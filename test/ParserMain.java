@@ -1,31 +1,6 @@
 import org.json.*;
 import java.io.*;
-import java.nio.*;
-import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
 class ParserMain {
-  private static String readStdin() throws IOException {
-    InputStreamReader stream = new InputStreamReader(System.in, "utf-8");
-    char buffer[] = new char[System.in.available()];
-    try {
-      stream.read(buffer, 0, System.in.available());
-    } finally {
-      stream.close();
-    }
-    return new String(buffer);
-  }
-  private static String readFile(String path) throws IOException {
-    FileInputStream stream = new FileInputStream(new File(path));
-    try {
-      FileChannel fc = stream.getChannel();
-      MappedByteBuffer bb = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
-      /* Instead of using default, pass in a decoder. */
-      return Charset.defaultCharset().decode(bb).toString();
-    }
-    finally {
-      stream.close();
-    }
-  }
   private static Parser getParser(String name) throws Exception {
     if (name.equals("wdl")) {
       return new WdlParser();
@@ -43,7 +18,7 @@ class ParserMain {
       Parser parser = getParser(grammar);
       TerminalMap terminals = parser.getTerminalMap();
       TokenStream tokens = new TokenStream(terminals);
-      String contents = readStdin();
+      String contents = Utility.readStdin();
       JSONArray arr = new JSONArray(contents);
       for ( int i = 0; i < arr.length(); i++ ) {
         JSONObject token = arr.getJSONObject(i);

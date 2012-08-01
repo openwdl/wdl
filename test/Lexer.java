@@ -13,10 +13,14 @@ class SourceCode {
   private File source;
   private String resource;
   private String contents;
+  private int line;
+  private int col;
 
   SourceCode(String source, String resource) {
     this.contents = source;
     this.resource = resource;
+    this.line = 1;
+    this.col = 1;
   }
 
   SourceCode(File source) throws IOException {
@@ -34,14 +38,38 @@ class SourceCode {
     CharsetDecoder cd = cs.newDecoder();
     CharBuffer cb = cd.decode(buffer);
     this.contents = cb.toString();
+    this.resource = resource;
+    this.line = 1;
+    this.col = 1;
   }
 
   public void advance(int amount) {
+    String str = this.contents.substring(0, amount);
+    for ( byte b : str.getBytes() ) {
+      if ( b == (byte) '\n' || b == (byte) '\r' ) {
+        this.line++;
+        this.col = 1;
+      } else {
+        this.col++;
+      }
+    }
     this.contents = this.contents.substring(amount);
   }
 
   public String getString() {
     return this.contents;
+  }
+
+  public String getResource() {
+    return this.resource;
+  }
+
+  public int getLine() {
+    return this.line;
+  }
+
+  public int getCol() {
+    return this.col;
   }
 }
 
@@ -56,39 +84,6 @@ class TokenLexer {
   private Pattern regex;
   private WdlParser.TerminalId terminal;
 
-  private String base64_encode(byte[] bytes) {
-    int b64_len = ((bytes.length + ( (bytes.length % 3 != 0) ? (3 - (bytes.length % 3)) : 0) ) / 3) * 4;
-    int cycle = 0, b64_index = 0;
-    byte[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".getBytes();
-    byte[] b64 = new byte[b64_len];
-    byte[] buffer = new byte[3];
-    Arrays.fill(buffer, (byte) -1);
-
-    for (byte b : bytes) {
-      int index = cycle % 3;
-      buffer[index] = b;
-      boolean last = (cycle == (bytes.length - 1));
-      if ( index == 2 || last ) {
-        if ( last ) {
-          if ( buffer[1] == -1 ) buffer[1] = 0;
-          if ( buffer[2] == -1 ) buffer[2] = 0;
-        }
-
-        b64[b64_index++] = alphabet[buffer[0] >> 2];
-        b64[b64_index++] = alphabet[((buffer[0] & 0x3) << 4) | ((buffer[1] >> 4) & 0xf)];
-        b64[b64_index++] = alphabet[((buffer[1] & 0xf) << 2) | ((buffer[2] >> 6) & 0x3)];
-        b64[b64_index++] = alphabet[buffer[2] & 0x3f];
-
-        if ( buffer[1] == 0 ) b64[b64_index - 2] = (byte) '=';
-        if ( buffer[2] == 0 ) b64[b64_index - 1] = (byte) '=';
-
-        Arrays.fill(buffer, (byte) -1);
-      }
-      cycle++;
-    }
-    return new String(b64);
-  }
-
   TokenLexer(Pattern regex, WdlParser.TerminalId terminal) {
     this.regex = regex;
     this.terminal = terminal;
@@ -96,16 +91,18 @@ class TokenLexer {
 
   LexerMatch match(SourceCode source) {
     Matcher m = this.regex.matcher(source.getString());
+    LexerMatch rval = null;
     if ( m.find() ) {
       String sourceString = m.group();
-      source.advance(sourceString.length());
 
       if (this.terminal != null)
-        return new LexerMatch(new Terminal(this.terminal.id(), this.terminal.string(), base64_encode(sourceString.getBytes()), "file", 0, 0));
+        rval = new LexerMatch(new Terminal(this.terminal.id(), this.terminal.string(), Utility.base64_encode(sourceString.getBytes()), source.getResource(), source.getLine(), source.getCol()));
       else
-        return new LexerMatch();
+        rval = new LexerMatch();
+
+      source.advance(sourceString.length());
     }
-    return null;
+    return rval;
   }
 }
 
