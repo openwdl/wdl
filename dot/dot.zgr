@@ -2,7 +2,7 @@
   "ll1": {
     "start": "graph",
     "rules": [
-      "graph := optional('strict') + graph_type + optional('identifier') + 'lbrace' + tlist(stmt, 'semi') + 'rbrace' -> Graph(strict=$0, type=$1, name=$2, statements=$4)",
+      "graph := optional('strict') + graph_type + optional('identifier') + 'lbrace' + tlist(stmt, 'semi') + 'rbrace' + 'semi' -> Graph(strict=$0, type=$1, name=$2, statements=$4)",
       "graph_type := 'graph' | 'digraph'",
       "stmt := node_stmt | edge_stmt | attr_stmt | subgraph",
       "stmt := 'value_assign_hint' + 'identifier' + 'assign' + 'identifier' -> Assign(key=$1, value=$3)",
@@ -11,7 +11,7 @@
       "attr := 'lsquare' + list(attr_values, 'comma') + 'rsquare' -> $1",
       "attr_values := 'identifier' + optional(attr_value_assign) -> AttributeValue(key=$0, value=$1)",
       "attr_value_assign := 'assign' + 'identifier' -> $1",
-      "edge_stmt := 'edge_stmt_hint' + node_or_subgraph + mlist(edge_rhs, 1) + list(attr) -> Edg(node=$1, edges=$2, attributes=$3)",
+      "edge_stmt := 'edge_stmt_hint' + node_or_subgraph + mlist(edge_rhs, 1) + list(attr) -> Edge(node=$1, edges=$2, attributes=$3)",
       "edge_rhs := edge_op + node_or_subgraph -> EdgeDeclaration( edge_type=$0, node=$1 )",
       "node_or_subgraph := node_id | subgraph",
       "edge_op := 'arrow' | 'dashdash'",

@@ -30,7 +30,7 @@ class TokenStream extends ArrayList<Terminal> {
     if (current.getId() != expecting) {
       Formatter formatter = new Formatter(new StringBuilder(), Locale.US);
       StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-      formatter.format("Unexpected symbol when parsing %s.  Expected %s, got %s.", stack[2].getMethodName(), this.terminals.get(expecting), current != null ? current : "<end of stream>");
+      formatter.format("Unexpected symbol when parsing %s.  Expected %s, got %s.", stack[2].getMethodName(), this.terminals.get(expecting), current != null ? current.getTerminalStr() : "<end of stream>");
       throw new SyntaxError(formatter.toString());
     }
     Terminal next = advance();

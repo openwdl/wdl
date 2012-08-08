@@ -1,25 +1,27 @@
-import java.util.regex.*;
-import java.util.concurrent.Callable;
-import java.util.ArrayList;
-import java.util.List;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.FileNotFoundException;
-import java.util.Arrays;
-import java.nio.*;
-import java.nio.charset.*;
-import java.nio.channels.*;
+import java.io.IOException;
+import java.nio.CharBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class SourceCode {
   private File source;
-  private String resource;
+  private final String resource;
   private String contents;
   private int line;
   private int col;
   private int nchars;
 
-  SourceCode(String source, String resource) {
+  SourceCode(final String source, final String resource) {
     this.contents = source;
     this.resource = resource;
     this.line = 1;
@@ -27,20 +29,20 @@ class SourceCode {
     this.nchars = 0;
   }
 
-  SourceCode(File source) throws IOException {
+  SourceCode(final File source) throws IOException {
     this(source, "utf-8", source.getCanonicalPath());
   }
 
-  SourceCode(File source, String resource) throws IOException {
+  SourceCode(final File source, final String resource) throws IOException {
     this(source, "utf-8", resource);
   }
 
-  SourceCode(File source, String encoding, String resource) throws IOException, FileNotFoundException {
-    FileChannel channel = new FileInputStream(source).getChannel();
-    MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
-    Charset cs = Charset.forName(encoding);
-    CharsetDecoder cd = cs.newDecoder();
-    CharBuffer cb = cd.decode(buffer);
+  SourceCode(final File source, final String encoding, final String resource) throws IOException, FileNotFoundException {
+    final FileChannel channel = new FileInputStream(source).getChannel();
+    final MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
+    final Charset cs = Charset.forName(encoding);
+    final CharsetDecoder cd = cs.newDecoder();
+    final CharBuffer cb = cd.decode(buffer);
     this.contents = cb.toString();
     this.resource = resource;
     this.line = 1;
@@ -51,9 +53,9 @@ class SourceCode {
     return this.nchars;
   }
 
-  public void advance(int amount) {
-    String str = this.contents.substring(0, amount);
-    for ( byte b : str.getBytes() ) {
+  public void advance(final int amount) {
+    final String str = this.contents.substring(0, amount);
+    for ( final byte b : str.getBytes() ) {
       if ( b == (byte) '\n' || b == (byte) '\r' ) {
         this.line++;
         this.col = 1;
@@ -83,46 +85,47 @@ class SourceCode {
 }
 
 class LexerMatch {
-  private List<Terminal> terminals;
+  private final List<Terminal> terminals;
   LexerMatch() { this.terminals = null; }
-  LexerMatch(List<Terminal> terminals) { this.terminals = terminals; }
+  LexerMatch(final List<Terminal> terminals) { this.terminals = terminals; }
   public List<Terminal> getTerminals() { return this.terminals; }
-  public void append(Terminal terminal) {this.terminals.add(terminal);}
+  public void append(final Terminal terminal) {this.terminals.add(terminal);}
 }
 
 abstract class TokenMatchCallback implements Callable<LexerMatch> {
   protected Terminal terminal;
   protected LexerState state;
-  protected void setContext(Terminal terminal, LexerState state) {
+  protected void setContext(final Terminal terminal, final LexerState state) {
     this.terminal = terminal;
     this.state = state;
   }
-  public abstract LexerMatch call();
+  @Override
+public abstract LexerMatch call();
 }
 
 class TokenLexer {
-  private Pattern regex;
-  private DotParser.TerminalId terminal;
-  private TokenMatchCallback handler;
+  private final Pattern regex;
+  private final DotParser.TerminalId terminal;
+  private final TokenMatchCallback handler;
 
-  TokenLexer(Pattern regex, DotParser.TerminalId terminal) {
+  TokenLexer(final Pattern regex, final DotParser.TerminalId terminal) {
     this(regex, terminal, null);
   }
 
-  TokenLexer(Pattern regex, DotParser.TerminalId terminal, TokenMatchCallback handler) {
+  TokenLexer(final Pattern regex, final DotParser.TerminalId terminal, final TokenMatchCallback handler) {
     this.regex = regex;
     this.terminal = terminal;
     this.handler = handler;
   }
 
-  LexerMatch match(SourceCode source, LexerState state) {
-    Matcher m = this.regex.matcher(source.getString());
-    LexerMatch rval = null;
+  LexerMatch match(final SourceCode source, final LexerState state) {
+    final Matcher m = this.regex.matcher(source.getString());
+    final LexerMatch rval = null;
 
-    String code = source.getString().length() > 20 ? source.getString().substring(0, 20) : source.getString();
+    final String code = source.getString().length() > 20 ? source.getString().substring(0, 20) : source.getString();
 
     if ( m.find() ) {
-      String sourceString = m.group();
+      final String sourceString = m.group();
       Terminal terminal = null;
 
       if ( this.terminal != null ) {
@@ -135,7 +138,7 @@ class TokenLexer {
         this.handler.setContext(terminal, state);
         return this.handler.call();
       } else {
-        ArrayList<Terminal> list = new ArrayList<Terminal>();
+        final ArrayList<Terminal> list = new ArrayList<Terminal>();
         if ( terminal != null )
           list.add(terminal);
         return new LexerMatch(list);
@@ -152,7 +155,7 @@ class LexerState {
     this.cache = new ArrayList<Terminal>();
     this.square_bracket = 0;
   }
-  public void add(Terminal terminal) {
+  public void add(final Terminal terminal) {
     this.cache.add(terminal);
   }
   public List<Terminal> getCache() {
@@ -171,9 +174,9 @@ class LexerState {
     return this.square_bracket;
   }
 
-  private boolean cache_contains(DotParser.TerminalId input) {
+  private boolean cache_contains(final DotParser.TerminalId input) {
     if ( this.cache.size() > 0 ) {
-      for ( Terminal t : this.cache ) {
+      for ( final Terminal t : this.cache ) {
         if ( t.getId() == input.id() ) {
           return true;
         }
@@ -187,15 +190,7 @@ class LexerState {
   }
 
   public LexerMatch stmt_end() {
-    /*
-    stmt_end)
-      i) if cache = ['identifier' + 'assign' + 'identifier'], hint = value_assign_hint
-      ii) if cache contains edgeop, hint = edge_stmt_hint
-      iii) if cache[0] = 'identifier' and cache does not contain edgeop, hint = node_stmt_hint
-      iv) if cache[-1] != 'semi', semi = 'semi'
-    */
-
-    ArrayList<Terminal> tokens = new ArrayList<Terminal>();
+    final ArrayList<Terminal> tokens = new ArrayList<Terminal>();
     Terminal hint = null, semi = null;
 
     if ( this.cache.size() == 0 ) {
@@ -203,23 +198,23 @@ class LexerState {
     }
 
     if ( this.cache.size() >= 3 &&
-         this.cache.get(0).getId() == DotParser.TerminalId.TERMINAL_IDENTIFIER.id() && 
+         this.cache.get(0).getId() == DotParser.TerminalId.TERMINAL_IDENTIFIER.id() &&
          this.cache.get(1).getId() == DotParser.TerminalId.TERMINAL_ASSIGN.id() &&
          this.cache.get(2).getId() == DotParser.TerminalId.TERMINAL_IDENTIFIER.id() ) {
-      DotParser.TerminalId t = DotParser.TerminalId.TERMINAL_VALUE_ASSIGN_HINT;
+      final DotParser.TerminalId t = DotParser.TerminalId.TERMINAL_VALUE_ASSIGN_HINT;
       hint = new Terminal( t.id(), t.string(), "", "Context-disambiguating token", this.cache.get(0).getLine(), this.cache.get(0).getColumn());
     }
     else if ( cache_contains_edgeop() ) {
-      DotParser.TerminalId t = DotParser.TerminalId.TERMINAL_EDGE_STMT_HINT;
+      final DotParser.TerminalId t = DotParser.TerminalId.TERMINAL_EDGE_STMT_HINT;
       hint = new Terminal( t.id(), t.string(), "", "Context-disambiguating token", this.cache.get(0).getLine(), this.cache.get(0).getColumn());
     }
     else if ( this.cache.get(0).getId() == DotParser.TerminalId.TERMINAL_IDENTIFIER.id() ) {
-      DotParser.TerminalId t = DotParser.TerminalId.TERMINAL_NODE_STMT_HINT;
+      final DotParser.TerminalId t = DotParser.TerminalId.TERMINAL_NODE_STMT_HINT;
       hint = new Terminal( t.id(), t.string(), "", "Context-disambiguating token", this.cache.get(0).getLine(), this.cache.get(0).getColumn());
     }
 
     if ( this.cache.get(this.cache.size()-1).getId() != DotParser.TerminalId.TERMINAL_SEMI.id() ) {
-      DotParser.TerminalId t = DotParser.TerminalId.TERMINAL_SEMI;
+      final DotParser.TerminalId t = DotParser.TerminalId.TERMINAL_SEMI;
       semi = new Terminal( t.id(), t.string(), "", "Auto-inserted semi-colon", this.cache.get(0).getLine(), this.cache.get(0).getColumn());
     }
 
@@ -228,7 +223,7 @@ class LexerState {
     }
 
     tokens.addAll(this.cache);
-    
+
     if ( semi != null ) {
       tokens.add(semi);
     }
@@ -241,31 +236,34 @@ class LexerState {
 public class Lexer {
   private static class BackslashNewlineCallback extends TokenMatchCallback {
     /* called on \\[\r\n] */
+    @Override
     public LexerMatch call() {
       return null;
     }
   }
   private static class RightBraceOrEOFCallback extends TokenMatchCallback {
     /* called on }[\r\n]* or EOF */
+    @Override
     public LexerMatch call() {
       if ( this.state.getCache().size() > 0 ) {
-        LexerMatch match = this.state.stmt_end();
+        final LexerMatch match = this.state.stmt_end();
         match.append(this.terminal);
         return match;
       } else {
         this.state.add(this.terminal);
-        LexerMatch match = new LexerMatch(this.state.getCache());
-        this.state.clearCache();
-        return match;
+        //LexerMatch match = new LexerMatch(this.state.getCache());
+        //this.state.clearCache();
+        return null;
       }
     }
   }
   private static class LeftBraceCallback extends TokenMatchCallback {
     /* called on {[\r\n]* */
+    @Override
     public LexerMatch call() {
       if ( this.state.getCache().size() > 0 ) {
         this.state.add(this.terminal);
-        LexerMatch match = new LexerMatch(this.state.getCache());
+        final LexerMatch match = new LexerMatch(this.state.getCache());
         this.state.clearCache();
         return match;
       }
@@ -275,6 +273,7 @@ public class Lexer {
   }
   private static class NewLineCallback extends TokenMatchCallback {
     /* called on [\r\n]+ */
+    @Override
     public LexerMatch call() {
       if ( this.state.square_level() == 0 ) {
         return this.state.stmt_end();
@@ -285,6 +284,7 @@ public class Lexer {
   }
   private static class LeftSquareBracketCallback extends TokenMatchCallback {
     /* called on \\[ */
+    @Override
     public LexerMatch call() {
       if ( this.terminal != null ) {
         this.state.square_inc();
@@ -295,6 +295,7 @@ public class Lexer {
   }
   private static class RightSquareBracketCallback extends TokenMatchCallback {
     /* called on \\] */
+    @Override
     public LexerMatch call() {
       if ( this.terminal != null ) {
         this.state.square_dec();
@@ -305,6 +306,7 @@ public class Lexer {
   }
   private static class TokenCallback extends TokenMatchCallback {
     /* Called on all other tokens */
+    @Override
     public LexerMatch call() {
       if ( this.terminal != null ) {
         this.state.add(this.terminal);
@@ -312,9 +314,9 @@ public class Lexer {
       return null;
     }
   }
-  public static void main(String[] args) {
-    ArrayList<TokenLexer> regex = new ArrayList<TokenLexer>();
-    TokenCallback cb = new TokenCallback();
+  public static void main(final String[] args) {
+    final ArrayList<TokenLexer> regex = new ArrayList<TokenLexer>();
+    final TokenCallback cb = new TokenCallback();
     regex.add( new TokenLexer(Pattern.compile("^digraph(?=[^a-zA-Z_]|$)"), DotParser.TerminalId.TERMINAL_DIGRAPH, new TokenCallback()) );
     regex.add( new TokenLexer(Pattern.compile("^graph(?=[^a-zA-Z_]|$)"), DotParser.TerminalId.TERMINAL_GRAPH, new TokenCallback()) );
     regex.add( new TokenLexer(Pattern.compile("^subgraph(?=[^a-zA-Z_]|$)"), DotParser.TerminalId.TERMINAL_SUBGRAPH, new TokenCallback()) );
@@ -322,7 +324,7 @@ public class Lexer {
     regex.add( new TokenLexer(Pattern.compile("^edge(?=[^a-zA-Z_]|$)"), DotParser.TerminalId.TERMINAL_EDGE, new TokenCallback()) );
     regex.add( new TokenLexer(Pattern.compile("^node(?=[^a-zA-Z_]|$)"), DotParser.TerminalId.TERMINAL_NODE, new TokenCallback()) );
     regex.add( new TokenLexer(Pattern.compile("^;"), DotParser.TerminalId.TERMINAL_SEMI, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^\\}[\r\n]*"), DotParser.TerminalId.TERMINAL_RBRACE, new RightBraceOrEOFCallback()) );
+    regex.add( new TokenLexer(Pattern.compile("^\\}"), DotParser.TerminalId.TERMINAL_RBRACE, new RightBraceOrEOFCallback()) );
     regex.add( new TokenLexer(Pattern.compile("^\\{[\r\n]*"), DotParser.TerminalId.TERMINAL_LBRACE, new LeftBraceCallback()) );
     regex.add( new TokenLexer(Pattern.compile("^\\["), DotParser.TerminalId.TERMINAL_LSQUARE, new LeftSquareBracketCallback()) );
     regex.add( new TokenLexer(Pattern.compile("^\\]"), DotParser.TerminalId.TERMINAL_RSQUARE, new RightSquareBracketCallback()) );
@@ -342,17 +344,17 @@ public class Lexer {
     }
 
     try {
-      SourceCode code = new SourceCode(new File(args[0]));
-      LexerState state = new LexerState();
-      ArrayList<Terminal> terminals = new ArrayList<Terminal>();
+      final SourceCode code = new SourceCode(new File(args[0]));
+      final LexerState state = new LexerState();
+      final ArrayList<Terminal> terminals = new ArrayList<Terminal>();
       int consumed;
       boolean progress = true;
 
       while (progress) {
         progress = false;
         consumed = code.getCharactersProcessed();
-        for ( TokenLexer lexer : regex ) {
-          LexerMatch match = lexer.match(code, state);
+        for ( final TokenLexer lexer : regex ) {
+          final LexerMatch match = lexer.match(code, state);
 
           if (match != null) {
             terminals.addAll(match.getTerminals());
@@ -365,15 +367,15 @@ public class Lexer {
         }
       }
 
-      ArrayList<String> strs = new ArrayList<String>();
-      for (Terminal t : terminals) {
+      final ArrayList<String> strs = new ArrayList<String>();
+      for (final Terminal t : terminals) {
         strs.add("  " + t.toString());
       }
       System.out.println("[");
       System.out.println( Utility.join(strs, ",\n") );
       System.out.println("]");
       System.out.flush();
-    } catch (IOException e) {
+    } catch (final IOException e) {
       System.err.println(e);
       System.exit(-1);
     }
