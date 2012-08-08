@@ -1,29 +1,24 @@
 composite_task CopyNumberQC {
-  step LaneBlackList: (lane_blacklist) = LaneBlackList();
-
-  for ( sample in samples ) {
-    step MakeLaneList: (sample.lanelist) = MakeLaneList(sample.bam, sample.id, sample.regions);
-    step RegionCovPerLane: (sample.rcl) = RegionCovPerLane(sample.bam, sample.id, sample.regions);
+  step {
+    task: LaneBlackList[version=6]
   }
 
-  step CopyNumberQc: CopyNumberQCReport(samples.lanelist, samples.rcl, region_list, normals_db, tumor_seg, normal_seg, lane_blacklist);
-}
+  for ( sample in samples ) {
+    step MakeLaneList_v11 {
+      task: MakeLaneList[version=11];
+      input: sample.bam, sample.id, sample.regions;
+      output: sample.lanelist;
+    }
 
-task MakeLaneList(File input_bam, String sample_id) {
-  output: File("lanelist_${sample_id}.txt");
-  action: task("MakeLaneList", version=11);
-}
+    step RegionCovPerLane_v16 {
+      task: RegionCovPerLane[version=16];
+      input: sample.bam, sample.id, sample.regions;
+      output: sample.rcl;
+    }
+  }
 
-task RegionCovPerLane(File input_bam, String sample_id, String region_list) {
-  output: File("sample_${sample_id}.rcl");
-  action: task("RegionCovPerLane", version=16);
-}
-
-task LaneBackList() {
-  output: File("LaneBlackList.txt");
-  action: task("LaneBlackList", version=6);
-}
-
-task CopyNumberQcReport(ListFile lanelist, ListFile rcl, String individual_name, FileList region_list, FileList normals_db, File tumor_seg, File normal_seg, File lane_blacklist) {
-  action: task("CopyNumberQCReport", version=25);
+  step CopyNumberQC_v25 {
+    task: CopyNumberQCReport[version=25];
+    input: samples.lanelist, samples.rcl, region_list, normals_db, tumor_seg, normal_seg, lane_blacklist;
+  }
 }
