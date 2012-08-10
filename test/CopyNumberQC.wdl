@@ -16,6 +16,6 @@ composite_task CopyNumberQC {
   }
 
   step CopyNumberQC[version=25] {
-    input: samples.lanelist, samples.rcl, lane_blacklist;
+    input: lanelist=samples.lanelist, rcl=samples.rcl, lane_blacklist=lane_blacklist;
   }
 }

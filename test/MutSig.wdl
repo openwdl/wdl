@@ -20,7 +20,7 @@ composite_task MutSig {
   }
 
   step MutSigRun[version=157] as MutSig {
-    input: mutation_list=mutation_list, coverage_file=coverage_file, patients=patient_list, category_file, mutation_preprocessing_report;
+    input: mutation_list=mutation_list, coverage_file=coverage_file, patients=patient_list, category_file=category_file, mutation_preprocessing_report=foobar;
     output: File("bargraphs.png") as graphs;
   }
 
