@@ -15,9 +15,11 @@
       "step_name := 'as' + 'identifier' -> $1",
       "step_attr := step_input_list | step_output_list",
       "step_input_list := 'input' + 'colon' + list(step_input, 'comma')  + 'semi' -> StepInputList( inputs=$2 )",
-      "step_input := 'identifier' + 'assign' + 'identifier'",
+      "step_input := 'identifier' + 'assign' + variable -> StepInput(parameter=$0, value=$2)",
       "step_output_list := 'output' + 'colon' + list(step_output, 'comma') + 'semi' -> StepOutputList( outputs=$2 )",
-      "step_output := 'file' + 'lparen' + 'string' + 'rparen' + 'as' + 'identifier'"
+      "step_output := 'file' + 'lparen' + 'string' + 'rparen' + 'as' + variable -> StepFileOutput( file=$2, as=$5 )",
+      "variable := 'identifier' + optional(variable_member) -> Variable(name=$0, member=$1)",
+      "variable_member := 'dot' + 'identifier -> $1"
     ]
   }
 }
