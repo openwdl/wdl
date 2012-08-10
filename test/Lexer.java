@@ -108,25 +108,32 @@ class TokenLexer {
 
 public class Lexer {
   public static void main(String[] args) {
+    // 'as', 'assign', 'colon', 'comma', 'composite_task', 'file', 'for', 'identifier', 'in', 'input', 'lbrace', 'lparen', 'lsquare', 'number', 'output', 'rbrace', 'rparen', 'rsquare', 'semi', 'step', 'string'
     ArrayList<TokenLexer> regex = new ArrayList<TokenLexer>();
-    regex.add( new TokenLexer(Pattern.compile("^scatter-gather(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_SCATTER_GATHER) );
-    regex.add( new TokenLexer(Pattern.compile("^String(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_STRING) );
-    regex.add( new TokenLexer(Pattern.compile("^workflow(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_WORKFLOW) );
-    regex.add( new TokenLexer(Pattern.compile("^File(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_FILE) );
+    regex.add( new TokenLexer(Pattern.compile("\\/\\*.*?\\*\\/", Pattern.DOTALL), null) );
+    regex.add( new TokenLexer(Pattern.compile("//.*"), null) );
+    regex.add( new TokenLexer(Pattern.compile("^composite_task(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_COMPOSITE_TASK) );
     regex.add( new TokenLexer(Pattern.compile("^output(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_OUTPUT) );
+    regex.add( new TokenLexer(Pattern.compile("^input(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_INPUT) );
     regex.add( new TokenLexer(Pattern.compile("^step(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_STEP) );
-    regex.add( new TokenLexer(Pattern.compile("^command(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_COMMAND) );
-    regex.add( new TokenLexer(Pattern.compile("^action(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_ACTION) );
+    regex.add( new TokenLexer(Pattern.compile("^File(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_FILE) );
+    regex.add( new TokenLexer(Pattern.compile("^for(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_FOR) );
+    regex.add( new TokenLexer(Pattern.compile("^as(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_AS) );
+    regex.add( new TokenLexer(Pattern.compile("^in(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_IN) );
+    regex.add( new TokenLexer(Pattern.compile("^\\."), WdlParser.TerminalId.TERMINAL_DOT) );
     regex.add( new TokenLexer(Pattern.compile("^,"), WdlParser.TerminalId.TERMINAL_COMMA) );
     regex.add( new TokenLexer(Pattern.compile("^:"), WdlParser.TerminalId.TERMINAL_COLON) );
-    regex.add( new TokenLexer(Pattern.compile("^\\}"), WdlParser.TerminalId.TERMINAL_RBRACE) );
     regex.add( new TokenLexer(Pattern.compile("^;"), WdlParser.TerminalId.TERMINAL_SEMI) );
+    regex.add( new TokenLexer(Pattern.compile("^="), WdlParser.TerminalId.TERMINAL_ASSIGN) );
+    regex.add( new TokenLexer(Pattern.compile("^\\["), WdlParser.TerminalId.TERMINAL_LSQUARE) );
+    regex.add( new TokenLexer(Pattern.compile("^\\]"), WdlParser.TerminalId.TERMINAL_RSQUARE) );
     regex.add( new TokenLexer(Pattern.compile("^\\{"), WdlParser.TerminalId.TERMINAL_LBRACE) );
-    regex.add( new TokenLexer(Pattern.compile("^="), WdlParser.TerminalId.TERMINAL_EQUALS) );
+    regex.add( new TokenLexer(Pattern.compile("^\\}"), WdlParser.TerminalId.TERMINAL_RBRACE) );
     regex.add( new TokenLexer(Pattern.compile("^\\("), WdlParser.TerminalId.TERMINAL_LPAREN) );
     regex.add( new TokenLexer(Pattern.compile("^\\)"), WdlParser.TerminalId.TERMINAL_RPAREN) );
-    regex.add( new TokenLexer(Pattern.compile("^\"([^\\\\\"\\n]|\\[\\\"'nrbtfav\\?]|\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\""), WdlParser.TerminalId.TERMINAL_STRING_LITERAL) );
+    regex.add( new TokenLexer(Pattern.compile("^\"([^\\\\\"\\n]|\\[\\\"'nrbtfav\\?]|\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\""), WdlParser.TerminalId.TERMINAL_STRING) );
     regex.add( new TokenLexer(Pattern.compile("^([a-zA-Z_]|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)([a-zA-Z_0-9]|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"), WdlParser.TerminalId.TERMINAL_IDENTIFIER) );
+    regex.add( new TokenLexer(Pattern.compile("^[-]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?)"), WdlParser.TerminalId.TERMINAL_NUMBER) );
     regex.add( new TokenLexer(Pattern.compile("^\\s+"), null) );
 
     if ( args.length < 1 ) {
