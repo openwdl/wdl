@@ -89,7 +89,9 @@ class LexerMatch {
   LexerMatch() { this.terminals = null; }
   LexerMatch(final List<Terminal> terminals) { this.terminals = terminals; }
   public List<Terminal> getTerminals() { return this.terminals; }
-  public void append(final Terminal terminal) {this.terminals.add(terminal);}
+  public void add(final Terminal terminal) {this.terminals.add(terminal);}
+  public void addAll(final List<Terminal> terminals) {this.terminals.addAll(terminals);}
+  public void addAll(final LexerMatch match) {this.terminals.addAll(match.getTerminals());}
 }
 
 abstract class TokenMatchCallback implements Callable<LexerMatch> {
@@ -100,7 +102,7 @@ abstract class TokenMatchCallback implements Callable<LexerMatch> {
     this.state = state;
   }
   @Override
-public abstract LexerMatch call();
+  public abstract LexerMatch call();
 }
 
 class TokenLexer {
@@ -120,7 +122,6 @@ class TokenLexer {
 
   LexerMatch match(final SourceCode source, final LexerState state) {
     final Matcher m = this.regex.matcher(source.getString());
-    final LexerMatch rval = null;
 
     final String code = source.getString().length() > 20 ? source.getString().substring(0, 20) : source.getString();
 
@@ -144,7 +145,7 @@ class TokenLexer {
         return new LexerMatch(list);
       }
     }
-    return rval;
+    return null;
   }
 }
 
@@ -241,13 +242,12 @@ public class Lexer {
       return null;
     }
   }
-  private static class RightBraceOrEOFCallback extends TokenMatchCallback {
-    /* called on }[\r\n]* or EOF */
+  private static class EofCallback extends TokenMatchCallback {
+    /* called on ^$ */
     @Override
     public LexerMatch call() {
       if ( this.state.getCache().size() > 0 ) {
         final LexerMatch match = this.state.stmt_end();
-        match.append(this.terminal);
         return match;
       } else {
         this.state.add(this.terminal);
@@ -255,6 +255,22 @@ public class Lexer {
         //this.state.clearCache();
         return null;
       }
+    }
+  }
+  private static class RightBraceCallback extends TokenMatchCallback {
+    /* called on }[\r\n]* */
+    @Override
+    public LexerMatch call() {
+      LexerMatch match = null;
+      if ( this.state.getCache().size() > 0 ) {
+        match = this.state.stmt_end();
+      } else {
+        //match = new LexerMatch
+        this.state.add(this.terminal);
+        //LexerMatch match = new LexerMatch(this.state.getCache());
+        //this.state.clearCache();
+      }
+      return null;
     }
   }
   private static class LeftBraceCallback extends TokenMatchCallback {
@@ -314,63 +330,80 @@ public class Lexer {
       return null;
     }
   }
-  public static void main(final String[] args) {
-    final ArrayList<TokenLexer> regex = new ArrayList<TokenLexer>();
-    final TokenCallback cb = new TokenCallback();
-    regex.add( new TokenLexer(Pattern.compile("^digraph(?=[^a-zA-Z_]|$)"), DotParser.TerminalId.TERMINAL_DIGRAPH, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^graph(?=[^a-zA-Z_]|$)"), DotParser.TerminalId.TERMINAL_GRAPH, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^subgraph(?=[^a-zA-Z_]|$)"), DotParser.TerminalId.TERMINAL_SUBGRAPH, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^strict(?=[^a-zA-Z_]|$)"), DotParser.TerminalId.TERMINAL_STRICT, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^edge(?=[^a-zA-Z_]|$)"), DotParser.TerminalId.TERMINAL_EDGE, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^node(?=[^a-zA-Z_]|$)"), DotParser.TerminalId.TERMINAL_NODE, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^;"), DotParser.TerminalId.TERMINAL_SEMI, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^\\}"), DotParser.TerminalId.TERMINAL_RBRACE, new RightBraceOrEOFCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^\\{[\r\n]*"), DotParser.TerminalId.TERMINAL_LBRACE, new LeftBraceCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^\\["), DotParser.TerminalId.TERMINAL_LSQUARE, new LeftSquareBracketCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^\\]"), DotParser.TerminalId.TERMINAL_RSQUARE, new RightSquareBracketCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^\u002d\u002d"), DotParser.TerminalId.TERMINAL_DASHDASH, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^\u002d\u003e"), DotParser.TerminalId.TERMINAL_ARROW, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^,"), DotParser.TerminalId.TERMINAL_COMMA, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^:"), DotParser.TerminalId.TERMINAL_COLON, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^="), DotParser.TerminalId.TERMINAL_ASSIGN, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^\\\\[\r\n]"), DotParser.TerminalId.TERMINAL_ASSIGN, new BackslashNewlineCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^([a-zA-Z\u0200-\u0377_]([0-9a-zA-Z\u0200-\u0377_])*|\"(\\\"|[^\"])*?\"|[-]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?))"), DotParser.TerminalId.TERMINAL_IDENTIFIER, new TokenCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^[\r\n]+"), null, new NewLineCallback()) );
-    regex.add( new TokenLexer(Pattern.compile("^\\s+"), null, new TokenCallback()) );
 
+  private ArrayList<TokenLexer> regex;
+
+  public Lexer() {
+    this.regex = new ArrayList<TokenLexer>();
+    this.regex.add( new TokenLexer(Pattern.compile("^$"), null, new EofCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^digraph(?=[^a-zA-Z_])"), DotParser.TerminalId.TERMINAL_DIGRAPH, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^graph(?=[^a-zA-Z_])"), DotParser.TerminalId.TERMINAL_GRAPH, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^subgraph(?=[^a-zA-Z_])"), DotParser.TerminalId.TERMINAL_SUBGRAPH, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^strict(?=[^a-zA-Z_])"), DotParser.TerminalId.TERMINAL_STRICT, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^edge(?=[^a-zA-Z_])"), DotParser.TerminalId.TERMINAL_EDGE, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^node(?=[^a-zA-Z_])"), DotParser.TerminalId.TERMINAL_NODE, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^;"), DotParser.TerminalId.TERMINAL_SEMI, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\}"), DotParser.TerminalId.TERMINAL_RBRACE, new RightBraceCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\{[\r\n]*"), DotParser.TerminalId.TERMINAL_LBRACE, new LeftBraceCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\["), DotParser.TerminalId.TERMINAL_LSQUARE, new LeftSquareBracketCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\]"), DotParser.TerminalId.TERMINAL_RSQUARE, new RightSquareBracketCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\u002d\u002d"), DotParser.TerminalId.TERMINAL_DASHDASH, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\u002d\u003e"), DotParser.TerminalId.TERMINAL_ARROW, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^,"), DotParser.TerminalId.TERMINAL_COMMA, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^:"), DotParser.TerminalId.TERMINAL_COLON, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^="), DotParser.TerminalId.TERMINAL_ASSIGN, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\\\[\r\n]"), DotParser.TerminalId.TERMINAL_ASSIGN, new BackslashNewlineCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^([a-zA-Z\u0200-\u0377_]([0-9a-zA-Z\u0200-\u0377_])*|\"(\\\"|[^\"])*?\"|[-]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?))"), DotParser.TerminalId.TERMINAL_IDENTIFIER, new TokenCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^[\r\n]+"), null, new NewLineCallback()) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\s+"), null, new TokenCallback()) );
+  }
+
+  private LexerMatch onMatch(Terminal terminal) {
+    return null;
+  }
+
+  public List<Terminal> getTokens(SourceCode code) {
+    final LexerState state = new LexerState();
+    final List<Terminal> terminals = new ArrayList<Terminal>();
+    int consumed;
+    boolean progress = true;
+
+    while (progress) {
+      progress = false;
+      consumed = code.getCharactersProcessed();
+      for ( final TokenLexer lexer : regex ) {
+        final LexerMatch match = lexer.match(code, state);
+
+        if (match != null) {
+          terminals.addAll(match.getTerminals());
+        }
+
+        if ( consumed < code.getCharactersProcessed() ) {
+          progress = true;
+          break;
+        }
+      }
+    }
+    return terminals;
+  }
+
+  public static void main(final String[] args) {
     if ( args.length < 1 ) {
       System.err.println("Usage: Lexer <input file>");
       System.exit(-1);
     }
 
+
     try {
+      Lexer lexer = new Lexer();
       final SourceCode code = new SourceCode(new File(args[0]));
-      final LexerState state = new LexerState();
-      final ArrayList<Terminal> terminals = new ArrayList<Terminal>();
-      int consumed;
-      boolean progress = true;
-
-      while (progress) {
-        progress = false;
-        consumed = code.getCharactersProcessed();
-        for ( final TokenLexer lexer : regex ) {
-          final LexerMatch match = lexer.match(code, state);
-
-          if (match != null) {
-            terminals.addAll(match.getTerminals());
-          }
-
-          if ( consumed < code.getCharactersProcessed() ) {
-            progress = true;
-            break;
-          }
-        }
-      }
-
       final ArrayList<String> strs = new ArrayList<String>();
+      final List<Terminal> terminals = lexer.getTokens(code);
+
       for (final Terminal t : terminals) {
         strs.add("  " + t.toString());
       }
+
       System.out.println("[");
       System.out.println( Utility.join(strs, ",\n") );
       System.out.println("]");

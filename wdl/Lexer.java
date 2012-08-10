@@ -1,5 +1,6 @@
 import java.util.regex.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,38 +10,43 @@ import java.nio.*;
 import java.nio.charset.*;
 import java.nio.channels.*;
 
-class SourceCode {
+class WdlSourceCode implements SourceCode{
   private File source;
   private String resource;
   private String contents;
   private int line;
   private int col;
+  private StringBuilder currentLine;
+  private List<String> lines;
 
-  SourceCode(String source, String resource) {
-    this.contents = source;
-    this.resource = resource;
-    this.line = 1;
-    this.col = 1;
+  WdlSourceCode(String source, String resource) {
+    init(source, resource);
   }
 
-  SourceCode(File source) throws IOException {
+  WdlSourceCode(File source) throws IOException {
     this(source, "utf-8", source.getCanonicalPath());
   }
 
-  SourceCode(File source, String resource) throws IOException {
+  WdlSourceCode(File source, String resource) throws IOException {
     this(source, "utf-8", resource);
   }
 
-  SourceCode(File source, String encoding, String resource) throws IOException, FileNotFoundException {
+  WdlSourceCode(File source, String encoding, String resource) throws IOException, FileNotFoundException {
     FileChannel channel = new FileInputStream(source).getChannel();
     MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
     Charset cs = Charset.forName(encoding);
     CharsetDecoder cd = cs.newDecoder();
     CharBuffer cb = cd.decode(buffer);
-    this.contents = cb.toString();
+    init(cb.toString(), resource);
+  }
+
+  private void init(String contents, String resource) {
+    this.contents = contents;
     this.resource = resource;
     this.line = 1;
     this.col = 1;
+    this.lines = new ArrayList<String>();
+    this.currentLine = new StringBuilder();
   }
 
   public void advance(int amount) {
@@ -68,8 +74,16 @@ class SourceCode {
     return this.line;
   }
 
-  public int getCol() {
+  public int getColumn() {
     return this.col;
+  }
+
+  public String getLine(int lineno) {
+    return null; // TODO
+  }
+
+  public List<String> getLines() {
+    return null; // TODO
   }
 }
 
@@ -96,7 +110,7 @@ class TokenLexer {
       String sourceString = m.group();
 
       if (this.terminal != null)
-        rval = new LexerMatch(new Terminal(this.terminal.id(), this.terminal.string(), Utility.base64_encode(sourceString.getBytes()), source.getResource(), source.getLine(), source.getCol()));
+        rval = new LexerMatch(new Terminal(this.terminal.id(), this.terminal.string(), Utility.base64_encode(sourceString.getBytes()), source.getResource(), source.getLine(), source.getColumn()));
       else
         rval = new LexerMatch();
 
@@ -142,7 +156,7 @@ public class Lexer {
     }
 
     try {
-      SourceCode code = new SourceCode(new File(args[0]));
+      SourceCode code = new WdlSourceCode(new File(args[0]));
       ArrayList<String> terminal_strings = new ArrayList<String>();
       boolean progress = true;
 

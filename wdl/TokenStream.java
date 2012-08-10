@@ -22,22 +22,22 @@ class TokenStream extends ArrayList<Terminal> {
       return null;
     }
   }
-  public Terminal expect(int expecting) throws SyntaxError {
+  public Terminal expect(int expecting, SyntaxErrorFormatter syntaxErrorFormatter) throws SyntaxError {
     Terminal current = current();
     if (current == null) {
-      throw new SyntaxError( "No more tokens.  Expecting " + this.terminals.get(expecting) );
+      StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+      throw new SyntaxError(syntaxErrorFormatter.no_more_tokens(stack[2].getMethodName(), expecting));
     }
     if (current.getId() != expecting) {
-      Formatter formatter = new Formatter(new StringBuilder(), Locale.US);
       StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-      formatter.format("Unexpected symbol when parsing %s.  Expected %s, got %s.", stack[2].getMethodName(), this.terminals.get(expecting), current != null ? current : "<end of stream>");
-      throw new SyntaxError(formatter.toString());
+      ArrayList<Integer> expectedList = new ArrayList<Integer>();
+      expectedList.add(expecting);
+      throw new SyntaxError(syntaxErrorFormatter.unexpected_symbol(stack[2].getMethodName(), current, expectedList));
     }
     Terminal next = advance();
     if ( next != null && !this.terminals.isValid(next.getId()) ) {
-      Formatter formatter = new Formatter(new StringBuilder(), Locale.US);
-      formatter.format("Invalid symbol ID: %d (%s)", next.getId(), next.getTerminalStr());
-      throw new SyntaxError(formatter.toString());
+      StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+      throw new SyntaxError(syntaxErrorFormatter.invalid_terminal(stack[2].getMethodName(), next));
     }
     return current;
   }

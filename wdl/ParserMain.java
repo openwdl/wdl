@@ -1,6 +1,28 @@
 import org.json.*;
 import java.io.*;
+import java.util.List;
 class ParserMain {
+  private static class DefaultSyntaxErrorFormatter implements SyntaxErrorFormatter {
+    private TerminalMap map;
+    DefaultSyntaxErrorFormatter(TerminalMap map) {
+      this.map = map;
+    }
+    public String unexpected_eof(String method, List<Integer> expected) {
+      return "Error: unexpected end of file";
+    }
+    public String excess_tokens(String method, Terminal terminal) {
+      return "Finished parsing without consuming all tokens";
+    }
+    public String unexpected_symbol(String method, Terminal actual, List<Integer> expected) {
+      return "Unexpected symbol (" + actual.getTerminalStr() + ") when parsing " + method;
+    }
+    public String no_more_tokens(String method, int expecting) {
+      return "No more tokens.  Expecting " + this.map.get(expecting);
+    }
+    public String invalid_terminal(String method, Terminal invalid) {
+      return "Invalid symbol ID: "+invalid.getId()+" ("+invalid.getTerminalStr()+")";
+    }
+  }
   private static Parser getParser(String name) throws Exception {
     if (name.equals("wdl")) {
       return new WdlParser();
@@ -31,7 +53,7 @@ class ParserMain {
           token.getInt("col")
         ));
       }
-      ParseTreeNode parsetree = parser.parse(tokens);
+      ParseTreeNode parsetree = parser.parse(tokens, new DefaultSyntaxErrorFormatter(terminals));
       if ( args.length > 1 && args[1].equals("ast") ) {
         AstNode ast = parsetree.toAst();
         if ( ast != null ) {
