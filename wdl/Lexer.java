@@ -34,7 +34,7 @@ class TokenLexer {
       String sourceString = m.group();
 
       if (this.terminal != null)
-        rval = new LexerMatch(new Terminal(this.terminal.id(), this.terminal.string(), Utility.base64_encode(sourceString.getBytes()), source.getResource(), source.getLine(), source.getColumn()));
+        rval = new LexerMatch(new Terminal(this.terminal.id(), this.terminal.string(), sourceString, source.getResource(), source.getLine(), source.getColumn()));
       else
         rval = new LexerMatch();
 

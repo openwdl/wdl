@@ -6,7 +6,7 @@
 
 composite_task MutSig {
 
-  step MutSigPreprocess[verson=86] {
+  step MutSigPreprocess[version=86] {
     output: File("coverage.prepare.txt") as coverage_prepare_file,
             File("patients.txt") as patient_list,
             File("${individual_set_id}.maf") as mutation_list,

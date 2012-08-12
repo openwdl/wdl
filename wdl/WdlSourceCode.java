@@ -53,9 +53,12 @@ class WdlSourceCode implements SourceCode{
     String str = this.contents.substring(0, amount);
     for ( byte b : str.getBytes() ) {
       if ( b == (byte) '\n' || b == (byte) '\r' ) {
+        this.lines.add(this.currentLine.toString());
+        this.currentLine = new StringBuilder();
         this.line++;
         this.col = 1;
       } else {
+        this.currentLine.append((char)b);
         this.col++;
       }
     }
@@ -79,10 +82,10 @@ class WdlSourceCode implements SourceCode{
   }
 
   public String getLine(int lineno) {
-    return null; // TODO
+    return this.lines.get(lineno-1);
   }
 
   public List<String> getLines() {
-    return null; // TODO
+    return this.lines;
   }
 }
