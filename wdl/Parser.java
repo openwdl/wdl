@@ -1,4 +1,4 @@
 interface Parser {
-  ParseTree parse(TokenStream tokens, SyntaxErrorFormatter formatter) throws SyntaxError;
+  ParseTree parse(TokenStream tokens) throws SyntaxError;
   TerminalMap getTerminalMap();
 }
