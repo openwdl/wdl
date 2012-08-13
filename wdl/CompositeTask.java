@@ -43,10 +43,12 @@ class CompositeTask {
 
         boolean version_found = false;
 
-        for ( AstNode task_attr : task_attrs ) {
-          Terminal key = (Terminal) ((Ast) task_attr).getAttribute("key");
-          if ( key.getSourceString().equals("version") ) {
-            version_found = true;
+        if ( task_attrs != null ) {
+          for ( AstNode task_attr : task_attrs ) {
+            Terminal key = (Terminal) ((Ast) task_attr).getAttribute("key");
+            if ( key.getSourceString().equals("version") ) {
+              version_found = true;
+            }
           }
         }
 
