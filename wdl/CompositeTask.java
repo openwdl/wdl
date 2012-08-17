@@ -120,7 +120,15 @@ class CompositeTask implements CompositeTaskScope {
   }
 
   public CompositeTaskStep getStep(String name) {
-
+    for ( CompositeTaskNode node : this.nodes ) {
+      if ( node instanceof CompositeTaskStep ) {
+        CompositeTaskStep step = (CompositeTaskStep) node;
+        if ( step.getName.equals(name) ) {
+          return step;
+        }
+      }
+    }
+    return null;
   }
 
   public CompositeTaskOutput getOutput(String name) {
