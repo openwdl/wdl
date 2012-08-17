@@ -26,10 +26,7 @@ class WdlMain {
         ParseTree tree = wdl.getParseTree();
         System.out.println(tree.toPrettyString());
       } else if ( args[1].equals("nodes") ) {
-        Map<String, Ast> steps = wdl.getSteps();
-        for ( Map.Entry<String, Ast> entry : steps.entrySet() ) {
-          System.out.println("Step: " + entry.getKey());
-        }
+        // TODO: implement
       } else {
         usage();
       }

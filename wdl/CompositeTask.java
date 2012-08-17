@@ -1,9 +1,8 @@
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.Set;
 import java.util.HashSet;
 
 class CompositeTask implements CompositeTaskScope {

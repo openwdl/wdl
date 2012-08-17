@@ -1,17 +1,17 @@
 class WdlSourceCodeFormatter {
-  private WdlSourceColorizer colorizer;
+  private WdlTerminalColorizer colorizer;
   private WdlSourceCodeNormalizer normalizer;
 
-  WdlSourceReformatter(WdlSourceColorizer colorizer, WdlSourceCodeNormalizer normalizer) {
+  WdlSourceCodeFormatter(WdlTerminalColorizer colorizer, WdlSourceCodeNormalizer normalizer) {
     this.colorizer = colorizer;
     this.normalizer = normalizer;
   }
 
-  WdlSourceReformatter(WdlSourceColorizer colorizer) {
+  WdlSourceCodeFormatter(WdlTerminalColorizer colorizer) {
     this.colorizer = colorizer;
   }
 
-  WdlSourceReformatter(WdlSourceCodeNormalizer normalizer) {
+  WdlSourceCodeFormatter(WdlSourceCodeNormalizer normalizer) {
     this.normalizer = normalizer;
   }
 

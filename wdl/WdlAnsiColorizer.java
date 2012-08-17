@@ -1,9 +1,9 @@
 class WdlAnsiColorizer implements WdlTerminalColorizer {
-  WdlHtmlColorizer(WdlColorTheme theme) {
+  WdlAnsiColorizer(WdlColorTheme theme) {
 
   }
 
-  String colorize(Terminal terminal) {
+  public String colorize(Terminal terminal) {
 
   }
 }
