@@ -4,12 +4,16 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.HashSet;
 
-class CompositeTask {
+class CompositeTask implements CompositeTaskScope {
 
   private ParseTree parse_tree;
   private Ast ast;
   private WdlSyntaxErrorFormatter error_formatter;
+  private Set<CompositeTaskNode> nodes;
+  private Set<CompositeTaskEdge> edges;
+  private String name;
 
   private class CompositeTaskAstVerifier {
     private WdlSyntaxErrorFormatter syntaxErrorFormatter;
@@ -68,6 +72,18 @@ class CompositeTask {
 
   /** Constructors **/
 
+  CompositeTask(String name, Set<CompositeTaskNode> nodes, Set<CompositeTaskEdge> edges) {
+    this.name = name;
+    this.nodes = nodes;
+    this.edges = edges;
+  }
+
+  CompositeTask(String name) {
+    this.name = name;
+    this.nodes = new HashSet<CompositeTaskNode>();
+    this.edges = new HashSet<CompositeTaskEdge>();
+  }
+
   CompositeTask(SourceCode source_code) throws SyntaxError {
     this.error_formatter = new WdlSyntaxErrorFormatter();
     this.error_formatter.setSourceCode(source_code);
@@ -92,20 +108,60 @@ class CompositeTask {
     return this.parse_tree;
   }
 
+  public String getName() {
+    return this.name;
+  }
+
+  public Set<CompositeTaskNode> getNodes() {
+    return this.nodes;
+  }
+
+  public Set<CompositeTaskEdge> getEdges() {
+    return this.edges;
+  }
+
+  public CompositeTaskStep getStep(String name) {
+
+  }
+
+  public CompositeTaskOutput getOutput(String name) {
+
+  }
+
+  public Set<CompositeTaskSubTask> getTasks() {
+
+  }
+
+  public Set<String> getInputs() {
+
+  }
+
+  public Map<CompositeTaskNode, Set<CompositeTaskNode>> getDependencyGraph() {
+
+  }
+
   public Ast getAst() {
     return this.ast;
   }
 
-  public Map<String, Ast> getSteps() {
-    Map<String, Ast> map = new HashMap<String, Ast>();
-    AstList steps = (AstList) this.ast.getAttribute("body");
-    for ( AstNode step : steps ) {
-      Ast step_ast = (Ast) step;
-      if ( step_ast.getName().equals("Step") ) {
-        map.put(getStepName(step_ast), step_ast);
-      }
-    }
-    return map;
+  public void setNodes(Set<CompositeTaskNode> nodes) {
+    this.nodes = nodes;
+  }
+
+  public void setEdges(Set<CompositeTaskEdge> edges) {
+    this.edges = edges;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public void addEdge(CompositeTaskEdge edge) {
+    this.edges.add(edge);
+  }
+
+  public void addNode(CompositeTaskNode node) {
+    this.nodes.add(node);
   }
 
   /** Private methods **/
