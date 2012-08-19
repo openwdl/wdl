@@ -6,16 +6,16 @@ composite_task CopyNumberQC {
   for ( sample in samples ) {
     step MakeLaneList[version=11] as foobar {
       input: bam=sample.bam, id=sample.id, regions=sample.regions;
-      output: File("${sample.id}.lanelist") as sample.lanelist;
+      output: File("${sample.id}.lanelist") as lanelist;
     }
 
     step RegionCovPerLane[version=16] {
       input: bam=sample.bam, id=sample.id, regions=sample.regions;
-      output: File("${sample.id}.rcl") as sample.rcl;
+      output: File("${sample.id}.rcl") as rcl;
     }
   }
 
   step CopyNumberQC[version=25] {
-    input: lanelist=samples.lanelist, rcl=samples.rcl, lane_blacklist=lane_blacklist;
+    input: lanelist=lanelist, rcl=rcl, lane_blacklist=lane_blacklist;
   }
 }

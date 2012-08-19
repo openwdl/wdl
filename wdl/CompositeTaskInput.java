@@ -1,25 +1,34 @@
 class CompositeTaskInput {
   private CompositeTaskNode node;
-  private String name;
+  private String parameter;
 
-  public CompositeTaskInput(CompositeTaskNode node, String name) {
+  public CompositeTaskInput(CompositeTaskNode node) {
     this.node = node;
-    this.name = name;
+    this.parameter = null;
+  }
+
+  public CompositeTaskInput(CompositeTaskNode node, String parameter) {
+    this(node);
+    this.parameter = parameter;
   }
 
   public CompositeTaskNode getNode() {
     return this.node;
   }
 
-  public String getName() {
-    return this.name;
+  public String getParameter() {
+    return this.parameter;
   }
 
   public int hashCode() {
-
+    return 0;
   }
 
   public boolean equals(CompositeTaskInput other) {
+    return false;
+  }
 
+  public String toString() {
+    return "[Input node="+this.node+", param="+this.parameter+"]";
   }
 }

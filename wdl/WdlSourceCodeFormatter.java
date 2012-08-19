@@ -16,6 +16,6 @@ class WdlSourceCodeFormatter {
   }
 
   public String compile(CompositeTask task) {
-
+    return null;
   }
 }

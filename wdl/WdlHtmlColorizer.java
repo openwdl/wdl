@@ -4,6 +4,6 @@ class WdlHtmlColorizer implements WdlTerminalColorizer {
   }
 
   public String colorize(Terminal terminal) {
-
+    return null;
   }
 }

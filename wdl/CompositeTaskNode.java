@@ -1,1 +1,3 @@
-interface CompositeTaskNode {}
+interface CompositeTaskNode {
+  public Ast getAst();
+}

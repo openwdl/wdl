@@ -19,5 +19,6 @@ class CompositeTaskSubTask {
 
   public Set<String> getInputs() {
     /* TODO: implement */
+    return null;
   }
 }

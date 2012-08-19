@@ -2,11 +2,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 class WdlMain {
 
   public static void usage() {
-    System.err.println("Usage: java ParserMain <.wdl file> <ast,parsetree,nodes>");
+    System.err.println("Usage: java ParserMain <.wdl file> <ast,parsetree,graph>");
     System.exit(-1);
   }
 
@@ -25,8 +26,16 @@ class WdlMain {
       } else if ( args[1].equals("parsetree") ) {
         ParseTree tree = wdl.getParseTree();
         System.out.println(tree.toPrettyString());
-      } else if ( args[1].equals("nodes") ) {
-        // TODO: implement
+      } else if ( args[1].equals("graph") ) {
+        for ( CompositeTaskNode node : wdl.getNodes() ) {
+          System.out.println(node);
+        }
+        for ( CompositeTaskEdge edge : wdl.getEdges() ) {
+          System.out.println(edge);
+        }
+        for ( String input : wdl.getInputs() ) {
+          System.out.println("input: " + input);
+        }
       } else {
         usage();
       }

@@ -2,13 +2,11 @@ class CompositeTaskOutput {
   private CompositeTaskNode node;
   private String type;
   private String path;
-  private String name;
   
-  public CompositeTaskOutput(CompositeTaskNode node, String type, String path, String name) {
+  public CompositeTaskOutput(CompositeTaskNode node, String type, String path) {
     this.node = node;
     this.type = type;
     this.path = path;
-    this.name = name;
   }
 
   public CompositeTaskNode getNode() {
@@ -23,15 +21,15 @@ class CompositeTaskOutput {
     return this.path;
   }
 
-  public String getName() {
-    return this.name;
-  }
-
   public int hashCode() {
-
+    return 0;
   }
 
   public boolean equals(CompositeTaskOutput other) {
-    
+    return false;
+  }
+
+  public String toString() {
+    return "[Output node="+this.node+", path="+this.path+"]";
   }
 }
