@@ -15,12 +15,14 @@ for ( CompositeTaskNode entry : ct.getNodes() ) {
 }
 ```
 
-To extract parse tree, and abstract syntax tree information from the command line:
-
-First compile the sources:
+Compiling is relatively straightforward:
 ```
 $ javac *.java
-$ cat examples/0.zgr
+```
+
+The data file we'll use is:
+
+```
 composite_task foo {
   
   step atask[version=0] {
