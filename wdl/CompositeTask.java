@@ -25,15 +25,23 @@ class CompositeTask implements CompositeTaskScope {
     }
 
     public Ast verify(AstNode wdl_ast) throws SyntaxError {
-      if ( !(wdl_ast instanceof AstList) ) {
-        throw new SyntaxError("Ast is not a list");
-      }
+      Ast composite_task = null;
 
-      if ( ((AstList) wdl_ast).size() != 1 ) {
-        throw new SyntaxError("Composite Task definition should contain only one top level composite_task definition.");
-      }
+      if ( wdl_ast instanceof AstList ) {
+        if ( ((AstList) wdl_ast).size() != 1 ) {
+          throw new SyntaxError("Composite Task definition should contain only one top level composite_task definition.");
+        }
 
-      Ast composite_task = (Ast) ((AstList) wdl_ast).get(0);
+        composite_task = (Ast) ((AstList) wdl_ast).get(0);
+      } else if (wdl_ast instanceof Ast) {
+        composite_task = (Ast) wdl_ast;
+        String node_type = composite_task.getName();
+        if (!node_type.equals("CompositeTask")) {
+          throw new SyntaxError("TODO");
+        }
+      } else {
+        throw new SyntaxError("TODO");
+      }
 
       /* a)  Error on two 'input' or 'output' in a Step
        * b)  Step names are unique in their scope (global or for)
@@ -44,12 +52,7 @@ class CompositeTask implements CompositeTaskScope {
       AstList steps = (AstList) composite_task.getAttribute("body");
 
       for ( AstNode step : steps ) {
-        Ast step_ast = (Ast) step;
-        if ( step_ast.getName().equals("Step") ) {
-          CompositeTask.this.nodes.add( verify_step(step_ast) );
-        } else if ( step_ast.getName().equals("ForLoop") ) {
-          CompositeTask.this.nodes.add( verify_for(step_ast) );
-        }
+        CompositeTask.this.nodes.add( verify((Ast) step) );
       }
 
       /* outputs: Map of String variable_name -> Set<CompositeTaskOutput> which represents a set of
@@ -86,15 +89,24 @@ class CompositeTask implements CompositeTaskScope {
           if ( output.getNode() == CompositeTask.this ) {
             continue;
           }
-          if ( inputs.get(variable) != null ) {
+          if ( inputs.get(variable) != null  ) {
             for ( CompositeTaskInput input : inputs.get(variable) ) {
               if ( input.getNode() == CompositeTask.this ) {
                 continue;
               }
-              if ( input.getNode() != output.getNode() ) {
-                CompositeTaskEdge edge = new CompositeTaskEdge(output, input, variable);
-                CompositeTask.this.edges.add(edge);
+              if ( input.getNode() == output.getNode() ) {
+                continue;
               }
+              if ( output.getNode() instanceof CompositeTaskScope &&
+                   in_scope((CompositeTaskScope) output.getNode(), input.getNode()) ) {
+                continue;
+              }
+              if ( input.getNode() instanceof CompositeTaskScope &&
+                   in_scope((CompositeTaskScope) input.getNode(), output.getNode()) ) {
+                continue;
+              }
+              CompositeTaskEdge edge = new CompositeTaskEdge(output, input, variable);
+              CompositeTask.this.edges.add(edge);
             }
           }
         }
@@ -123,10 +135,20 @@ class CompositeTask implements CompositeTaskScope {
             CompositeTask.this.inputs.add(variable);
           }
         }
-        System.out.println("INPUT " + entry.getKey() + " --- " + Utility.join(entry.getValue(), ", "));
       }
 
       return composite_task;
+    }
+
+    private boolean in_scope(CompositeTaskScope scope, CompositeTaskNode node) {
+      boolean answer = false;
+      for ( CompositeTaskNode scope_node : scope.getNodes() ) {
+        answer |= (node == scope_node);
+        if ( scope_node instanceof CompositeTaskScope ) {
+          answer |= in_scope((CompositeTaskScope) scope_node, node);
+        }
+      }
+      return answer;
     }
 
     private boolean outputs_variable(CompositeTaskNode node, String variable) {
@@ -252,6 +274,18 @@ class CompositeTask implements CompositeTaskScope {
       return outputs;
     }
 
+    private CompositeTaskNode verify(Ast ast) throws SyntaxError {
+      if ( ast.getName().equals("Step") ) {
+        return verify_step(ast);
+      } else if ( ast.getName().equals("ForLoop") ) {
+        return verify_for(ast);
+      } else if ( ast.getName().equals("CompositeTask") ) {
+        return verify_composite_task(ast);
+      } else {
+        throw new SyntaxError("TODO");
+      }
+    }
+
     private CompositeTaskNode verify_step(Ast step) throws SyntaxError {
       Ast task = (Ast) step.getAttribute("task");
       Terminal task_name = getTaskName(task);
@@ -280,18 +314,23 @@ class CompositeTask implements CompositeTaskScope {
       Set<CompositeTaskNode> nodes = new HashSet<CompositeTaskNode>();
 
       for ( AstNode for_sub_node : (AstList) for_node_ast.getAttribute("body") ) {
-        Ast for_sub_node_ast = (Ast) for_sub_node;
-        if ( for_sub_node_ast.getName().equals("ForLoop") ) {
-          nodes.add(verify_for(for_sub_node_ast));
-        } else if (for_sub_node_ast.getName().equals("Step")) {
-          nodes.add(verify_step(for_sub_node_ast));
-        }
+        nodes.add( verify((Ast) for_sub_node) );
       }
 
-      String collection = ((Terminal)for_node_ast.getAttribute("collection")).getSourceString();
-      String item = ((Terminal)for_node_ast.getAttribute("item")).getSourceString();
+      String collection = ((Terminal) for_node_ast.getAttribute("collection")).getSourceString();
+      String item = ((Terminal) for_node_ast.getAttribute("item")).getSourceString();
 
       return new CompositeTaskForScope(for_node_ast, collection, item, nodes);
+    }
+
+    private CompositeTaskNode verify_composite_task(Ast ast) throws SyntaxError {
+      Set<CompositeTaskNode> nodes = new HashSet<CompositeTaskNode>();
+
+      for ( AstNode sub : (AstList) ast.getAttribute("body") ) {
+        nodes.add( verify((Ast) sub) );
+      }
+
+      return new CompositeTaskBaseScope(ast, nodes);
     }
 
     private Terminal getTaskName(Ast task) {
@@ -304,8 +343,9 @@ class CompositeTask implements CompositeTaskScope {
       if ( task_attrs != null ) {
         for ( AstNode task_attr : task_attrs ) {
           Terminal key = (Terminal) ((Ast) task_attr).getAttribute("key");
+          Terminal value = (Terminal) ((Ast) task_attr).getAttribute("value");
           if ( key.getSourceString().equals("version") ) {
-            return key;
+            return value;
           }
         }
       }
@@ -320,6 +360,7 @@ class CompositeTask implements CompositeTaskScope {
     this.name = name;
     this.nodes = nodes;
     this.edges = edges;
+    this.inputs = inputs;
   }
 
   CompositeTask(String name) {
@@ -390,7 +431,27 @@ class CompositeTask implements CompositeTaskScope {
   }
 
   public Set<CompositeTaskSubTask> getTasks() {
-    return null;
+    Set<CompositeTaskSubTask> tasks = new HashSet<CompositeTaskSubTask>();
+    for (CompositeTaskNode node : this.nodes) {
+      if ( node instanceof CompositeTaskStep ) {
+        tasks.add( ((CompositeTaskStep) node).getTask() );
+      } else if ( node instanceof CompositeTaskScope ) {
+        tasks.addAll( getTasks((CompositeTaskScope) node));
+      }
+    }
+    return tasks;
+  }
+
+  private Set<CompositeTaskSubTask> getTasks(CompositeTaskScope scope) {
+    Set<CompositeTaskSubTask> tasks = new HashSet<CompositeTaskSubTask>();
+    for (CompositeTaskNode node : scope.getNodes()) {
+      if ( node instanceof CompositeTaskStep ) {
+        tasks.add( ((CompositeTaskStep) node).getTask() );
+      } else if ( node instanceof CompositeTaskScope ) {
+        tasks.addAll( getTasks((CompositeTaskScope) node));
+      }
+    }
+    return tasks;
   }
 
   public Set<String> getInputs() {

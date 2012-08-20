@@ -21,4 +21,8 @@ class CompositeTaskSubTask {
     /* TODO: implement */
     return null;
   }
+
+  public String toString() {
+    return "[Task: name="+this.name+", version="+this.version+"]";
+  }
 }

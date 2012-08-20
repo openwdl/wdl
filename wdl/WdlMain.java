@@ -36,6 +36,9 @@ class WdlMain {
         for ( String input : wdl.getInputs() ) {
           System.out.println("input: " + input);
         }
+        for ( CompositeTaskSubTask task : wdl.getTasks() ) {
+          System.out.println("task: " + task);
+        }
       } else {
         usage();
       }
