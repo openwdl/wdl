@@ -1,23 +1,25 @@
-import java.util.Collection;
+import java.util.Set;
 
 class CompositeTaskStep implements CompositeTaskNode {
   private CompositeTaskSubTask task;
   private String name;
-  private Ast ast;
+  private Set<CompositeTaskStepInput> inputs;
+  private Set<CompositeTaskStepOutput> outputs;
 
-  public CompositeTaskStep(String name, CompositeTaskSubTask task) {
-    this.ast = null;
+  public CompositeTaskStep(String name, CompositeTaskSubTask task, Set<CompositeTaskStepInput> inputs, Set<CompositeTaskStepOutput> outputs) {
     this.task = task;
     this.name = name;
+    this.inputs = inputs;
+    this.outputs = outputs;
   }
 
-  public CompositeTaskStep(Ast ast, String name, CompositeTaskSubTask task) {
+  public CompositeTaskStep(Ast ast) {
     this(name, task);
     this.ast = ast;
   }
 
   public Ast getAst() {
-    return this.ast;
+    return null;
   }
 
   public String getName() {
@@ -28,7 +30,6 @@ class CompositeTaskStep implements CompositeTaskNode {
     return this.task;
   }
 
-  /* TODO: Are steps only unique by name? */
   public int hashCode() {
     return 0;
   }

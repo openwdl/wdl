@@ -1,21 +1,14 @@
 import java.util.Set;
 
-class CompositeTaskForScope implements CompositeTaskScope {
+class CompositeTaskForLoop implements CompositeTaskScope {
   private String collection;
   private String var;
   private Set<CompositeTaskNode> nodes;
-  private Ast ast;
 
-  public CompositeTaskForScope(String collection, String var, Set<CompositeTaskNode> nodes) {
-    this.ast = null;
+  public CompositeTaskForLoop(String collection, String var, Set<CompositeTaskNode> nodes) {
     this.collection = collection;
     this.var = var;
     this.nodes = nodes;
-  }
-
-  public CompositeTaskForScope(Ast ast, String collection, String var, Set<CompositeTaskNode> nodes) {
-    this(collection, var, nodes);
-    this.ast = ast;
   }
 
   public Ast getAst() {
