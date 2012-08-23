@@ -27,18 +27,6 @@ class WdlMain {
         ParseTree tree = wdl.getParseTree();
         System.out.println(tree.toPrettyString());
       } else if ( args[1].equals("graph") ) {
-        for ( CompositeTaskNode node : wdl.getNodes() ) {
-          System.out.println(node);
-        }
-        for ( CompositeTaskEdge edge : wdl.getEdges() ) {
-          System.out.println(edge);
-        }
-        for ( String input : wdl.getInputs() ) {
-          System.out.println("input: " + input);
-        }
-        for ( CompositeTaskSubTask task : wdl.getTasks() ) {
-          System.out.println("task: " + task);
-        }
       } else {
         usage();
       }

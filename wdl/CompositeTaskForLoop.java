@@ -12,7 +12,7 @@ class CompositeTaskForLoop implements CompositeTaskScope {
   }
 
   public Ast getAst() {
-    return this.ast;
+    return null;
   }
 
   public String getCollectionName() {

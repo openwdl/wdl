@@ -6,11 +6,9 @@ class CompositeTaskStepOutput {
   private CompositeTaskVariable variable;
 
   public CompositeTaskStepOutput(String type, String path, CompositeTaskVariable variable) {
-    this.parameter = parameter;
+    this.type = type;
+    this.path = path;
     this.variable = variable;
-  }
-
-  public CompositeTaskStepOutput(Ast ast) {
   }
 
   public Ast getAst() {
@@ -38,6 +36,6 @@ class CompositeTaskStepOutput {
   }
 
   public String toString() {
-    return "[StepOutput: name=" + this.name + "]";
+    return "[StepOutput: path=" + this.path + "]";
   }
 }

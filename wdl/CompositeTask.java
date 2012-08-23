@@ -53,11 +53,11 @@ class CompositeTask implements CompositeTaskScope {
       for ( AstNode ctNode : ctNodes ) {
         Ast node = (Ast) ctNode;
         if (node.getName().equals("Step")) {
-          nodes.add(new CompositeTaskStep(ast));
+          nodes.add(verify_step(ast));
         } else if (node.getName().equals("ForLoop")) {
-          nodes.add(new CompositeTaskForLoop(ast));
+          nodes.add(verify_for(ast));
         } else if (node.getName().equals("CompositeTask")) {
-          nodes.add(new CompositeTaskStep(ast));
+          nodes.add(verify_composite_task(ast));
         } else {
           throw new SyntaxError("TODO");
         }
@@ -141,7 +141,10 @@ class CompositeTask implements CompositeTaskScope {
         ctStepName = task_name.getSourceString();
       }
 
-      return new CompositeTaskStep(ctStepName, ctSubTask);
+      Set<CompositeTaskStepInput> inputs = new HashSet<CompositeTaskStepInput>();
+      Set<CompositeTaskStepOutput> outputs = new HashSet<CompositeTaskStepOutput>();
+
+      return new CompositeTaskStep(ctStepName, ctSubTask, inputs, outputs);
     }
 
     private CompositeTaskForLoop verify_for(Ast for_node_ast) throws SyntaxError {
@@ -159,12 +162,13 @@ class CompositeTask implements CompositeTaskScope {
 
     private CompositeTask verify_composite_task(Ast ast) throws SyntaxError {
       Set<CompositeTaskNode> nodes = new HashSet<CompositeTaskNode>();
+      Terminal ctName = (Terminal) ast.getAttribute("name");
 
       for ( AstNode sub : (AstList) ast.getAttribute("body") ) {
         nodes.add( verify((Ast) sub) );
       }
 
-      return new CompositeTask(nodes);
+      return new CompositeTask(ctName.getSourceString(), nodes);
     }
 
     private Terminal getTaskName(Ast task) {
@@ -223,7 +227,7 @@ class CompositeTask implements CompositeTaskScope {
   }
 
   public Set<CompositeTaskNode> getNodes() {
-    return this.nodes;
+    return null;
   }
 
   public CompositeTaskStep getStep(String name) {
@@ -235,7 +239,7 @@ class CompositeTask implements CompositeTaskScope {
   }
 
   private Set<CompositeTaskSubTask> getTasks(CompositeTaskScope scope) {
-    return tasks;
+    return null;
   }
 
   public Ast getAst() {
@@ -247,7 +251,6 @@ class CompositeTask implements CompositeTaskScope {
   }
 
   public void addNode(CompositeTaskNode node) {
-    this.nodes.add(node);
   }
 
   /** Private methods **/

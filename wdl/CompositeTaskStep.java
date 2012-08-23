@@ -13,11 +13,6 @@ class CompositeTaskStep implements CompositeTaskNode {
     this.outputs = outputs;
   }
 
-  public CompositeTaskStep(Ast ast) {
-    this(name, task);
-    this.ast = ast;
-  }
-
   public Ast getAst() {
     return null;
   }
