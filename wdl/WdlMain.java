@@ -7,7 +7,7 @@ import java.util.Set;
 class WdlMain {
 
   public static void usage() {
-    System.err.println("Usage: java ParserMain <.wdl file> <ast,parsetree,graph>");
+    System.err.println("Usage: java ParserMain <.wdl file> <ast,parsetree,entities,graph>");
     System.exit(-1);
   }
 
@@ -18,15 +18,18 @@ class WdlMain {
     }
 
     try {
-      CompositeTask wdl = new CompositeTask(new File(args[0]));
+      CompositeTask ctask = new CompositeTask(new File(args[0]));
 
       if ( args[1].equals("ast") ) {
-        Ast ast = wdl.getAst();
+        Ast ast = ctask.getAst();
         System.out.println(ast.toPrettyString());
       } else if ( args[1].equals("parsetree") ) {
-        ParseTree tree = wdl.getParseTree();
+        ParseTree tree = ctask.getParseTree();
         System.out.println(tree.toPrettyString());
+      } else if ( args[1].equals("entities") ) {
+        print_tree(ctask);
       } else if ( args[1].equals("graph") ) {
+        System.out.println(ctask);
       } else {
         usage();
       }
@@ -36,6 +39,20 @@ class WdlMain {
     } catch (SyntaxError error) {
       System.err.println(error);
       System.exit(-1);
+    }
+  }
+
+  public static void print_tree(CompositeTask ctask) {
+    print_tree(ctask, 0);
+  }
+
+  public static void print_tree(CompositeTaskScope scope, int depth) {
+    Set<CompositeTaskNode> nodes = scope.getNodes();
+    for ( CompositeTaskNode node : nodes ) {
+      System.out.println(Utility.getIndentString(depth) + node);
+      if ( node instanceof CompositeTaskScope ) {
+        print_tree((CompositeTaskScope) node, depth + 2);
+      }
     }
   }
 }

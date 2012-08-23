@@ -12,7 +12,7 @@ class CompositeTask implements CompositeTaskScope {
   private ParseTree parse_tree;
   private Ast ast;
   private WdlSyntaxErrorFormatter error_formatter;
-  private Set<String> inputs;
+  private Set<CompositeTaskNode> nodes;
   private String name;
 
   private class CompositeTaskAstVerifier {
@@ -48,11 +48,11 @@ class CompositeTask implements CompositeTaskScope {
        */
 
       AstList ctNodes = (AstList) composite_task.getAttribute("body");
-      Set<CompositeTaskNode> nodes = new HashSet<CompositeTaskNode>();
+      CompositeTask.this.nodes = new HashSet<CompositeTaskNode>();
 
       for ( AstNode ctNode : ctNodes ) {
         Ast node = (Ast) ctNode;
-        nodes.add(verify(ast));
+        CompositeTask.this.nodes.add(verify(node));
       }
 
       /* Graph definition:
@@ -77,6 +77,12 @@ class CompositeTask implements CompositeTaskScope {
       return composite_task;
     }
 
+    private CompositeTaskVariable ast_to_variable(Ast ast) {
+      Terminal name = (Terminal) ast.getAttribute("name");
+      Terminal member = (Terminal) ast.getAttribute("member");
+      return new CompositeTaskVariable(name.getSourceString(), (member == null) ? null : member.getSourceString());
+    }
+
     private CompositeTaskNode verify(Ast ast) throws SyntaxError {
       if ( ast.getName().equals("Step") ) {
         return verify_step(ast);
@@ -98,22 +104,50 @@ class CompositeTask implements CompositeTaskScope {
         throw new SyntaxError(this.syntaxErrorFormatter.missing_version(task_name));
       }
 
-      CompositeTaskSubTask ctSubTask = new CompositeTaskSubTask(
+      CompositeTaskSubTask subtask = new CompositeTaskSubTask(
         task_name.getSourceString(),
         task_version.getSourceString()
       );
 
-      String ctStepName;
+      String name;
       if ( step.getAttribute("name") != null ) {
-        ctStepName = ((Terminal) step.getAttribute("name")).getSourceString();
+        name = ((Terminal) step.getAttribute("name")).getSourceString();
       } else {
-        ctStepName = task_name.getSourceString();
+        name = task_name.getSourceString();
       }
 
       Set<CompositeTaskStepInput> inputs = new HashSet<CompositeTaskStepInput>();
       Set<CompositeTaskStepOutput> outputs = new HashSet<CompositeTaskStepOutput>();
 
-      return new CompositeTaskStep(ctStepName, ctSubTask, inputs, outputs);
+      AstList body = (AstList) step.getAttribute("body");
+
+      if ( body != null ) {
+        for ( AstNode entry : body ) {
+          Ast entry_ast = (Ast) entry;
+
+          if ( entry_ast.getName().equals("StepInputList") ) {
+            AstList input_list = (AstList) entry_ast.getAttribute("inputs");
+            for ( AstNode input_node : input_list ) {
+              Ast input = (Ast) input_node;
+              Terminal parameter = (Terminal) input.getAttribute("parameter");
+              CompositeTaskVariable variable = ast_to_variable((Ast) input.getAttribute("value"));
+              inputs.add( new CompositeTaskStepInput(parameter.getSourceString(), variable) );
+            }
+          }
+
+          if ( entry_ast.getName().equals("StepOutputList") ) {
+            AstList output_list = (AstList) entry_ast.getAttribute("outputs");
+            for ( AstNode output_node : output_list ) {
+              Ast output = (Ast) output_node;
+              Terminal filepath = (Terminal) output.getAttribute("file");
+              CompositeTaskVariable variable = ast_to_variable((Ast) output.getAttribute("as"));
+              outputs.add( new CompositeTaskStepOutput("File", filepath.getSourceString(), variable) );
+            }
+          }
+        }
+      }
+
+      return new CompositeTaskStep(name, subtask, inputs, outputs);
     }
 
     private CompositeTaskForLoop verify_for(Ast for_node_ast) throws SyntaxError {
@@ -165,6 +199,7 @@ class CompositeTask implements CompositeTaskScope {
 
   CompositeTask(String name, Set<CompositeTaskNode> nodes) {
     this.name = name;
+    this.nodes = nodes;
   }
 
   CompositeTask(SourceCode source_code) throws SyntaxError {
@@ -196,7 +231,7 @@ class CompositeTask implements CompositeTaskScope {
   }
 
   public Set<CompositeTaskNode> getNodes() {
-    return null;
+    return this.nodes;
   }
 
   public CompositeTaskStep getStep(String name) {
@@ -220,6 +255,10 @@ class CompositeTask implements CompositeTaskScope {
   }
 
   public void addNode(CompositeTaskNode node) {
+  }
+
+  public String toString() {
+    return "[CompositeTask name="+this.name+"]";
   }
 
   /** Private methods **/

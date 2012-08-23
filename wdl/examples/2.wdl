@@ -7,7 +7,7 @@ composite_task foo {
   for ( item in foo ) {
     step btask[version=0] {
       input: p0=x, p1=global;
-      output: File("bar.txt") appendto list;
+      output: File("bar.txt") as list;
     }
   }
 
