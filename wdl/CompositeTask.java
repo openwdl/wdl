@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import org.jgrapht.DirectedGraph;
 
 class CompositeTask implements CompositeTaskScope {
 
@@ -232,6 +233,10 @@ class CompositeTask implements CompositeTaskScope {
 
   public Set<CompositeTaskNode> getNodes() {
     return this.nodes;
+  }
+
+  public DirectedGraph<CompositeTaskVertex, CompositeTaskEdge> getGraph() {
+    return null;
   }
 
   public CompositeTaskStep getStep(String name) {
