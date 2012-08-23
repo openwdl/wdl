@@ -52,15 +52,7 @@ class CompositeTask implements CompositeTaskScope {
 
       for ( AstNode ctNode : ctNodes ) {
         Ast node = (Ast) ctNode;
-        if (node.getName().equals("Step")) {
-          nodes.add(verify_step(ast));
-        } else if (node.getName().equals("ForLoop")) {
-          nodes.add(verify_for(ast));
-        } else if (node.getName().equals("CompositeTask")) {
-          nodes.add(verify_composite_task(ast));
-        } else {
-          throw new SyntaxError("TODO");
-        }
+        nodes.add(verify(ast));
       }
 
       /* Graph definition:
@@ -72,40 +64,17 @@ class CompositeTask implements CompositeTaskScope {
        *    scope -> step           : Step is dependent on scope completing
        *    scope (for) -> variable : Variable is the loop variable (not collection).
        *                              Each for loop contains exactly one of these edges
-       *    scope -> scope          : Doesn't exist.
        *    variable -> scope (for) : Variable is the loop collection
        *    variable -> step        : Step needs variable as an input
-       *    variable -> variable    : Doesn't exist.
        *    step -> variable        : Variable is an output of step
+       *    variable -> variable    : Doesn't exist.
+       *    scope -> scope          : Doesn't exist.
        *    step -> scope           : Doesn't exist.
        *    step -> step            : Doesn't exist.
        *
        */
 
       return composite_task;
-    }
-
-    private boolean in_scope(CompositeTaskScope scope, CompositeTaskNode node) {
-      boolean answer = false;
-      for ( CompositeTaskNode scope_node : scope.getNodes() ) {
-        answer |= (node == scope_node);
-        if ( scope_node instanceof CompositeTaskScope ) {
-          answer |= in_scope((CompositeTaskScope) scope_node, node);
-        }
-      }
-      return answer;
-    }
-
-    private String variable_to_string(Ast variable) {
-      String name;
-      Terminal asName = (Terminal) variable.getAttribute("name");
-      Terminal asMember = (Terminal) variable.getAttribute("member");
-      name = asName.getSourceString();
-
-      if ( false && asMember != null ) {
-        name += "." + asMember.getSourceString();
-      }
-      return name;
     }
 
     private CompositeTaskNode verify(Ast ast) throws SyntaxError {
