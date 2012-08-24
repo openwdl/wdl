@@ -5,6 +5,15 @@ import org.jgrapht.EdgeFactory;
 
 class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, CompositeTaskEdge>
 {
+  private Map<CompositeTaskVariable, CompositeTaskForLoop> for_loop_output;
+  public CompositeTaskGraph(CompositeTask composite_task) {
+    for_loop_output = new HashMap<CompositeTaskVariable, CompositeTaskForLoop>();
+  }
+
+  private generate_for_loop_output() {
+
+  }
+
   public Set<CompositeTaskEdge> getAllEdges(CompositeTaskVertex sourceVertex, CompositeTaskVertex targetVertex) {return null;}
   public CompositeTaskEdge getEdge(CompositeTaskVertex sourceVertex, CompositeTaskVertex targetVertex) {return null;}
   public EdgeFactory<CompositeTaskVertex, CompositeTaskEdge> getEdgeFactory() {return null;}

@@ -1,11 +1,11 @@
 import java.util.Set;
 
 class CompositeTaskForLoop implements CompositeTaskScope {
-  private String collection;
-  private String var;
+  private CompositeTaskVariable collection;
+  private CompositeTaskVariable var;
   private Set<CompositeTaskNode> nodes;
 
-  public CompositeTaskForLoop(String collection, String var, Set<CompositeTaskNode> nodes) {
+  public CompositeTaskForLoop(CompositeTaskVariable collection, CompositeTaskVariable var, Set<CompositeTaskNode> nodes) {
     this.collection = collection;
     this.var = var;
     this.nodes = nodes;
@@ -15,11 +15,11 @@ class CompositeTaskForLoop implements CompositeTaskScope {
     return null;
   }
 
-  public String getCollectionName() {
+  public CompositeTaskVariable getCollectionName() {
     return this.collection;
   }
 
-  public String getVarName() {
+  public CompositeTaskVariable getVarName() {
     return this.var;
   }
 

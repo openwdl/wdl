@@ -78,6 +78,10 @@ class CompositeTask implements CompositeTaskScope {
       return composite_task;
     }
 
+    private CompositeTaskVariable make_variable(String name, String member) {
+
+    }
+
     private CompositeTaskVariable ast_to_variable(Ast ast) {
       Terminal name = (Terminal) ast.getAttribute("name");
       Terminal member = (Terminal) ast.getAttribute("member");
@@ -161,7 +165,7 @@ class CompositeTask implements CompositeTaskScope {
       String collection = ((Terminal) for_node_ast.getAttribute("collection")).getSourceString();
       String item = ((Terminal) for_node_ast.getAttribute("item")).getSourceString();
 
-      return new CompositeTaskForLoop(collection, item, nodes);
+      return new CompositeTaskForLoop(new CompositeTaskVariable(collection), new CompositeTaskVariable(item), nodes);
     }
 
     private CompositeTask verify_composite_task(Ast ast) throws SyntaxError {
