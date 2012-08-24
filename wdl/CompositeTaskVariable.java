@@ -1,6 +1,6 @@
 import java.util.Set;
 
-class CompositeTaskVariable {
+class CompositeTaskVariable implements CompositeTaskVertex {
   private String name;
   private String member;
 

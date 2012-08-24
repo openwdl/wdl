@@ -235,8 +235,8 @@ class CompositeTask implements CompositeTaskScope {
     return this.nodes;
   }
 
-  public DirectedGraph<CompositeTaskVertex, CompositeTaskEdge> getGraph() {
-    return null;
+  public CompositeTaskGraph getGraph() {
+    return new CompositeTaskGraph();
   }
 
   public CompositeTaskStep getStep(String name) {

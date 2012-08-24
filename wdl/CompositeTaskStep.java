@@ -1,6 +1,6 @@
 import java.util.Set;
 
-class CompositeTaskStep implements CompositeTaskNode {
+class CompositeTaskStep implements CompositeTaskNode, CompositeTaskVertex {
   private CompositeTaskSubTask task;
   private String name;
   private Set<CompositeTaskStepInput> inputs;
