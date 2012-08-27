@@ -23,36 +23,30 @@ $ javac *.java
 The data file we'll use is:
 
 ```
-composite_task foo {
-  
-  step atask[version=0] {
-    output: File("foo.txt") as x;
+composite_task test {
+  step s0[version=0] {
+    output: File("abc") as foo;
   }
 
-  for ( item in foo ) {
-    step btask[version=0] {
-      input: p0=x, p1=s;
-      output: File("bar.txt") as y;
-    }
-
-    step ctask[version=0] {
-      input: p0=x, p1=y;
-      output: File("quux.txt") as z;
+  for (I in L) {
+    for (J in M) {
+      step s1[version=0] {
+        input: p0=I, p1=J, p2=foo;
+        output: File("def") as bar;
+      }
     }
   }
 
-  step dtask[version=0] {
-    input: p0=x, p1=y, p2=z;
-    output: File("report.txt") as r;
+  step s2[version=0] {
+    input: p0=bar;
   }
-
 }
 ```
 
 Get the abstract syntax tree:
 
 ```
-$ java WdlMain examples/0.wdl ast
+$ java WdlMain examples/7.wdl ast
 (CompositeTask:
   body=[
     (Step:
@@ -82,91 +76,61 @@ $ java WdlMain examples/0.wdl ast
     ),
     (ForLoop:
       body=[
-        (Step:
+        (ForLoop:
           body=[
-            (StepInputList:
-              inputs=[
-                (StepInput:
-                  parameter=identifier,
-                  value=(Variable:
-                    member=None,
-                    name=identifier
-                  )
+            (Step:
+              body=[
+                (StepInputList:
+                  inputs=[
+                    (StepInput:
+                      parameter=identifier,
+                      value=(Variable:
+                        member=None,
+                        name=identifier
+                      )
+                    ),
+                    (StepInput:
+                      parameter=identifier,
+                      value=(Variable:
+                        member=None,
+                        name=identifier
+                      )
+                    ),
+                    (StepInput:
+                      parameter=identifier,
+                      value=(Variable:
+                        member=None,
+                        name=identifier
+                      )
+                    )
+                  ]
                 ),
-                (StepInput:
-                  parameter=identifier,
-                  value=(Variable:
-                    member=None,
-                    name=identifier
+                (StepOutputList:
+                  outputs=[
+                    (StepFileOutput:
+                      as=(Variable:
+                        member=None,
+                        name=identifier
+                      ),
+                      file=string
+                    )
+                  ]
+                )
+              ],
+              task=(Task:
+                attributes=[
+                  (TaskAttribute:
+                    value=number,
+                    key=identifier
                   )
-                )
-              ]
-            ),
-            (StepOutputList:
-              outputs=[
-                (StepFileOutput:
-                  as=(Variable:
-                    member=None,
-                    name=identifier
-                  ),
-                  file=string
-                )
-              ]
+                ],
+                name=identifier
+              ),
+              name=None
             )
           ],
-          task=(Task:
-            attributes=[
-              (TaskAttribute:
-                value=number,
-                key=identifier
-              )
-            ],
-            name=identifier
-          ),
-          name=None
-        ),
-        (Step:
-          body=[
-            (StepInputList:
-              inputs=[
-                (StepInput:
-                  parameter=identifier,
-                  value=(Variable:
-                    member=None,
-                    name=identifier
-                  )
-                ),
-                (StepInput:
-                  parameter=identifier,
-                  value=(Variable:
-                    member=None,
-                    name=identifier
-                  )
-                )
-              ]
-            ),
-            (StepOutputList:
-              outputs=[
-                (StepFileOutput:
-                  as=(Variable:
-                    member=None,
-                    name=identifier
-                  ),
-                  file=string
-                )
-              ]
-            )
-          ],
-          task=(Task:
-            attributes=[
-              (TaskAttribute:
-                value=number,
-                key=identifier
-              )
-            ],
-            name=identifier
-          ),
-          name=None
+          item=identifier,
+          collection=identifier
         )
       ],
       item=identifier,
@@ -182,31 +146,6 @@ $ java WdlMain examples/0.wdl ast
                 member=None,
                 name=identifier
               )
-            ),
-            (StepInput:
-              parameter=identifier,
-              value=(Variable:
-                member=None,
-                name=identifier
-              )
-            ),
-            (StepInput:
-              parameter=identifier,
-              value=(Variable:
-                member=None,
-                name=identifier
-              )
-            )
-          ]
-        ),
-        (StepOutputList:
-          outputs=[
-            (StepFileOutput:
-              as=(Variable:
-                member=None,
-                name=identifier
-              ),
-              file=string
             )
           ]
         )
@@ -230,58 +169,65 @@ $ java WdlMain examples/0.wdl ast
 Get a view of the graph
 
 ```
-$ java WdlMain examples/0.wdl graph
-[Step: name=dtask]
-[Step: name=atask]
-[CompositeTaskForScope: collection=foo, var=item, # nodes=2]
+$ java WdlMain examples/7.wdl graph
+VERTICIES
+---------
+[Step: name=s1]
+[Variable: name=J]
+[Variable: name=M]
+[Variable: name=I]
+[Variable: name=L]
+[Variable: name=foo]
+[Step: name=s0]
+[Variable: name=bar]
+[Step: name=s2]
+[CompositeTaskForScope: collection=[Variable: name=L], var=[Variable: name=I], # nodes=1]
+[CompositeTaskForScope: collection=[Variable: name=M], var=[Variable: name=J], # nodes=1]
+
+EDGES
+-----
 [Edge
-  from=[Output node=[Step: name=atask], path="foo.txt"],
-  to=[Input node=[Step: name=dtask], param=p0],
-  var=x
+  from: [CompositeTaskForScope: collection=[Variable: name=L], var=[Variable: name=I], # nodes=1]
+  to: [Variable: name=I]
 ]
 [Edge
-  from=[Output node=[Step: name=atask], path="foo.txt"],
-  to=[Input node=[CompositeTaskForScope: collection=foo, var=item, # nodes=2], param=null],
-  var=x
+  from: [CompositeTaskForScope: collection=[Variable: name=L], var=[Variable: name=I], # nodes=1]
+  to: [Step: name=s2]
 ]
 [Edge
-  from=[Output node=[Step: name=atask], path="foo.txt"],
-  to=[Input node=[Step: name=btask], param=p0],
-  var=x
+  from: [Variable: name=J]
+  to: [Step: name=s1]
 ]
 [Edge
-  from=[Output node=[Step: name=atask], path="foo.txt"],
-  to=[Input node=[CompositeTaskForScope: collection=foo, var=item, # nodes=2], param=null],
-  var=x
+  from: [Variable: name=L]
+  to: [CompositeTaskForScope: collection=[Variable: name=L], var=[Variable: name=I], # nodes=1]
 ]
 [Edge
-  from=[Output node=[Step: name=atask], path="foo.txt"],
-  to=[Input node=[Step: name=ctask], param=p0],
-  var=x
+  from: [Variable: name=foo]
+  to: [Step: name=s1]
 ]
 [Edge
-  from=[Output node=[CompositeTaskForScope: collection=foo, var=item, # nodes=2], path="bar.txt"],
-  to=[Input node=[Step: name=dtask], param=p1],
-  var=y
+  from: [Variable: name=I]
+  to: [Step: name=s1]
 ]
 [Edge
-  from=[Output node=[Step: name=btask], path="bar.txt"],
-  to=[Input node=[Step: name=dtask], param=p1],
-  var=y
+  from: [CompositeTaskForScope: collection=[Variable: name=M], var=[Variable: name=J], # nodes=1]
+  to: [Variable: name=J]
 ]
 [Edge
-  from=[Output node=[Step: name=btask], path="bar.txt"],
-  to=[Input node=[Step: name=ctask], param=p1],
-  var=y
+  from: [Step: name=s0]
+  to: [Variable: name=foo]
 ]
 [Edge
-  from=[Output node=[CompositeTaskForScope: collection=foo, var=item, # nodes=2], path="quux.txt"],
-  to=[Input node=[Step: name=dtask], param=p2],
-  var=z
+  from: [Step: name=s1]
+  to: [Variable: name=bar]
 ]
 [Edge
-  from=[Output node=[Step: name=ctask], path="quux.txt"],
-  to=[Input node=[Step: name=dtask], param=p2],
-  var=z
+  from: [Variable: name=bar]
+  to: [Step: name=s2]
+]
+[Edge
+  from: [Variable: name=M]
+  to: [CompositeTaskForScope: collection=[Variable: name=M], var=[Variable: name=J], # nodes=1]
 ]
 ```
