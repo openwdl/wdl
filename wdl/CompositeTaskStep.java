@@ -5,12 +5,14 @@ class CompositeTaskStep implements CompositeTaskNode, CompositeTaskVertex {
   private String name;
   private Set<CompositeTaskStepInput> inputs;
   private Set<CompositeTaskStepOutput> outputs;
+  private CompositeTaskScope parent;
 
   public CompositeTaskStep(String name, CompositeTaskSubTask task, Set<CompositeTaskStepInput> inputs, Set<CompositeTaskStepOutput> outputs) {
     this.task = task;
     this.name = name;
     this.inputs = inputs;
     this.outputs = outputs;
+    this.parent = null;
   }
 
   public Ast getAst() {
@@ -23,6 +25,22 @@ class CompositeTaskStep implements CompositeTaskNode, CompositeTaskVertex {
 
   public CompositeTaskSubTask getTask() {
     return this.task;
+  }
+
+  public Set<CompositeTaskStepOutput> getOutputs() {
+    return this.outputs;
+  }
+
+  public Set<CompositeTaskStepInput> getInputs() {
+    return this.inputs;
+  }
+
+  public void setParent(CompositeTaskScope parent) {
+    this.parent = parent;
+  }
+
+  public CompositeTaskScope getParent() {
+    return this.parent;
   }
 
   public int hashCode() {

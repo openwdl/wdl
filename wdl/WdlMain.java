@@ -29,7 +29,21 @@ class WdlMain {
       } else if ( args[1].equals("entities") ) {
         print_tree(ctask);
       } else if ( args[1].equals("graph") ) {
-        System.out.println(ctask);
+        CompositeTaskGraph graph = ctask.getGraph();
+
+        System.out.println("VERTICIES");
+        System.out.println("---------");
+        for ( CompositeTaskVertex v : graph.vertexSet() ) {
+          System.out.println(v);
+        }
+        System.out.println("");
+
+        System.out.println("EDGES");
+        System.out.println("-----");
+        for ( CompositeTaskEdge v : graph.edgeSet() ) {
+          System.out.println(v);
+        }
+
       } else {
         usage();
       }

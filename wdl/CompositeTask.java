@@ -15,12 +15,15 @@ class CompositeTask implements CompositeTaskScope {
   private WdlSyntaxErrorFormatter error_formatter;
   private Set<CompositeTaskNode> nodes;
   private String name;
+  private CompositeTaskScope parent;
 
   private class CompositeTaskAstVerifier {
     private WdlSyntaxErrorFormatter syntaxErrorFormatter;
+    private Map<String, CompositeTaskVariable> variables;
 
     CompositeTaskAstVerifier(WdlSyntaxErrorFormatter syntaxErrorFormatter) {
       this.syntaxErrorFormatter = syntaxErrorFormatter;
+      this.variables = new HashMap<String, CompositeTaskVariable>();
     }
 
     public Ast verify(AstNode wdl_ast) throws SyntaxError {
@@ -56,36 +59,34 @@ class CompositeTask implements CompositeTaskScope {
         CompositeTask.this.nodes.add(verify(node));
       }
 
-      /* Graph definition:
-       * 
-       * Verticies:
-       *    scope, step, variable
-       *
-       * Edges:
-       *    scope -> step           : Step is dependent on scope completing
-       *    scope (for) -> variable : Variable is the loop variable (not collection).
-       *                              Each for loop contains exactly one of these edges
-       *    variable -> scope (for) : Variable is the loop collection
-       *    variable -> step        : Step needs variable as an input
-       *    step -> variable        : Variable is an output of step
-       *    variable -> variable    : Doesn't exist.
-       *    scope -> scope          : Doesn't exist.
-       *    step -> scope           : Doesn't exist.
-       *    step -> step            : Doesn't exist.
-       *
-       */
+      set_parents(CompositeTask.this);
 
       return composite_task;
     }
 
-    private CompositeTaskVariable make_variable(String name, String member) {
+    private void set_parents(CompositeTaskScope scope) {
 
+      for ( CompositeTaskNode node : scope.getNodes() ) {
+        node.setParent(scope);
+        if ( node instanceof CompositeTaskScope ) {
+          set_parents((CompositeTaskScope) node);
+        }
+      }
+
+    }
+
+    private CompositeTaskVariable make_variable(String name, String member) {
+      String key = name + ((member == null) ? "" : member);
+      if ( !this.variables.containsKey(key) ) {
+        this.variables.put(key, new CompositeTaskVariable(name, member));
+      }
+      return this.variables.get(key);
     }
 
     private CompositeTaskVariable ast_to_variable(Ast ast) {
       Terminal name = (Terminal) ast.getAttribute("name");
       Terminal member = (Terminal) ast.getAttribute("member");
-      return new CompositeTaskVariable(name.getSourceString(), (member == null) ? null : member.getSourceString());
+      return make_variable(name.getSourceString(), (member == null) ? null : member.getSourceString());
     }
 
     private CompositeTaskNode verify(Ast ast) throws SyntaxError {
@@ -165,7 +166,7 @@ class CompositeTask implements CompositeTaskScope {
       String collection = ((Terminal) for_node_ast.getAttribute("collection")).getSourceString();
       String item = ((Terminal) for_node_ast.getAttribute("item")).getSourceString();
 
-      return new CompositeTaskForLoop(new CompositeTaskVariable(collection), new CompositeTaskVariable(item), nodes);
+      return new CompositeTaskForLoop(make_variable(collection, null), make_variable(item, null), nodes);
     }
 
     private CompositeTask verify_composite_task(Ast ast) throws SyntaxError {
@@ -202,9 +203,10 @@ class CompositeTask implements CompositeTaskScope {
 
   /** Constructors **/
 
-  CompositeTask(String name, Set<CompositeTaskNode> nodes) {
+  private CompositeTask(String name, Set<CompositeTaskNode> nodes) {
     this.name = name;
     this.nodes = nodes;
+    this.parent = null;
   }
 
   CompositeTask(SourceCode source_code) throws SyntaxError {
@@ -215,6 +217,7 @@ class CompositeTask implements CompositeTaskScope {
     AstList ast_list = (AstList) node.toAst();
     CompositeTaskAstVerifier verifier = new CompositeTaskAstVerifier(this.error_formatter);
     this.ast = verifier.verify(ast_list);
+    this.parent = null;
   }
 
   CompositeTask(File source_code) throws SyntaxError, IOException {
@@ -240,7 +243,7 @@ class CompositeTask implements CompositeTaskScope {
   }
 
   public CompositeTaskGraph getGraph() {
-    return new CompositeTaskGraph();
+    return new CompositeTaskGraph(this);
   }
 
   public CompositeTaskStep getStep(String name) {
@@ -264,6 +267,30 @@ class CompositeTask implements CompositeTaskScope {
   }
 
   public void addNode(CompositeTaskNode node) {
+  }
+
+  public void setParent(CompositeTaskScope parent) {
+    this.parent = parent;
+  }
+
+  public CompositeTaskScope getParent() {
+    return this.parent;
+  }
+
+  public boolean contains(CompositeTaskNode node) {
+    for ( CompositeTaskNode sub_node : this.nodes ) {
+      if ( node.equals(sub_node) ) {
+        return true;
+      }
+
+      if ( sub_node instanceof CompositeTaskScope ) {
+        CompositeTaskScope scope = (CompositeTaskScope) sub_node;
+        if ( scope.contains(node) ) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   public String toString() {
