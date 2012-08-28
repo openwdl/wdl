@@ -9,8 +9,19 @@
     <mkdir dir="${build}"/>
   </target>
 
+  <target name="generate" description="Generate the parser from grammar file">
+    <exec executable="hermes">
+      <arg value="generate" />
+      <arg value="grammars/wdl.zgr" />
+      <arg value="--language=java" />
+      <arg value="--directory=src" />
+    </exec>
+  </target>
+
   <target name="compile" depends="init" description="Compile source code">
-    <javac srcdir="${src}" destdir="${build}" includeantruntime="false" />
+    <javac srcdir="${src}" destdir="${build}" includeantruntime="false" deprecation="true">
+      <compilerarg value="-Xlint:unchecked" />
+    </javac>
   </target>
 
   <target name="dist" depends="compile" description="Generate JAR file" >
