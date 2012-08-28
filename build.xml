@@ -10,11 +10,10 @@
   </target>
 
   <target name="generate" description="Generate the parser from grammar file">
-    <exec executable="hermes">
+    <exec executable="hermes" dir="src">
       <arg value="generate" />
-      <arg value="grammars/wdl.zgr" />
+      <arg value="../grammars/wdl.zgr" />
       <arg value="--language=java" />
-      <arg value="--directory=src" />
     </exec>
   </target>
 
