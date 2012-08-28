@@ -13,9 +13,6 @@ class CompositeTaskVariable implements CompositeTaskVertex {
     this.name = name;
   }
 
-  public CompositeTaskVariable(Ast ast) {
-  }
-
   public Ast getAst() {
     return null;
   }
