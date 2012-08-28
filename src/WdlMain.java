@@ -7,7 +7,7 @@ import java.util.Set;
 class WdlMain {
 
   public static void usage() {
-    System.err.println("Usage: java ParserMain <.wdl file> <ast,parsetree,entities,graph>");
+    System.err.println("Usage: <.wdl file> <ast,parsetree,entities,graph>");
     System.exit(-1);
   }
 

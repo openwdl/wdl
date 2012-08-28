@@ -1,4 +1,4 @@
-<project name="wdl">
+<project name="wdl" default="dist">
   <property name="src" location="src" />
   <property name="build" location="build" />
   <property name="dist" location="dist" />
@@ -25,7 +25,12 @@
 
   <target name="dist" depends="compile" description="Generate JAR file" >
     <mkdir dir="${dist}"/>
-    <jar jarfile="${dist}/Wdl-${version}.jar" basedir="${build}"/>
+    <jar jarfile="${dist}/Wdl-${version}.jar" basedir="${build}">
+      <manifest>
+        <attribute name="Main-Class" value="WdlMain" />
+        <attribute name="Manifest-Version" value="${version}" />
+      </manifest>
+    </jar>
   </target>
 
   <target name="clean" description="Clean up all generated files">

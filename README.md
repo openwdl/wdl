@@ -12,7 +12,11 @@ To build the JAR file, run:
 $ ant dist
 ```
 
-Which will create a file dist/Wdl-${version}.jar
+Which will create a file dist/Wdl-${version}.jar as an executable JAR.  To invoke from the command line:
+
+```
+$ java -jar dist/Wdl-0.0.1.jar examples/0.wdl ast
+```
 
 Usage
 =====
