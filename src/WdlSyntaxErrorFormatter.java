@@ -67,4 +67,12 @@ class WdlSyntaxErrorFormatter implements SyntaxErrorFormatter {
            this.code.getLine(previous.getLine()) + "\n" + Utility.getIndentString(previous.getColumn()-1) + "^\n";
   }
 
+  public String duplicate_output_file(Terminal duplicate, Terminal previous) {
+    return "Two steps output to the same file: " + duplicate.getSourceString() + "\n" + 
+           "Location: " + duplicate.getResource() + " @ line " + duplicate.getLine() + ", column " + duplicate.getColumn() + ":\n\n" + 
+           this.code.getLine(duplicate.getLine()) + "\n" + Utility.getIndentString(duplicate.getColumn()-1) + "^\n" + 
+           "Previous output for file was @ line " + previous.getLine() + ", column " + previous.getColumn() + ":\n\n" +
+           this.code.getLine(previous.getLine()) + "\n" + Utility.getIndentString(previous.getColumn()-1) + "^\n";
+  }
+
 }

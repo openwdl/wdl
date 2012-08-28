@@ -21,11 +21,13 @@ class CompositeTask implements CompositeTaskScope {
     private WdlSyntaxErrorFormatter syntaxErrorFormatter;
     private Map<String, CompositeTaskVariable> variables;
     private Map<CompositeTaskVariable, Terminal> output_variables;
+    private Map<String, Terminal> output_files;
 
     CompositeTaskAstVerifier(WdlSyntaxErrorFormatter syntaxErrorFormatter) {
       this.syntaxErrorFormatter = syntaxErrorFormatter;
       this.variables = new HashMap<String, CompositeTaskVariable>();
       this.output_variables = new HashMap<CompositeTaskVariable, Terminal>();
+      this.output_files = new HashMap<String, Terminal>();
     }
 
     public Ast verify(AstNode wdl_ast) throws SyntaxError {
@@ -46,12 +48,6 @@ class CompositeTask implements CompositeTaskScope {
       } else {
         throw new SyntaxError("TODO");
       }
-
-      /* a)  Error on two 'input' or 'output' in a Step
-       * b)  Step names are unique in their scope (global or for)
-       * c)  No version specified for task
-       * d)  Two outputs have the same name
-       */
 
       AstList ctNodes = (AstList) composite_task.getAttribute("body");
       CompositeTask.this.nodes = new HashSet<CompositeTaskNode>();
@@ -153,6 +149,12 @@ class CompositeTask implements CompositeTaskScope {
                 throw new SyntaxError(this.syntaxErrorFormatter.duplicate_output_variable(var_terminal, this.output_variables.get(variable)));
               } else {
                 this.output_variables.put(variable, var_terminal);
+              }
+
+              if (this.output_files.containsKey(filepath.getSourceString())) {
+                throw new SyntaxError(this.syntaxErrorFormatter.duplicate_output_file(filepath, this.output_files.get(filepath.getSourceString())));
+              } else {
+                this.output_files.put(filepath.getSourceString(), filepath);
               }
 
               step_outputs.add( new CompositeTaskStepOutput("File", filepath.getSourceString(), variable) );
