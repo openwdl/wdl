@@ -6,12 +6,12 @@ composite_task foo {
 
   for ( item in foo ) {
     step btask[version=0] {
-      input: p0=x, p1=item, p2=GLOBAL;
+      input: p0=x, p1=GLOBAL;
       output: File("bar.txt") as y;
     }
 
     step ctask[version=0] {
-      input: p0=x, p1=item, p2=y;
+      input: p0=x, p1=y;
       output: File("quux.txt") as z;
     }
   }

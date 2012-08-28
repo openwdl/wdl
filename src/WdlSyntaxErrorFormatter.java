@@ -42,8 +42,11 @@ class WdlSyntaxErrorFormatter implements SyntaxErrorFormatter {
   }
 
   public String no_more_tokens(String method, TerminalIdentifier expecting, Terminal last) {
-    String lastLine = this.code.getLine(last.getLine());
-    return "No more tokens when parsing " + method + "\nExpecting: " + expecting.string() + "\nLocation: " + last.getResource() + " @ line " + last.getLine() + ", column " + last.getColumn() + ":\n\n" + lastLine + "\n" + Utility.getIndentString(last.getColumn()-1) + "^\n";
+    return "No more tokens when parsing " + method + "\n" +
+           "Expecting: " + expecting.string() + "\n" +
+           "Location: " + last.getResource() + " @ line " + last.getLine() + ", column " + last.getColumn() + ":\n\n" +
+           this.code.getLine(last.getLine()) + "\n" +
+           Utility.getIndentString(last.getColumn()-1) + "^\n";
   }
 
   public String invalid_terminal(String method, Terminal invalid) {
@@ -51,7 +54,17 @@ class WdlSyntaxErrorFormatter implements SyntaxErrorFormatter {
   }
 
   public String missing_version(Terminal task_name) {
-    return "Version information missing for task " + task_name.getSourceString() + "\nLocation: " + task_name.getResource() + " @ line " + task_name.getLine() + ", column " + task_name.getColumn() + ":\n\n" + this.code.getLine(task_name.getLine()) + "\n" + Utility.getIndentString(task_name.getColumn()-1) + "^\n";
+    return "Version information missing for task " + task_name.getSourceString() + "\n" +
+           "Location: " + task_name.getResource() + " @ line " + task_name.getLine() + ", column " + task_name.getColumn() + ":\n\n" +
+           this.code.getLine(task_name.getLine()) + "\n" + Utility.getIndentString(task_name.getColumn()-1) + "^\n";
+  }
+
+  public String duplicate_output_variable(Terminal duplicate, Terminal previous) {
+    return "Two steps output to the same variable: " + duplicate.getSourceString() + "\n" + 
+           "Location: " + duplicate.getResource() + " @ line " + duplicate.getLine() + ", column " + duplicate.getColumn() + ":\n\n" + 
+           this.code.getLine(duplicate.getLine()) + "\n" + Utility.getIndentString(duplicate.getColumn()-1) + "^\n" + 
+           "Previous output for variable was @ line " + previous.getLine() + ", column " + previous.getColumn() + ":\n\n" +
+           this.code.getLine(previous.getLine()) + "\n" + Utility.getIndentString(previous.getColumn()-1) + "^\n";
   }
 
 }

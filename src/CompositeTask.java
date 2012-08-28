@@ -20,10 +20,12 @@ class CompositeTask implements CompositeTaskScope {
   private class CompositeTaskAstVerifier {
     private WdlSyntaxErrorFormatter syntaxErrorFormatter;
     private Map<String, CompositeTaskVariable> variables;
+    private Map<CompositeTaskVariable, Terminal> output_variables;
 
     CompositeTaskAstVerifier(WdlSyntaxErrorFormatter syntaxErrorFormatter) {
       this.syntaxErrorFormatter = syntaxErrorFormatter;
       this.variables = new HashMap<String, CompositeTaskVariable>();
+      this.output_variables = new HashMap<CompositeTaskVariable, Terminal>();
     }
 
     public Ast verify(AstNode wdl_ast) throws SyntaxError {
@@ -65,14 +67,12 @@ class CompositeTask implements CompositeTaskScope {
     }
 
     private void set_parents(CompositeTaskScope scope) {
-
       for ( CompositeTaskNode node : scope.getNodes() ) {
         node.setParent(scope);
         if ( node instanceof CompositeTaskScope ) {
           set_parents((CompositeTaskScope) node);
         }
       }
-
     }
 
     private CompositeTaskVariable make_variable(String name, String member) {
@@ -122,8 +122,8 @@ class CompositeTask implements CompositeTaskScope {
         name = task_name.getSourceString();
       }
 
-      Set<CompositeTaskStepInput> inputs = new HashSet<CompositeTaskStepInput>();
-      Set<CompositeTaskStepOutput> outputs = new HashSet<CompositeTaskStepOutput>();
+      Set<CompositeTaskStepInput> step_inputs = new HashSet<CompositeTaskStepInput>();
+      Set<CompositeTaskStepOutput> step_outputs = new HashSet<CompositeTaskStepOutput>();
 
       AstList body = (AstList) step.getAttribute("body");
 
@@ -137,7 +137,7 @@ class CompositeTask implements CompositeTaskScope {
               Ast input = (Ast) input_node;
               Terminal parameter = (Terminal) input.getAttribute("parameter");
               CompositeTaskVariable variable = ast_to_variable((Ast) input.getAttribute("value"));
-              inputs.add( new CompositeTaskStepInput(parameter.getSourceString(), variable) );
+              step_inputs.add( new CompositeTaskStepInput(parameter.getSourceString(), variable) );
             }
           }
 
@@ -147,13 +147,21 @@ class CompositeTask implements CompositeTaskScope {
               Ast output = (Ast) output_node;
               Terminal filepath = (Terminal) output.getAttribute("file");
               CompositeTaskVariable variable = ast_to_variable((Ast) output.getAttribute("as"));
-              outputs.add( new CompositeTaskStepOutput("File", filepath.getSourceString(), variable) );
+
+              Terminal var_terminal = (Terminal) ((Ast) output.getAttribute("as")).getAttribute("name");
+              if (this.output_variables.containsKey(variable)) {
+                throw new SyntaxError(this.syntaxErrorFormatter.duplicate_output_variable(var_terminal, this.output_variables.get(variable)));
+              } else {
+                this.output_variables.put(variable, var_terminal);
+              }
+
+              step_outputs.add( new CompositeTaskStepOutput("File", filepath.getSourceString(), variable) );
             }
           }
         }
       }
 
-      return new CompositeTaskStep(name, subtask, inputs, outputs);
+      return new CompositeTaskStep(name, subtask, step_inputs, step_outputs);
     }
 
     private CompositeTaskForLoop verify_for(Ast for_node_ast) throws SyntaxError {
