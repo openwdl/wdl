@@ -1,0 +1,25 @@
+<project name="wdl">
+  <property name="src" location="src" />
+  <property name="build" location="build" />
+  <property name="dist" location="dist" />
+  <property name="version" value="0.0.1" />
+
+  <target name="init">
+    <tstamp/>
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile" depends="init" description="Compile source code">
+    <javac srcdir="${src}" destdir="${build}" includeantruntime="false" />
+  </target>
+
+  <target name="dist" depends="compile" description="Generate JAR file" >
+    <mkdir dir="${dist}"/>
+    <jar jarfile="${dist}/Wdl-${version}.jar" basedir="${build}"/>
+  </target>
+
+  <target name="clean" description="Clean up all generated files">
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+  </target>
+</project>
