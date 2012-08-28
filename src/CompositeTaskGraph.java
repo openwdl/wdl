@@ -37,8 +37,10 @@ class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Composite
 
           if ( this.scope_output_map.containsKey(var) ) {
             CompositeTaskScope closest = closest_scope(step, this.scope_output_map.get(var));
-            addVertex(closest);
-            addEdge(closest, step);
+            if ( !closest.contains(step) ) {
+              addVertex(closest);
+              addEdge(closest, step);
+            }
           }
         }
 
