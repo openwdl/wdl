@@ -1,3 +1,19 @@
+Workflow Description Language (wdl)
+===================================
+
+The Workflow Description Language is a language for describing dependency trees of tasks (algorithms) in a concise and clear syntax.
+
+Installation
+============
+
+To build the JAR file, run:
+
+```
+$ ant dist
+```
+
+Which will create a file dist/Wdl-${version}.jar
+
 Usage
 =====
 
