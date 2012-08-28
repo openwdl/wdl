@@ -75,4 +75,20 @@ class WdlSyntaxErrorFormatter implements SyntaxErrorFormatter {
            this.code.getLine(previous.getLine()) + "\n" + Utility.getIndentString(previous.getColumn()-1) + "^\n";
   }
 
+  public String duplicate_step_names(Terminal duplicate, Terminal previous) {
+    return "Two steps have the same name: " + duplicate.getSourceString() + "\n" + 
+           "Location: " + duplicate.getResource() + " @ line " + duplicate.getLine() + ", column " + duplicate.getColumn() + ":\n\n" + 
+           this.code.getLine(duplicate.getLine()) + "\n" + Utility.getIndentString(duplicate.getColumn()-1) + "^\n" + 
+           "Previous step was defined @ line " + previous.getLine() + ", column " + previous.getColumn() + ":\n\n" +
+           this.code.getLine(previous.getLine()) + "\n" + Utility.getIndentString(previous.getColumn()-1) + "^\n";
+  }
+
+  public String step_doesnt_use_loop_iterator(Terminal loop_iterator, Terminal step_name) {
+    return "Step '" + step_name.getSourceString() + "' inside for loop doesn't use loop iterator: " + loop_iterator.getSourceString() + "\n" + 
+           "Location: " + step_name.getResource() + " @ line " + step_name.getLine() + ", column " + step_name.getColumn() + ":\n\n" + 
+           this.code.getLine(step_name.getLine()) + "\n" + Utility.getIndentString(step_name.getColumn()-1) + "^\n" + 
+           "Loop iterator is declared @ line " + loop_iterator.getLine() + ", column " + loop_iterator.getColumn() + ":\n\n" +
+           this.code.getLine(loop_iterator.getLine()) + "\n" + Utility.getIndentString(loop_iterator.getColumn()-1) + "^\n";
+  }
+
 }

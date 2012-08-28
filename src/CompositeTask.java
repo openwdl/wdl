@@ -22,12 +22,14 @@ class CompositeTask implements CompositeTaskScope {
     private Map<String, CompositeTaskVariable> variables;
     private Map<CompositeTaskVariable, Terminal> output_variables;
     private Map<String, Terminal> output_files;
+    private Map<String, Terminal> step_names;
 
     CompositeTaskAstVerifier(WdlSyntaxErrorFormatter syntaxErrorFormatter) {
       this.syntaxErrorFormatter = syntaxErrorFormatter;
       this.variables = new HashMap<String, CompositeTaskVariable>();
       this.output_variables = new HashMap<CompositeTaskVariable, Terminal>();
       this.output_files = new HashMap<String, Terminal>();
+      this.step_names = new HashMap<String, Terminal>();
     }
 
     public Ast verify(AstNode wdl_ast) throws SyntaxError {
@@ -111,12 +113,18 @@ class CompositeTask implements CompositeTaskScope {
         task_version.getSourceString()
       );
 
-      String name;
+      Terminal name_terminal;
       if ( step.getAttribute("name") != null ) {
-        name = ((Terminal) step.getAttribute("name")).getSourceString();
+        name_terminal = (Terminal) step.getAttribute("name");
       } else {
-        name = task_name.getSourceString();
+        name_terminal = task_name;
       }
+
+      String name = name_terminal.getSourceString();
+      if ( this.step_names.containsKey(name) ) {
+        throw new SyntaxError(this.syntaxErrorFormatter.duplicate_step_names(name_terminal, this.step_names.get(name)));
+      }
+      this.step_names.put(name, name_terminal);
 
       Set<CompositeTaskStepInput> step_inputs = new HashSet<CompositeTaskStepInput>();
       Set<CompositeTaskStepOutput> step_outputs = new HashSet<CompositeTaskStepOutput>();
@@ -169,14 +177,32 @@ class CompositeTask implements CompositeTaskScope {
     private CompositeTaskForLoop verify_for(Ast for_node_ast) throws SyntaxError {
       Set<CompositeTaskNode> nodes = new HashSet<CompositeTaskNode>();
 
-      for ( AstNode for_sub_node : (AstList) for_node_ast.getAttribute("body") ) {
-        nodes.add( verify((Ast) for_sub_node) );
-      }
-
       String collection = ((Terminal) for_node_ast.getAttribute("collection")).getSourceString();
       String item = ((Terminal) for_node_ast.getAttribute("item")).getSourceString();
+      CompositeTaskVariable collection_var = make_variable(collection, null);
+      CompositeTaskVariable item_var = make_variable(item, null);
 
-      return new CompositeTaskForLoop(make_variable(collection, null), make_variable(item, null), nodes);
+      for ( AstNode for_sub_node : (AstList) for_node_ast.getAttribute("body") ) {
+        CompositeTaskNode sub_node = verify((Ast) for_sub_node);
+
+        if ( sub_node instanceof CompositeTaskStep ) {
+          CompositeTaskStep step = (CompositeTaskStep) sub_node;
+          boolean found = false;
+          for ( CompositeTaskStepInput input : step.getInputs() ) {
+            if (input.getVariable().equals(item_var)) {
+              found = true;
+            } 
+          }
+
+          if ( !found ) {
+            throw new SyntaxError(this.syntaxErrorFormatter.step_doesnt_use_loop_iterator((Terminal) for_node_ast.getAttribute("item"), this.step_names.get(step.getName())));
+          }
+        }
+
+        nodes.add(sub_node);
+      }
+
+      return new CompositeTaskForLoop(collection_var, item_var, nodes);
     }
 
     private CompositeTask verify_composite_task(Ast ast) throws SyntaxError {
