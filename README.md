@@ -26,18 +26,13 @@ There are two example .wdl files in the examples/ directory:
 * MutSig.wdl
 * CopyNumberQC.wdl
 
-From Java code, the main interface is the CompositeTask, which can be used in this example to acquire the name of each task:
+From Java code, the main interface is the CompositeTask, which can be used in this example to print out the immediate children nodes of this composite task:
 
 ```java
 CompositeTask ct = new CompositeTask(new File(args[0]));
 for ( CompositeTaskNode entry : ct.getNodes() ) {
   System.out.println("Node: " + entry);
 }
-```
-
-Compiling is relatively straightforward:
-```
-$ javac *.java
 ```
 
 The data file we'll use is:
@@ -66,7 +61,7 @@ composite_task test {
 Get the abstract syntax tree:
 
 ```
-$ java WdlMain examples/7.wdl ast
+$ java -jar dist/Wdl-0.0.1.jar examples/7.wdl ast
 (CompositeTask:
   body=[
     (Step:
@@ -189,7 +184,7 @@ $ java WdlMain examples/7.wdl ast
 Get a view of the graph
 
 ```
-$ java WdlMain examples/7.wdl graph
+$ java -jar dist/Wdl-0.0.1.jar examples/7.wdl graph
 VERTICIES
 ---------
 [Step: name=s1]
