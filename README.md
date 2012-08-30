@@ -21,12 +21,7 @@ $ java -jar dist/Wdl-0.0.1.jar examples/0.wdl ast
 Usage
 =====
 
-There are two example .wdl files in the examples/ directory:
-
-* MutSig.wdl
-* CopyNumberQC.wdl
-
-From Java code, the main interface is the CompositeTask, which can be used in this example to acquire the name of each task:
+From Java code, the main interface is the CompositeTask, which can be used in this example to print out the immediate children nodes of this composite task:
 
 ```java
 CompositeTask ct = new CompositeTask(new File(args[0]));
@@ -35,14 +30,10 @@ for ( CompositeTaskNode entry : ct.getNodes() ) {
 }
 ```
 
-Compiling is relatively straightforward:
-```
-$ javac *.java
-```
-
 The data file we'll use is:
 
 ```
+$ cat examples/7.wdl
 composite_task test {
   step s0[version=0] {
     output: File("abc") as foo;
@@ -66,7 +57,7 @@ composite_task test {
 Get the abstract syntax tree:
 
 ```
-$ java WdlMain examples/7.wdl ast
+$ java -jar dist/Wdl-0.0.1.jar examples/7.wdl ast
 (CompositeTask:
   body=[
     (Step:
@@ -189,7 +180,7 @@ $ java WdlMain examples/7.wdl ast
 Get a view of the graph
 
 ```
-$ java WdlMain examples/7.wdl graph
+$ java -jar dist/Wdl-0.0.1.jar examples/7.wdl graph
 VERTICIES
 ---------
 [Step: name=s1]
@@ -207,47 +198,47 @@ VERTICIES
 EDGES
 -----
 [Edge
-  from: [CompositeTaskForScope: collection=[Variable: name=L], var=[Variable: name=I], # nodes=1]
-  to: [Variable: name=I]
-]
-[Edge
-  from: [CompositeTaskForScope: collection=[Variable: name=L], var=[Variable: name=I], # nodes=1]
-  to: [Step: name=s2]
-]
-[Edge
-  from: [Variable: name=J]
-  to: [Step: name=s1]
+  from: [Step: name=s1]
+  to: [Variable: name=bar]
 ]
 [Edge
   from: [Variable: name=L]
   to: [CompositeTaskForScope: collection=[Variable: name=L], var=[Variable: name=I], # nodes=1]
 ]
 [Edge
+  from: [Variable: name=bar]
+  to: [Step: name=s2]
+]
+[Edge
   from: [Variable: name=foo]
   to: [Step: name=s1]
-]
-[Edge
-  from: [Variable: name=I]
-  to: [Step: name=s1]
-]
-[Edge
-  from: [CompositeTaskForScope: collection=[Variable: name=M], var=[Variable: name=J], # nodes=1]
-  to: [Variable: name=J]
 ]
 [Edge
   from: [Step: name=s0]
   to: [Variable: name=foo]
 ]
 [Edge
-  from: [Step: name=s1]
-  to: [Variable: name=bar]
+  from: [CompositeTaskForScope: collection=[Variable: name=M], var=[Variable: name=J], # nodes=1]
+  to: [Variable: name=J]
 ]
 [Edge
-  from: [Variable: name=bar]
-  to: [Step: name=s2]
+  from: [Variable: name=J]
+  to: [Step: name=s1]
 ]
 [Edge
   from: [Variable: name=M]
   to: [CompositeTaskForScope: collection=[Variable: name=M], var=[Variable: name=J], # nodes=1]
+]
+[Edge
+  from: [CompositeTaskForScope: collection=[Variable: name=L], var=[Variable: name=I], # nodes=1]
+  to: [Step: name=s2]
+]
+[Edge
+  from: [Variable: name=I]
+  to: [Step: name=s1]
+]
+[Edge
+  from: [CompositeTaskForScope: collection=[Variable: name=L], var=[Variable: name=I], # nodes=1]
+  to: [Variable: name=I]
 ]
 ```
