@@ -10,6 +10,12 @@
   </target>
 
   <target name="generate" description="Generate the parser from grammar file">
+    <exec executable="hermes">
+      <arg value="--version" />
+    </exec>
+
+    <echo message="Generating parser in ./src" />
+
     <exec executable="hermes" dir="src">
       <arg value="generate" />
       <arg value="../grammars/wdl.zgr" />
