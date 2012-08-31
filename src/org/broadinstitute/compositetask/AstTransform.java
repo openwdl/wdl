@@ -1,3 +1,3 @@
 
 package org.broadinstitute.compositetask;
-interface AstTransform {}
+public interface AstTransform {}

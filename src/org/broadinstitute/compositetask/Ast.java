@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.ArrayList;
-class Ast implements AstNode {
+public class Ast implements AstNode {
   private String name;
   private Map<String, AstNode> attributes;
   Ast(String name, Map<String, AstNode> attributes) {

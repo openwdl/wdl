@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.nio.*;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-class Utility {
+public class Utility {
   public static String join(Collection<?> s, String delimiter) {
     StringBuilder builder = new StringBuilder();
     Iterator iter = s.iterator();

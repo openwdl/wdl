@@ -1,6 +1,6 @@
 
 package org.broadinstitute.compositetask;
-class NonTerminal {
+public class NonTerminal {
   private int id;
   private String string;
   NonTerminal(int id, String string) {

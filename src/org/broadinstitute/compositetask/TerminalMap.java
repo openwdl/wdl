@@ -1,6 +1,6 @@
 
 package org.broadinstitute.compositetask;
-interface TerminalMap {
+public interface TerminalMap {
   int get(String string);
   String get(int id);
   boolean isValid(String string);

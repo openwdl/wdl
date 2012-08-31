@@ -1,6 +1,6 @@
 
 package org.broadinstitute.compositetask;
-class AstTransformSubstitution implements AstTransform {
+public class AstTransformSubstitution implements AstTransform {
   private int index;
   AstTransformSubstitution(int index) {
     this.index = index;

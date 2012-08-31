@@ -1,6 +1,6 @@
 
 package org.broadinstitute.compositetask;
-interface Parser {
+public interface Parser {
   ParseTree parse(TokenStream tokens) throws SyntaxError;
   TerminalMap getTerminalMap();
 }

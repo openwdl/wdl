@@ -3,7 +3,7 @@ package org.broadinstitute.compositetask;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.LinkedHashMap;
-class AstTransformNodeCreator implements AstTransform {
+public class AstTransformNodeCreator implements AstTransform {
   private String name;
   private LinkedHashMap<String, Integer> parameters;
   AstTransformNodeCreator(String name, LinkedHashMap<String, Integer> parameters) {

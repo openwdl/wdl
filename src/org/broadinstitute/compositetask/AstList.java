@@ -1,7 +1,7 @@
 
 package org.broadinstitute.compositetask;
 import java.util.ArrayList;
-class AstList extends ArrayList<AstNode> implements AstNode {
+public class AstList extends ArrayList<AstNode> implements AstNode {
   public String toString() {
     return "[" + Utility.join(this, ", ") + "]";
   }

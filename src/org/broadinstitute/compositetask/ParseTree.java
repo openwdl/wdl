@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
 import java.util.LinkedHashMap;
-class ParseTree implements ParseTreeNode {
+public class ParseTree implements ParseTreeNode {
   private NonTerminal nonterminal;
   private ArrayList<ParseTreeNode> children;
   private boolean isExpr, isNud, isPrefix, isInfix, isExprNud;

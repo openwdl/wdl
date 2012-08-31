@@ -1,7 +1,7 @@
 
 package org.broadinstitute.compositetask;
 import java.util.List;
-interface SyntaxErrorFormatter {
+public interface SyntaxErrorFormatter {
   /* Called when the parser runs out of tokens but isn't finished parsing. */
   String unexpected_eof(String method, List<TerminalIdentifier> expected, List<String> nt_rules);
   /* Called when the parser finished parsing but there are still tokens left in the stream. */

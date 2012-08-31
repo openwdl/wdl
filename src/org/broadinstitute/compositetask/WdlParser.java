@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Arrays;
-class WdlParser implements Parser {
+public class WdlParser implements Parser {
   private TokenStream tokens;
   private HashMap<String, ExpressionParser> expressionParsers;
   private SyntaxErrorFormatter syntaxErrorFormatter;
