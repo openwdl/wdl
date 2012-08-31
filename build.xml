@@ -14,12 +14,14 @@
       <arg value="--version" />
     </exec>
 
-    <echo message="Generating parser in ./src" />
+    <echo message="Generating parser in src/org/broadinstitute/compositetask" />
 
-    <exec executable="hermes" dir="src">
+    <exec executable="hermes">
       <arg value="generate" />
-      <arg value="../grammars/wdl.zgr" />
+      <arg value="grammars/wdl.zgr" />
+      <arg value="--directory=src/org/broadinstitute/compositetask" />
       <arg value="--language=java" />
+      <arg value="--java-package=org.broadinstitute.compositetask" />
     </exec>
   </target>
 
@@ -33,7 +35,7 @@
     <mkdir dir="${dist}"/>
     <jar jarfile="${dist}/Wdl-${version}.jar" basedir="${build}">
       <manifest>
-        <attribute name="Main-Class" value="WdlMain" />
+        <attribute name="Main-Class" value="org.broadinstitute.compositetask.WdlMain" />
         <attribute name="Manifest-Version" value="${version}" />
       </manifest>
     </jar>
