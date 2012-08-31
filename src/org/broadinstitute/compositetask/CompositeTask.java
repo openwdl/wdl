@@ -247,7 +247,7 @@ public class CompositeTask implements CompositeTaskScope {
     this.parent = null;
   }
 
-  CompositeTask(SourceCode source_code) throws SyntaxError {
+  public CompositeTask(SourceCode source_code) throws SyntaxError {
     this.error_formatter = new WdlSyntaxErrorFormatter();
     this.error_formatter.setSourceCode(source_code);
     ParseTreeNode node = getParseTree(source_code);
@@ -258,11 +258,11 @@ public class CompositeTask implements CompositeTaskScope {
     this.parent = null;
   }
 
-  CompositeTask(File source_code) throws SyntaxError, IOException {
+  public CompositeTask(File source_code) throws SyntaxError, IOException {
     this(new WdlSourceCode(source_code));
   }
 
-  CompositeTask(String source_code, String resource) throws SyntaxError {
+  public CompositeTask(String source_code, String resource) throws SyntaxError {
     this(new WdlSourceCode(source_code, resource));
   }
 
