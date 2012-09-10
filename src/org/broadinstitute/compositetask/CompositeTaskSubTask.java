@@ -24,6 +24,13 @@ public class CompositeTaskSubTask {
     return null;
   }
 
+  public boolean equals(CompositeTaskSubTask other) {
+    if (other.getTaskName().equals(this.name) && other.getVersion().equals(this.version)) {
+      return true;
+    }
+    return false;
+  }
+
   public String toString() {
     return "[Task: name="+this.name+", version="+this.version+"]";
   }
