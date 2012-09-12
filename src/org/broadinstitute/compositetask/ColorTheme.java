@@ -2,6 +2,6 @@ package org.broadinstitute.compositetask;
 
 import java.awt.Color;
 
-public interface WdlColorTheme {
+public interface ColorTheme {
   Color getColor(Terminal terminal);
 }

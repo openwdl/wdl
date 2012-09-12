@@ -289,39 +289,8 @@ public class CompositeTask implements CompositeTaskScope {
     return getStep(this, name);
   }
 
-  private static CompositeTaskStep getStep(CompositeTaskScope scope, String name) {
-    for ( CompositeTaskNode node : scope.getNodes() ) {
-      if ( node instanceof CompositeTaskStep ) {
-        CompositeTaskStep step = (CompositeTaskStep) node;
-        if ( step.getName().equals(name) ) {
-          return step;
-        }
-      } else if ( node instanceof CompositeTaskScope ) {
-        CompositeTaskStep step = getStep((CompositeTaskScope) node, name);
-        if ( step != null ) {
-          return step;
-        }
-      }
-    }
-    return null;
-  }
-
   public Set<CompositeTaskSubTask> getTasks() {
     return getTasks(this);
-  }
-
-  private static Set<CompositeTaskSubTask> getTasks(CompositeTaskScope scope) {
-    Set<CompositeTaskSubTask> tasks = new HashSet<CompositeTaskSubTask>();
-    for ( CompositeTaskNode node : scope.getNodes() ) {
-      if ( node instanceof CompositeTaskStep ) {
-        CompositeTaskStep step = (CompositeTaskStep) node;
-        tasks.add(step.getTask());
-      } else if ( node instanceof CompositeTaskScope ) {
-        CompositeTaskScope subScope = (CompositeTaskScope) node;
-        tasks.addAll( getTasks(subScope) );
-      }
-    }
-    return tasks;
   }
 
   public Ast getAst() {
@@ -371,5 +340,36 @@ public class CompositeTask implements CompositeTaskScope {
     List<Terminal> terminals = lexer.getTokens(source_code);
     TokenStream tokens = new TokenStream(terminals);
     return parser.parse(tokens);
+  }
+
+  private static Set<CompositeTaskSubTask> getTasks(CompositeTaskScope scope) {
+    Set<CompositeTaskSubTask> tasks = new HashSet<CompositeTaskSubTask>();
+    for ( CompositeTaskNode node : scope.getNodes() ) {
+      if ( node instanceof CompositeTaskStep ) {
+        CompositeTaskStep step = (CompositeTaskStep) node;
+        tasks.add(step.getTask());
+      } else if ( node instanceof CompositeTaskScope ) {
+        CompositeTaskScope subScope = (CompositeTaskScope) node;
+        tasks.addAll( getTasks(subScope) );
+      }
+    }
+    return tasks;
+  }
+
+  private static CompositeTaskStep getStep(CompositeTaskScope scope, String name) {
+    for ( CompositeTaskNode node : scope.getNodes() ) {
+      if ( node instanceof CompositeTaskStep ) {
+        CompositeTaskStep step = (CompositeTaskStep) node;
+        if ( step.getName().equals(name) ) {
+          return step;
+        }
+      } else if ( node instanceof CompositeTaskScope ) {
+        CompositeTaskStep step = getStep((CompositeTaskScope) node, name);
+        if ( step != null ) {
+          return step;
+        }
+      }
+    }
+    return null;
   }
 }

@@ -9,7 +9,7 @@ import java.util.Set;
 public class WdlMain {
 
   public static void usage() {
-    System.err.println("Usage: <.wdl file> <ast,parsetree,entities,graph>");
+    System.err.println("Usage: <.wdl file> <ast,parsetree,entities,graph,format>");
     System.exit(-1);
   }
 
@@ -46,6 +46,10 @@ public class WdlMain {
           System.out.println(v);
         }
 
+      } else if ( args[1].equals("format") ) {
+        WdlSourceCodeFormatter formatter = new WdlSourceCodeFormatter(new AnsiColorizer());
+        String formatted = formatter.format(ctask);
+        System.out.println(formatted);
       } else {
         usage();
       }
