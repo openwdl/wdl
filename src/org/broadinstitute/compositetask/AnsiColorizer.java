@@ -1,10 +1,6 @@
 package org.broadinstitute.compositetask;
 
 public class AnsiColorizer implements CompositeTaskColorizer {
-  public AnsiColorizer() {
-    
-  }
-
   public String preamble() {
     return "";
   }
@@ -23,5 +19,9 @@ public class AnsiColorizer implements CompositeTaskColorizer {
 
   public String variable(String str) {
     return "\033[38;5;143m" + str + "\033[0m";
+  }
+
+  public String task(String str) {
+    return "\033[38;5;139m" + str + "\033[0m";
   }
 }

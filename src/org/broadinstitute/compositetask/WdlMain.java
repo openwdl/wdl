@@ -9,7 +9,16 @@ import java.util.Set;
 public class WdlMain {
 
   public static void usage() {
-    System.err.println("Usage: <.wdl file> <ast,parsetree,entities,graph,format>");
+    System.err.println("Usage: <.wdl file> <ast,parsetree,entities,graph,format,format-ansi,format-html>");
+    System.err.println();
+    System.err.println("Actions:");
+    System.err.println("  ast: parse source code and output an abstract syntax tree");
+    System.err.println("  parsetree: parse source code and output a parsetree");
+    System.err.println("  entities: output an abbreviated view of all entities and which scope they're nested in");
+    System.err.println("  graph: output the set of verticies and edges for the directed acyclic graph");
+    System.err.println("  format: reformat source code");
+    System.err.println("  format-ansi: reformat source code and colorize for the terminal");
+    System.err.println("  format-html: reformat source code and add HTML span tags");
     System.exit(-1);
   }
 
@@ -46,8 +55,16 @@ public class WdlMain {
           System.out.println(v);
         }
 
-      } else if ( args[1].equals("format") ) {
+      } else if ( args[1].equals("format-ansi") ) {
         WdlSourceCodeFormatter formatter = new WdlSourceCodeFormatter(new AnsiColorizer());
+        String formatted = formatter.format(ctask);
+        System.out.println(formatted);
+      } else if ( args[1].equals("format-html") ) {
+        WdlSourceCodeFormatter formatter = new WdlSourceCodeFormatter(new HtmlColorizer());
+        String formatted = formatter.format(ctask);
+        System.out.println(formatted);
+      } else if ( args[1].equals("format") ) {
+        WdlSourceCodeFormatter formatter = new WdlSourceCodeFormatter();
         String formatted = formatter.format(ctask);
         System.out.println(formatted);
       } else {

@@ -1,12 +1,6 @@
 package org.broadinstitute.compositetask;
 
 public class HtmlColorizer implements CompositeTaskColorizer {
-  private ColorTheme theme;
-
-  public HtmlColorizer(ColorTheme theme) {
-    this.theme = theme;
-  }
-
   public String preamble() {
     return "";
   }
@@ -16,14 +10,18 @@ public class HtmlColorizer implements CompositeTaskColorizer {
   }
 
   public String keyword(String str) {
-    return str;
+    return "<span class=\"ct-keyword\">" + str + "</span>";
   }
 
   public String string(String str) {
-    return str;
+    return "<span class=\"ct-string\">" + str + "</span>";
   }
 
   public String variable(String str) {
-    return str;
+    return "<span class=\"ct-variable\">" + str + "</span>";
+  }
+
+  public String task(String str) {
+    return "<span class=\"ct-task\">" + str + "</span>";
   }
 }

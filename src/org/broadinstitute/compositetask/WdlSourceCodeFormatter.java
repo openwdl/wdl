@@ -44,7 +44,7 @@ public class WdlSourceCodeFormatter {
       if ( !step.getName().equals(task.getTaskName()) ) {
         rename = " " + this.colorizer.keyword("as") + " " + step.getName();
       }
-      builder.append( "  " + this.colorizer.keyword("step") + " " + task.getTaskName() + "[version=" + task.getVersion() + "]" + rename + " {\n" );
+      builder.append( "  " + this.colorizer.keyword("step") + " " + this.colorizer.task(task.getTaskName()) + "[version=" + task.getVersion() + "]" + rename + " {\n" );
 
       if ( step.getInputs().size() > 0 ) {
         List<String> parameters = new ArrayList<String>();

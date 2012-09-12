@@ -20,4 +20,8 @@ public class NullColorizer implements CompositeTaskColorizer {
   public String variable(String str) {
     return str;
   }
+
+  public String task(String str) {
+    return str;
+  }
 }
