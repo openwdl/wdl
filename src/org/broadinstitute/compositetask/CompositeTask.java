@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import org.jgrapht.DirectedGraph;
@@ -39,7 +40,7 @@ public class CompositeTask implements CompositeTaskScope {
 
       if ( wdl_ast instanceof AstList ) {
         if ( ((AstList) wdl_ast).size() != 1 ) {
-          throw new SyntaxError("Composite Task definition should contain only one top level composite_task definition.");
+          throw new SyntaxError("Source code must contain only one top level composite_task definition.");
         }
 
         composite_task = (Ast) ((AstList) wdl_ast).get(0);
@@ -47,14 +48,14 @@ public class CompositeTask implements CompositeTaskScope {
         composite_task = (Ast) wdl_ast;
         String node_type = composite_task.getName();
         if (!node_type.equals("CompositeTask")) {
-          throw new SyntaxError("TODO");
+          throw new SyntaxError("Source code does not contain a composite task definition");
         }
       } else {
-        throw new SyntaxError("TODO");
+        throw new SyntaxError("Unknown syntax error");
       }
 
       AstList ctNodes = (AstList) composite_task.getAttribute("body");
-      CompositeTask.this.nodes = new HashSet<CompositeTaskNode>();
+      CompositeTask.this.nodes = new LinkedHashSet<CompositeTaskNode>();
       CompositeTask.this.name = ((Terminal) composite_task.getAttribute("name")).getSourceString();
 
       for ( AstNode ctNode : ctNodes ) {
@@ -98,7 +99,7 @@ public class CompositeTask implements CompositeTaskScope {
       } else if ( ast.getName().equals("CompositeTask") ) {
         return verify_composite_task(ast);
       } else {
-        throw new SyntaxError("TODO");
+        throw new SyntaxError("Unknown node found in abstract syntax tree.");
       }
     }
 
@@ -129,8 +130,8 @@ public class CompositeTask implements CompositeTaskScope {
       }
       this.step_names.put(name, name_terminal);
 
-      Set<CompositeTaskStepInput> step_inputs = new HashSet<CompositeTaskStepInput>();
-      Set<CompositeTaskStepOutput> step_outputs = new HashSet<CompositeTaskStepOutput>();
+      Set<CompositeTaskStepInput> step_inputs = new LinkedHashSet<CompositeTaskStepInput>();
+      Set<CompositeTaskStepOutput> step_outputs = new LinkedHashSet<CompositeTaskStepOutput>();
 
       AstList body = (AstList) step.getAttribute("body");
 
@@ -192,7 +193,7 @@ public class CompositeTask implements CompositeTaskScope {
           CompositeTaskStep step = (CompositeTaskStep) sub_node;
           boolean found = false;
           for ( CompositeTaskStepInput input : step.getInputs() ) {
-            if (input.getVariable().equals(item_var)) {
+            if (input.getVariable().getName().equals(item_var.getName())) {
               found = true;
             } 
           }
@@ -209,7 +210,7 @@ public class CompositeTask implements CompositeTaskScope {
     }
 
     private CompositeTask verify_composite_task(Ast ast) throws SyntaxError {
-      Set<CompositeTaskNode> nodes = new HashSet<CompositeTaskNode>();
+      Set<CompositeTaskNode> nodes = new LinkedHashSet<CompositeTaskNode>();
       Terminal ctName = (Terminal) ast.getAttribute("name");
 
       for ( AstNode sub : (AstList) ast.getAttribute("body") ) {

@@ -31,7 +31,7 @@ public class WdlSourceCodeFormatter {
       builder.append(indent_str + "}\n");
     } else if ( node instanceof CompositeTaskForLoop ) {
       CompositeTaskForLoop loop = (CompositeTaskForLoop) node;
-      builder.append( indent_str + this.colorizer.keyword("for") + " ( " + this.colorizer.variable(variable_to_string(loop.getVariable())) + " in " + this.colorizer.variable(variable_to_string(loop.getCollection())) + " ) {\n" );
+      builder.append( indent_str + this.colorizer.keyword("for") + " ( " + this.colorizer.variable(variable_to_string(loop.getVariable())) + " " + this.colorizer.keyword("in") + " " + this.colorizer.variable(variable_to_string(loop.getCollection())) + " ) {\n" );
       for ( CompositeTaskNode sub_node : loop.getNodes() ) {
         builder.append( indent_str );
         builder.append( format(sub_node, indent + 2) );
