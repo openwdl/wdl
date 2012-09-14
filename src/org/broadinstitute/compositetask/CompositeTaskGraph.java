@@ -157,7 +157,9 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
     return edge;
   }
 
-  public boolean addEdge(CompositeTaskVertex sourceVertex, CompositeTaskVertex targetVertex, CompositeTaskEdge e) {return false;}
+  public boolean addEdge(CompositeTaskVertex sourceVertex, CompositeTaskVertex targetVertex, CompositeTaskEdge e) {
+    return false;
+  }
 
   public boolean addVertex(CompositeTaskVertex v) {
     if ( containsVertex(v) ) {
@@ -168,8 +170,13 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
     return true;
   }
 
-  public boolean containsEdge(CompositeTaskVertex sourceVertex, CompositeTaskVertex targetVertex) {return false;}
-  public boolean containsEdge(CompositeTaskEdge e) {return false;}
+  public boolean containsEdge(CompositeTaskVertex sourceVertex, CompositeTaskVertex targetVertex) {
+    return false;
+  }
+
+  public boolean containsEdge(CompositeTaskEdge e) {
+    return false;
+  }
 
   public boolean containsVertex(CompositeTaskVertex v) {
     for ( CompositeTaskVertex vertex : this.verticies ) {
@@ -184,24 +191,63 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
     return this.edges;
   }
 
-  public Set<CompositeTaskEdge> edgesOf(CompositeTaskVertex vertex) {return null;}
-  public boolean removeAllEdges(Collection<? extends CompositeTaskEdge> edges) {return false;}
-  public Set<CompositeTaskEdge> removeAllEdges(CompositeTaskVertex sourceVertex, CompositeTaskVertex targetVertex) {return null;}
-  public boolean removeAllVertices(Collection<? extends CompositeTaskVertex> vertices) {return false;}
-  public CompositeTaskEdge removeEdge(CompositeTaskVertex sourceVertex, CompositeTaskVertex targetVertex) {return null;}
-  public boolean removeEdge(CompositeTaskEdge e) {return false;}
-  public boolean removeVertex(CompositeTaskVertex v) {return false;}
+  public Set<CompositeTaskEdge> edgesOf(CompositeTaskVertex vertex) {
+    return null;
+  }
+
+  public boolean removeAllEdges(Collection<? extends CompositeTaskEdge> edges) {
+    return false;
+  }
+
+  public Set<CompositeTaskEdge> removeAllEdges(CompositeTaskVertex sourceVertex, CompositeTaskVertex targetVertex) {
+    return null;
+  }
+
+  public boolean removeAllVertices(Collection<? extends CompositeTaskVertex> vertices) {
+    return false;
+  }
+
+  public CompositeTaskEdge removeEdge(CompositeTaskVertex sourceVertex, CompositeTaskVertex targetVertex) {
+    return null;
+  }
+
+  public boolean removeEdge(CompositeTaskEdge e) {
+    return false;
+  }
+
+  public boolean removeVertex(CompositeTaskVertex v) {
+    return false;
+  }
 
   public Set<CompositeTaskVertex> vertexSet() {
     return this.verticies;
   }
 
-  public CompositeTaskVertex getEdgeSource(CompositeTaskEdge e) {return null;}
-  public CompositeTaskVertex getEdgeTarget(CompositeTaskEdge e) {return null;}
-  public double getEdgeWeight(CompositeTaskEdge e) {return 1.0;}
+  public CompositeTaskVertex getEdgeSource(CompositeTaskEdge e) {
+    return e.getStart();
+  }
 
-  public int inDegreeOf(CompositeTaskVertex vertex) {return 0;}
-  public Set<CompositeTaskEdge> incomingEdgesOf(CompositeTaskVertex vertex) {return null;}
-  public int outDegreeOf(CompositeTaskVertex vertex) {return 0;}
-  public Set<CompositeTaskEdge> outgoingEdgesOf(CompositeTaskVertex vertex) {return null;}
+  public CompositeTaskVertex getEdgeTarget(CompositeTaskEdge e) {
+    return e.getEnd();
+  }
+
+  public double getEdgeWeight(CompositeTaskEdge e) {
+    return 1.0;
+  }
+
+  public int inDegreeOf(CompositeTaskVertex vertex) {
+    return 0;
+  }
+
+  public Set<CompositeTaskEdge> incomingEdgesOf(CompositeTaskVertex vertex) {
+    return null;
+  }
+
+  public int outDegreeOf(CompositeTaskVertex vertex) {
+    return 0;
+  }
+
+  public Set<CompositeTaskEdge> outgoingEdgesOf(CompositeTaskVertex vertex) {
+    return null;
+  }
 }
