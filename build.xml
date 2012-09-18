@@ -41,17 +41,19 @@
         </jar>
     </target>
 
-    <target name="clean" description="Clean up all generated files">
+    <target name="clean" depends="test.clean" description="Clean up all generated files">
         <delete dir="${build}"/>
         <delete dir="${dist}"/>
         <delete dir="${test-output}"/>
     </target>
 
     <!-- Unit tests -->
+
     <property name="test.src" location="test" />
     <property name="test.build" location="test-build" />
     <property name="test.output" location="test-output" />
-    <taskdef resource="testngtasks" classpath="lib/testng-6.8.jar"/>
+    <property name="testng-jar" location="lib/testng-6.8.jar" />
+    <taskdef resource="testngtasks" classpath="${testng-jar}"/>
 
     <target name="test.init">
         <tstamp />
@@ -59,7 +61,7 @@
     </target>
 
     <target name="test.compile" depends="test.init" description="Compile tests">
-        <javac srcdir="${test.src}" destdir="${test.build}" includeantruntime="false" deprecation="true">
+        <javac srcdir="${test.src}" classpath="${testng-jar}:${build}" destdir="${test.build}" includeantruntime="false" deprecation="true">
             <compilerarg value="-Xlint:unchecked" />
         </javac>
     </target>
@@ -68,5 +70,10 @@
         <testng classpath="${test.build}" outputDir="${test.output}" haltOnFailure="true" verbose="2">
             <classfileset dir="${test.build}" includes="**/*.class" />
         </testng>
+    </target>
+
+    <target name="test.clean" description="Clean up all generated files">
+        <delete dir="${test.output}"/>
+        <delete dir="${test.build}"/>
     </target>
 </project>
