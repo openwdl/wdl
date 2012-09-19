@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.FileInputStream;
 
-public class WdlSourceCode implements SourceCode{
+public class CompositeTaskSourceCode implements SourceCode{
   private File source;
   private String resource;
   private String contents;
@@ -21,19 +21,19 @@ public class WdlSourceCode implements SourceCode{
   private StringBuilder currentLine;
   private List<String> lines;
 
-  WdlSourceCode(String source, String resource) {
+  CompositeTaskSourceCode(String source, String resource) {
     init(source, resource);
   }
 
-  WdlSourceCode(File source) throws IOException {
+  CompositeTaskSourceCode(File source) throws IOException {
     this(source, "utf-8", source.getCanonicalPath());
   }
 
-  WdlSourceCode(File source, String resource) throws IOException {
+  CompositeTaskSourceCode(File source, String resource) throws IOException {
     this(source, "utf-8", resource);
   }
 
-  WdlSourceCode(File source, String encoding, String resource) throws IOException, FileNotFoundException {
+  CompositeTaskSourceCode(File source, String encoding, String resource) throws IOException, FileNotFoundException {
     FileChannel channel = new FileInputStream(source).getChannel();
     MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
     Charset cs = Charset.forName(encoding);

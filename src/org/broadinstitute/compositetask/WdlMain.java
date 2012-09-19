@@ -56,15 +56,15 @@ public class WdlMain {
         }
 
       } else if ( args[1].equals("format-ansi") ) {
-        WdlSourceCodeFormatter formatter = new WdlSourceCodeFormatter(new AnsiColorizer());
+        CompositeTaskSourceCodeFormatter formatter = new CompositeTaskSourceCodeFormatter(new AnsiColorizer());
         String formatted = formatter.format(ctask);
         System.out.println(formatted);
       } else if ( args[1].equals("format-html") ) {
-        WdlSourceCodeFormatter formatter = new WdlSourceCodeFormatter(new HtmlColorizer());
+        CompositeTaskSourceCodeFormatter formatter = new CompositeTaskSourceCodeFormatter(new HtmlColorizer());
         String formatted = formatter.format(ctask);
         System.out.println(formatted);
       } else if ( args[1].equals("format") ) {
-        WdlSourceCodeFormatter formatter = new WdlSourceCodeFormatter();
+        CompositeTaskSourceCodeFormatter formatter = new CompositeTaskSourceCodeFormatter();
         String formatted = formatter.format(ctask);
         System.out.println(formatted);
       } else {

@@ -261,11 +261,11 @@ public class CompositeTask implements CompositeTaskScope {
     }
 
     public CompositeTask(File source_code) throws SyntaxError, IOException {
-        this(new WdlSourceCode(source_code));
+        this(new CompositeTaskSourceCode(source_code));
     }
 
     public CompositeTask(String source_code, String resource) throws SyntaxError {
-        this(new WdlSourceCode(source_code, resource));
+        this(new CompositeTaskSourceCode(source_code, resource));
     }
 
     /** Public Methods **/

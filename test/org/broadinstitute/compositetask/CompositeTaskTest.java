@@ -43,12 +43,14 @@ public class CompositeTaskTest
     public void testLexicalAnalysis(File dir) {
         File tokens = new File(dir, "tokens");
         if ( !tokens.exists() ) {
-            SourceCode code = new WdlSourceCode(new File(args[0]));
+            /*
+            SourceCode code = new CompositeTaskSourceCode(new File(args[0]));
             Lexer lexer = new Lexer();
             List<Terminal> terminals = lexer.getTokens(code);
             System.out.println("[");
             System.out.println(Utility.join(terminals, ",\n"));
             System.out.println("]");
+            */
 
             System.out.println("Created " + tokens);
         }

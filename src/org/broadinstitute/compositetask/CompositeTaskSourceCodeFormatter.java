@@ -3,14 +3,14 @@ package org.broadinstitute.compositetask;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WdlSourceCodeFormatter {
+public class CompositeTaskSourceCodeFormatter {
   private CompositeTaskColorizer colorizer;
 
-  WdlSourceCodeFormatter(CompositeTaskColorizer colorizer) {
+  CompositeTaskSourceCodeFormatter(CompositeTaskColorizer colorizer) {
     this.colorizer = colorizer;
   }
 
-  WdlSourceCodeFormatter() {
+  CompositeTaskSourceCodeFormatter() {
     this(new NullColorizer());
   }
 

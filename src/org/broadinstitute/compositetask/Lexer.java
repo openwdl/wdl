@@ -101,7 +101,7 @@ public class Lexer {
   }
   public static void main(String[] args) {
     try {
-      SourceCode code = new WdlSourceCode(new File(args[0]));
+      SourceCode code = new CompositeTaskSourceCode(new File(args[0]));
       Lexer lexer = new Lexer();
       List<Terminal> terminals = lexer.getTokens(code);
       System.out.println("[");
