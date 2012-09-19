@@ -76,7 +76,7 @@
     </target>
 
     <target name="test" depends="compile, test.compile" description="Run unit tests">
-        <testng classpath="${test.build}" outputDir="${test.output}" haltOnFailure="true" verbose="2">
+        <testng classpath="${test.build}:${build}" outputDir="${test.output}" haltOnFailure="true" verbose="2">
             <sysproperty key="test.files" value="${test.files}"/>
             <classfileset dir="${test.build}" includes="**/*.class" />
         </testng>

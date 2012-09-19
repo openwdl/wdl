@@ -27,10 +27,29 @@ public class CompositeTaskTest
         return composite_tasks.toArray(new Object[0][]);
     }
 
+    private CompositeTask getCompositeTask(File source) {
+        try {
+            return new CompositeTask(source);
+        } catch(IOException error) {
+            Assert.fail("IOException reading file: " + error);
+        } catch(SyntaxError error) {
+            Assert.fail("Not expecting syntax error: " + error);
+        }
+
+        return null;
+    }
+
     @Test(dataProvider="parsingTests")
     public void testLexicalAnalysis(File dir) {
         File tokens = new File(dir, "tokens");
         if ( !tokens.exists() ) {
+            SourceCode code = new WdlSourceCode(new File(args[0]));
+            Lexer lexer = new Lexer();
+            List<Terminal> terminals = lexer.getTokens(code);
+            System.out.println("[");
+            System.out.println(Utility.join(terminals, ",\n"));
+            System.out.println("]");
+
             System.out.println("Created " + tokens);
         }
     }
@@ -39,14 +58,10 @@ public class CompositeTaskTest
     public void testParseTree(File dir) {
         File source = new File(dir, "source.wdl");
         File parsetree = new File(dir, "parsetree");
-        CompositeTask ctask = null;
+        CompositeTask ctask = getCompositeTask(source);
 
-        try {
-            ctask = new CompositeTask(source);
-        } catch(SyntaxError error) {
-            Assert.fail("Not expecting syntax error: " + error);
-        } catch(IOException error) {
-            Assert.fail("IOException reading file: " + error);
+        if ( ctask == null ) {
+            Assert.fail("Null Composite Task");
         }
 
         if ( !parsetree.exists() ) {
@@ -57,14 +72,26 @@ public class CompositeTaskTest
             } catch (IOException error) {
                 Assert.fail("Could not write " + parsetree + ": " + error);
             }
+
             System.out.println("Created " + parsetree);
         }
     }
 
     @Test(dataProvider="parsingTests")
     public void testAbstractSyntaxTree(File dir) {
+        File source = new File(dir, "source.wdl");
         File ast = new File(dir, "ast");
+        CompositeTask ctask = getCompositeTask(source);
+
         if ( !ast.exists() ) {
+            try {
+                FileWriter out = new FileWriter(ast);
+                out.write(ctask.getAst().toPrettyString());
+                out.close();
+            } catch (IOException error) {
+                Assert.fail("Could not write " + ast + ": " + error);
+            }
+
             System.out.println("Created " + ast);
         }
     }
