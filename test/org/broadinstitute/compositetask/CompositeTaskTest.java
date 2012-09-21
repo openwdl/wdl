@@ -9,9 +9,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.broadinstitute.compositetask.CompositeTask;
 import org.broadinstitute.compositetask.SyntaxError;
+import org.broadinstitute.compositetask.SourceCode;
+import org.broadinstitute.compositetask.CompositeTaskSourceCode;
+import org.broadinstitute.compositetask.Lexer;
+import org.broadinstitute.compositetask.Terminal;
 
 public class CompositeTaskTest 
 {
@@ -42,17 +47,35 @@ public class CompositeTaskTest
     @Test(dataProvider="parsingTests")
     public void testLexicalAnalysis(File dir) {
         File tokens = new File(dir, "tokens");
-        if ( !tokens.exists() ) {
-            /*
-            SourceCode code = new CompositeTaskSourceCode(new File(args[0]));
+        File source = new File(dir, "source.wdl");
+        String actual = null;
+
+        try {
+            SourceCode code = new CompositeTaskSourceCode(source);
             Lexer lexer = new Lexer();
             List<Terminal> terminals = lexer.getTokens(code);
-            System.out.println("[");
-            System.out.println(Utility.join(terminals, ",\n"));
-            System.out.println("]");
-            */
+            actual = "[\n  " + Utility.join(terminals, ",\n  ") + "\n]\n";
+        } catch (IOException error) {
+            Assert.fail("Could not read source code: " + error);
+        }
+
+        if ( !tokens.exists() ) {
+            try {
+                FileWriter out = new FileWriter(tokens);
+                out.write(actual);
+                out.close();
+            } catch (IOException error) {
+                Assert.fail("Could not write tokens file: " + error);
+            }
 
             System.out.println("Created " + tokens);
+        }
+
+        try {
+            String expected = Utility.readFile(tokens.getAbsolutePath());
+            Assert.assertEquals(actual, expected, "Tokens list did not match");
+        } catch (IOException error) {
+            Assert.fail("Cannot read " + tokens.getAbsolutePath());
         }
     }
 
@@ -61,6 +84,7 @@ public class CompositeTaskTest
         File source = new File(dir, "source.wdl");
         File parsetree = new File(dir, "parsetree");
         CompositeTask ctask = getCompositeTask(source);
+        String actual = ctask.getParseTree().toPrettyString();
 
         if ( ctask == null ) {
             Assert.fail("Null Composite Task");
@@ -69,13 +93,20 @@ public class CompositeTaskTest
         if ( !parsetree.exists() ) {
             try {
                 FileWriter out = new FileWriter(parsetree);
-                out.write(ctask.getParseTree().toPrettyString());
+                out.write(actual);
                 out.close();
             } catch (IOException error) {
                 Assert.fail("Could not write " + parsetree + ": " + error);
             }
 
             System.out.println("Created " + parsetree);
+        }
+
+        try {
+            String expected = Utility.readFile(parsetree.getAbsolutePath());
+            Assert.assertEquals(actual, expected, "Parse trees did not match");
+        } catch (IOException error) {
+            Assert.fail("Cannot read " + parsetree.getAbsolutePath());
         }
     }
 
@@ -84,11 +115,12 @@ public class CompositeTaskTest
         File source = new File(dir, "source.wdl");
         File ast = new File(dir, "ast");
         CompositeTask ctask = getCompositeTask(source);
+        String actual = ctask.getAst().toPrettyString();
 
         if ( !ast.exists() ) {
             try {
                 FileWriter out = new FileWriter(ast);
-                out.write(ctask.getAst().toPrettyString());
+                out.write(actual);
                 out.close();
             } catch (IOException error) {
                 Assert.fail("Could not write " + ast + ": " + error);
@@ -96,10 +128,12 @@ public class CompositeTaskTest
 
             System.out.println("Created " + ast);
         }
-    }
 
-    @Test
-    public void testTrivial() {
-        Assert.assertEquals(1, 1);
+        try {
+            String expected = Utility.readFile(ast.getAbsolutePath());
+            Assert.assertEquals(actual, expected, "Abstract syntax trees did not match");
+        } catch (IOException error) {
+            Assert.fail("Cannot read " + ast.getAbsolutePath());
+        }
     }
 }
