@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.Iterator;
-import org.jgrapht.DirectedGraph;
 
 public class CompositeTask implements CompositeTaskScope {
 

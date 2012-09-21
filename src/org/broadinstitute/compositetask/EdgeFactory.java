@@ -22,9 +22,9 @@
  * Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-/* ------------------
- * WeightedGraph.java
- * ------------------
+/* ----------------
+ * EdgeFactory.java
+ * ----------------
  * (C) Copyright 2003-2008, by Barak Naveh and Contributors.
  *
  * Original Author:  Barak Naveh
@@ -35,37 +35,33 @@
  * Changes
  * -------
  * 24-Jul-2003 : Initial revision (BN);
- * 13-Aug-2003 : Included weight methods in Edge interface (BN);
  * 11-Mar-2004 : Made generic (CH);
  *
  */
-package org.jgrapht;
+
+package org.broadinstitute.compositetask;
 
 /**
- * An interface for a graph whose edges have non-uniform weights.
+ * An edge factory used by graphs for creating new edges.
  *
  * @author Barak Naveh
- * @since Jul 23, 2003
+ * @since Jul 14, 2003
  */
-public interface WeightedGraph<V, E>
-    extends Graph<V, E>
+public interface EdgeFactory<V, E>
 {
-    //~ Static fields/initializers ---------------------------------------------
-
-    /**
-     * The default weight for an edge.
-     */
-    public static double DEFAULT_EDGE_WEIGHT = 1.0;
-
     //~ Methods ----------------------------------------------------------------
 
     /**
-     * Assigns a weight to an edge.
+     * Creates a new edge whose endpoints are the specified source and target
+     * vertices.
      *
-     * @param e edge on which to set weight
-     * @param weight new weight for edge
+     * @param sourceVertex the source vertex.
+     * @param targetVertex the target vertex.
+     *
+     * @return a new edge whose endpoints are the specified source and target
+     * vertices.
      */
-    public void setEdgeWeight(E e, double weight);
+    public E createEdge(V sourceVertex, V targetVertex);
 }
 
-// End WeightedGraph.java
+// End EdgeFactory.java

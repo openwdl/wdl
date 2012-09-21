@@ -42,10 +42,10 @@
  * 28-May-2006 : Moved connectivity info from edge to graph (JVS);
  *
  */
-package org.jgrapht;
+
+package org.broadinstitute.compositetask;
 
 import java.util.*;
-
 
 /**
  * The root interface in the graph hierarchy. A mathematical graph-theory graph

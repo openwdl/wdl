@@ -39,10 +39,10 @@
  * 07-May-2006 : Changed from List<Edge> to Set<Edge> (JVS);
  *
  */
-package org.jgrapht;
+
+package org.broadinstitute.compositetask;
 
 import java.util.*;
-
 
 /**
  * A graph whose all edges are directed. This is the root interface of all

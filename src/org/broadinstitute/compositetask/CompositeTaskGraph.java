@@ -8,8 +8,6 @@ import java.util.HashSet;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.Iterator;
-import org.jgrapht.DirectedGraph;
-import org.jgrapht.EdgeFactory;
 
 public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, CompositeTaskEdge>
 {
