@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask.parser;
+package org.broadinstitute.parser;
 public interface ParseTreeNode {
   public AstNode toAst();
   public String toString();

@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask.parser;
+package org.broadinstitute.parser;
 public class NonTerminal {
   private int id;
   private String string;

@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask.parser;
+package org.broadinstitute.parser;
 import java.util.*;
 import java.util.HashMap;
 import java.util.LinkedHashMap;

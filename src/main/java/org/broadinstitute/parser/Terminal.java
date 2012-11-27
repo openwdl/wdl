@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask.parser;
+package org.broadinstitute.parser;
 import java.util.Formatter;
 import java.util.Locale;
 public class Terminal implements AstNode, ParseTreeNode

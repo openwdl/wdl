@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask.parser;
+package org.broadinstitute.parser;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Formatter;

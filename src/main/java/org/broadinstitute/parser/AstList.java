@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask.parser;
+package org.broadinstitute.parser;
 import java.util.ArrayList;
 public class AstList extends ArrayList<AstNode> implements AstNode {
   public String toString() {
