@@ -1,15 +1,5 @@
-<project name="wdl" default="dist">
-    <property name="src" location="src" />
-    <property name="build" location="build" />
-    <property name="dist" location="dist" />
-    <property name="version" value="0.0.1" />
-
-    <target name="init">
-        <tstamp />
-        <mkdir dir="${build}" />
-    </target>
-
-    <target name="generate" description="Generate the parser from grammar file">
+<project name="wdl">
+    <target name="generate-parser" description="Generate the parser from grammar file">
         <exec executable="hermes">
             <arg value="--version" />
         </exec>
@@ -23,67 +13,5 @@
             <arg value="--language=java" />
             <arg value="--java-package=org.broadinstitute.compositetask" />
         </exec>
-    </target>
-
-    <target name="compile" depends="init" description="Compile source code">
-        <javac srcdir="${src}" destdir="${build}" includeantruntime="false" deprecation="true">
-            <compilerarg value="-Xlint:unchecked" />
-        </javac>
-    </target>
-
-    <target name="dist" depends="compile" description="Generate JAR file" >
-        <mkdir dir="${dist}"/>
-        <jar jarfile="${dist}/Wdl-${version}.jar" basedir="${build}">
-            <manifest>
-                <attribute name="Main-Class" value="org.broadinstitute.compositetask.WdlMain" />
-                <attribute name="Manifest-Version" value="${version}" />
-            </manifest>
-        </jar>
-    </target>
-
-    <target name="clean" depends="test.clean" description="Clean up all generated files">
-        <delete dir="${build}"/>
-        <delete dir="${dist}"/>
-        <delete dir="${test-output}"/>
-    </target>
-
-    <!-- Unit tests -->
-
-    <property name="test.src" location="test" />
-    <property name="test.build" location="test-build" />
-    <property name="test.output" location="test-output" />
-    <property name="test.files" location="test-files" />
-    <property name="testng.jar" location="lib/testng-6.8.jar" />
-    <taskdef resource="testngtasks" classpath="${testng.jar}"/>
-
-    <target name="test.init">
-        <tstamp />
-        <mkdir dir="${test.build}" />
-    </target>
-
-    <target name="test.compile" depends="test.init" description="Compile tests">
-        <javac srcdir="${test.src}" classpath="${testng.jar}:${build}" destdir="${test.build}" includeantruntime="false" deprecation="true">
-            <compilerarg value="-Xlint:unchecked" />
-        </javac>
-    </target>
-
-    <!-- TODO: finish implementing: ant test-single -Dtest.method=org.broadinstitute.compositetask.CompositeTaskTest.testTrivial -->
-    <target name="test-single" depends="compile, test.compile" description="Run single unit test">
-        <testng methods="${test.method}" classpath="${test.build}" outputDir="${test.output}" haltOnFailure="true" verbose="2">
-            <sysproperty key="test.files" value="${test.files}"/>
-            <classfileset dir="${test.build}" includes="**/*.class" />
-        </testng>
-    </target>
-
-    <target name="test" depends="compile, test.compile" description="Run unit tests">
-        <testng classpath="${test.build}:${build}" outputDir="${test.output}" haltOnFailure="true" verbose="2">
-            <sysproperty key="test.files" value="${test.files}"/>
-            <classfileset dir="${test.build}" includes="**/*.class" />
-        </testng>
-    </target>
-
-    <target name="test.clean" description="Clean up all generated files">
-        <delete dir="${test.output}"/>
-        <delete dir="${test.build}"/>
     </target>
 </project>
