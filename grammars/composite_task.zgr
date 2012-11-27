@@ -1,9 +1,9 @@
 {
   "ll1": {
-    "start": "wdl",
+    "start": "composite_task",
     "rules": [
-      "wdl := list(wdl_entity)",
-      "wdl_entity := composite_task",
+      "composite_task := list(composite_task_entity)",
+      "composite_task_entity := composite_task",
       "composite_task := 'composite_task' + 'identifier' + 'lbrace' + list(composite_task_entity) + 'rbrace' -> CompositeTask( name=$1, body=$3 )",
       "composite_task_entity := step | for_loop | composite_task",
       "for_loop := 'for' + 'lparen' + 'identifier' + 'in' + 'identifier' + 'rparen' + 'lbrace' + list(composite_task_entity) + 'rbrace' -> ForLoop( collection=$4, item=$2, body=$7 )",
