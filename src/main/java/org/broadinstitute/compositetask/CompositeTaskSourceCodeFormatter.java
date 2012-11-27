@@ -3,6 +3,8 @@ package org.broadinstitute.compositetask;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.broadinstitute.compositetask.parser.Utility;
+
 public class CompositeTaskSourceCodeFormatter {
   private CompositeTaskColorizer colorizer;
 

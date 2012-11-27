@@ -11,12 +11,14 @@ import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.broadinstitute.compositetask.parser.SyntaxError;
+import org.broadinstitute.compositetask.parser.SourceCode;
+import org.broadinstitute.compositetask.parser.Terminal;
+import org.broadinstitute.compositetask.parser.Utility;
+
 import org.broadinstitute.compositetask.CompositeTask;
-import org.broadinstitute.compositetask.SyntaxError;
-import org.broadinstitute.compositetask.SourceCode;
 import org.broadinstitute.compositetask.CompositeTaskSourceCode;
 import org.broadinstitute.compositetask.Lexer;
-import org.broadinstitute.compositetask.Terminal;
 
 public class CompositeTaskTest 
 {

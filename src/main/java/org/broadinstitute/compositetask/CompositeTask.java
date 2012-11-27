@@ -10,6 +10,17 @@ import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.broadinstitute.compositetask.parser.Ast;
+import org.broadinstitute.compositetask.parser.AstNode;
+import org.broadinstitute.compositetask.parser.AstList;
+import org.broadinstitute.compositetask.parser.ParseTree;
+import org.broadinstitute.compositetask.parser.ParseTreeNode;
+import org.broadinstitute.compositetask.parser.SourceCode;
+import org.broadinstitute.compositetask.parser.Terminal;
+import org.broadinstitute.compositetask.parser.SyntaxError;
+import org.broadinstitute.compositetask.parser.CompositeTaskParser;
+import org.broadinstitute.compositetask.parser.TokenStream;
+
 public class CompositeTask implements CompositeTaskScope {
 
     private ParseTree parse_tree;
@@ -335,7 +346,7 @@ public class CompositeTask implements CompositeTaskScope {
     /** Private methods **/
 
     private ParseTreeNode getParseTree(SourceCode source_code) throws SyntaxError {
-        WdlParser parser = new WdlParser(this.error_formatter);
+        CompositeTaskParser parser = new CompositeTaskParser(this.error_formatter);
         Lexer lexer = new Lexer();
         List<Terminal> terminals = lexer.getTokens(source_code);
         TokenStream tokens = new TokenStream(terminals);

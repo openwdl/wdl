@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask;
+package org.broadinstitute.compositetask.parser;
 public interface ExpressionParser extends Parser {
   ParseTree parse(TokenStream tokens, int rbp) throws SyntaxError;
 }

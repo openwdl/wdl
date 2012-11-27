@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask;
+package org.broadinstitute.compositetask.parser;
 import java.util.Collection;
 import java.util.Iterator;
 import java.io.IOException;

@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask;
+package org.broadinstitute.compositetask.parser;
 import java.util.List;
 public interface SourceCode {
   public void advance(int amount);

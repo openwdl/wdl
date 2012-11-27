@@ -12,6 +12,7 @@ import java.nio.*;
 import java.nio.charset.*;
 import java.nio.channels.*;
 
+import org.broadinstitute.compositetask.parser.*;
 
 class LexerMatch {
   private Terminal terminal;
@@ -22,9 +23,9 @@ class LexerMatch {
 
 class TokenLexer {
   private Pattern regex;
-  private WdlParser.TerminalId terminal;
+  private CompositeTaskParser.TerminalId terminal;
 
-  TokenLexer(Pattern regex, WdlParser.TerminalId terminal) {
+  TokenLexer(Pattern regex, CompositeTaskParser.TerminalId terminal) {
     this.regex = regex;
     this.terminal = terminal;
   }
@@ -54,28 +55,28 @@ public class Lexer {
     this.regex = new ArrayList<TokenLexer>();
     this.regex.add( new TokenLexer(Pattern.compile("\\/\\*.*?\\*\\/", Pattern.DOTALL), null) );
     this.regex.add( new TokenLexer(Pattern.compile("//.*"), null) );
-    this.regex.add( new TokenLexer(Pattern.compile("^composite_task(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_COMPOSITE_TASK) );
-    this.regex.add( new TokenLexer(Pattern.compile("^output(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_OUTPUT) );
-    this.regex.add( new TokenLexer(Pattern.compile("^input(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_INPUT) );
-    this.regex.add( new TokenLexer(Pattern.compile("^step(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_STEP) );
-    this.regex.add( new TokenLexer(Pattern.compile("^File(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_FILE) );
-    this.regex.add( new TokenLexer(Pattern.compile("^for(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_FOR) );
-    this.regex.add( new TokenLexer(Pattern.compile("^as(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_AS) );
-    this.regex.add( new TokenLexer(Pattern.compile("^in(?=[^a-zA-Z_]|$)"), WdlParser.TerminalId.TERMINAL_IN) );
-    this.regex.add( new TokenLexer(Pattern.compile("^\\."), WdlParser.TerminalId.TERMINAL_DOT) );
-    this.regex.add( new TokenLexer(Pattern.compile("^,"), WdlParser.TerminalId.TERMINAL_COMMA) );
-    this.regex.add( new TokenLexer(Pattern.compile("^:"), WdlParser.TerminalId.TERMINAL_COLON) );
-    this.regex.add( new TokenLexer(Pattern.compile("^;"), WdlParser.TerminalId.TERMINAL_SEMI) );
-    this.regex.add( new TokenLexer(Pattern.compile("^="), WdlParser.TerminalId.TERMINAL_ASSIGN) );
-    this.regex.add( new TokenLexer(Pattern.compile("^\\["), WdlParser.TerminalId.TERMINAL_LSQUARE) );
-    this.regex.add( new TokenLexer(Pattern.compile("^\\]"), WdlParser.TerminalId.TERMINAL_RSQUARE) );
-    this.regex.add( new TokenLexer(Pattern.compile("^\\{"), WdlParser.TerminalId.TERMINAL_LBRACE) );
-    this.regex.add( new TokenLexer(Pattern.compile("^\\}"), WdlParser.TerminalId.TERMINAL_RBRACE) );
-    this.regex.add( new TokenLexer(Pattern.compile("^\\("), WdlParser.TerminalId.TERMINAL_LPAREN) );
-    this.regex.add( new TokenLexer(Pattern.compile("^\\)"), WdlParser.TerminalId.TERMINAL_RPAREN) );
-    this.regex.add( new TokenLexer(Pattern.compile("^\"([^\\\\\"\\n]|\\[\\\"'nrbtfav\\?]|\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\""), WdlParser.TerminalId.TERMINAL_STRING) );
-    this.regex.add( new TokenLexer(Pattern.compile("^([a-zA-Z_]|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)([a-zA-Z_0-9]|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"), WdlParser.TerminalId.TERMINAL_IDENTIFIER) );
-    this.regex.add( new TokenLexer(Pattern.compile("^[-]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?)"), WdlParser.TerminalId.TERMINAL_NUMBER) );
+    this.regex.add( new TokenLexer(Pattern.compile("^composite_task(?=[^a-zA-Z_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_COMPOSITE_TASK) );
+    this.regex.add( new TokenLexer(Pattern.compile("^output(?=[^a-zA-Z_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_OUTPUT) );
+    this.regex.add( new TokenLexer(Pattern.compile("^input(?=[^a-zA-Z_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_INPUT) );
+    this.regex.add( new TokenLexer(Pattern.compile("^step(?=[^a-zA-Z_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_STEP) );
+    this.regex.add( new TokenLexer(Pattern.compile("^File(?=[^a-zA-Z_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_FILE) );
+    this.regex.add( new TokenLexer(Pattern.compile("^for(?=[^a-zA-Z_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_FOR) );
+    this.regex.add( new TokenLexer(Pattern.compile("^as(?=[^a-zA-Z_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_AS) );
+    this.regex.add( new TokenLexer(Pattern.compile("^in(?=[^a-zA-Z_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_IN) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\."), CompositeTaskParser.TerminalId.TERMINAL_DOT) );
+    this.regex.add( new TokenLexer(Pattern.compile("^,"), CompositeTaskParser.TerminalId.TERMINAL_COMMA) );
+    this.regex.add( new TokenLexer(Pattern.compile("^:"), CompositeTaskParser.TerminalId.TERMINAL_COLON) );
+    this.regex.add( new TokenLexer(Pattern.compile("^;"), CompositeTaskParser.TerminalId.TERMINAL_SEMI) );
+    this.regex.add( new TokenLexer(Pattern.compile("^="), CompositeTaskParser.TerminalId.TERMINAL_ASSIGN) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\["), CompositeTaskParser.TerminalId.TERMINAL_LSQUARE) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\]"), CompositeTaskParser.TerminalId.TERMINAL_RSQUARE) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\{"), CompositeTaskParser.TerminalId.TERMINAL_LBRACE) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\}"), CompositeTaskParser.TerminalId.TERMINAL_RBRACE) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\("), CompositeTaskParser.TerminalId.TERMINAL_LPAREN) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\\)"), CompositeTaskParser.TerminalId.TERMINAL_RPAREN) );
+    this.regex.add( new TokenLexer(Pattern.compile("^\"([^\\\\\"\\n]|\\[\\\"'nrbtfav\\?]|\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\""), CompositeTaskParser.TerminalId.TERMINAL_STRING) );
+    this.regex.add( new TokenLexer(Pattern.compile("^([a-zA-Z_]|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)([a-zA-Z_0-9]|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"), CompositeTaskParser.TerminalId.TERMINAL_IDENTIFIER) );
+    this.regex.add( new TokenLexer(Pattern.compile("^[-]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?)"), CompositeTaskParser.TerminalId.TERMINAL_NUMBER) );
     this.regex.add( new TokenLexer(Pattern.compile("^\\s+"), null) );
   }
 

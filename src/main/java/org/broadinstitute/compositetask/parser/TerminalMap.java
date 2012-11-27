@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask;
+package org.broadinstitute.compositetask.parser;
 public interface TerminalMap {
   int get(String string);
   String get(int id);

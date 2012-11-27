@@ -2,6 +2,8 @@ package org.broadinstitute.compositetask;
 
 import java.util.Set;
 
+import org.broadinstitute.compositetask.parser.Ast;
+
 public class CompositeTaskStepOutput {
   private String type;
   private String path;

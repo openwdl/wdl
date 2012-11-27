@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask;
+package org.broadinstitute.compositetask.parser;
 import java.util.List;
 public interface SyntaxErrorFormatter {
   /* Called when the parser runs out of tokens but isn't finished parsing. */

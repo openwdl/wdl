@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask;
+package org.broadinstitute.compositetask.parser;
 import java.util.Map;
 import java.util.LinkedList;
 import java.util.Formatter;

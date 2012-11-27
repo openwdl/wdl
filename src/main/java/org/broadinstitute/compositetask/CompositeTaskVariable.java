@@ -2,6 +2,8 @@ package org.broadinstitute.compositetask;
 
 import java.util.Set;
 
+import org.broadinstitute.compositetask.parser.Ast;
+
 public class CompositeTaskVariable implements CompositeTaskVertex {
   private String name;
   private String member;

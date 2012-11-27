@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask;
+package org.broadinstitute.compositetask.parser;
 public interface TerminalIdentifier {
   public int id();
   public String string();

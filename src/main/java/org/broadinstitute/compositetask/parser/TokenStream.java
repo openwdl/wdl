@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask;
+package org.broadinstitute.compositetask.parser;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Formatter;
@@ -8,11 +8,11 @@ public class TokenStream extends ArrayList<Terminal> {
   private int index;
   private TerminalMap terminals;
   private SyntaxErrorFormatter syntaxErrorFormatter;
-  TokenStream(List<Terminal> terminals) {
+  public TokenStream(List<Terminal> terminals) {
     super(terminals);
     reset();
   }
-  TokenStream() {
+  public TokenStream() {
     reset();
   }
   public void setTerminalMap(TerminalMap terminals) {

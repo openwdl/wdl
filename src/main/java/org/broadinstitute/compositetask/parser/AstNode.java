@@ -1,5 +1,5 @@
 
-package org.broadinstitute.compositetask;
+package org.broadinstitute.compositetask.parser;
 public interface AstNode {
   public String toString();
   public String toPrettyString();

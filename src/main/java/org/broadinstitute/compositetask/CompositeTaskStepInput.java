@@ -2,6 +2,8 @@ package org.broadinstitute.compositetask;
 
 import java.util.Set;
 
+import org.broadinstitute.compositetask.parser.Ast;
+
 public class CompositeTaskStepInput {
   private String parameter;
   private CompositeTaskVariable variable;

@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.FileInputStream;
 
+import org.broadinstitute.compositetask.parser.SourceCode;
+
 public class CompositeTaskSourceCode implements SourceCode{
   private File source;
   private String resource;
