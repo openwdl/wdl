@@ -6,7 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class WdlMain {
+import org.broadinstitute.compositetask.parser.Utility;
+import org.broadinstitute.compositetask.parser.Ast;
+import org.broadinstitute.compositetask.parser.ParseTree;
+import org.broadinstitute.compositetask.parser.SyntaxError;
+
+public class Main {
 
   public static void usage() {
     System.err.println("Usage: <.wdl file> <ast,parsetree,entities,graph,format,format-ansi,format-html>");
