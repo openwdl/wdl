@@ -1,7 +1,7 @@
 <project name="wdl">
   <target name="generate-parser" description="Generate the parser from grammar file">
-        <property name="parser.dir" value="src/main/java/org/broadinstitute/compositetask/parser" />
-        <property name="parser.package" value="org.broadinstitute.compositetask.parser" />
+        <property name="parser.dir" value="src/main/java/org/broadinstitute/parser" />
+        <property name="parser.package" value="org.broadinstitute.parser" />
         <property name="parser.grammar" value="grammars/composite_task.zgr" />
 
         <exec executable="hermes">
