@@ -6,20 +6,41 @@ The Workflow Description Language is a language for describing dependency trees 
 Installation
 ============
 
+Generating the JAR
+------------------
+
 To build the JAR file, run:
 
 ```
-$ ant dist
+$ mvn package
 ```
 
-Which will create a file dist/Wdl-${version}.jar as an executable JAR.  To invoke from the command line:
+Which will create a file target/Wdl-${version}.jar as an executable JAR.  To invoke the CLI:
 
 ```
-$ java -jar dist/Wdl-0.0.1.jar examples/0.wdl ast
+$ java -jar target/Wdl-0.0.1.jar examples/0.wdl ast
+```
+
+Generating the parser code
+--------------------------
+
+Use the Hermes parser generator (http://github.com/scottfrazer/hermes).  From the root of this repository, run:
+
+```
+$ hermes generate grammars/wdl.zgr --directory=src/main/java/org/broadinstitute/compositetask --language=java --java-package=org.broadinstitute.compositetask
+```
+
+Or, run the Ant target `generate-parser` which will run the command above:
+
+```
+$ ant generate-parser
 ```
 
 Usage
 =====
+
+Java API
+--------
 
 From Java code, the main interface is the CompositeTask, which can be used in this example to print out the immediate children nodes of this composite task:
 
@@ -29,6 +50,9 @@ for ( CompositeTaskNode entry : ct.getNodes() ) {
   System.out.println("Node: " + entry);
 }
 ```
+
+Command-line Interface
+----------------------
 
 The data file we'll use is:
 
