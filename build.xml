@@ -1,17 +1,20 @@
 <project name="wdl">
-    <target name="generate-parser" description="Generate the parser from grammar file">
+  <target name="generate-parser" description="Generate the parser from grammar file">
+        <property name="parser.dir" value="src/main/java/org/broadinstitute/compositetask/parser" />
+        <property name="parser.package" value="org.broadinstitute.compositetask.parser" />
+        <property name="parser.grammar" value="grammars/composite_task.zgr" />
+
         <exec executable="hermes">
             <arg value="--version" />
         </exec>
-
-        <echo message="Generating parser in src/org/broadinstitute/compositetask" />
-
+        <echo message="Generating parser in ${parser.dir}" />
+        <mkdir dir="${parser.dir}" />
         <exec executable="hermes">
             <arg value="generate" />
-            <arg value="grammars/wdl.zgr" />
-            <arg value="--directory=src/org/broadinstitute/compositetask" />
+            <arg value="${parser.grammar}" />
+            <arg value="--directory=${parser.dir}" />
             <arg value="--language=java" />
-            <arg value="--java-package=org.broadinstitute.compositetask" />
+            <arg value="--java-package=${parser.package}" />
         </exec>
     </target>
 </project>

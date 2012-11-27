@@ -23,7 +23,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>org.broadinstitute.compositetask.WdlMain</mainClass>
+              <mainClass>org.broadinstitute.compositetask.Main</mainClass>
             </manifest>
           </archive>
         </configuration>
