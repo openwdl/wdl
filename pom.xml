@@ -7,10 +7,10 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.broadinstitute.compositetask</groupId>
-  <artifactId>composite-task</artifactId>
+  <artifactId>Wdl</artifactId>
   <packaging>jar</packaging>
   <version>0.0.1</version>
-  <name>composite-task</name>
+  <name>Wdl</name>
   <url>http://github.com/broadinstitute/wdl</url>
 
   <build>
