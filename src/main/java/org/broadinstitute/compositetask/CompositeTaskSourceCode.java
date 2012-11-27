@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.FileInputStream;
 
-import org.broadinstitute.compositetask.parser.SourceCode;
+import org.broadinstitute.parser.SourceCode;
 
 public class CompositeTaskSourceCode implements SourceCode{
   private File source;

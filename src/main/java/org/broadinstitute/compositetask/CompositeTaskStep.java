@@ -2,7 +2,7 @@ package org.broadinstitute.compositetask;
 
 import java.util.Set;
 
-import org.broadinstitute.compositetask.parser.Ast;
+import org.broadinstitute.parser.Ast;
 
 public class CompositeTaskStep implements CompositeTaskNode, CompositeTaskVertex {
   private CompositeTaskSubTask task;

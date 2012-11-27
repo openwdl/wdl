@@ -1,6 +1,6 @@
 package org.broadinstitute.compositetask;
 
-import org.broadinstitute.compositetask.parser.Ast;
+import org.broadinstitute.parser.Ast;
 
 public interface CompositeTaskNode {
   public Ast getAst();

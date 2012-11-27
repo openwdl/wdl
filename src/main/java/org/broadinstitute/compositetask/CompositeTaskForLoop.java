@@ -2,8 +2,8 @@ package org.broadinstitute.compositetask;
 
 import java.util.Set;
 
-import org.broadinstitute.compositetask.parser.Ast;
-import org.broadinstitute.compositetask.parser.AstList;
+import org.broadinstitute.parser.Ast;
+import org.broadinstitute.parser.AstList;
 
 public class CompositeTaskForLoop implements CompositeTaskScope {
   private CompositeTaskVariable collection;

@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.broadinstitute.compositetask.parser.Utility;
-import org.broadinstitute.compositetask.parser.Ast;
-import org.broadinstitute.compositetask.parser.ParseTree;
-import org.broadinstitute.compositetask.parser.SyntaxError;
+import org.broadinstitute.parser.Utility;
+import org.broadinstitute.parser.Ast;
+import org.broadinstitute.parser.ParseTree;
+import org.broadinstitute.parser.SyntaxError;
 
 public class Main {
 

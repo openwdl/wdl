@@ -12,7 +12,7 @@ import java.nio.*;
 import java.nio.charset.*;
 import java.nio.channels.*;
 
-import org.broadinstitute.compositetask.parser.*;
+import org.broadinstitute.parser.*;
 
 class LexerMatch {
   private Terminal terminal;

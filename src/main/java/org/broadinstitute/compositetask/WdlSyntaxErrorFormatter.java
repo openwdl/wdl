@@ -3,11 +3,11 @@ package org.broadinstitute.compositetask;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.broadinstitute.compositetask.parser.SyntaxErrorFormatter;
-import org.broadinstitute.compositetask.parser.SourceCode;
-import org.broadinstitute.compositetask.parser.Terminal;
-import org.broadinstitute.compositetask.parser.TerminalIdentifier;
-import org.broadinstitute.compositetask.parser.Utility;
+import org.broadinstitute.parser.SyntaxErrorFormatter;
+import org.broadinstitute.parser.SourceCode;
+import org.broadinstitute.parser.Terminal;
+import org.broadinstitute.parser.TerminalIdentifier;
+import org.broadinstitute.parser.Utility;
 
 public class WdlSyntaxErrorFormatter implements SyntaxErrorFormatter {
   private SourceCode code;

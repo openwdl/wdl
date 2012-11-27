@@ -10,16 +10,16 @@ import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import org.broadinstitute.compositetask.parser.Ast;
-import org.broadinstitute.compositetask.parser.AstNode;
-import org.broadinstitute.compositetask.parser.AstList;
-import org.broadinstitute.compositetask.parser.ParseTree;
-import org.broadinstitute.compositetask.parser.ParseTreeNode;
-import org.broadinstitute.compositetask.parser.SourceCode;
-import org.broadinstitute.compositetask.parser.Terminal;
-import org.broadinstitute.compositetask.parser.SyntaxError;
-import org.broadinstitute.compositetask.parser.CompositeTaskParser;
-import org.broadinstitute.compositetask.parser.TokenStream;
+import org.broadinstitute.parser.Ast;
+import org.broadinstitute.parser.AstNode;
+import org.broadinstitute.parser.AstList;
+import org.broadinstitute.parser.ParseTree;
+import org.broadinstitute.parser.ParseTreeNode;
+import org.broadinstitute.parser.SourceCode;
+import org.broadinstitute.parser.Terminal;
+import org.broadinstitute.parser.SyntaxError;
+import org.broadinstitute.parser.CompositeTaskParser;
+import org.broadinstitute.parser.TokenStream;
 
 public class CompositeTask implements CompositeTaskScope {
 
