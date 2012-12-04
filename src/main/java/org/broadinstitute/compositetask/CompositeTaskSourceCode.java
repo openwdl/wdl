@@ -14,7 +14,7 @@ import java.io.FileInputStream;
 
 import org.broadinstitute.parser.SourceCode;
 
-public class CompositeTaskSourceCode implements SourceCode{
+public class CompositeTaskSourceCode implements SourceCode {
   private File source;
   private String resource;
   private String contents;
@@ -36,11 +36,14 @@ public class CompositeTaskSourceCode implements SourceCode{
   }
 
   CompositeTaskSourceCode(File source, String encoding, String resource) throws IOException, FileNotFoundException {
-    FileChannel channel = new FileInputStream(source).getChannel();
+    FileInputStream in = new FileInputStream(source);
+    FileChannel channel = in.getChannel();
     MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
     Charset cs = Charset.forName(encoding);
     CharsetDecoder cd = cs.newDecoder();
     CharBuffer cb = cd.decode(buffer);
+    in.close();
+
     init(cb.toString(), resource);
   }
 
