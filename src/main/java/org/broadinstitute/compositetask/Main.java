@@ -10,13 +10,15 @@ import org.broadinstitute.parser.Utility;
 import org.broadinstitute.parser.Ast;
 import org.broadinstitute.parser.ParseTree;
 import org.broadinstitute.parser.SyntaxError;
+import org.broadinstitute.parser.Terminal;
 
 public class Main {
 
   public static void usage() {
-    System.err.println("Usage: <.wdl file> <ast,parsetree,entities,graph,format,format-ansi,format-html>");
+    System.err.println("Usage: <.wdl file> <tokens,ast,parsetree,entities,graph,format,format-ansi,format-html>");
     System.err.println();
     System.err.println("Actions:");
+    System.err.println("  tokens: tokenize the source code");
     System.err.println("  ast: parse source code and output an abstract syntax tree");
     System.err.println("  parsetree: parse source code and output a parsetree");
     System.err.println("  entities: output an abbreviated view of all entities and which scope they're nested in");
@@ -34,6 +36,16 @@ public class Main {
     }
 
     try {
+
+      if ( args[1].equals("tokens") ) {
+          Lexer lexer = new Lexer();
+          List<Terminal> terminals = lexer.getTokens(new CompositeTaskSourceCode(new File(args[0])));
+          for ( Terminal terminal : terminals ) {
+              System.out.println(terminal);
+          }
+          System.exit(0);
+      }
+
       CompositeTask ctask = new CompositeTask(new File(args[0]));
 
       if ( args[1].equals("ast") ) {
