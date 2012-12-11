@@ -1,48 +1,63 @@
 (CompositeTask:
+  name=identifier,
   body=[
     (Step:
+      task=(Task:
+        name=identifier,
+        attributes=[
+          (TaskAttribute:
+            key=identifier,
+            value=number
+          )
+        ]
+      ),
+      name=None,
       body=[
         (StepOutputList:
           outputs=[
             (StepFileOutput:
-              as=(Variable:
-                member=None,
-                name=identifier
-              ),
-              file=string
+              file=string,
+              var=(OutputVariable:
+                var=(Variable:
+                  name=identifier,
+                  member=None
+                )
+              )
             )
           ]
         )
-      ],
-      task=(Task:
-        attributes=[
-          (TaskAttribute:
-            value=number,
-            key=identifier
-          )
-        ],
-        name=identifier
-      ),
-      name=None
+      ]
     ),
     (ForLoop:
+      collection=identifier,
+      item=identifier,
       body=[
         (Step:
+          task=(Task:
+            name=identifier,
+            attributes=[
+              (TaskAttribute:
+                key=identifier,
+                value=number
+              )
+            ]
+          ),
+          name=None,
           body=[
             (StepInputList:
               inputs=[
                 (StepInput:
                   parameter=identifier,
                   value=(Variable:
-                    member=None,
-                    name=identifier
+                    name=identifier,
+                    member=None
                   )
                 ),
                 (StepInput:
                   parameter=identifier,
                   value=(Variable:
-                    member=None,
-                    name=identifier
+                    name=identifier,
+                    member=None
                   )
                 )
               ]
@@ -50,42 +65,44 @@
             (StepOutputList:
               outputs=[
                 (StepFileOutput:
-                  as=(Variable:
-                    member=None,
-                    name=identifier
-                  ),
-                  file=string
+                  file=string,
+                  var=(OutputVariable:
+                    var=(Variable:
+                      name=identifier,
+                      member=None
+                    )
+                  )
                 )
               ]
             )
-          ],
-          task=(Task:
-            attributes=[
-              (TaskAttribute:
-                value=number,
-                key=identifier
-              )
-            ],
-            name=identifier
-          ),
-          name=None
+          ]
         ),
         (Step:
+          task=(Task:
+            name=identifier,
+            attributes=[
+              (TaskAttribute:
+                key=identifier,
+                value=number
+              )
+            ]
+          ),
+          name=None,
           body=[
             (StepInputList:
               inputs=[
                 (StepInput:
                   parameter=identifier,
                   value=(Variable:
-                    member=None,
-                    name=identifier
+                    name=identifier,
+                    member=None
                   )
                 ),
                 (StepInput:
                   parameter=identifier,
                   value=(Variable:
-                    member=None,
-                    name=identifier
+                    name=identifier,
+                    member=None
                   )
                 )
               ]
@@ -93,84 +110,84 @@
             (StepOutputList:
               outputs=[
                 (StepFileOutput:
-                  as=(Variable:
-                    member=None,
-                    name=identifier
-                  ),
-                  file=string
+                  file=string,
+                  var=(OutputVariable:
+                    var=(Variable:
+                      name=identifier,
+                      member=None
+                    )
+                  )
                 )
               ]
             )
-          ],
-          task=(Task:
-            attributes=[
-              (TaskAttribute:
-                value=number,
-                key=identifier
-              )
-            ],
-            name=identifier
-          ),
-          name=None
+          ]
         ),
         (ForLoop:
+          collection=identifier,
+          item=identifier,
           body=[
             (Step:
+              task=(Task:
+                name=identifier,
+                attributes=[
+                  (TaskAttribute:
+                    key=identifier,
+                    value=number
+                  )
+                ]
+              ),
+              name=None,
               body=[
                 (StepInputList:
                   inputs=[
                     (StepInput:
                       parameter=identifier,
                       value=(Variable:
-                        member=None,
-                        name=identifier
+                        name=identifier,
+                        member=None
                       )
                     )
                   ]
                 )
-              ],
-              task=(Task:
-                attributes=[
-                  (TaskAttribute:
-                    value=number,
-                    key=identifier
-                  )
-                ],
-                name=identifier
-              ),
-              name=None
+              ]
             )
-          ],
-          item=identifier,
-          collection=identifier
+          ]
         )
-      ],
-      item=identifier,
-      collection=identifier
+      ]
     ),
     (Step:
+      task=(Task:
+        name=identifier,
+        attributes=[
+          (TaskAttribute:
+            key=identifier,
+            value=number
+          )
+        ]
+      ),
+      name=None,
       body=[
         (StepInputList:
           inputs=[
             (StepInput:
               parameter=identifier,
               value=(Variable:
-                member=None,
-                name=identifier
+                name=identifier,
+                member=None
               )
             ),
             (StepInput:
               parameter=identifier,
               value=(Variable:
-                member=None,
-                name=identifier
+                name=identifier,
+                member=None
               )
             ),
             (StepInput:
               parameter=identifier,
               value=(Variable:
-                member=None,
-                name=identifier
+                name=identifier,
+                member=None
               )
             )
           ]
@@ -178,26 +195,17 @@
         (StepOutputList:
           outputs=[
             (StepFileOutput:
-              as=(Variable:
-                member=None,
-                name=identifier
-              ),
-              file=string
+              file=string,
+              var=(OutputVariable:
+                var=(Variable:
+                  name=identifier,
+                  member=None
+                )
+              )
             )
           ]
         )
-      ],
-      task=(Task:
-        attributes=[
-          (TaskAttribute:
-            value=number,
-            key=identifier
-          )
-        ],
-        name=identifier
-      ),
-      name=None
+      ]
     )
-  ],
-  name=identifier
+  ]
 )

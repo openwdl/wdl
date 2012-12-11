@@ -24,7 +24,7 @@ public class CompositeTaskTest
 {
     @DataProvider(name="parsingTests")
     public Object[][] parsingTests() {
-        File parsingTestDir = new File(System.getProperty("test.files"), "parsing");
+        File parsingTestDir = new File("test-files", "parsing");
         Collection<Object[]> composite_tasks = new ArrayList<Object[]>();
 
         for ( String subDir : parsingTestDir.list() ) {
@@ -51,7 +51,7 @@ public class CompositeTaskTest
         File tokens = new File(dir, "tokens");
         File source = new File(dir, "source.wdl");
         String actual = null;
-
+  
         try {
             SourceCode code = new CompositeTaskSourceCode(source);
             Lexer lexer = new Lexer();

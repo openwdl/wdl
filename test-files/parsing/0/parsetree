@@ -41,10 +41,12 @@
                         lparen,
                         string,
                         rparen,
-                        as,
-                        (variable:
-                          identifier,
-                          (_gen10: )
+                        (step_output_location:
+                          as,
+                          (variable:
+                            identifier,
+                            (_gen10: )
+                          )
                         )
                       ),
                       (_gen9: )
@@ -144,10 +146,12 @@
                                   lparen,
                                   string,
                                   rparen,
-                                  as,
-                                  (variable:
-                                    identifier,
-                                    (_gen10: )
+                                  (step_output_location:
+                                    as,
+                                    (variable:
+                                      identifier,
+                                      (_gen10: )
+                                    )
                                   )
                                 ),
                                 (_gen9: )
@@ -238,10 +242,12 @@
                                     lparen,
                                     string,
                                     rparen,
-                                    as,
-                                    (variable:
-                                      identifier,
-                                      (_gen10: )
+                                    (step_output_location:
+                                      as,
+                                      (variable:
+                                        identifier,
+                                        (_gen10: )
+                                      )
                                     )
                                   ),
                                   (_gen9: )
@@ -338,10 +344,12 @@
                               lparen,
                               string,
                               rparen,
-                              as,
-                              (variable:
-                                identifier,
-                                (_gen10: )
+                              (step_output_location:
+                                as,
+                                (variable:
+                                  identifier,
+                                  (_gen10: )
+                                )
                               )
                             ),
                             (_gen9: )
