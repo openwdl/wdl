@@ -46,7 +46,7 @@ public class CompositeTaskTest
         return null;
     }
 
-    @Test(dataProvider="parsingTests")
+    @Test(dataProvider="parsingTests", enabled=false)
     public void testLexicalAnalysis(File dir) {
         File tokens = new File(dir, "tokens");
         File source = new File(dir, "source.wdl");
@@ -81,7 +81,7 @@ public class CompositeTaskTest
         }
     }
 
-    @Test(dataProvider="parsingTests")
+    @Test(dataProvider="parsingTests", enabled=false)
     public void testParseTree(File dir) {
         File source = new File(dir, "source.wdl");
         File parsetree = new File(dir, "parsetree");
@@ -112,7 +112,7 @@ public class CompositeTaskTest
         }
     }
 
-    @Test(dataProvider="parsingTests")
+    @Test(dataProvider="parsingTests", enabled=false)
     public void testAbstractSyntaxTree(File dir) {
         File source = new File(dir, "source.wdl");
         File ast = new File(dir, "ast");
@@ -136,6 +136,34 @@ public class CompositeTaskTest
             Assert.assertEquals(actual, expected, "Abstract syntax trees did not match");
         } catch (IOException error) {
             Assert.fail("Cannot read " + ast.getAbsolutePath());
+        }
+    }
+
+    @Test(dataProvider="parsingTests", enabled=false)
+    public void testSourceFormatter(File dir) {
+        File source = new File(dir, "source.wdl");
+        File formatted_file = new File(dir, "formatted");
+        CompositeTask ctask = getCompositeTask(source);
+        CompositeTaskSourceCodeFormatter formatter = new CompositeTaskSourceCodeFormatter();
+        String actual = formatter.format(ctask);
+
+        if ( !formatted_file.exists() ) {
+            try {
+                FileWriter out = new FileWriter(formatted_file);
+                out.write(actual);
+                out.close();
+            } catch (IOException error) {
+                Assert.fail("Could not write " + formatted_file + ": " + error);
+            }
+
+            System.out.println("Created " + formatted_file);
+        }
+
+        try {
+            String expected = Utility.readFile(formatted_file.getAbsolutePath());
+            Assert.assertEquals(actual, expected, "Formatted source code files did not match");
+        } catch (IOException error) {
+            Assert.fail("Cannot read " + formatted_file.getAbsolutePath());
         }
     }
 }
