@@ -27,7 +27,7 @@ Generating the parser code
 Use the Hermes parser generator (http://github.com/scottfrazer/hermes).  From the root of this repository, run:
 
 ```
-$ hermes generate grammars/wdl.zgr --directory=src/main/java/org/broadinstitute/compositetask --language=java --java-package=org.broadinstitute.compositetask
+$ hermes generate grammars/composite_task.zgr --directory=src/main/java/org/broadinstitute/compositetask --language=java --java-package=org.broadinstitute.compositetask
 ```
 
 Or, run the Ant target `generate-parser` which will run the command above:

@@ -6,11 +6,13 @@ import org.broadinstitute.parser.Ast;
 
 public class CompositeTaskStepOutput {
   private String type;
+  private String method;
   private String path;
   private CompositeTaskVariable variable;
 
-  public CompositeTaskStepOutput(String type, String path, CompositeTaskVariable variable) {
+  public CompositeTaskStepOutput(String type, String method, String path, CompositeTaskVariable variable) {
     this.type = type;
+    this.method = method;
     this.path = path;
     this.variable = variable;
   }
@@ -21,6 +23,10 @@ public class CompositeTaskStepOutput {
 
   public String getPath() {
     return this.path;
+  }
+
+  public String getMethod() {
+    return this.method;
   }
 
   public String getType() {

@@ -288,7 +288,18 @@
                                             (_gen10: )
                                           )
                                         ),
-                                        (_gen7: )
+                                        (_gen7:
+                                          comma,
+                                          (step_input:
+                                            identifier,
+                                            assign,
+                                            (variable:
+                                              identifier,
+                                              (_gen10: )
+                                            )
+                                          ),
+                                          (_gen7: )
+                                        )
                                       ),
                                       semi
                                     )
@@ -298,7 +309,162 @@
                                 rbrace
                               )
                             ),
-                            (_gen1: )
+                            (_gen1:
+                              (composite_task_entity:
+                                (composite_task:
+                                  composite_task,
+                                  identifier,
+                                  lbrace,
+                                  (_gen1:
+                                    (composite_task_entity:
+                                      (step:
+                                        step,
+                                        (task_identifier:
+                                          identifier,
+                                          (_gen4:
+                                            (task_attrs:
+                                              lsquare,
+                                              (_gen5:
+                                                (task_attr:
+                                                  identifier,
+                                                  assign,
+                                                  (task_attr_value:
+                                                    number
+                                                  )
+                                                ),
+                                                (_gen5: )
+                                              ),
+                                              rsquare
+                                            )
+                                          )
+                                        ),
+                                        (_gen2: ),
+                                        lbrace,
+                                        (_gen3:
+                                          (step_attr:
+                                            (step_input_list:
+                                              input,
+                                              colon,
+                                              (_gen6:
+                                                (step_input:
+                                                  identifier,
+                                                  assign,
+                                                  (variable:
+                                                    identifier,
+                                                    (_gen10: )
+                                                  )
+                                                ),
+                                                (_gen7:
+                                                  comma,
+                                                  (step_input:
+                                                    identifier,
+                                                    assign,
+                                                    (variable:
+                                                      identifier,
+                                                      (_gen10: )
+                                                    )
+                                                  ),
+                                                  (_gen7:
+                                                    comma,
+                                                    (step_input:
+                                                      identifier,
+                                                      assign,
+                                                      (variable:
+                                                        identifier,
+                                                        (_gen10: )
+                                                      )
+                                                    ),
+                                                    (_gen7: )
+                                                  )
+                                                )
+                                              ),
+                                              semi
+                                            )
+                                          ),
+                                          (_gen3: )
+                                        ),
+                                        rbrace
+                                      )
+                                    ),
+                                    (_gen1:
+                                      (composite_task_entity:
+                                        (step:
+                                          step,
+                                          (task_identifier:
+                                            identifier,
+                                            (_gen4:
+                                              (task_attrs:
+                                                lsquare,
+                                                (_gen5:
+                                                  (task_attr:
+                                                    identifier,
+                                                    assign,
+                                                    (task_attr_value:
+                                                      number
+                                                    )
+                                                  ),
+                                                  (_gen5: )
+                                                ),
+                                                rsquare
+                                              )
+                                            )
+                                          ),
+                                          (_gen2: ),
+                                          lbrace,
+                                          (_gen3:
+                                            (step_attr:
+                                              (step_input_list:
+                                                input,
+                                                colon,
+                                                (_gen6:
+                                                  (step_input:
+                                                    identifier,
+                                                    assign,
+                                                    (variable:
+                                                      identifier,
+                                                      (_gen10: )
+                                                    )
+                                                  ),
+                                                  (_gen7:
+                                                    comma,
+                                                    (step_input:
+                                                      identifier,
+                                                      assign,
+                                                      (variable:
+                                                        identifier,
+                                                        (_gen10: )
+                                                      )
+                                                    ),
+                                                    (_gen7:
+                                                      comma,
+                                                      (step_input:
+                                                        identifier,
+                                                        assign,
+                                                        (variable:
+                                                          identifier,
+                                                          (_gen10: )
+                                                        )
+                                                      ),
+                                                      (_gen7: )
+                                                    )
+                                                  )
+                                                ),
+                                                semi
+                                              )
+                                            ),
+                                            (_gen3: )
+                                          ),
+                                          rbrace
+                                        )
+                                      ),
+                                      (_gen1: )
+                                    )
+                                  ),
+                                  rbrace
+                                )
+                              ),
+                              (_gen1: )
+                            )
                           ),
                           rbrace
                         )

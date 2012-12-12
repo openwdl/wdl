@@ -59,13 +59,6 @@
                     name=identifier,
                     member=None
                   )
-                ),
-                (StepInput:
-                  parameter=identifier,
-                  value=(Variable:
-                    name=identifier,
-                    member=None
-                  )
                 )
               ]
             ),
@@ -111,13 +104,6 @@
                     name=identifier,
                     member=None
                   )
-                ),
-                (StepInput:
-                  parameter=identifier,
-                  value=(Variable:
-                    name=identifier,
-                    member=None
-                  )
                 )
               ]
             ),
@@ -131,6 +117,127 @@
                       member=None
                     )
                   )
+                )
+              ]
+            )
+          ]
+        ),
+        (ForLoop:
+          collection=identifier,
+          item=identifier,
+          body=[
+            (Step:
+              task=(Task:
+                name=identifier,
+                attributes=[
+                  (TaskAttribute:
+                    key=identifier,
+                    value=number
+                  )
+                ]
+              ),
+              name=None,
+              body=[
+                (StepInputList:
+                  inputs=[
+                    (StepInput:
+                      parameter=identifier,
+                      value=(Variable:
+                        name=identifier,
+                        member=None
+                      )
+                    ),
+                    (StepInput:
+                      parameter=identifier,
+                      value=(Variable:
+                        name=identifier,
+                        member=None
+                      )
+                    )
+                  ]
+                )
+              ]
+            ),
+            (CompositeTask:
+              name=identifier,
+              body=[
+                (Step:
+                  task=(Task:
+                    name=identifier,
+                    attributes=[
+                      (TaskAttribute:
+                        key=identifier,
+                        value=number
+                      )
+                    ]
+                  ),
+                  name=None,
+                  body=[
+                    (StepInputList:
+                      inputs=[
+                        (StepInput:
+                          parameter=identifier,
+                          value=(Variable:
+                            name=identifier,
+                            member=None
+                          )
+                        ),
+                        (StepInput:
+                          parameter=identifier,
+                          value=(Variable:
+                            name=identifier,
+                            member=None
+                          )
+                        ),
+                        (StepInput:
+                          parameter=identifier,
+                          value=(Variable:
+                            name=identifier,
+                            member=None
+                          )
+                        )
+                      ]
+                    )
+                  ]
+                ),
+                (Step:
+                  task=(Task:
+                    name=identifier,
+                    attributes=[
+                      (TaskAttribute:
+                        key=identifier,
+                        value=number
+                      )
+                    ]
+                  ),
+                  name=None,
+                  body=[
+                    (StepInputList:
+                      inputs=[
+                        (StepInput:
+                          parameter=identifier,
+                          value=(Variable:
+                            name=identifier,
+                            member=None
+                          )
+                        ),
+                        (StepInput:
+                          parameter=identifier,
+                          value=(Variable:
+                            name=identifier,
+                            member=None
+                          )
+                        ),
+                        (StepInput:
+                          parameter=identifier,
+                          value=(Variable:
+                            name=identifier,
+                            member=None
+                          )
+                        )
+                      ]
+                    )
+                  ]
                 )
               ]
             )

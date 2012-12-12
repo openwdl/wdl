@@ -47,6 +47,6 @@ public class CompositeTaskVariable implements CompositeTaskVertex {
   }
 
   public String toString() {
-    return "[Variable: name=" + this.name + "]";
+    return "[Variable: name=" + this.name + (this.member == null ? "" : ", member=" + this.member) + "]";
   }
 }

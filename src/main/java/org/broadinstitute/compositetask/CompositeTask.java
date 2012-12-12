@@ -164,13 +164,22 @@ public class CompositeTask implements CompositeTaskScope {
                         for ( AstNode output_node : output_list ) {
                             Ast output = (Ast) output_node;
                             Terminal filepath = (Terminal) output.getAttribute("file");
-                            CompositeTaskVariable variable = ast_to_variable((Ast) output.getAttribute("as"));
+                            Ast output_var = (Ast) output.getAttribute("var");
 
-                            Terminal var_terminal = (Terminal) ((Ast) output.getAttribute("as")).getAttribute("name");
+                            CompositeTaskVariable variable = ast_to_variable((Ast) output_var.getAttribute("var"));
+                            Terminal variable_terminal = (Terminal) ((Ast) output.getAttribute("var")).getAttribute("name");
+                            String method = null;
+
+                            if ( output_var.getName().equals("OutputVariable") ) {
+                                method = "assign";
+                            } else if ( output_var.getName().equals("OutputListAppend") ) {
+                                method = "append";
+                            }
+
                             if (this.output_variables.containsKey(variable)) {
-                                throw new SyntaxError(this.syntaxErrorFormatter.duplicate_output_variable(var_terminal, this.output_variables.get(variable)));
+                                throw new SyntaxError(this.syntaxErrorFormatter.duplicate_output_variable(variable_terminal, this.output_variables.get(variable)));
                             } else {
-                                this.output_variables.put(variable, var_terminal);
+                                this.output_variables.put(variable, variable_terminal);
                             }
 
                             if (this.output_files.containsKey(filepath.getSourceString())) {
@@ -179,7 +188,7 @@ public class CompositeTask implements CompositeTaskScope {
                                 this.output_files.put(filepath.getSourceString(), filepath);
                             }
 
-                            step_outputs.add( new CompositeTaskStepOutput("File", filepath.getSourceString(), variable) );
+                            step_outputs.add( new CompositeTaskStepOutput("File", method, filepath.getSourceString(), variable) );
                         }
                     }
                 }
