@@ -1,0 +1,3 @@
+composite_task foo {
+
+}

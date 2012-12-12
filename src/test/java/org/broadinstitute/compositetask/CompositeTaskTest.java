@@ -139,7 +139,7 @@ public class CompositeTaskTest
         }
     }
 
-    @Test(dataProvider="parsingTests", enabled=false)
+    @Test(dataProvider="parsingTests")
     public void testSourceFormatter(File dir) {
         File source = new File(dir, "source.wdl");
         File formatted_file = new File(dir, "formatted");
