@@ -3,19 +3,19 @@ composite_task foo {
     output: File("foo.txt") as x;
   }
   for ( item in foo ) {
-    step ctask[version=0] {
-      input: p0=item, p1=y;
-      output: File("quux.txt") as z;
-    }
     step btask[version=0] {
       input: p0=item, p1=global;
       output: File("bar.txt") as y;
     }
-      for ( alpha in beta ) {
+    step ctask[version=0] {
+      input: p0=item, p1=y;
+      output: File("quux.txt") as z;
+    }
+    for ( alpha in beta ) {
       step dtask[version=0] {
         input: p0=y, p1=alpha;
       }
-          composite_task foo_sub {
+      composite_task foo_sub {
         step etask[version=0] {
           input: p0=global1, p1=y, p2=alpha;
         }

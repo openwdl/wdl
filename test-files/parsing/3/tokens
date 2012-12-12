@@ -1,0 +1,6 @@
+[
+  {"terminal": "composite_task", "line": 1, "col": 1, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/3/source.wdl", "source_string": "Y29tcG9zaXRlX3Rhc2s="},
+  {"terminal": "identifier", "line": 1, "col": 16, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/3/source.wdl", "source_string": "Zm9v"},
+  {"terminal": "lbrace", "line": 1, "col": 20, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/3/source.wdl", "source_string": "ew=="},
+  {"terminal": "rbrace", "line": 1, "col": 21, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/3/source.wdl", "source_string": "fQ=="}
+]

@@ -27,7 +27,6 @@ public class CompositeTaskSourceCodeFormatter {
       CompositeTask ctask = (CompositeTask) node;
       builder.append(indent_str + this.colorizer.keyword("composite_task") + " " + ctask.getName() + " {\n");
       for ( CompositeTaskNode sub_node : ctask.getNodes() ) {
-        builder.append( indent_str );
         builder.append( format(sub_node, indent + 2) );
       }
       builder.append(indent_str + "}\n");
@@ -35,7 +34,6 @@ public class CompositeTaskSourceCodeFormatter {
       CompositeTaskForLoop loop = (CompositeTaskForLoop) node;
       builder.append( indent_str + this.colorizer.keyword("for") + " ( " + this.colorizer.variable(variable_to_string(loop.getVariable())) + " " + this.colorizer.keyword("in") + " " + this.colorizer.variable(variable_to_string(loop.getCollection())) + " ) {\n" );
       for ( CompositeTaskNode sub_node : loop.getNodes() ) {
-        builder.append( indent_str );
         builder.append( format(sub_node, indent + 2) );
       }
       builder.append( indent_str + "}\n" );
@@ -46,7 +44,7 @@ public class CompositeTaskSourceCodeFormatter {
       if ( !step.getName().equals(task.getTaskName()) ) {
         rename = " " + this.colorizer.keyword("as") + " " + step.getName();
       }
-      builder.append( "  " + this.colorizer.keyword("step") + " " + this.colorizer.task(task.getTaskName()) + "[version=" + task.getVersion() + "]" + rename + " {\n" );
+      builder.append( indent_str + this.colorizer.keyword("step") + " " + this.colorizer.task(task.getTaskName()) + "[version=" + task.getVersion() + "]" + rename + " {\n" );
 
       if ( step.getInputs().size() > 0 ) {
         List<String> parameters = new ArrayList<String>();

@@ -1,0 +1,36 @@
+(wdl:
+  (_gen0:
+    (wdl_entity:
+      (composite_task:
+        composite_task,
+        identifier,
+        lbrace,
+        (_gen1:
+          (composite_task_entity:
+            (composite_task:
+              composite_task,
+              identifier,
+              lbrace,
+              (_gen1:
+                (composite_task_entity:
+                  (composite_task:
+                    composite_task,
+                    identifier,
+                    lbrace,
+                    (_gen1: ),
+                    rbrace
+                  )
+                ),
+                (_gen1: )
+              ),
+              rbrace
+            )
+          ),
+          (_gen1: )
+        ),
+        rbrace
+      )
+    ),
+    (_gen0: )
+  )
+)

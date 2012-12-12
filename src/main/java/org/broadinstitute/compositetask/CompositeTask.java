@@ -198,7 +198,7 @@ public class CompositeTask implements CompositeTaskScope {
         }
 
         private CompositeTaskForLoop verify_for(Ast for_node_ast) throws SyntaxError {
-            Set<CompositeTaskNode> nodes = new HashSet<CompositeTaskNode>();
+            Set<CompositeTaskNode> nodes = new LinkedHashSet<CompositeTaskNode>();
 
             String collection = ((Terminal) for_node_ast.getAttribute("collection")).getSourceString();
             String item = ((Terminal) for_node_ast.getAttribute("item")).getSourceString();

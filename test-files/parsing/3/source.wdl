@@ -1,3 +1,1 @@
-composite_task foo {
-
-}
+composite_task foo {}
