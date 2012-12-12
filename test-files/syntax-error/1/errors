@@ -1,0 +1,9 @@
+org.broadinstitute.parser.SyntaxError: Two steps output to the same variable: x
+Location: /Users/sfrazer/projects/wdl/test-files/syntax-error/1/source.wdl @ line 9, column 35:
+
+    output: File("report.txt") as x;
+                                  ^
+Previous output for variable was @ line 4, column 32:
+
+    output: File("foo.txt") as x;
+                               ^

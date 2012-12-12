@@ -164,15 +164,15 @@ public class CompositeTask implements CompositeTaskScope {
                         for ( AstNode output_node : output_list ) {
                             Ast output = (Ast) output_node;
                             Terminal filepath = (Terminal) output.getAttribute("file");
-                            Ast output_var = (Ast) output.getAttribute("var");
+                            Ast step_output = (Ast) output.getAttribute("var");
 
-                            CompositeTaskVariable variable = ast_to_variable((Ast) output_var.getAttribute("var"));
-                            Terminal variable_terminal = (Terminal) ((Ast) output.getAttribute("var")).getAttribute("name");
+                            CompositeTaskVariable variable = ast_to_variable((Ast) step_output.getAttribute("var"));
+                            Terminal variable_terminal = (Terminal) ((Ast) ((Ast) output.getAttribute("var")).getAttribute("var")).getAttribute("name");
                             String method = null;
 
-                            if ( output_var.getName().equals("OutputVariable") ) {
+                            if ( step_output.getName().equals("OutputVariable") ) {
                                 method = "assign";
-                            } else if ( output_var.getName().equals("OutputListAppend") ) {
+                            } else if ( step_output.getName().equals("OutputListAppend") ) {
                                 method = "append";
                             }
 

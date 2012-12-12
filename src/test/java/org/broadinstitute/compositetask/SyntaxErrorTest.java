@@ -19,7 +19,7 @@ public class SyntaxErrorTest
 {
     @DataProvider(name="syntaxErrorTests")
     public Object[][] parsingTests() {
-        File parsingTestDir = new File("test-files", "syntax-errors");
+        File parsingTestDir = new File("test-files", "syntax-error");
         Collection<Object[]> composite_tasks = new ArrayList<Object[]>();
 
         for ( String subDir : parsingTestDir.list() ) {
