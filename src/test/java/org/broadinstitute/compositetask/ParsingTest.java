@@ -28,7 +28,11 @@ public class ParsingTest
         Collection<Object[]> composite_tasks = new ArrayList<Object[]>();
 
         for ( String subDir : parsingTestDir.list() ) {
-            composite_tasks.add(new Object[] { new File(parsingTestDir, subDir) });
+            File testDir = new File(parsingTestDir, subDir);
+            File skipFile = new File(testDir, "skip");
+            if ( ! skipFile.exists() ) {
+              composite_tasks.add(new Object[] { testDir });
+            }
         }
 
         return composite_tasks.toArray(new Object[0][]);

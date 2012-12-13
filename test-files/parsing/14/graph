@@ -1,0 +1,76 @@
+VERTICIES
+---------
+[Step: name=MutSigPreprocess]
+[Step: name=MutSig]
+[Step: name=ProcessCoverageForMutSig]
+[Variable: name=category_file]
+[Variable: name=coverage_file]
+[Variable: name=coverage_prepare_file]
+[Variable: name=foobar]
+[Variable: name=graphs]
+[Variable: name=mutation_list]
+[Variable: name=mutation_preprocessing_report]
+[Variable: name=patient_list]
+
+EDGES
+-----
+[Edge
+  from: [Step: name=MutSigPreprocess]
+  to: [Variable: name=coverage_prepare_file]
+]
+[Edge
+  from: [Step: name=MutSigPreprocess]
+  to: [Variable: name=mutation_list]
+]
+[Edge
+  from: [Step: name=MutSigPreprocess]
+  to: [Variable: name=mutation_preprocessing_report]
+]
+[Edge
+  from: [Step: name=MutSigPreprocess]
+  to: [Variable: name=patient_list]
+]
+[Edge
+  from: [Step: name=MutSig]
+  to: [Variable: name=graphs]
+]
+[Edge
+  from: [Step: name=ProcessCoverageForMutSig]
+  to: [Variable: name=category_file]
+]
+[Edge
+  from: [Step: name=ProcessCoverageForMutSig]
+  to: [Variable: name=coverage_file]
+]
+[Edge
+  from: [Variable: name=category_file]
+  to: [Step: name=MutSig]
+]
+[Edge
+  from: [Variable: name=coverage_file]
+  to: [Step: name=MutSig]
+]
+[Edge
+  from: [Variable: name=coverage_prepare_file]
+  to: [Step: name=ProcessCoverageForMutSig]
+]
+[Edge
+  from: [Variable: name=foobar]
+  to: [Step: name=MutSig]
+]
+[Edge
+  from: [Variable: name=mutation_list]
+  to: [Step: name=MutSig]
+]
+[Edge
+  from: [Variable: name=mutation_list]
+  to: [Step: name=ProcessCoverageForMutSig]
+]
+[Edge
+  from: [Variable: name=patient_list]
+  to: [Step: name=MutSig]
+]
+[Edge
+  from: [Variable: name=patient_list]
+  to: [Step: name=ProcessCoverageForMutSig]
+]

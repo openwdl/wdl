@@ -1,0 +1,15 @@
+[
+  {"terminal": "composite_task", "line": 4, "col": 1, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "Y29tcG9zaXRlX3Rhc2s="},
+  {"terminal": "identifier", "line": 4, "col": 22, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "eQ=="},
+  {"terminal": "lbrace", "line": 4, "col": 30, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "ew=="},
+  {"terminal": "step", "line": 7, "col": 3, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "c3RlcA=="},
+  {"terminal": "identifier", "line": 7, "col": 8, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "Z2FtbWE="},
+  {"terminal": "lsquare", "line": 7, "col": 35, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "Ww=="},
+  {"terminal": "identifier", "line": 7, "col": 36, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "dmVyc2lvbg=="},
+  {"terminal": "assign", "line": 7, "col": 43, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "PQ=="},
+  {"terminal": "number", "line": 7, "col": 49, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "NA=="},
+  {"terminal": "rsquare", "line": 7, "col": 50, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "XQ=="},
+  {"terminal": "lbrace", "line": 7, "col": 52, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "ew=="},
+  {"terminal": "rbrace", "line": 7, "col": 60, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "fQ=="},
+  {"terminal": "rbrace", "line": 8, "col": 1, "resource": "/Users/sfrazer/projects/wdl/test-files/parsing/16/source.wdl", "source_string": "fQ=="}
+]

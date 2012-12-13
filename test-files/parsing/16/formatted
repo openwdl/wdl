@@ -1,0 +1,4 @@
+composite_task y {
+  step gamma[version=4] {
+  }
+}
