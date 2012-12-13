@@ -1,3 +1,3 @@
 package org.broadinstitute.compositetask;
 
-public interface CompositeTaskVertex {}
+public interface CompositeTaskVertex extends Comparable<CompositeTaskVertex> {}

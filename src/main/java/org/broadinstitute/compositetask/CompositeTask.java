@@ -348,6 +348,10 @@ public class CompositeTask implements CompositeTaskScope {
         return false;
     }
 
+    public int compareTo(CompositeTaskVertex other) {
+      return this.toString().compareTo(other.toString());
+    }
+
     public String toString() {
         return "[CompositeTask name="+this.name+"]";
     }

@@ -167,7 +167,13 @@ public class ParsingTest
         }
     }
 
-    @Test(dataProvider="parsingTests", enabled=false)
+    public static <T extends Comparable<? super T>> List<T> asSortedList(Collection<T> c) {
+        List<T> list = new ArrayList<T>(c);
+        java.util.Collections.sort(list);
+        return list;
+    }
+
+    @Test(dataProvider="parsingTests")
     public void testCompositeTaskGeneratesCorrectGraph(File dir) {
         File source = new File(dir, "source.wdl");
         File graph_file = new File(dir, "graph");
@@ -177,14 +183,14 @@ public class ParsingTest
         StringBuilder actual = new StringBuilder();
         actual.append("VERTICIES\n");
         actual.append("---------\n");
-        for ( CompositeTaskVertex v : graph.vertexSet() ) {
+        for ( CompositeTaskVertex v : asSortedList(graph.vertexSet()) ) {
           actual.append(v + "\n");
         }
         actual.append("\n");
 
         actual.append("EDGES\n");
         actual.append("-----\n");
-        for ( CompositeTaskEdge v : graph.edgeSet() ) {
+        for ( CompositeTaskEdge v : asSortedList(graph.edgeSet()) ) {
           actual.append(v + "\n");
         }
 

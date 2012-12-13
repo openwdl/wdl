@@ -33,6 +33,10 @@ public class CompositeTaskVariable implements CompositeTaskVertex {
     return 0;
   }
 
+  public int compareTo(CompositeTaskVertex other) {
+    return this.toString().compareTo(other.toString());
+  }
+
   public boolean equals(CompositeTaskVariable other) {
     if ( other.getName().equals(this.name) ) {
       if ( other.getMember() == null && this.member == null ) {

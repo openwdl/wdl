@@ -1,6 +1,6 @@
 package org.broadinstitute.compositetask;
 
-public class CompositeTaskEdge {
+public class CompositeTaskEdge implements Comparable<CompositeTaskEdge> {
   private CompositeTaskVertex start;
   private CompositeTaskVertex end;
 
@@ -23,6 +23,10 @@ public class CompositeTaskEdge {
 
   public void setEnd(CompositeTaskVertex end) {
     this.end = end;
+  }
+
+  public int compareTo(CompositeTaskEdge other) {
+    return this.toString().compareTo(other.toString());
   }
 
   public String toString() {
