@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.Iterator;
@@ -19,8 +19,8 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
     public CompositeTaskGraph(CompositeTask composite_task) {
         this.scope_output_map = new HashMap<CompositeTaskVariable, Set<CompositeTaskScope>>();
         this.edge_factory = new CompositeTaskEdgeFactory();
-        this.verticies = new HashSet<CompositeTaskVertex>();
-        this.edges = new HashSet<CompositeTaskEdge>();
+        this.verticies = new LinkedHashSet<CompositeTaskVertex>();
+        this.edges = new LinkedHashSet<CompositeTaskEdge>();
 
         generate_scope_output(composite_task);
         generate_graph(composite_task);
@@ -79,7 +79,7 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
     }
 
     private CompositeTaskScope closest_scope(CompositeTaskNode node, Set<CompositeTaskScope> scopes) {
-        Set<CompositeTaskScope> matches = new HashSet<CompositeTaskScope>();
+        Set<CompositeTaskScope> matches = new LinkedHashSet<CompositeTaskScope>();
         for ( CompositeTaskScope scope : scopes ) {
             if ( node.getParent().contains(scope) ) {
                 matches.add(scope);
@@ -99,7 +99,7 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
                 Set<CompositeTaskVariable> scope_outputs = get_outputs(sub_scope);
                 for ( CompositeTaskVariable variable : scope_outputs ) {
                     if ( !scope_output_map.containsKey(variable) ) {
-                        scope_output_map.put(variable, new HashSet<CompositeTaskScope>());
+                        scope_output_map.put(variable, new LinkedHashSet<CompositeTaskScope>());
                     }
                     scope_output_map.get(variable).add(sub_scope);
                     generate_scope_output(sub_scope);
@@ -109,7 +109,7 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
     }
 
     private Set<CompositeTaskVariable> get_outputs(CompositeTaskScope scope) {
-        Set<CompositeTaskVariable> outputs = new HashSet<CompositeTaskVariable>();
+        Set<CompositeTaskVariable> outputs = new LinkedHashSet<CompositeTaskVariable>();
         for ( CompositeTaskNode node : scope.getNodes() ) {
             if ( node instanceof CompositeTaskStep ) {
                 CompositeTaskStep step = (CompositeTaskStep) node;
@@ -199,7 +199,7 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
             throw new IllegalArgumentException("edgesOf(): vertex is not in graph");
         }
 
-        Set<CompositeTaskEdge> edges = new HashSet<CompositeTaskEdge>();
+        Set<CompositeTaskEdge> edges = new LinkedHashSet<CompositeTaskEdge>();
         for ( CompositeTaskEdge edge : this.edges ) {
             if ( edge.getStart().equals(vertex) || edge.getEnd().equals(vertex) ) {
                 edges.add(edge);
@@ -213,7 +213,7 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
             throw new NullPointerException("removeAllEdges(): null edge collection");
         }
 
-        Set<CompositeTaskEdge> removed_edges = new HashSet<CompositeTaskEdge>();
+        Set<CompositeTaskEdge> removed_edges = new LinkedHashSet<CompositeTaskEdge>();
         for ( CompositeTaskEdge edge : this.edges ) {
             if (edges.contains(edge)) {
                 removed_edges.add(edge);
@@ -235,7 +235,7 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
             return null;
         }
 
-        Set<CompositeTaskEdge> edges = new HashSet<CompositeTaskEdge>();
+        Set<CompositeTaskEdge> edges = new LinkedHashSet<CompositeTaskEdge>();
         while ( true ) {
             CompositeTaskEdge removed_edge = removeEdge(sourceVertex, targetVertex);
             if ( removed_edge == null ) {
@@ -251,7 +251,7 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
             throw new NullPointerException("removeAllVerticies(): null edge collection");
         }
 
-        Set<CompositeTaskVertex> removed_verticies = new HashSet<CompositeTaskVertex>();
+        Set<CompositeTaskVertex> removed_verticies = new LinkedHashSet<CompositeTaskVertex>();
         for ( CompositeTaskVertex vertex : this.verticies ) {
             if (verticies.contains(vertex)) {
                 removed_verticies.add(vertex);
@@ -333,7 +333,7 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
     }
 
     public Set<CompositeTaskEdge> incomingEdgesOf(CompositeTaskVertex vertex) {
-        Set<CompositeTaskEdge> incoming = new HashSet<CompositeTaskEdge>();
+        Set<CompositeTaskEdge> incoming = new LinkedHashSet<CompositeTaskEdge>();
         for ( CompositeTaskEdge edge : this.edges ) {
             if ( edge.getEnd().equals(vertex) ) {
                 incoming.add(edge);
@@ -353,7 +353,7 @@ public class CompositeTaskGraph implements DirectedGraph<CompositeTaskVertex, Co
     }
 
     public Set<CompositeTaskEdge> outgoingEdgesOf(CompositeTaskVertex vertex) {
-        Set<CompositeTaskEdge> outgoing = new HashSet<CompositeTaskEdge>();
+        Set<CompositeTaskEdge> outgoing = new LinkedHashSet<CompositeTaskEdge>();
         for ( CompositeTaskEdge edge : this.edges ) {
             if ( edge.getStart().equals(vertex) ) {
                 outgoing.add(edge);
