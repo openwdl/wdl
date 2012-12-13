@@ -42,6 +42,10 @@ public class CompositeTaskForLoop implements CompositeTaskScope {
     return this.parent;
   }
 
+  public int compareTo(CompositeTaskVertex other) {
+    return this.toString().compareTo(other.toString());
+  }
+
   public boolean contains(CompositeTaskNode node) {
     for ( CompositeTaskNode sub_node : this.nodes ) {
       if ( node.equals(sub_node) ) {

@@ -1,0 +1,9 @@
+org.broadinstitute.parser.SyntaxError: Two steps output to the same file: "foo.txt"
+Location: test-files/syntax-error/2/source.wdl @ line 9, column 18:
+
+    output: File("foo.txt") as xyz;
+                 ^
+Previous output for file was @ line 4, column 18:
+
+    output: File("foo.txt") as abc;
+                 ^

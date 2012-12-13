@@ -1,0 +1,39 @@
+VERTICIES
+---------
+[CompositeTaskForScope: collection=[Variable: name=b], var=[Variable: name=a], # nodes=1]
+[CompositeTaskForScope: collection=[Variable: name=d], var=[Variable: name=c], # nodes=1]
+[CompositeTaskForScope: collection=[Variable: name=f], var=[Variable: name=e], # nodes=0]
+[Step: name=x]
+[Variable: name=a]
+[Variable: name=b]
+[Variable: name=c]
+[Variable: name=d]
+[Variable: name=e]
+[Variable: name=f]
+
+EDGES
+-----
+[Edge
+  from: [CompositeTaskForScope: collection=[Variable: name=b], var=[Variable: name=a], # nodes=1]
+  to: [Variable: name=a]
+]
+[Edge
+  from: [CompositeTaskForScope: collection=[Variable: name=d], var=[Variable: name=c], # nodes=1]
+  to: [Variable: name=c]
+]
+[Edge
+  from: [CompositeTaskForScope: collection=[Variable: name=f], var=[Variable: name=e], # nodes=0]
+  to: [Variable: name=e]
+]
+[Edge
+  from: [Variable: name=b]
+  to: [CompositeTaskForScope: collection=[Variable: name=b], var=[Variable: name=a], # nodes=1]
+]
+[Edge
+  from: [Variable: name=d]
+  to: [CompositeTaskForScope: collection=[Variable: name=d], var=[Variable: name=c], # nodes=1]
+]
+[Edge
+  from: [Variable: name=f]
+  to: [CompositeTaskForScope: collection=[Variable: name=f], var=[Variable: name=e], # nodes=0]
+]

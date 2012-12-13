@@ -1,0 +1,14 @@
+(CompositeTask:
+  name=identifier,
+  body=[
+    (CompositeTask:
+      name=identifier,
+      body=[
+        (CompositeTask:
+          name=identifier,
+          body=[]
+        )
+      ]
+    )
+  ]
+)

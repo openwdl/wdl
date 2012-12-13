@@ -1,0 +1,35 @@
+(CompositeTask:
+  name=identifier,
+  body=[
+    (ForLoop:
+      collection=identifier,
+      item=identifier,
+      body=[
+        (ForLoop:
+          collection=identifier,
+          item=identifier,
+          body=[
+            (ForLoop:
+              collection=identifier,
+              item=identifier,
+              body=[]
+            )
+          ]
+        )
+      ]
+    ),
+    (Step:
+      task=(Task:
+        name=identifier,
+        attributes=[
+          (TaskAttribute:
+            key=identifier,
+            value=number
+          )
+        ]
+      ),
+      name=None,
+      body=[]
+    )
+  ]
+)

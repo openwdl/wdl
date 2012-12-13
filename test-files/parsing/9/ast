@@ -1,0 +1,18 @@
+(CompositeTask:
+  name=identifier,
+  body=[
+    (Step:
+      task=(Task:
+        name=identifier,
+        attributes=[
+          (TaskAttribute:
+            key=identifier,
+            value=number
+          )
+        ]
+      ),
+      name=None,
+      body=[]
+    )
+  ]
+)

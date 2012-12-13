@@ -20,7 +20,7 @@ import org.broadinstitute.compositetask.CompositeTask;
 import org.broadinstitute.compositetask.CompositeTaskSourceCode;
 import org.broadinstitute.compositetask.Lexer;
 
-public class CompositeTaskTest 
+public class ParsingTest 
 {
     @DataProvider(name="parsingTests")
     public Object[][] parsingTests() {
@@ -28,7 +28,11 @@ public class CompositeTaskTest
         Collection<Object[]> composite_tasks = new ArrayList<Object[]>();
 
         for ( String subDir : parsingTestDir.list() ) {
-            composite_tasks.add(new Object[] { new File(parsingTestDir, subDir) });
+            File testDir = new File(parsingTestDir, subDir);
+            File skipFile = new File(testDir, "skip");
+            if ( ! skipFile.exists() ) {
+              composite_tasks.add(new Object[] { testDir });
+            }
         }
 
         return composite_tasks.toArray(new Object[0][]);
@@ -36,7 +40,8 @@ public class CompositeTaskTest
 
     private CompositeTask getCompositeTask(File source) {
         try {
-            return new CompositeTask(source);
+            String relative = new File(".").toURI().relativize(source.toURI()).getPath();
+            return new CompositeTask(source, relative);
         } catch(IOException error) {
             Assert.fail("IOException reading file: " + error);
         } catch(SyntaxError error) {
@@ -46,14 +51,15 @@ public class CompositeTaskTest
         return null;
     }
 
-    @Test(dataProvider="parsingTests", enabled=false)
+    @Test(dataProvider="parsingTests")
     public void testLexicalAnalysis(File dir) {
         File tokens = new File(dir, "tokens");
         File source = new File(dir, "source.wdl");
         String actual = null;
   
         try {
-            SourceCode code = new CompositeTaskSourceCode(source);
+            String relative = new File(".").toURI().relativize(source.toURI()).getPath();
+            SourceCode code = new CompositeTaskSourceCode(source, relative);
             Lexer lexer = new Lexer();
             List<Terminal> terminals = lexer.getTokens(code);
             actual = "[\n  " + Utility.join(terminals, ",\n  ") + "\n]\n";
@@ -75,14 +81,14 @@ public class CompositeTaskTest
 
         try {
             String expected = Utility.readFile(tokens.getAbsolutePath());
-            Assert.assertEquals(actual, expected, "Tokens list did not match");
+            Assert.assertEquals(actual, expected, "Tokens list did not match.");
         } catch (IOException error) {
             Assert.fail("Cannot read " + tokens.getAbsolutePath());
         }
     }
 
-    @Test(dataProvider="parsingTests", enabled=false)
-    public void testParseTree(File dir) {
+    @Test(dataProvider="parsingTests")
+    public void testParseTreeIsGeneratedFromSourceCodeCorrectly(File dir) {
         File source = new File(dir, "source.wdl");
         File parsetree = new File(dir, "parsetree");
         CompositeTask ctask = getCompositeTask(source);
@@ -112,8 +118,8 @@ public class CompositeTaskTest
         }
     }
 
-    @Test(dataProvider="parsingTests", enabled=false)
-    public void testAbstractSyntaxTree(File dir) {
+    @Test(dataProvider="parsingTests")
+    public void testAbstractSyntaxTreeIsGeneratedFromSourceCodeCorrectly(File dir) {
         File source = new File(dir, "source.wdl");
         File ast = new File(dir, "ast");
         CompositeTask ctask = getCompositeTask(source);
@@ -139,8 +145,8 @@ public class CompositeTaskTest
         }
     }
 
-    @Test(dataProvider="parsingTests", enabled=false)
-    public void testSourceFormatter(File dir) {
+    @Test(dataProvider="parsingTests")
+    public void testSourceFormatterOutputsCorrectlyFormattedSourceCode(File dir) {
         File source = new File(dir, "source.wdl");
         File formatted_file = new File(dir, "formatted");
         CompositeTask ctask = getCompositeTask(source);
@@ -164,6 +170,53 @@ public class CompositeTaskTest
             Assert.assertEquals(actual, expected, "Formatted source code files did not match");
         } catch (IOException error) {
             Assert.fail("Cannot read " + formatted_file.getAbsolutePath());
+        }
+    }
+
+    public static <T extends Comparable<? super T>> List<T> asSortedList(Collection<T> c) {
+        List<T> list = new ArrayList<T>(c);
+        java.util.Collections.sort(list);
+        return list;
+    }
+
+    @Test(dataProvider="parsingTests")
+    public void testCompositeTaskGeneratesCorrectGraph(File dir) {
+        File source = new File(dir, "source.wdl");
+        File graph_file = new File(dir, "graph");
+        CompositeTask ctask = getCompositeTask(source);
+        CompositeTaskGraph graph = ctask.getGraph();
+
+        StringBuilder actual = new StringBuilder();
+        actual.append("VERTICIES\n");
+        actual.append("---------\n");
+        for ( CompositeTaskVertex v : asSortedList(graph.vertexSet()) ) {
+          actual.append(v + "\n");
+        }
+        actual.append("\n");
+
+        actual.append("EDGES\n");
+        actual.append("-----\n");
+        for ( CompositeTaskEdge v : asSortedList(graph.edgeSet()) ) {
+          actual.append(v + "\n");
+        }
+
+        if ( !graph_file.exists() ) {
+            try {
+                FileWriter out = new FileWriter(graph_file);
+                out.write(actual.toString());
+                out.close();
+            } catch (IOException error) {
+                Assert.fail("Could not write " + graph_file + ": " + error);
+            }
+
+            System.out.println("Created " + graph_file);
+        }
+
+        try {
+            String expected = Utility.readFile(graph_file.getAbsolutePath());
+            Assert.assertEquals(actual.toString(), expected, "Graphs did not match");
+        } catch (IOException error) {
+            Assert.fail("Cannot read " + graph_file.getAbsolutePath());
         }
     }
 }

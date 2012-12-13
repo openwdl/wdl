@@ -55,6 +55,10 @@ public class CompositeTaskStep implements CompositeTaskNode, CompositeTaskVertex
     return false;
   }
 
+  public int compareTo(CompositeTaskVertex other) {
+    return this.toString().compareTo(other.toString());
+  }
+
   public String toString() {
     return "[Step: name=" + this.name + "]";
   }

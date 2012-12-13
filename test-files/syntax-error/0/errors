@@ -1,0 +1,9 @@
+org.broadinstitute.parser.SyntaxError: Step 'btask' inside for loop doesn't use loop iterator: item
+Location: test-files/syntax-error/0/source.wdl @ line 8, column 10:
+
+    step btask[version=0] {
+         ^
+Loop iterator is declared @ line 7, column 9:
+
+  for ( item in foo ) {
+        ^

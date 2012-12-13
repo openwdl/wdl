@@ -10,14 +10,12 @@ composite_task foo {
 
   for ( item in items ) {
     step atask[version=0] {
-      input: p0=alpha;
+      input: p0=alpha, p1=item.x;
       output: File("baz.txt") as gamma;
     }
-  }
 
-  for ( item in items ) {
     step btask[version=0] {
-      input: p0=beta;
+      input: p0=beta, p1=item.y;
       output: File("quux.txt") as epsilon;
     }
   }
