@@ -31,7 +31,8 @@ public class SyntaxErrorTest
 
     private CompositeTask getCompositeTask(File source) throws SyntaxError {
         try {
-            return new CompositeTask(source);
+            String relative = new File(".").toURI().relativize(source.toURI()).getPath();
+            return new CompositeTask(source, relative);
         } catch(IOException error) {
             Assert.fail("IOException reading file: " + error);
         }

@@ -1,6 +1,6 @@
 org.broadinstitute.parser.SyntaxError: Unexpected symbol identifier.  Expecting composite_task.
 Rule: wdl := _gen0
-Location: /Users/sfrazer/projects/wdl/test-files/syntax-error/5/source.wdl @ line 1, column 1:
+Location: test-files/syntax-error/5/source.wdl @ line 1, column 1:
 
 composite task foo {}
 ^

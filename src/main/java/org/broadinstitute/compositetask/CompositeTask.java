@@ -279,6 +279,10 @@ public class CompositeTask implements CompositeTaskScope {
         this.parent = null;
     }
 
+    public CompositeTask(File source_code, String resource) throws SyntaxError, IOException {
+        this(new CompositeTaskSourceCode(source_code, resource));
+    }
+
     public CompositeTask(File source_code) throws SyntaxError, IOException {
         this(new CompositeTaskSourceCode(source_code));
     }

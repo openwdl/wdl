@@ -40,7 +40,8 @@ public class ParsingTest
 
     private CompositeTask getCompositeTask(File source) {
         try {
-            return new CompositeTask(source);
+            String relative = new File(".").toURI().relativize(source.toURI()).getPath();
+            return new CompositeTask(source, relative);
         } catch(IOException error) {
             Assert.fail("IOException reading file: " + error);
         } catch(SyntaxError error) {
@@ -57,7 +58,8 @@ public class ParsingTest
         String actual = null;
   
         try {
-            SourceCode code = new CompositeTaskSourceCode(source);
+            String relative = new File(".").toURI().relativize(source.toURI()).getPath();
+            SourceCode code = new CompositeTaskSourceCode(source, relative);
             Lexer lexer = new Lexer();
             List<Terminal> terminals = lexer.getTokens(code);
             actual = "[\n  " + Utility.join(terminals, ",\n  ") + "\n]\n";
@@ -79,7 +81,7 @@ public class ParsingTest
 
         try {
             String expected = Utility.readFile(tokens.getAbsolutePath());
-            Assert.assertEquals(actual, expected, "Tokens list did not match");
+            Assert.assertEquals(actual, expected, "Tokens list did not match.");
         } catch (IOException error) {
             Assert.fail("Cannot read " + tokens.getAbsolutePath());
         }
