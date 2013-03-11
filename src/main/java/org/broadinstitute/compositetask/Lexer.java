@@ -79,6 +79,7 @@ public class Lexer {
     this.regex.add( new TokenLexer(Pattern.compile("^\\("), CompositeTaskParser.TerminalId.TERMINAL_LPAREN) );
     this.regex.add( new TokenLexer(Pattern.compile("^\\)"), CompositeTaskParser.TerminalId.TERMINAL_RPAREN) );
     this.regex.add( new TokenLexer(Pattern.compile("^\"([^\\\\\"\\n]|\\[\\\"'nrbtfav\\?]|\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\""), CompositeTaskParser.TerminalId.TERMINAL_STRING) );
+    this.regex.add( new TokenLexer(Pattern.compile("^([a-zA-Z0-9_\\.])+(?=\\s*=)"), CompositeTaskParser.TerminalId.TERMINAL_IDENTIFIER) );
     this.regex.add( new TokenLexer(Pattern.compile("^([a-zA-Z_]|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)([a-zA-Z_0-9]|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"), CompositeTaskParser.TerminalId.TERMINAL_IDENTIFIER) );
     this.regex.add( new TokenLexer(Pattern.compile("^[-]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?)"), CompositeTaskParser.TerminalId.TERMINAL_NUMBER) );
     this.regex.add( new TokenLexer(Pattern.compile("^\\s+"), null) );

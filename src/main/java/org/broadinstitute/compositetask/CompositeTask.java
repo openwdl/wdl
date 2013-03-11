@@ -183,7 +183,10 @@ public class CompositeTask implements CompositeTaskScope {
                             }
 
                             if (this.output_files.containsKey(filepath.getSourceString())) {
-                                throw new SyntaxError(this.syntaxErrorFormatter.duplicate_output_file(filepath, this.output_files.get(filepath.getSourceString())));
+                                // We don't need this syntax error anymore, but perhaps useful in the future. */
+                                /* throw new SyntaxError(
+                                  this.syntaxErrorFormatter.duplicate_output_file(filepath, this.output_files.get(filepath.getSourceString())));
+                                */
                             } else {
                                 this.output_files.put(filepath.getSourceString(), filepath);
                             }

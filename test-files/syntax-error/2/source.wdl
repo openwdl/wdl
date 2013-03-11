@@ -1,7 +1,7 @@
 composite_task foo {
   
   step atask[version=0] {
-    output: File("foo.txt") as abc;
+    output: File("foo.txt") as xyz;
   }
 
   step btask[version=0] {

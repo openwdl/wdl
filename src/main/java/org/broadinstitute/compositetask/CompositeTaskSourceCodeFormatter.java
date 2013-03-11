@@ -8,11 +8,11 @@ import org.broadinstitute.parser.Utility;
 public class CompositeTaskSourceCodeFormatter {
   private CompositeTaskColorizer colorizer;
 
-  CompositeTaskSourceCodeFormatter(CompositeTaskColorizer colorizer) {
+  public CompositeTaskSourceCodeFormatter(CompositeTaskColorizer colorizer) {
     this.colorizer = colorizer;
   }
 
-  CompositeTaskSourceCodeFormatter() {
+  public CompositeTaskSourceCodeFormatter() {
     this(new NullColorizer());
   }
 
@@ -58,7 +58,7 @@ public class CompositeTaskSourceCodeFormatter {
       if ( step.getOutputs().size() > 0 ) {
         List<String> outputs = new ArrayList<String>();
         for ( CompositeTaskStepOutput output : step.getOutputs() ) {
-          outputs.add(output.getType() + "(" + this.colorizer.string(output.getPath()) + ") " + this.colorizer.keyword("as") + " " + this.colorizer.variable(variable_to_string(output.getVariable())));
+          outputs.add(output.getType() + "(\"" + this.colorizer.string(output.getPath()) + "\") " + this.colorizer.keyword("as") + " " + this.colorizer.variable(variable_to_string(output.getVariable())));
         }
 
         builder.append(indent_str + "  " + this.colorizer.keyword("output") + ": " + Utility.join(outputs, ", ") + ";\n");

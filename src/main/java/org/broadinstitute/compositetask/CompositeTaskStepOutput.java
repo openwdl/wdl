@@ -22,7 +22,7 @@ public class CompositeTaskStepOutput {
   }
 
   public String getPath() {
-    return this.path;
+    return this.path.replaceAll("^\"|\"$", "");
   }
 
   public String getMethod() {
