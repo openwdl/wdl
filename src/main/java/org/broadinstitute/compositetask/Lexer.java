@@ -63,6 +63,7 @@ public class Lexer {
     this.regex.add( new TokenLexer(Pattern.compile("^input(?=(\\s*:)|$)"), CompositeTaskParser.TerminalId.TERMINAL_INPUT) );
     this.regex.add( new TokenLexer(Pattern.compile("^step(?=[^a-zA-Z0-9_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_STEP) );
     this.regex.add( new TokenLexer(Pattern.compile("^File(?=[^a-zA-Z0-9_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_FILE) );
+    this.regex.add( new TokenLexer(Pattern.compile("^FirstLine(?=[^a-zA-Z0-9_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_FIRST_LINE) );
     this.regex.add( new TokenLexer(Pattern.compile("^for(?=[^a-zA-Z0-9_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_FOR) );
     this.regex.add( new TokenLexer(Pattern.compile("^as(?=[^a-zA-Z0-9_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_AS) );
     this.regex.add( new TokenLexer(Pattern.compile("^into(?=[^a-zA-Z0-9_]|$)"), CompositeTaskParser.TerminalId.TERMINAL_INTO) );
