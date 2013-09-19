@@ -163,8 +163,9 @@ public class CompositeTask implements CompositeTaskScope {
                         AstList output_list = (AstList) entry_ast.getAttribute("outputs");
                         for ( AstNode output_node : output_list ) {
                             Ast output = (Ast) output_node;
-                            Terminal filepath = (Terminal) output.getAttribute("file");
+                            Terminal filepath = (Terminal) output.getAttribute("expression");
                             Ast step_output = (Ast) output.getAttribute("var");
+                            String mode = ((Terminal) output.getAttribute("mode")).getSourceString();
 
                             CompositeTaskVariable variable = ast_to_variable((Ast) step_output.getAttribute("var"));
                             Terminal variable_terminal = (Terminal) ((Ast) ((Ast) output.getAttribute("var")).getAttribute("var")).getAttribute("name");
@@ -191,7 +192,7 @@ public class CompositeTask implements CompositeTaskScope {
                                 this.output_files.put(filepath.getSourceString(), filepath);
                             }
 
-                            step_outputs.add( new CompositeTaskStepOutput("File", method, filepath.getSourceString(), variable) );
+                            step_outputs.add( new CompositeTaskStepOutput(mode, method, filepath.getSourceString(), variable) );
                         }
                     }
                 }
