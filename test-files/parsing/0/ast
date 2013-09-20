@@ -15,8 +15,9 @@
       body=[
         (StepOutputList:
           outputs=[
-            (StepFileOutput:
-              file=string,
+            (StepOutput:
+              mode=file,
+              expression=string,
               var=(OutputVariable:
                 var=(Variable:
                   name=identifier,
@@ -71,8 +72,9 @@
             ),
             (StepOutputList:
               outputs=[
-                (StepFileOutput:
-                  file=string,
+                (StepOutput:
+                  mode=file,
+                  expression=string,
                   var=(OutputVariable:
                     var=(Variable:
                       name=identifier,
@@ -123,8 +125,9 @@
             ),
             (StepOutputList:
               outputs=[
-                (StepFileOutput:
-                  file=string,
+                (StepOutput:
+                  mode=file,
+                  expression=string,
                   var=(OutputVariable:
                     var=(Variable:
                       name=identifier,
@@ -177,8 +180,9 @@
         ),
         (StepOutputList:
           outputs=[
-            (StepFileOutput:
-              file=string,
+            (StepOutput:
+              mode=file,
+              expression=string,
               var=(OutputVariable:
                 var=(Variable:
                   name=identifier,

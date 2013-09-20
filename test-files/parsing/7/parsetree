@@ -93,7 +93,9 @@
                             colon,
                             (_gen8:
                               (step_output:
-                                file,
+                                (step_output_mode:
+                                  file
+                                ),
                                 lparen,
                                 string,
                                 rparen,
