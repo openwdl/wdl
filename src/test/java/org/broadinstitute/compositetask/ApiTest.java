@@ -37,30 +37,17 @@ public class ApiTest
 
     @Test
     public void testGetNodesMethodReturnsASingleTopLevelStepNode() {
-        Set<CompositeTaskNode> nodes = this.task.getNodes();
-        boolean found = false;
-        for ( CompositeTaskNode node : nodes ) {
-            if ( node instanceof CompositeTaskStep ) {
-                found = true;
-                CompositeTaskStep step = (CompositeTaskStep) node;
-                Assert.assertEquals(step.getName(), "atask", "Expecting one step with name 'atask'");
-            }
-        }
-        Assert.assertTrue(found, "Expected one top-level step in the composite task, didn't find any");
+        CompositeTaskStep step = this.task.getStep("atask");
+        Assert.assertNotNull(step, "Expected one step with name 'atask'");
+        Assert.assertEquals(step.getName(), "atask", "Expecting one step with name 'atask'");
     }
 
     @Test
     public void testGetNodesMethodReturnsASingleTopLevelForLoopNode() {
         Set<CompositeTaskNode> nodes = this.task.getNodes();
-        boolean found = false;
-        for ( CompositeTaskNode node : nodes ) {
-            if ( node instanceof CompositeTaskForLoop ) {
-                found = true;
-                CompositeTaskForLoop loop = (CompositeTaskForLoop) node;
-                Assert.assertEquals(loop.getCollection().getName(), "foobar", "Expecting one loop with a collection called 'foobar'");
-                Assert.assertEquals(loop.getVariable().getName(), "item", "Expecting one loop with a variable called 'item'");
-            }
-        }
-        Assert.assertTrue(found, "Expected one top-level loop in the composite task, didn't find any");
+        CompositeTaskStep innerStep = this.task.getStep("btask");
+        CompositeTaskForLoop loop = (CompositeTaskForLoop) innerStep.getParent();
+        Assert.assertEquals(loop.getCollection().getName(), "foobar", "Expecting one loop with a collection called 'foobar'");
+        Assert.assertEquals(loop.getVariable().getName(), "item", "Expecting one loop with a variable called 'item'");
     }
 }
