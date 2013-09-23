@@ -1,0 +1,6 @@
+[
+  {"terminal": "composite_task", "line": 1, "col": 1, "resource": "test-files/parsing/15/source.wdl", "source_string": "Y29tcG9zaXRlX3Rhc2s="},
+  {"terminal": "identifier", "line": 1, "col": 16, "resource": "test-files/parsing/15/source.wdl", "source_string": "eA=="},
+  {"terminal": "lbrace", "line": 1, "col": 18, "resource": "test-files/parsing/15/source.wdl", "source_string": "ew=="},
+  {"terminal": "rbrace", "line": 4, "col": 1, "resource": "test-files/parsing/15/source.wdl", "source_string": "fQ=="}
+]
