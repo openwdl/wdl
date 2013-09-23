@@ -9,7 +9,7 @@
   <groupId>org.broadinstitute.compositetask</groupId>
   <artifactId>Wdl</artifactId>
   <packaging>jar</packaging>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
   <name>Wdl</name>
   <url>http://github.com/broadinstitute/wdl</url>
 
