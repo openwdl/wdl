@@ -1,5 +1,5 @@
 <project name="wdl">
-  <target name="generate-parser" description="Generate the parser from grammar file">
+  <target name="java-parser" description="Generate the parser from grammar file">
         <property name="parser.dir" value="src/main/java/org/broadinstitute/parser" />
         <property name="parser.package" value="org.broadinstitute.parser" />
         <property name="parser.grammar" value="grammars/composite_task.zgr" />
@@ -15,6 +15,24 @@
             <arg value="--directory=${parser.dir}" />
             <arg value="--language=java" />
             <arg value="--java-package=${parser.package}" />
+        </exec>
+  </target>
+
+  <target name="python-parser" description="Generate the parser from grammar file">
+        <property name="parser.dir" value="build/python" />
+        <property name="parser.package" value="org.broadinstitute.parser" />
+        <property name="parser.grammar" value="grammars/composite_task.zgr" />
+
+        <exec executable="hermes">
+            <arg value="--version" />
+        </exec>
+        <echo message="Generating parser in ${parser.dir}" />
+        <mkdir dir="${parser.dir}" />
+        <exec executable="hermes">
+            <arg value="generate" />
+            <arg value="${parser.grammar}" />
+            <arg value="--directory=${parser.dir}" />
+            <arg value="--language=python" />
         </exec>
     </target>
 </project>
