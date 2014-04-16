@@ -1,0 +1,8 @@
+org.broadinstitute.parser.SyntaxError: Variable filtered_bam_name used to construct an output filename and also as an output variable.  One of these variable names must change.
+
+Line 3, Column 18:
+    output: File("${filtered_bam_name}.bam") as filtered_bam_name;
+                  ^
+Line 3, Column 49:
+    output: File("${filtered_bam_name}.bam") as filtered_bam_name;
+                                                ^

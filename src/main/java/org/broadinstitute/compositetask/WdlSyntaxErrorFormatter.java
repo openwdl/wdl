@@ -99,4 +99,14 @@ public class WdlSyntaxErrorFormatter implements SyntaxErrorFormatter {
            this.code.getLine(loop_iterator.getLine()) + "\n" + Utility.getIndentString(loop_iterator.getColumn()-1) + "^\n";
   }
 
+  public String variable_used_as_filename_and_step_output(Terminal filename_var, int filename_var_offset, Terminal output_var) {
+    return String.format("Variable %s used to construct an output filename and also as an output variable.  One of these variable names must change.\n\n", output_var.getSourceString()) +
+           String.format("Line %d, Column %d:\n", filename_var.getLine(), filename_var.getColumn()) +
+           this.code.getLine(filename_var.getLine()) + "\n" +
+           Utility.getIndentString(filename_var.getColumn() + filename_var_offset - 1) + "^\n" +
+           String.format("Line %d, Column %d:\n", output_var.getLine(), output_var.getColumn()) +
+           this.code.getLine(output_var.getLine()) + "\n" +
+           Utility.getIndentString(output_var.getColumn()-1) + "^\n";
+  }
+
 }
