@@ -1,0 +1,8 @@
+org.broadinstitute.parser.SyntaxError: Variable xyz used to construct an output filename and also as an output variable.  One of these variable names must change.
+
+Line 3, Column 18:
+    output: File("${abc}.${xyz}.bam") as filtered_bam_name,
+                         ^
+Line 4, Column 35:
+            File("${abc}.bam") as xyz;
+                                  ^

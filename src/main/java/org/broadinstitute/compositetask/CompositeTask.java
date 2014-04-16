@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.broadinstitute.parser.Ast;
 import org.broadinstitute.parser.AstNode;
@@ -74,6 +76,20 @@ public class CompositeTask implements CompositeTaskScope {
             }
 
             set_parents(CompositeTask.this);
+
+            Pattern expressionPattern = Pattern.compile("\\$\\{([^}]+)\\}");
+            for ( Map.Entry<String, Terminal> output_file : this.output_files.entrySet() ) {
+              Matcher matcher = expressionPattern.matcher(output_file.getValue().getSourceString());
+              while ( matcher.find() ) {
+                String filename_var = matcher.group(1);
+                for ( Map.Entry<CompositeTaskVariable, Terminal> step_output : this.output_variables.entrySet() ) {
+                  String output_var = step_output.getKey().getName();
+                  if ( output_var.equals(filename_var) ) {
+                    throw new SyntaxError(this.syntaxErrorFormatter.variable_used_as_filename_and_step_output(output_file.getValue(), matcher.start(), step_output.getValue()));
+                  }
+                }
+              }
+            }
 
             return composite_task;
         }
