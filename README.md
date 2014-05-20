@@ -18,7 +18,7 @@ $ mvn package
 Which will create a file target/Wdl-${version}.jar as an executable JAR.  To invoke the CLI:
 
 ```
-$ java -jar target/Wdl-0.0.1.jar examples/0.wdl ast
+$ java -jar target/Wdl-0.0.4.jar examples/0.wdl ast
 ```
 
 Generating the parser code
@@ -54,7 +54,28 @@ for ( CompositeTaskNode entry : ct.getNodes() ) {
 Command-line Interface
 ----------------------
 
-The data file we'll use is:
+The command line interface provides some common tools for analyzing and displaying WDL files Below are the actions that can be taken by running the executable JAR without any parameters:
+
+```
+$ java -jar target/Wdl-0.0.4.jar
+Usage: <.wdl file> <tokens,astarsetree,entities,graph,format,format-ansi,format-html,replace>
+
+Actions:
+  tokens: tokenize the source code
+  ast: parse source code and output an abstract syntax tree
+  parsetree: parse source code and output a parsetree
+  entities: output an abbreviated view of all entities and which scope they're nested in
+  graph: output the set of verticies and edges for the directed acyclic graph
+  format: reformat source code
+  format-ansi: reformat source code and colorize for the terminal
+  format-html: reformat source code and add HTML span tags
+  replace <task[:version]> <new task:version>: replace a task/version with a different task/version
+```
+
+CLI Examples
+------------
+
+The WDL file we'll use is:
 
 ```
 $ cat examples/7.wdl
@@ -81,7 +102,7 @@ composite_task test {
 Get the abstract syntax tree:
 
 ```
-$ java -jar dist/Wdl-0.0.1.jar examples/7.wdl ast
+$ java -jar dist/Wdl-0.0.4.jar examples/7.wdl ast
 (CompositeTask:
   body=[
     (Step:
@@ -204,7 +225,7 @@ $ java -jar dist/Wdl-0.0.1.jar examples/7.wdl ast
 Get a view of the graph
 
 ```
-$ java -jar dist/Wdl-0.0.1.jar examples/7.wdl graph
+$ java -jar dist/Wdl-0.0.4.jar examples/7.wdl graph
 VERTICIES
 ---------
 [Step: name=s1]

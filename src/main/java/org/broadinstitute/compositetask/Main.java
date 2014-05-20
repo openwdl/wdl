@@ -15,7 +15,7 @@ import org.broadinstitute.parser.Terminal;
 public class Main {
 
   public static void usage() {
-    System.err.println("Usage: <.wdl file> <tokens,ast,parsetree,entities,graph,format,format-ansi,format-html>");
+    System.err.println("Usage: <.wdl file> <tokens,ast,parsetree,entities,graph,format,format-ansi,format-html,replace>");
     System.err.println();
     System.err.println("Actions:");
     System.err.println("  tokens: tokenize the source code");
