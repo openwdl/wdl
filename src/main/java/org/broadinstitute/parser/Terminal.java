@@ -36,6 +36,9 @@ public class Terminal implements AstNode, ParseTreeNode
   public int getColumn() {
     return this.col;
   }
+  public void setSourceString(String source_string) {
+    this.source_string = source_string;
+  }
   public String toString() {
     StringBuilder sb = new StringBuilder();
     Formatter formatter = new Formatter(sb, Locale.US);

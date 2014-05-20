@@ -26,6 +26,7 @@ public class Main {
     System.err.println("  format: reformat source code");
     System.err.println("  format-ansi: reformat source code and colorize for the terminal");
     System.err.println("  format-html: reformat source code and add HTML span tags");
+    System.err.println("  replace <task[:version]> <new task:version>: replace a task/version with a different task/version");
     System.exit(-1);
   }
 
@@ -81,6 +82,30 @@ public class Main {
         String formatted = formatter.format(ctask);
         System.out.println(formatted);
       } else if ( args[1].equals("format") ) {
+        CompositeTaskSourceCodeFormatter formatter = new CompositeTaskSourceCodeFormatter();
+        String formatted = formatter.format(ctask);
+        System.out.println(formatted);
+      } else if ( args[1].equals("replace") ) {
+        if (args.length < 4 || !args[3].contains(":")) {
+          System.err.println("Usage: replace <task[:version]> <task:version> e.g. `replace my_task my_task:45`");
+          System.exit(-1);
+        }
+
+        String from, from_version, to, to_version;
+        from = from_version = to = to_version = null;
+
+        from = args[2];
+        if ( args[2].contains(":") ) {
+          String[] parts = args[2].split(":");
+          from = parts[0];
+          from_version = parts[1];
+        }
+
+        String[] parts = args[3].split(":");
+        to = parts[0];
+        to_version = parts[1];
+
+        ctask.replace(from, from_version, to, to_version);
         CompositeTaskSourceCodeFormatter formatter = new CompositeTaskSourceCodeFormatter();
         String formatted = formatter.format(ctask);
         System.out.println(formatted);

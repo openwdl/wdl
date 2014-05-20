@@ -31,6 +31,7 @@ public class CompositeTask implements CompositeTaskScope {
     private Set<CompositeTaskNode> nodes;
     private String name;
     private CompositeTaskScope parent;
+    private CompositeTaskAstVerifier verifier;
 
     private class CompositeTaskAstVerifier {
         private WdlSyntaxErrorFormatter syntaxErrorFormatter;
@@ -259,11 +260,11 @@ public class CompositeTask implements CompositeTaskScope {
             return new CompositeTask(ctName.getSourceString(), nodes);
         }
 
-        private Terminal getTaskName(Ast task) {
+        public Terminal getTaskName(Ast task) {
             return (Terminal) task.getAttribute("name");
         }
 
-        private Terminal getTaskVersion(Ast task) {
+        public Terminal getTaskVersion(Ast task) {
             AstList task_attrs = (AstList) task.getAttribute("attributes");
 
             if ( task_attrs != null ) {
@@ -286,6 +287,8 @@ public class CompositeTask implements CompositeTaskScope {
         this.name = name;
         this.nodes = nodes;
         this.parent = null;
+        this.error_formatter = new WdlSyntaxErrorFormatter();
+        this.verifier = new CompositeTaskAstVerifier(this.error_formatter);
     }
 
     public CompositeTask(SourceCode source_code) throws SyntaxError {
@@ -294,8 +297,8 @@ public class CompositeTask implements CompositeTaskScope {
         ParseTreeNode node = getParseTree(source_code);
         this.parse_tree = (ParseTree) node;
         AstList ast_list = (AstList) node.toAst();
-        CompositeTaskAstVerifier verifier = new CompositeTaskAstVerifier(this.error_formatter);
-        this.ast = verifier.verify(ast_list);
+        this.verifier = new CompositeTaskAstVerifier(this.error_formatter);
+        this.ast = this.verifier.verify(ast_list);
         this.parent = null;
     }
 
@@ -372,6 +375,10 @@ public class CompositeTask implements CompositeTaskScope {
         return false;
     }
 
+    public Set<Ast> replace(String from, String from_version, String to, String to_version) throws SyntaxError {
+      return replace(this.ast, from, from_version, to, to_version);
+    }
+
     public int compareTo(CompositeTaskVertex other) {
       return this.toString().compareTo(other.toString());
     }
@@ -381,6 +388,34 @@ public class CompositeTask implements CompositeTaskScope {
     }
 
     /** Private methods **/
+
+    private Set<Ast> replace(Ast scope, String from, String from_version, String to, String to_version) throws SyntaxError {
+      Set<Ast> steps = new HashSet<Ast>();
+
+      AstList ctNodes = (AstList) scope.getAttribute("body");
+      for ( AstNode ctNode : ctNodes ) {
+          Ast node = (Ast) ctNode;
+          if ( node.getName().equals("Step") ) {
+            Ast task = (Ast) node.getAttribute("task");
+            Terminal task_name = this.verifier.getTaskName(task);
+            Terminal task_version = this.verifier.getTaskVersion(task);
+            if (task_name.getSourceString().equals(from) && (from_version == null || (task_version != null && task_version.getSourceString().equals(from_version)))) {
+              task_name.setSourceString(to);
+              task_version.setSourceString(to_version);
+              steps.add(node);
+            }
+          } else if ( node.getName().equals("ForLoop") || node.getName().equals("CompositeTask") ) {
+            steps.addAll(replace(node, from, from_version, to, to_version));
+          }
+      }
+      this.verifier = new CompositeTaskAstVerifier(this.error_formatter);
+      this.ast = this.verifier.verify((AstNode) ast);
+      return steps;
+    }
+
+    private void reload(Ast ast) throws SyntaxError {
+        this.parent = null;
+    }
 
     private ParseTreeNode getParseTree(SourceCode source_code) throws SyntaxError {
         CompositeTaskParser parser = new CompositeTaskParser(this.error_formatter);

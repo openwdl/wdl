@@ -1,7 +1,7 @@
 package org.broadinstitute.compositetask;
 
 import org.testng.annotations.Test;
-import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.Assert;
 
 import java.io.File;
@@ -16,7 +16,7 @@ public class ApiTest
 {
     private CompositeTask task;
 
-    @BeforeClass
+    @BeforeMethod
     private void createCompositeTaskObject() {
         try {
             File source = new File("test-files/api/0.wdl");
@@ -81,5 +81,32 @@ public class ApiTest
         Assert.assertEquals(loop.getParent(), this.task, "Expected the loop's parent node to be the composite task");
         Assert.assertEquals(loop.getCollection().getName(), "foobar", "Expecting one loop with a collection called 'foobar'");
         Assert.assertEquals(loop.getVariable().getName(), "item", "Expecting one loop with a variable called 'item'");
+    }
+
+    @Test
+    public void testReplaceTaskInWdlWithNewTaskVersion() throws SyntaxError {
+      Assert.assertNotNull(this.task.getStep("atask"));
+      Assert.assertNull(this.task.getStep("atask_replace"));
+      this.task.replace("atask", null, "atask_replace", "100");
+      Assert.assertNull(this.task.getStep("atask"));
+      Assert.assertNotNull(this.task.getStep("atask_replace"));
+    }
+
+    @Test
+    public void testReplaceTaskWithSpecificVersionInWdlWithNewTaskVersion() throws SyntaxError {
+      Assert.assertNotNull(this.task.getStep("atask"));
+      Assert.assertNull(this.task.getStep("atask_replace"));
+      this.task.replace("atask", "0", "atask_replace", "100");
+      Assert.assertNull(this.task.getStep("atask"));
+      Assert.assertNotNull(this.task.getStep("atask_replace"));
+    }
+
+    @Test
+    public void testReplaceTaskInWdlWithNewTaskVersionFailsIfTaskDoesntExist() throws SyntaxError {
+      Assert.assertNotNull(this.task.getStep("atask"));
+      Assert.assertNull(this.task.getStep("atask_replace"));
+      this.task.replace("XYZ_atask", null, "atask_replace", "100");
+      Assert.assertNotNull(this.task.getStep("atask"));
+      Assert.assertNull(this.task.getStep("atask_replace"));
     }
 }
