@@ -413,10 +413,6 @@ public class CompositeTask implements CompositeTaskScope {
       return steps;
     }
 
-    private void reload(Ast ast) throws SyntaxError {
-        this.parent = null;
-    }
-
     private ParseTreeNode getParseTree(SourceCode source_code) throws SyntaxError {
         CompositeTaskParser parser = new CompositeTaskParser(this.error_formatter);
         Lexer lexer = new Lexer();
