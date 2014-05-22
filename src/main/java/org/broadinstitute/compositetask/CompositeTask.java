@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.TreeSet;
 import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -379,6 +380,10 @@ public class CompositeTask implements CompositeTaskScope {
       return replace(this.ast, from, from_version, to, to_version);
     }
 
+    public Set<CompositeTaskSubTask> getAllSubTasks() {
+      return getAllSubTasks(this);
+    }
+
     public int compareTo(CompositeTaskVertex other) {
       return this.toString().compareTo(other.toString());
     }
@@ -411,6 +416,19 @@ public class CompositeTask implements CompositeTaskScope {
       this.verifier = new CompositeTaskAstVerifier(this.error_formatter);
       this.ast = this.verifier.verify((AstNode) ast);
       return steps;
+    }
+
+    private Set<CompositeTaskSubTask> getAllSubTasks(CompositeTaskScope scope) {
+      Set<CompositeTaskSubTask> subTasks = new TreeSet<CompositeTaskSubTask>();
+      for ( CompositeTaskNode node : scope.getNodes() ) {
+        if ( node instanceof CompositeTaskStep ) {
+          CompositeTaskStep step = (CompositeTaskStep) node;
+          subTasks.add(step.getTask());
+        } else if ( node instanceof CompositeTaskScope ) {
+          subTasks.addAll(getAllSubTasks((CompositeTaskScope) node));
+        }
+      }
+      return subTasks;
     }
 
     private ParseTreeNode getParseTree(SourceCode source_code) throws SyntaxError {

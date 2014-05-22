@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.broadinstitute.parser.Utility;
 import org.broadinstitute.parser.Ast;
@@ -27,6 +28,7 @@ public class Main {
     System.err.println("  format-ansi: reformat source code and colorize for the terminal");
     System.err.println("  format-html: reformat source code and add HTML span tags");
     System.err.println("  replace <task[:version]> <new task:version>: replace a task/version with a different task/version");
+    System.err.println("  tasks: return 1 line in the format <task:version> for each unique <task:version> pair");
     System.exit(-1);
   }
 
@@ -109,6 +111,11 @@ public class Main {
         CompositeTaskSourceCodeFormatter formatter = new CompositeTaskSourceCodeFormatter();
         String formatted = formatter.format(ctask);
         System.out.println(formatted);
+      } else if ( args[1].equals("tasks") ) {
+        Set<CompositeTaskSubTask> subTasks = ctask.getAllSubTasks();
+        for ( CompositeTaskSubTask subTask : subTasks ) {
+          System.out.println(String.format("%s:%s", subTask.getTaskName(), subTask.getVersion()));
+        }
       } else {
         usage();
       }

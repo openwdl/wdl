@@ -18,7 +18,7 @@ $ mvn package
 Which will create a file target/Wdl-${version}.jar as an executable JAR.  To invoke the CLI:
 
 ```
-$ java -jar target/Wdl-0.0.4.jar examples/0.wdl ast
+$ java -jar target/Wdl-0.0.5.jar examples/0.wdl ast
 ```
 
 Generating the parser code
@@ -57,7 +57,7 @@ Command-line Interface
 The command line interface provides some common tools for analyzing and displaying WDL files Below are the actions that can be taken by running the executable JAR without any parameters:
 
 ```
-$ java -jar target/Wdl-0.0.4.jar
+$ java -jar target/Wdl-0.0.5.jar
 Usage: <.wdl file> <tokens,astarsetree,entities,graph,format,format-ansi,format-html,replace>
 
 Actions:
@@ -70,6 +70,7 @@ Actions:
   format-ansi: reformat source code and colorize for the terminal
   format-html: reformat source code and add HTML span tags
   replace <task[:version]> <new task:version>: replace a task/version with a different task/version
+  tasks: return 1 line in the format <task:version> for each unique <task:version> pair
 ```
 
 CLI Examples
@@ -102,7 +103,7 @@ composite_task test {
 Get the abstract syntax tree:
 
 ```
-$ java -jar dist/Wdl-0.0.4.jar examples/7.wdl ast
+$ java -jar dist/Wdl-0.0.5.jar examples/7.wdl ast
 (CompositeTask:
   body=[
     (Step:
@@ -225,7 +226,7 @@ $ java -jar dist/Wdl-0.0.4.jar examples/7.wdl ast
 Get a view of the graph
 
 ```
-$ java -jar dist/Wdl-0.0.4.jar examples/7.wdl graph
+$ java -jar dist/Wdl-0.0.5.jar examples/7.wdl graph
 VERTICIES
 ---------
 [Step: name=s1]
