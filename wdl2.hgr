@@ -1,5 +1,10 @@
 grammar {
   lexer {
+    partials {
+      r'"([^\"]+)"' -> _dquote_string
+      r'\'([^\']+)\'' -> _squote_string
+      r'(set|array|int|uri|file|string)' -> _type
+    }
     r'\s+' -> null
     r'task' -> :task
     r'(command)\s*(\{)' -> :command[1] :lbrace[2]  @command
@@ -20,30 +25,31 @@ grammar {
     mode<cmd_param> {
       r'\s+' -> null
       r'\}' -> :cmd_param_end %pop
-      r'array|int|uri|file' -> :type
-      r'[a-zA-Z0-9_-]+(?=\s*=)' -> :cmd_attr_hint :identifier
+      r'{%_type%}(?=\s*\[)' -> :compound_type_hint[] :type
+      r'{%_type%}' -> :type
+      r'[a-zA-Z0-9_-]+(?=\s*=)' -> :cmd_attr_hint[] :identifier
       r'[a-zA-Z0-9_-]+' -> :identifier
       r'=' -> :equals
       r'\?' -> :qmark
       r'\*' -> :asterisk
       r'\[' -> :lsquare
       r'\]' -> :rsquare
-      r'"[^\"]+"' -> :string
-      r'\'[^\']+\'' -> :string
+      r'{%_dquote_string%}' -> :string[1]
+      r'{%_squote_string%}' -> :string[1]
     }
     mode<outputs> {
       r'\s+' -> null
       r'\}' -> :rbrace %pop
-      r'"[^\"]+"' -> :string
-      r'\'[^\']+\'' -> :string
+      r'{%_dquote_string%}' -> :string[1]
+      r'{%_squote_string%}' -> :string[1]
       r'->' -> :arrow
       r'[a-zA-Z0-9_-]+' -> :identifier
     }
     mode<runtime> {
       r'\s+' -> null
       r'\}' -> :rbrace %pop
-      r'"[^\"]+"' -> :string
-      r'\'[^\']+\'' -> :string
+      r'{%_dquote_string%}' -> :string[1]
+      r'{%_squote_string%}' -> :string[1]
       r':' -> :colon
       r'[a-zA-Z0-9_-]+' -> :identifier
     }
@@ -51,19 +57,17 @@ grammar {
   parser {
     $task = :task :identifier :lbrace list($sections) :rbrace -> Task(name=$1, sections=$3)
     $sections = $command | $outputs | $runtime
-
     $command = :command :lbrace list($command_part) :rbrace -> Command(parts=$2)
     $command_part = :cmd_part | $cmd_param
     $cmd_param = :cmd_param_start list($cmd_param_kv) :identifier optional($qualifier) :cmd_param_end -> CommandParameter(name=$2, attributes=$1, qualifier=$3)
     $cmd_param_kv = :cmd_attr_hint :identifier :equals $cmd_param_value -> CommandParameterAttr(key=$1, value=$3)
-    $cmd_param_value = :string | :type optional($sub_type) -> Type(name=$0, sub=$1)
-    $sub_type = :lsquare :type :rsquare -> $1
+    $cmd_param_value = :string
+    $cmd_param_value = :type -> Type(name=$0)
+    $cmd_param_value = :compound_type_hint :type :lsquare :type :rsquare-> CollectionType(collection=$1, member=$3)
     $qualifier = :qmark | :asterisk
-
-    $outputs = :outputs :lbrace list($output_kv) :rbrace -> Outputs(attributes=$0)
+    $outputs = :outputs :lbrace list($output_kv) :rbrace -> Outputs(attributes=$2)
     $output_kv = :string :arrow :identifier -> OutputAttribute(key=$0, value=$2)
-
-    $runtime = :runtime :lbrace list($runtime_kv) :rbrace -> RuntimeAttributes(attributes=$0)
+    $runtime = :runtime :lbrace list($runtime_kv) :rbrace -> RuntimeAttributes(attributes=$2)
     $runtime_kv = :identifier :colon :string -> RuntimeAttribute(key=$0, value=$2)
   }
 }
