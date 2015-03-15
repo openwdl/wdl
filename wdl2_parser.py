@@ -53,7 +53,7 @@ class Terminal:
       self.__dict__.update(locals())
   def getId(self):
       return self.id
-  def toAst(self):
+  def ast(self):
       return self
   def dumps(self, b64_source=True, json=False, **kwargs):
       if not b64_source and json:
@@ -89,10 +89,10 @@ class AstTransformNodeCreator(AstTransform):
   def __str__(self):
     return self.__repr__()
 class AstList(list):
-  def toAst(self):
+  def ast(self):
       retval = []
       for ast in self:
-          retval.append(ast.toAst())
+          retval.append(ast.ast())
       return retval
   def dumps(self, indent=None, b64_source=True):
       args = locals()
@@ -113,30 +113,30 @@ class ParseTree():
       self.list = False
   def add( self, tree ):
       self.children.append( tree )
-  def toAst( self ):
+  def ast( self ):
       if self.list == 'slist' or self.list == 'nlist':
           if len(self.children) == 0:
               return AstList()
           offset = 1 if self.children[0] == self.listSeparator else 0
-          first = self.children[offset].toAst()
+          first = self.children[offset].ast()
           r = AstList()
           if first is not None:
               r.append(first)
-          r.extend(self.children[offset+1].toAst())
+          r.extend(self.children[offset+1].ast())
           return r
       elif self.list == 'otlist':
           if len(self.children) == 0:
               return AstList()
           r = AstList()
           if self.children[0] != self.listSeparator:
-              r.append(self.children[0].toAst())
-          r.extend(self.children[1].toAst())
+              r.append(self.children[0].ast())
+          r.extend(self.children[1].ast())
           return r
       elif self.list == 'tlist':
           if len(self.children) == 0:
               return AstList()
-          r = AstList([self.children[0].toAst()])
-          r.extend(self.children[2].toAst())
+          r = AstList([self.children[0].ast()])
+          r.extend(self.children[2].ast())
           return r
       elif self.list == 'mlist':
           r = AstList()
@@ -144,12 +144,12 @@ class ParseTree():
               return r
           lastElement = len(self.children) - 1
           for i in range(lastElement):
-              r.append(self.children[i].toAst())
-          r.extend(self.children[lastElement].toAst())
+              r.append(self.children[i].ast())
+          r.extend(self.children[lastElement].ast())
           return r
       elif self.isExpr:
           if isinstance(self.astTransform, AstTransformSubstitution):
-              return self.children[self.astTransform.idx].toAst()
+              return self.children[self.astTransform.idx].ast()
           elif isinstance(self.astTransform, AstTransformNodeCreator):
               parameters = OrderedDict()
               for name, idx in self.astTransform.parameters.items():
@@ -169,18 +169,18 @@ class ParseTree():
                       return self.children[0]
                   else:
                       child = self.children[idx]
-                  parameters[name] = child.toAst()
+                  parameters[name] = child.ast()
               return Ast(self.astTransform.name, parameters)
       else:
           if isinstance(self.astTransform, AstTransformSubstitution):
-              return self.children[self.astTransform.idx].toAst()
+              return self.children[self.astTransform.idx].ast()
           elif isinstance(self.astTransform, AstTransformNodeCreator):
               parameters = OrderedDict()
               for name, idx in self.astTransform.parameters.items():
-                  parameters[name] = self.children[idx].toAst()
+                  parameters[name] = self.children[idx].ast()
               return Ast(self.astTransform.name, parameters)
           elif len(self.children):
-              return self.children[0].toAst()
+              return self.children[0].ast()
           else:
               return None
   def dumps(self, indent=None, b64_source=True):
@@ -190,7 +190,7 @@ class ParseTree():
 class Ast():
     def __init__(self, name, attributes):
         self.__dict__.update(locals())
-    def getAttr(self, attr):
+    def attr(self, attr):
         return self.attributes[attr]
     def dumps(self, indent=None, b64_source=True):
         args = locals()
@@ -259,220 +259,220 @@ class ParserContext:
     self.rule_string = None
 # Parser Code #
 terminals = {
-    0: 'cmd_part',
-    1: 'runtime',
-    2: 'colon',
-    3: 'equals',
-    4: 'identifier',
-    5: 'rbrace',
-    6: 'lbrace',
+    0: 'command',
+    1: 'rsquare',
+    2: 'rbrace',
+    3: 'qmark',
+    4: 'type',
+    5: 'runtime',
+    6: 'outputs',
     7: 'task',
-    8: 'cmd_param_start',
-    9: 'lsquare',
-    10: 'outputs',
-    11: 'string',
-    12: 'type',
-    13: 'arrow',
-    14: 'qmark',
-    15: 'asterisk',
-    16: 'cmd_param_end',
-    17: 'command',
-    18: 'cmd_attr_hint',
-    19: 'rsquare',
-    'cmd_part': 0,
-    'runtime': 1,
-    'colon': 2,
-    'equals': 3,
-    'identifier': 4,
-    'rbrace': 5,
-    'lbrace': 6,
+    8: 'identifier',
+    9: 'cmd_param_end',
+    10: 'cmd_part',
+    11: 'lbrace',
+    12: 'cmd_attr_hint',
+    13: 'equals',
+    14: 'colon',
+    15: 'string',
+    16: 'cmd_param_start',
+    17: 'lsquare',
+    18: 'asterisk',
+    19: 'arrow',
+    'command': 0,
+    'rsquare': 1,
+    'rbrace': 2,
+    'qmark': 3,
+    'type': 4,
+    'runtime': 5,
+    'outputs': 6,
     'task': 7,
-    'cmd_param_start': 8,
-    'lsquare': 9,
-    'outputs': 10,
-    'string': 11,
-    'type': 12,
-    'arrow': 13,
-    'qmark': 14,
-    'asterisk': 15,
-    'cmd_param_end': 16,
-    'command': 17,
-    'cmd_attr_hint': 18,
-    'rsquare': 19,
+    'identifier': 8,
+    'cmd_param_end': 9,
+    'cmd_part': 10,
+    'lbrace': 11,
+    'cmd_attr_hint': 12,
+    'equals': 13,
+    'colon': 14,
+    'string': 15,
+    'cmd_param_start': 16,
+    'lsquare': 17,
+    'asterisk': 18,
+    'arrow': 19,
 }
 # table[nonterminal][terminal] = rule
 table = [
-    [-1, -1, -1, -1, -1, -1, -1, -1, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, 31, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, 28, 29, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, 5, -1, -1, -1, -1, -1, -1, -1, -1, 4, -1, -1, -1, -1, -1, -1, 3, -1, -1],
-    [-1, -1, -1, -1, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 13, 13, 14, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, -1, -1],
-    [-1, 30, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-    [6, -1, -1, -1, -1, 7, -1, -1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 22, 23, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 27, -1, -1, -1, -1, -1, -1, -1, -1],
-    [9, -1, -1, -1, -1, -1, -1, -1, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, 0, -1, -1, -1, 1, -1, -1, -1, -1, 0, -1, -1, -1, -1, -1, -1, 0, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 16, -1],
-    [-1, -1, -1, -1, -1, 25, -1, -1, -1, -1, -1, 24, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, 21, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, 25, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 24, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 16, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, 31, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, 19, -1, -1, -1, 19, -1, -1, -1, -1, 18, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 15, -1, -1, -1],
+    [-1, -1, 29, -1, -1, -1, -1, -1, 28, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1, -1, -1, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, 19, -1, -1, -1, -1, 18, -1, -1, -1, -1, -1, -1, -1, -1, 19, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 17, 20, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 26, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 21, -1, -1],
+    [-1, -1, -1, -1, -1, 30, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [0, -1, 1, -1, -1, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, 26, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, 12, -1, -1, -1, 11, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 27, -1, -1, -1, -1],
+    [-1, -1, -1, 22, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 23, -1],
+    [3, -1, -1, -1, -1, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, -1, -1, -1, -1, -1, 10, -1, -1, -1],
+    [-1, -1, -1, -1, 20, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 17, -1, -1, -1, -1],
+    [-1, -1, 7, -1, -1, -1, -1, -1, -1, -1, 6, -1, -1, -1, -1, -1, 6, -1, -1, -1],
+    [-1, -1, -1, 13, -1, -1, -1, -1, -1, 14, -1, -1, -1, -1, -1, -1, -1, -1, 13, -1],
 ]
 nonterminal_first = {
-    20: [8],
-    21: [4],
-    22: [-1, 4],
-    23: [10, 17, 1],
-    24: [-1, 18],
-    25: [-1, 14, 15],
-    26: [17],
-    27: [1],
-    28: [-1, 8, 0],
-    29: [14, 15],
-    30: [11],
-    31: [8, 0],
-    32: [10, -1, 17, 1],
-    33: [18],
-    34: [-1, 11],
-    35: [9],
-    36: [7],
-    37: [-1, 9],
-    38: [11, 12],
-    39: [10],
+    20: [15, -1],
+    21: [12],
+    22: [8],
+    23: [-1, 17],
+    24: [16],
+    25: [8, -1],
+    26: [7],
+    27: [17],
+    28: [5],
+    29: [0],
+    30: [0, 6, -1, 5],
+    31: [6],
+    32: [-1, 12],
+    33: [15],
+    34: [3, 18],
+    35: [0, 6, 5],
+    36: [10, 16],
+    37: [15, 4],
+    38: [10, 16, -1],
+    39: [-1, 3, 18],
 }
 nonterminal_follow = {
-    20: [5, 8, 0],
-    21: [4, 5],
-    22: [5],
-    23: [10, 17, 5, 1],
-    24: [4],
-    25: [16],
-    26: [10, 1, 17, 5],
-    27: [10, 1, 17, 5],
-    28: [5],
-    29: [16],
-    30: [11, 5],
-    31: [5, 8, 0],
-    32: [5],
-    33: [18, 4],
-    34: [5],
-    35: [18, 4],
-    36: [-1],
-    37: [18, 4],
-    38: [18, 4],
-    39: [10, 1, 17, 5],
+    20: [2],
+    21: [8, 12],
+    22: [8, 2],
+    23: [8, 12],
+    24: [10, 16, 2],
+    25: [2],
+    26: [-1],
+    27: [8, 12],
+    28: [0, 2, 5, 6],
+    29: [0, 2, 5, 6],
+    30: [2],
+    31: [0, 2, 5, 6],
+    32: [8],
+    33: [15, 2],
+    34: [9],
+    35: [0, 6, 2, 5],
+    36: [10, 16, 2],
+    37: [8, 12],
+    38: [2],
+    39: [9],
 }
 rule_first = {
-    0: [10, 17, 1],
+    0: [0, 6, 5],
     1: [-1],
     2: [7],
-    3: [17],
-    4: [10],
-    5: [1],
-    6: [8, 0],
+    3: [0],
+    4: [6],
+    5: [5],
+    6: [10, 16],
     7: [-1],
-    8: [17],
-    9: [0],
-    10: [8],
-    11: [18],
+    8: [0],
+    9: [10],
+    10: [16],
+    11: [12],
     12: [-1],
-    13: [14, 15],
+    13: [3, 18],
     14: [-1],
-    15: [8],
-    16: [18],
-    17: [11],
-    18: [9],
+    15: [16],
+    16: [12],
+    17: [15],
+    18: [17],
     19: [-1],
-    20: [12],
-    21: [9],
-    22: [14],
-    23: [15],
-    24: [11],
+    20: [4],
+    21: [17],
+    22: [3],
+    23: [18],
+    24: [15],
     25: [-1],
-    26: [10],
-    27: [11],
-    28: [4],
+    26: [6],
+    27: [15],
+    28: [8],
     29: [-1],
-    30: [1],
-    31: [4],
+    30: [5],
+    31: [8],
 }
 nonterminal_rules = {
     20: [
-        "$cmd_param = :cmd_param_start $_gen2 :identifier $_gen3 :cmd_param_end -> CommandParameter( name=$2, attributes=$1, qualifier=$3 )",
+        "$_gen5 = $output_kv $_gen5",
+        "$_gen5 = :_empty",
     ],
     21: [
-        "$runtime_kv = :identifier :colon :string -> RuntimeAttribute( key=$0, value=$2 )",
+        "$cmd_param_kv = :cmd_attr_hint :identifier :equals $cmd_param_value -> CommandParameterAttr( key=$1, value=$3 )",
     ],
     22: [
+        "$runtime_kv = :identifier :colon :string -> RuntimeAttribute( key=$0, value=$2 )",
+    ],
+    23: [
+        "$_gen4 = $sub_type",
+        "$_gen4 = :_empty",
+    ],
+    24: [
+        "$cmd_param = :cmd_param_start $_gen2 :identifier $_gen3 :cmd_param_end -> CommandParameter( name=$2, attributes=$1, qualifier=$3 )",
+    ],
+    25: [
         "$_gen6 = $runtime_kv $_gen6",
         "$_gen6 = :_empty",
     ],
-    23: [
+    26: [
+        "$task = :task :identifier :lbrace $_gen0 :rbrace -> Task( name=$1, sections=$3 )",
+    ],
+    27: [
+        "$sub_type = :lsquare :type :rsquare -> $1",
+    ],
+    28: [
+        "$runtime = :runtime :lbrace $_gen6 :rbrace -> RuntimeAttributes( attributes=$0 )",
+    ],
+    29: [
+        "$command = :command :lbrace $_gen1 :rbrace -> Command( parts=$2 )",
+    ],
+    30: [
+        "$_gen0 = $sections $_gen0",
+        "$_gen0 = :_empty",
+    ],
+    31: [
+        "$outputs = :outputs :lbrace $_gen5 :rbrace -> Outputs( attributes=$0 )",
+    ],
+    32: [
+        "$_gen2 = $cmd_param_kv $_gen2",
+        "$_gen2 = :_empty",
+    ],
+    33: [
+        "$output_kv = :string :arrow :identifier -> OutputAttribute( key=$0, value=$2 )",
+    ],
+    34: [
+        "$qualifier = :qmark",
+        "$qualifier = :asterisk",
+    ],
+    35: [
         "$sections = $command",
         "$sections = $outputs",
         "$sections = $runtime",
     ],
-    24: [
-        "$_gen2 = $cmd_param_kv $_gen2",
-        "$_gen2 = :_empty",
-    ],
-    25: [
-        "$_gen3 = $qualifier",
-        "$_gen3 = :_empty",
-    ],
-    26: [
-        "$command = :command :lbrace $_gen1 :rbrace -> Command( parts=$2 )",
-    ],
-    27: [
-        "$runtime = :runtime :lbrace $_gen6 :rbrace -> RuntimeAttributes( attributes=$0 )",
-    ],
-    28: [
-        "$_gen1 = $command_part $_gen1",
-        "$_gen1 = :_empty",
-    ],
-    29: [
-        "$qualifier = :qmark",
-        "$qualifier = :asterisk",
-    ],
-    30: [
-        "$output_kv = :string :arrow :identifier -> OutputAttribute( key=$0, value=$2 )",
-    ],
-    31: [
+    36: [
         "$command_part = :cmd_part",
         "$command_part = $cmd_param",
     ],
-    32: [
-        "$_gen0 = $sections $_gen0",
-        "$_gen0 = :_empty",
-    ],
-    33: [
-        "$cmd_param_kv = :cmd_attr_hint :identifier :equals $cmd_param_value -> CommandParameterAttr( key=$1, value=$3 )",
-    ],
-    34: [
-        "$_gen5 = $output_kv $_gen5",
-        "$_gen5 = :_empty",
-    ],
-    35: [
-        "$sub_type = :lsquare :type :rsquare -> $1",
-    ],
-    36: [
-        "$task = :task :identifier :lbrace $_gen0 :rbrace -> Task( name=$1, sections=$3 )",
-    ],
     37: [
-        "$_gen4 = $sub_type",
-        "$_gen4 = :_empty",
-    ],
-    38: [
         "$cmd_param_value = :string",
         "$cmd_param_value = :type $_gen4 -> Type( name=$0, sub=$1 )",
     ],
+    38: [
+        "$_gen1 = $command_part $_gen1",
+        "$_gen1 = :_empty",
+    ],
     39: [
-        "$outputs = :outputs :lbrace $_gen5 :rbrace -> Outputs( attributes=$0 )",
+        "$_gen3 = $qualifier",
+        "$_gen3 = :_empty",
     ],
 }
 rules = {
@@ -530,10 +530,104 @@ def expect(ctx, terminal_id):
     if next and not is_terminal(next.id):
         raise ctx.errors.invalid_terminal(ctx.nonterminal, next)
     return current
-def parse_cmd_param(ctx):
+def parse__gen5(ctx):
     current = ctx.tokens.current()
     rule = table[0][current.id] if current else -1
-    tree = ParseTree(NonTerminal(20, 'cmd_param'))
+    tree = ParseTree(NonTerminal(20, '_gen5'))
+    ctx.nonterminal = "_gen5"
+    tree.list = 'nlist'
+    if current != None and current.id in nonterminal_follow[20] and current.id not in nonterminal_first[20]:
+        return tree
+    if current == None:
+        return tree
+    if rule == 24: # $_gen5 = $output_kv $_gen5
+        ctx.rule = rules[24]
+        tree.astTransform = AstTransformSubstitution(0)
+        subtree = parse_output_kv(ctx)
+        tree.add(subtree)
+        subtree = parse__gen5(ctx)
+        tree.add(subtree)
+        return tree
+    return tree
+def parse_cmd_param_kv(ctx):
+    current = ctx.tokens.current()
+    rule = table[1][current.id] if current else -1
+    tree = ParseTree(NonTerminal(21, 'cmd_param_kv'))
+    ctx.nonterminal = "cmd_param_kv"
+    tree.list = False
+    if current == None:
+        raise ctx.errors.unexpected_eof()
+    if rule == 16: # $cmd_param_kv = :cmd_attr_hint :identifier :equals $cmd_param_value -> CommandParameterAttr( key=$1, value=$3 )
+        ctx.rule = rules[16]
+        ast_parameters = OrderedDict([
+            ('key', 1),
+            ('value', 3),
+        ])
+        tree.astTransform = AstTransformNodeCreator('CommandParameterAttr', ast_parameters)
+        t = expect(ctx, 12) # :cmd_attr_hint
+        tree.add(t)
+        t = expect(ctx, 8) # :identifier
+        tree.add(t)
+        t = expect(ctx, 13) # :equals
+        tree.add(t)
+        subtree = parse_cmd_param_value(ctx)
+        tree.add(subtree)
+        return tree
+    raise ctx.errors.unexpected_symbol(
+      ctx.nonterminal,
+      ctx.tokens.current(),
+      [terminals[x] for x in nonterminal_first[21] if x >=0],
+      rules[16]
+    )
+def parse_runtime_kv(ctx):
+    current = ctx.tokens.current()
+    rule = table[2][current.id] if current else -1
+    tree = ParseTree(NonTerminal(22, 'runtime_kv'))
+    ctx.nonterminal = "runtime_kv"
+    tree.list = False
+    if current == None:
+        raise ctx.errors.unexpected_eof()
+    if rule == 31: # $runtime_kv = :identifier :colon :string -> RuntimeAttribute( key=$0, value=$2 )
+        ctx.rule = rules[31]
+        ast_parameters = OrderedDict([
+            ('key', 0),
+            ('value', 2),
+        ])
+        tree.astTransform = AstTransformNodeCreator('RuntimeAttribute', ast_parameters)
+        t = expect(ctx, 8) # :identifier
+        tree.add(t)
+        t = expect(ctx, 14) # :colon
+        tree.add(t)
+        t = expect(ctx, 15) # :string
+        tree.add(t)
+        return tree
+    raise ctx.errors.unexpected_symbol(
+      ctx.nonterminal,
+      ctx.tokens.current(),
+      [terminals[x] for x in nonterminal_first[22] if x >=0],
+      rules[31]
+    )
+def parse__gen4(ctx):
+    current = ctx.tokens.current()
+    rule = table[3][current.id] if current else -1
+    tree = ParseTree(NonTerminal(23, '_gen4'))
+    ctx.nonterminal = "_gen4"
+    tree.list = False
+    if current != None and current.id in nonterminal_follow[23] and current.id not in nonterminal_first[23]:
+        return tree
+    if current == None:
+        return tree
+    if rule == 18: # $_gen4 = $sub_type
+        ctx.rule = rules[18]
+        tree.astTransform = AstTransformSubstitution(0)
+        subtree = parse_sub_type(ctx)
+        tree.add(subtree)
+        return tree
+    return tree
+def parse_cmd_param(ctx):
+    current = ctx.tokens.current()
+    rule = table[4][current.id] if current else -1
+    tree = ParseTree(NonTerminal(24, 'cmd_param'))
     ctx.nonterminal = "cmd_param"
     tree.list = False
     if current == None:
@@ -546,58 +640,30 @@ def parse_cmd_param(ctx):
             ('qualifier', 3),
         ])
         tree.astTransform = AstTransformNodeCreator('CommandParameter', ast_parameters)
-        t = expect(ctx, 8) # :cmd_param_start
+        t = expect(ctx, 16) # :cmd_param_start
         tree.add(t)
         subtree = parse__gen2(ctx)
         tree.add(subtree)
-        t = expect(ctx, 4) # :identifier
+        t = expect(ctx, 8) # :identifier
         tree.add(t)
         subtree = parse__gen3(ctx)
         tree.add(subtree)
-        t = expect(ctx, 16) # :cmd_param_end
+        t = expect(ctx, 9) # :cmd_param_end
         tree.add(t)
         return tree
     raise ctx.errors.unexpected_symbol(
       ctx.nonterminal,
       ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[20] if x >=0],
+      [terminals[x] for x in nonterminal_first[24] if x >=0],
       rules[15]
-    )
-def parse_runtime_kv(ctx):
-    current = ctx.tokens.current()
-    rule = table[1][current.id] if current else -1
-    tree = ParseTree(NonTerminal(21, 'runtime_kv'))
-    ctx.nonterminal = "runtime_kv"
-    tree.list = False
-    if current == None:
-        raise ctx.errors.unexpected_eof()
-    if rule == 31: # $runtime_kv = :identifier :colon :string -> RuntimeAttribute( key=$0, value=$2 )
-        ctx.rule = rules[31]
-        ast_parameters = OrderedDict([
-            ('key', 0),
-            ('value', 2),
-        ])
-        tree.astTransform = AstTransformNodeCreator('RuntimeAttribute', ast_parameters)
-        t = expect(ctx, 4) # :identifier
-        tree.add(t)
-        t = expect(ctx, 2) # :colon
-        tree.add(t)
-        t = expect(ctx, 11) # :string
-        tree.add(t)
-        return tree
-    raise ctx.errors.unexpected_symbol(
-      ctx.nonterminal,
-      ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[21] if x >=0],
-      rules[31]
     )
 def parse__gen6(ctx):
     current = ctx.tokens.current()
-    rule = table[2][current.id] if current else -1
-    tree = ParseTree(NonTerminal(22, '_gen6'))
+    rule = table[5][current.id] if current else -1
+    tree = ParseTree(NonTerminal(25, '_gen6'))
     ctx.nonterminal = "_gen6"
     tree.list = 'nlist'
-    if current != None and current.id in nonterminal_follow[22] and current.id not in nonterminal_first[22]:
+    if current != None and current.id in nonterminal_follow[25] and current.id not in nonterminal_first[25]:
         return tree
     if current == None:
         return tree
@@ -610,10 +676,245 @@ def parse__gen6(ctx):
         tree.add(subtree)
         return tree
     return tree
+def parse_task(ctx):
+    current = ctx.tokens.current()
+    rule = table[6][current.id] if current else -1
+    tree = ParseTree(NonTerminal(26, 'task'))
+    ctx.nonterminal = "task"
+    tree.list = False
+    if current == None:
+        raise ctx.errors.unexpected_eof()
+    if rule == 2: # $task = :task :identifier :lbrace $_gen0 :rbrace -> Task( name=$1, sections=$3 )
+        ctx.rule = rules[2]
+        ast_parameters = OrderedDict([
+            ('name', 1),
+            ('sections', 3),
+        ])
+        tree.astTransform = AstTransformNodeCreator('Task', ast_parameters)
+        t = expect(ctx, 7) # :task
+        tree.add(t)
+        t = expect(ctx, 8) # :identifier
+        tree.add(t)
+        t = expect(ctx, 11) # :lbrace
+        tree.add(t)
+        subtree = parse__gen0(ctx)
+        tree.add(subtree)
+        t = expect(ctx, 2) # :rbrace
+        tree.add(t)
+        return tree
+    raise ctx.errors.unexpected_symbol(
+      ctx.nonterminal,
+      ctx.tokens.current(),
+      [terminals[x] for x in nonterminal_first[26] if x >=0],
+      rules[2]
+    )
+def parse_sub_type(ctx):
+    current = ctx.tokens.current()
+    rule = table[7][current.id] if current else -1
+    tree = ParseTree(NonTerminal(27, 'sub_type'))
+    ctx.nonterminal = "sub_type"
+    tree.list = False
+    if current == None:
+        raise ctx.errors.unexpected_eof()
+    if rule == 21: # $sub_type = :lsquare :type :rsquare -> $1
+        ctx.rule = rules[21]
+        tree.astTransform = AstTransformSubstitution(1)
+        t = expect(ctx, 17) # :lsquare
+        tree.add(t)
+        t = expect(ctx, 4) # :type
+        tree.add(t)
+        t = expect(ctx, 1) # :rsquare
+        tree.add(t)
+        return tree
+    raise ctx.errors.unexpected_symbol(
+      ctx.nonterminal,
+      ctx.tokens.current(),
+      [terminals[x] for x in nonterminal_first[27] if x >=0],
+      rules[21]
+    )
+def parse_runtime(ctx):
+    current = ctx.tokens.current()
+    rule = table[8][current.id] if current else -1
+    tree = ParseTree(NonTerminal(28, 'runtime'))
+    ctx.nonterminal = "runtime"
+    tree.list = False
+    if current == None:
+        raise ctx.errors.unexpected_eof()
+    if rule == 30: # $runtime = :runtime :lbrace $_gen6 :rbrace -> RuntimeAttributes( attributes=$0 )
+        ctx.rule = rules[30]
+        ast_parameters = OrderedDict([
+            ('attributes', 0),
+        ])
+        tree.astTransform = AstTransformNodeCreator('RuntimeAttributes', ast_parameters)
+        t = expect(ctx, 5) # :runtime
+        tree.add(t)
+        t = expect(ctx, 11) # :lbrace
+        tree.add(t)
+        subtree = parse__gen6(ctx)
+        tree.add(subtree)
+        t = expect(ctx, 2) # :rbrace
+        tree.add(t)
+        return tree
+    raise ctx.errors.unexpected_symbol(
+      ctx.nonterminal,
+      ctx.tokens.current(),
+      [terminals[x] for x in nonterminal_first[28] if x >=0],
+      rules[30]
+    )
+def parse_command(ctx):
+    current = ctx.tokens.current()
+    rule = table[9][current.id] if current else -1
+    tree = ParseTree(NonTerminal(29, 'command'))
+    ctx.nonterminal = "command"
+    tree.list = False
+    if current == None:
+        raise ctx.errors.unexpected_eof()
+    if rule == 8: # $command = :command :lbrace $_gen1 :rbrace -> Command( parts=$2 )
+        ctx.rule = rules[8]
+        ast_parameters = OrderedDict([
+            ('parts', 2),
+        ])
+        tree.astTransform = AstTransformNodeCreator('Command', ast_parameters)
+        t = expect(ctx, 0) # :command
+        tree.add(t)
+        t = expect(ctx, 11) # :lbrace
+        tree.add(t)
+        subtree = parse__gen1(ctx)
+        tree.add(subtree)
+        t = expect(ctx, 2) # :rbrace
+        tree.add(t)
+        return tree
+    raise ctx.errors.unexpected_symbol(
+      ctx.nonterminal,
+      ctx.tokens.current(),
+      [terminals[x] for x in nonterminal_first[29] if x >=0],
+      rules[8]
+    )
+def parse__gen0(ctx):
+    current = ctx.tokens.current()
+    rule = table[10][current.id] if current else -1
+    tree = ParseTree(NonTerminal(30, '_gen0'))
+    ctx.nonterminal = "_gen0"
+    tree.list = 'nlist'
+    if current != None and current.id in nonterminal_follow[30] and current.id not in nonterminal_first[30]:
+        return tree
+    if current == None:
+        return tree
+    if rule == 0: # $_gen0 = $sections $_gen0
+        ctx.rule = rules[0]
+        tree.astTransform = AstTransformSubstitution(0)
+        subtree = parse_sections(ctx)
+        tree.add(subtree)
+        subtree = parse__gen0(ctx)
+        tree.add(subtree)
+        return tree
+    return tree
+def parse_outputs(ctx):
+    current = ctx.tokens.current()
+    rule = table[11][current.id] if current else -1
+    tree = ParseTree(NonTerminal(31, 'outputs'))
+    ctx.nonterminal = "outputs"
+    tree.list = False
+    if current == None:
+        raise ctx.errors.unexpected_eof()
+    if rule == 26: # $outputs = :outputs :lbrace $_gen5 :rbrace -> Outputs( attributes=$0 )
+        ctx.rule = rules[26]
+        ast_parameters = OrderedDict([
+            ('attributes', 0),
+        ])
+        tree.astTransform = AstTransformNodeCreator('Outputs', ast_parameters)
+        t = expect(ctx, 6) # :outputs
+        tree.add(t)
+        t = expect(ctx, 11) # :lbrace
+        tree.add(t)
+        subtree = parse__gen5(ctx)
+        tree.add(subtree)
+        t = expect(ctx, 2) # :rbrace
+        tree.add(t)
+        return tree
+    raise ctx.errors.unexpected_symbol(
+      ctx.nonterminal,
+      ctx.tokens.current(),
+      [terminals[x] for x in nonterminal_first[31] if x >=0],
+      rules[26]
+    )
+def parse__gen2(ctx):
+    current = ctx.tokens.current()
+    rule = table[12][current.id] if current else -1
+    tree = ParseTree(NonTerminal(32, '_gen2'))
+    ctx.nonterminal = "_gen2"
+    tree.list = 'nlist'
+    if current != None and current.id in nonterminal_follow[32] and current.id not in nonterminal_first[32]:
+        return tree
+    if current == None:
+        return tree
+    if rule == 11: # $_gen2 = $cmd_param_kv $_gen2
+        ctx.rule = rules[11]
+        tree.astTransform = AstTransformSubstitution(0)
+        subtree = parse_cmd_param_kv(ctx)
+        tree.add(subtree)
+        subtree = parse__gen2(ctx)
+        tree.add(subtree)
+        return tree
+    return tree
+def parse_output_kv(ctx):
+    current = ctx.tokens.current()
+    rule = table[13][current.id] if current else -1
+    tree = ParseTree(NonTerminal(33, 'output_kv'))
+    ctx.nonterminal = "output_kv"
+    tree.list = False
+    if current == None:
+        raise ctx.errors.unexpected_eof()
+    if rule == 27: # $output_kv = :string :arrow :identifier -> OutputAttribute( key=$0, value=$2 )
+        ctx.rule = rules[27]
+        ast_parameters = OrderedDict([
+            ('key', 0),
+            ('value', 2),
+        ])
+        tree.astTransform = AstTransformNodeCreator('OutputAttribute', ast_parameters)
+        t = expect(ctx, 15) # :string
+        tree.add(t)
+        t = expect(ctx, 19) # :arrow
+        tree.add(t)
+        t = expect(ctx, 8) # :identifier
+        tree.add(t)
+        return tree
+    raise ctx.errors.unexpected_symbol(
+      ctx.nonterminal,
+      ctx.tokens.current(),
+      [terminals[x] for x in nonterminal_first[33] if x >=0],
+      rules[27]
+    )
+def parse_qualifier(ctx):
+    current = ctx.tokens.current()
+    rule = table[14][current.id] if current else -1
+    tree = ParseTree(NonTerminal(34, 'qualifier'))
+    ctx.nonterminal = "qualifier"
+    tree.list = False
+    if current == None:
+        raise ctx.errors.unexpected_eof()
+    if rule == 22: # $qualifier = :qmark
+        ctx.rule = rules[22]
+        tree.astTransform = AstTransformSubstitution(0)
+        t = expect(ctx, 3) # :qmark
+        tree.add(t)
+        return tree
+    elif rule == 23: # $qualifier = :asterisk
+        ctx.rule = rules[23]
+        tree.astTransform = AstTransformSubstitution(0)
+        t = expect(ctx, 18) # :asterisk
+        tree.add(t)
+        return tree
+    raise ctx.errors.unexpected_symbol(
+      ctx.nonterminal,
+      ctx.tokens.current(),
+      [terminals[x] for x in nonterminal_first[34] if x >=0],
+      rules[23]
+    )
 def parse_sections(ctx):
     current = ctx.tokens.current()
-    rule = table[3][current.id] if current else -1
-    tree = ParseTree(NonTerminal(23, 'sections'))
+    rule = table[15][current.id] if current else -1
+    tree = ParseTree(NonTerminal(35, 'sections'))
     ctx.nonterminal = "sections"
     tree.list = False
     if current == None:
@@ -639,110 +940,74 @@ def parse_sections(ctx):
     raise ctx.errors.unexpected_symbol(
       ctx.nonterminal,
       ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[23] if x >=0],
+      [terminals[x] for x in nonterminal_first[35] if x >=0],
       rules[5]
     )
-def parse__gen2(ctx):
+def parse_command_part(ctx):
     current = ctx.tokens.current()
-    rule = table[4][current.id] if current else -1
-    tree = ParseTree(NonTerminal(24, '_gen2'))
-    ctx.nonterminal = "_gen2"
-    tree.list = 'nlist'
-    if current != None and current.id in nonterminal_follow[24] and current.id not in nonterminal_first[24]:
-        return tree
-    if current == None:
-        return tree
-    if rule == 11: # $_gen2 = $cmd_param_kv $_gen2
-        ctx.rule = rules[11]
-        tree.astTransform = AstTransformSubstitution(0)
-        subtree = parse_cmd_param_kv(ctx)
-        tree.add(subtree)
-        subtree = parse__gen2(ctx)
-        tree.add(subtree)
-        return tree
-    return tree
-def parse__gen3(ctx):
-    current = ctx.tokens.current()
-    rule = table[5][current.id] if current else -1
-    tree = ParseTree(NonTerminal(25, '_gen3'))
-    ctx.nonterminal = "_gen3"
-    tree.list = False
-    if current != None and current.id in nonterminal_follow[25] and current.id not in nonterminal_first[25]:
-        return tree
-    if current == None:
-        return tree
-    if rule == 13: # $_gen3 = $qualifier
-        ctx.rule = rules[13]
-        tree.astTransform = AstTransformSubstitution(0)
-        subtree = parse_qualifier(ctx)
-        tree.add(subtree)
-        return tree
-    return tree
-def parse_command(ctx):
-    current = ctx.tokens.current()
-    rule = table[6][current.id] if current else -1
-    tree = ParseTree(NonTerminal(26, 'command'))
-    ctx.nonterminal = "command"
+    rule = table[16][current.id] if current else -1
+    tree = ParseTree(NonTerminal(36, 'command_part'))
+    ctx.nonterminal = "command_part"
     tree.list = False
     if current == None:
         raise ctx.errors.unexpected_eof()
-    if rule == 8: # $command = :command :lbrace $_gen1 :rbrace -> Command( parts=$2 )
-        ctx.rule = rules[8]
-        ast_parameters = OrderedDict([
-            ('parts', 2),
-        ])
-        tree.astTransform = AstTransformNodeCreator('Command', ast_parameters)
-        t = expect(ctx, 17) # :command
+    if rule == 9: # $command_part = :cmd_part
+        ctx.rule = rules[9]
+        tree.astTransform = AstTransformSubstitution(0)
+        t = expect(ctx, 10) # :cmd_part
         tree.add(t)
-        t = expect(ctx, 6) # :lbrace
-        tree.add(t)
-        subtree = parse__gen1(ctx)
+        return tree
+    elif rule == 10: # $command_part = $cmd_param
+        ctx.rule = rules[10]
+        tree.astTransform = AstTransformSubstitution(0)
+        subtree = parse_cmd_param(ctx)
         tree.add(subtree)
-        t = expect(ctx, 5) # :rbrace
-        tree.add(t)
         return tree
     raise ctx.errors.unexpected_symbol(
       ctx.nonterminal,
       ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[26] if x >=0],
-      rules[8]
+      [terminals[x] for x in nonterminal_first[36] if x >=0],
+      rules[10]
     )
-def parse_runtime(ctx):
+def parse_cmd_param_value(ctx):
     current = ctx.tokens.current()
-    rule = table[7][current.id] if current else -1
-    tree = ParseTree(NonTerminal(27, 'runtime'))
-    ctx.nonterminal = "runtime"
+    rule = table[17][current.id] if current else -1
+    tree = ParseTree(NonTerminal(37, 'cmd_param_value'))
+    ctx.nonterminal = "cmd_param_value"
     tree.list = False
     if current == None:
         raise ctx.errors.unexpected_eof()
-    if rule == 30: # $runtime = :runtime :lbrace $_gen6 :rbrace -> RuntimeAttributes( attributes=$0 )
-        ctx.rule = rules[30]
+    if rule == 17: # $cmd_param_value = :string
+        ctx.rule = rules[17]
+        tree.astTransform = AstTransformSubstitution(0)
+        t = expect(ctx, 15) # :string
+        tree.add(t)
+        return tree
+    elif rule == 20: # $cmd_param_value = :type $_gen4 -> Type( name=$0, sub=$1 )
+        ctx.rule = rules[20]
         ast_parameters = OrderedDict([
-            ('attributes', 0),
+            ('name', 0),
+            ('sub', 1),
         ])
-        tree.astTransform = AstTransformNodeCreator('RuntimeAttributes', ast_parameters)
-        t = expect(ctx, 1) # :runtime
+        tree.astTransform = AstTransformNodeCreator('Type', ast_parameters)
+        t = expect(ctx, 4) # :type
         tree.add(t)
-        t = expect(ctx, 6) # :lbrace
-        tree.add(t)
-        subtree = parse__gen6(ctx)
+        subtree = parse__gen4(ctx)
         tree.add(subtree)
-        t = expect(ctx, 5) # :rbrace
-        tree.add(t)
         return tree
     raise ctx.errors.unexpected_symbol(
       ctx.nonterminal,
       ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[27] if x >=0],
-      rules[30]
+      [terminals[x] for x in nonterminal_first[37] if x >=0],
+      rules[20]
     )
 def parse__gen1(ctx):
     current = ctx.tokens.current()
-    rule = table[8][current.id] if current else -1
-    tree = ParseTree(NonTerminal(28, '_gen1'))
+    rule = table[18][current.id] if current else -1
+    tree = ParseTree(NonTerminal(38, '_gen1'))
     ctx.nonterminal = "_gen1"
     tree.list = 'nlist'
-    if current != None and current.id in nonterminal_follow[28] and current.id not in nonterminal_first[28]:
+    if current != None and current.id in nonterminal_follow[38] and current.id not in nonterminal_first[38]:
         return tree
     if current == None:
         return tree
@@ -755,288 +1020,23 @@ def parse__gen1(ctx):
         tree.add(subtree)
         return tree
     return tree
-def parse_qualifier(ctx):
-    current = ctx.tokens.current()
-    rule = table[9][current.id] if current else -1
-    tree = ParseTree(NonTerminal(29, 'qualifier'))
-    ctx.nonterminal = "qualifier"
-    tree.list = False
-    if current == None:
-        raise ctx.errors.unexpected_eof()
-    if rule == 22: # $qualifier = :qmark
-        ctx.rule = rules[22]
-        tree.astTransform = AstTransformSubstitution(0)
-        t = expect(ctx, 14) # :qmark
-        tree.add(t)
-        return tree
-    elif rule == 23: # $qualifier = :asterisk
-        ctx.rule = rules[23]
-        tree.astTransform = AstTransformSubstitution(0)
-        t = expect(ctx, 15) # :asterisk
-        tree.add(t)
-        return tree
-    raise ctx.errors.unexpected_symbol(
-      ctx.nonterminal,
-      ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[29] if x >=0],
-      rules[23]
-    )
-def parse_output_kv(ctx):
-    current = ctx.tokens.current()
-    rule = table[10][current.id] if current else -1
-    tree = ParseTree(NonTerminal(30, 'output_kv'))
-    ctx.nonterminal = "output_kv"
-    tree.list = False
-    if current == None:
-        raise ctx.errors.unexpected_eof()
-    if rule == 27: # $output_kv = :string :arrow :identifier -> OutputAttribute( key=$0, value=$2 )
-        ctx.rule = rules[27]
-        ast_parameters = OrderedDict([
-            ('key', 0),
-            ('value', 2),
-        ])
-        tree.astTransform = AstTransformNodeCreator('OutputAttribute', ast_parameters)
-        t = expect(ctx, 11) # :string
-        tree.add(t)
-        t = expect(ctx, 13) # :arrow
-        tree.add(t)
-        t = expect(ctx, 4) # :identifier
-        tree.add(t)
-        return tree
-    raise ctx.errors.unexpected_symbol(
-      ctx.nonterminal,
-      ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[30] if x >=0],
-      rules[27]
-    )
-def parse_command_part(ctx):
-    current = ctx.tokens.current()
-    rule = table[11][current.id] if current else -1
-    tree = ParseTree(NonTerminal(31, 'command_part'))
-    ctx.nonterminal = "command_part"
-    tree.list = False
-    if current == None:
-        raise ctx.errors.unexpected_eof()
-    if rule == 9: # $command_part = :cmd_part
-        ctx.rule = rules[9]
-        tree.astTransform = AstTransformSubstitution(0)
-        t = expect(ctx, 0) # :cmd_part
-        tree.add(t)
-        return tree
-    elif rule == 10: # $command_part = $cmd_param
-        ctx.rule = rules[10]
-        tree.astTransform = AstTransformSubstitution(0)
-        subtree = parse_cmd_param(ctx)
-        tree.add(subtree)
-        return tree
-    raise ctx.errors.unexpected_symbol(
-      ctx.nonterminal,
-      ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[31] if x >=0],
-      rules[10]
-    )
-def parse__gen0(ctx):
-    current = ctx.tokens.current()
-    rule = table[12][current.id] if current else -1
-    tree = ParseTree(NonTerminal(32, '_gen0'))
-    ctx.nonterminal = "_gen0"
-    tree.list = 'nlist'
-    if current != None and current.id in nonterminal_follow[32] and current.id not in nonterminal_first[32]:
-        return tree
-    if current == None:
-        return tree
-    if rule == 0: # $_gen0 = $sections $_gen0
-        ctx.rule = rules[0]
-        tree.astTransform = AstTransformSubstitution(0)
-        subtree = parse_sections(ctx)
-        tree.add(subtree)
-        subtree = parse__gen0(ctx)
-        tree.add(subtree)
-        return tree
-    return tree
-def parse_cmd_param_kv(ctx):
-    current = ctx.tokens.current()
-    rule = table[13][current.id] if current else -1
-    tree = ParseTree(NonTerminal(33, 'cmd_param_kv'))
-    ctx.nonterminal = "cmd_param_kv"
-    tree.list = False
-    if current == None:
-        raise ctx.errors.unexpected_eof()
-    if rule == 16: # $cmd_param_kv = :cmd_attr_hint :identifier :equals $cmd_param_value -> CommandParameterAttr( key=$1, value=$3 )
-        ctx.rule = rules[16]
-        ast_parameters = OrderedDict([
-            ('key', 1),
-            ('value', 3),
-        ])
-        tree.astTransform = AstTransformNodeCreator('CommandParameterAttr', ast_parameters)
-        t = expect(ctx, 18) # :cmd_attr_hint
-        tree.add(t)
-        t = expect(ctx, 4) # :identifier
-        tree.add(t)
-        t = expect(ctx, 3) # :equals
-        tree.add(t)
-        subtree = parse_cmd_param_value(ctx)
-        tree.add(subtree)
-        return tree
-    raise ctx.errors.unexpected_symbol(
-      ctx.nonterminal,
-      ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[33] if x >=0],
-      rules[16]
-    )
-def parse__gen5(ctx):
-    current = ctx.tokens.current()
-    rule = table[14][current.id] if current else -1
-    tree = ParseTree(NonTerminal(34, '_gen5'))
-    ctx.nonterminal = "_gen5"
-    tree.list = 'nlist'
-    if current != None and current.id in nonterminal_follow[34] and current.id not in nonterminal_first[34]:
-        return tree
-    if current == None:
-        return tree
-    if rule == 24: # $_gen5 = $output_kv $_gen5
-        ctx.rule = rules[24]
-        tree.astTransform = AstTransformSubstitution(0)
-        subtree = parse_output_kv(ctx)
-        tree.add(subtree)
-        subtree = parse__gen5(ctx)
-        tree.add(subtree)
-        return tree
-    return tree
-def parse_sub_type(ctx):
-    current = ctx.tokens.current()
-    rule = table[15][current.id] if current else -1
-    tree = ParseTree(NonTerminal(35, 'sub_type'))
-    ctx.nonterminal = "sub_type"
-    tree.list = False
-    if current == None:
-        raise ctx.errors.unexpected_eof()
-    if rule == 21: # $sub_type = :lsquare :type :rsquare -> $1
-        ctx.rule = rules[21]
-        tree.astTransform = AstTransformSubstitution(1)
-        t = expect(ctx, 9) # :lsquare
-        tree.add(t)
-        t = expect(ctx, 12) # :type
-        tree.add(t)
-        t = expect(ctx, 19) # :rsquare
-        tree.add(t)
-        return tree
-    raise ctx.errors.unexpected_symbol(
-      ctx.nonterminal,
-      ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[35] if x >=0],
-      rules[21]
-    )
-def parse_task(ctx):
-    current = ctx.tokens.current()
-    rule = table[16][current.id] if current else -1
-    tree = ParseTree(NonTerminal(36, 'task'))
-    ctx.nonterminal = "task"
-    tree.list = False
-    if current == None:
-        raise ctx.errors.unexpected_eof()
-    if rule == 2: # $task = :task :identifier :lbrace $_gen0 :rbrace -> Task( name=$1, sections=$3 )
-        ctx.rule = rules[2]
-        ast_parameters = OrderedDict([
-            ('name', 1),
-            ('sections', 3),
-        ])
-        tree.astTransform = AstTransformNodeCreator('Task', ast_parameters)
-        t = expect(ctx, 7) # :task
-        tree.add(t)
-        t = expect(ctx, 4) # :identifier
-        tree.add(t)
-        t = expect(ctx, 6) # :lbrace
-        tree.add(t)
-        subtree = parse__gen0(ctx)
-        tree.add(subtree)
-        t = expect(ctx, 5) # :rbrace
-        tree.add(t)
-        return tree
-    raise ctx.errors.unexpected_symbol(
-      ctx.nonterminal,
-      ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[36] if x >=0],
-      rules[2]
-    )
-def parse__gen4(ctx):
-    current = ctx.tokens.current()
-    rule = table[17][current.id] if current else -1
-    tree = ParseTree(NonTerminal(37, '_gen4'))
-    ctx.nonterminal = "_gen4"
-    tree.list = False
-    if current != None and current.id in nonterminal_follow[37] and current.id not in nonterminal_first[37]:
-        return tree
-    if current == None:
-        return tree
-    if rule == 18: # $_gen4 = $sub_type
-        ctx.rule = rules[18]
-        tree.astTransform = AstTransformSubstitution(0)
-        subtree = parse_sub_type(ctx)
-        tree.add(subtree)
-        return tree
-    return tree
-def parse_cmd_param_value(ctx):
-    current = ctx.tokens.current()
-    rule = table[18][current.id] if current else -1
-    tree = ParseTree(NonTerminal(38, 'cmd_param_value'))
-    ctx.nonterminal = "cmd_param_value"
-    tree.list = False
-    if current == None:
-        raise ctx.errors.unexpected_eof()
-    if rule == 17: # $cmd_param_value = :string
-        ctx.rule = rules[17]
-        tree.astTransform = AstTransformSubstitution(0)
-        t = expect(ctx, 11) # :string
-        tree.add(t)
-        return tree
-    elif rule == 20: # $cmd_param_value = :type $_gen4 -> Type( name=$0, sub=$1 )
-        ctx.rule = rules[20]
-        ast_parameters = OrderedDict([
-            ('name', 0),
-            ('sub', 1),
-        ])
-        tree.astTransform = AstTransformNodeCreator('Type', ast_parameters)
-        t = expect(ctx, 12) # :type
-        tree.add(t)
-        subtree = parse__gen4(ctx)
-        tree.add(subtree)
-        return tree
-    raise ctx.errors.unexpected_symbol(
-      ctx.nonterminal,
-      ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[38] if x >=0],
-      rules[20]
-    )
-def parse_outputs(ctx):
+def parse__gen3(ctx):
     current = ctx.tokens.current()
     rule = table[19][current.id] if current else -1
-    tree = ParseTree(NonTerminal(39, 'outputs'))
-    ctx.nonterminal = "outputs"
+    tree = ParseTree(NonTerminal(39, '_gen3'))
+    ctx.nonterminal = "_gen3"
     tree.list = False
-    if current == None:
-        raise ctx.errors.unexpected_eof()
-    if rule == 26: # $outputs = :outputs :lbrace $_gen5 :rbrace -> Outputs( attributes=$0 )
-        ctx.rule = rules[26]
-        ast_parameters = OrderedDict([
-            ('attributes', 0),
-        ])
-        tree.astTransform = AstTransformNodeCreator('Outputs', ast_parameters)
-        t = expect(ctx, 10) # :outputs
-        tree.add(t)
-        t = expect(ctx, 6) # :lbrace
-        tree.add(t)
-        subtree = parse__gen5(ctx)
-        tree.add(subtree)
-        t = expect(ctx, 5) # :rbrace
-        tree.add(t)
+    if current != None and current.id in nonterminal_follow[39] and current.id not in nonterminal_first[39]:
         return tree
-    raise ctx.errors.unexpected_symbol(
-      ctx.nonterminal,
-      ctx.tokens.current(),
-      [terminals[x] for x in nonterminal_first[39] if x >=0],
-      rules[26]
-    )
+    if current == None:
+        return tree
+    if rule == 13: # $_gen3 = $qualifier
+        ctx.rule = rules[13]
+        tree.astTransform = AstTransformSubstitution(0)
+        subtree = parse_qualifier(ctx)
+        tree.add(subtree)
+        return tree
+    return tree
 # Lexer Code #
 # START USER CODE
 # END USER CODE
