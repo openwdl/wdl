@@ -1,5 +1,0 @@
-org.broadinstitute.parser.SyntaxError: Version information missing for task x
-Location: test-files/syntax-error/4/source.wdl @ line 3, column 8:
-
-  step x {}
-       ^

@@ -1,1 +1,0 @@
-composite_task foo {}

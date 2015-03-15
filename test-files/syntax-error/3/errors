@@ -1,9 +1,0 @@
-org.broadinstitute.parser.SyntaxError: Two steps have the same name: atask
-Location: test-files/syntax-error/3/source.wdl @ line 7, column 8:
-
-  step atask[version=0] {
-       ^
-Previous step was defined @ line 3, column 8:
-
-  step atask[version=0] {
-       ^
