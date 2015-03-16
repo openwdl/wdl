@@ -1,4 +1,4 @@
-Workflow Description Language (wdl)
+Workflow Description Language (WDL)
 ===================================
 
 The Workflow Description Language is a domain specific language for describing tasks and workflows in a clear and concise syntax.
@@ -11,7 +11,7 @@ Here is an example of a tool for running `bwa mem`.  This was ported from [bwa m
 task bwa-mem {
   command {
     bwa mem \
-    ${prefix='-t ' cpus?} \
+    ${prefix='-t ' cores?} \
     ${prefix='-I ' sep=',' type=array[int] min_std_max_min} \
     ${prefix='-m ' type=int minimum_seed_length} \
     ${type=uri reference} \
@@ -24,6 +24,7 @@ task bwa-mem {
   runtime {
     docker: "broadinstitute/bwa-mem:latest"
     memory: "5GB"
+    cores: ${cores}
   }
 }
 ```
