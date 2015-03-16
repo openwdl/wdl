@@ -11,11 +11,11 @@ Here is an example of a tool for running `bwa mem`.  This was ported from [bwa m
 task bwa-mem {
   command {
     bwa mem \
-    ${prefix='-t ' cores?} \
+    ${prefix='-t ' cpus?} \
     ${prefix='-I ' sep=',' type=array[int] min_std_max_min} \
     ${prefix='-m ' type=int minimum_seed_length} \
-    ${type=uri reference} \
-    ${type=array[uri] sep=' ' reads}
+    ${type=file reference} \
+    ${type=array[file] sep=' ' reads}
   }
   outputs {
     "output.bam" -> bam
@@ -24,7 +24,8 @@ task bwa-mem {
   runtime {
     docker: "broadinstitute/bwa-mem:latest"
     memory: "5GB"
-    cores: ${cores}
+    stdout: "output.bam"
+    cwd: "/job"
   }
 }
 ```
