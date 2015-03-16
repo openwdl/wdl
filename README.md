@@ -36,3 +36,39 @@ The 'command' section specifies the command line that this task runs with placeh
 The 'outputs' section specifies which output files are important and which variables they should be stored as.
 
 The 'runtime' section specifies any runtime needs for this task, like Docker containers, memory, CPU, standard in, standard out, etc.
+
+Current Implementation
+----------------------
+
+`wdl2.hgr` is the grammar file for describing tasks, like the `bwa-mem` example above.
+
+The `wdl.py` file will analyze a task and print out information about it:
+
+```
+$ python wdl.py analyze bwa-mem.wdl
+Short Form:
+['bwa', 'mem', <cpus>, <min_std_max_min>, <minimum_seed_length>, <reference>, <reads>]
+
+Long Form:
+(0) bwa
+(1) mem
+(2) [param name=cpus qualifier=? attrs={'type': string, 'prefix': '-t '}]
+(3) [param name=min_std_max_min qualifier=None attrs={'type': array[int], 'prefix': '-I ', 'sep': ','}]
+(4) [param name=minimum_seed_length qualifier=None attrs={'type': int, 'prefix': '-m '}]
+(5) [param name=reference qualifier=None attrs={'type': uri}]
+(6) [param name=reads qualifier=None attrs={'type': array[uri], 'sep': ' '}]
+```
+
+Also, providing an JSON file with mappings for the inputs, `wdl.py` will generate a command line:
+
+```
+$ python wdl.py run bwa-mem.wdl input.json
+bwa mem -t 2 -I 1,2,3 -m 9 gs://bucket/object gs://bucket/read1 gs://bucket/read2
+```
+
+It also provides basic type checking... if an input specified in the JSON is incorrect:
+
+```
+$ python wdl.py run bwa-mem.wdl input.json
+Parameter min_std_max_min requires type array[int], got: ['1', 2, 3]
+```
