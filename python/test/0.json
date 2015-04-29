@@ -1,0 +1,5 @@
+{
+    "simple.scatter_files": [[["/usr/share/dict/words"]], [["/usr/share/dict/words"]]],
+    "simple.array_of_str": ["a", "b"],
+    "simple.docker": "f4fbd4982e46"
+}
