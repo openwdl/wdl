@@ -1,75 +1,109 @@
 Workflow Description Language (WDL)
 ===================================
 
-The Workflow Description Language is a domain specific language for describing tasks and workflows in a clear and concise syntax.
+Language Spec
+-------------
 
-WDL was inspired by the [Common Workflow Language](https://github.com/common-workflow-language/common-workflow-language) but WDL aims to be written and read by humans while still maintaining easy machine parseability.
+[WDL Language Specification](SPEC.md)
 
-Here is an example of a tool for running `bwa mem`.  This was ported from [bwa mem in CWL](https://github.com/common-workflow-language/common-workflow-language/blob/master/examples/draft-2/bwa-mem-tool.cwl)
+Overview
+--------
+
+The Workflow Description Language is a domain specific language for describing tasks and workflows.
+
+An example WDL file that describes three tasks to run UNIX commands (in this case, `ps`, `grep`, and `wc`) and then link them together in a workflow would look like this:
 
 ```
-task bwa-mem {
+task ps {
   command {
-    bwa mem \
-    ${prefix='-t ' cpus?} \
-    ${prefix='-I ' sep=',' type=array[int] min_std_max_min} \
-    ${prefix='-m ' type=int minimum_seed_length} \
-    ${type=file reference} \
-    ${type=array[file] sep=' ' reads}
+    ps
   }
-  outputs {
-    "output.bam" -> bam
-    "${bam}.bai" -> bai
+  output {
+    file procs = "stdout"
   }
-  runtime {
-    docker: "broadinstitute/bwa-mem:latest"
-    memory: "5GB"
-    stdout: "output.bam"
-    cwd: "/job"
+}
+
+task cgrep {
+  command {
+    grep '${pattern}' ${file in_file} | wc -l
+  }
+  output {
+    int count = read_int("stdout")
+  }
+}
+
+task wc {
+  command {
+    wc -l ${file in_file}
+  }
+  output {
+    int count = read_int("stdout")
+  }
+}
+
+workflow three_step {
+  call ps
+  call cgrep {
+    input: in_file=ps.procs
+  }
+  call wc {
+    input: in_file=ps.procs
   }
 }
 ```
 
-Here the task is named, and has three sections: command, outputs, and runtime.
+WDL aims to be able to describe tasks with abstract commands which have inputs.  Abstract commands are a template with parts of the command left for the user to provide a value for.  In the example above, the `task wc` declaration defines a task with one input (`in_file` of type file) and one output (`count` of type int).
 
-The 'command' section specifies the command line that this task runs with placeholders for parameters that the user must provide.  For example, `${type=array[uri] sep=' ' reads}` specifies that the user must provide a parameter called `reads` which is an array of URIs.
+Once tasks are defined, WDL allows you to construct a workflow of these tasks.  Since each task defines its inputs and outputs explicitly, you can wire together one task's output to be another task's input and create a dependency graph.  An execution engine can then collect the set of inputs it needs from the user to run each task in the workflow up front and then run the tasks in the right order.
 
-The 'outputs' section specifies which output files are important and which variables they should be stored as.
-
-The 'runtime' section specifies any runtime needs for this task, like Docker containers, memory, CPU, standard in, standard out, etc.
-
-Current Implementation
-----------------------
-
-`wdl2.hgr` is the grammar file for describing tasks, like the `bwa-mem` example above.
-
-The `wdl.py` file will analyze a task and print out information about it:
+WDL also lets you define more advanced structures, like the ability to call a task in parallel (referred to as 'scattering').  In the example below, the `wc` task is being called n-times where n is the length of the `array[string] str_array` variable.  Each element of the `str_array` is used as the value of the `str` parameter in the call to the `wc` task.
 
 ```
-$ python wdl.py analyze bwa-mem.wdl
-Short Form:
-['bwa', 'mem', <cpus>, <min_std_max_min>, <minimum_seed_length>, <reference>, <reads>]
+task wc {
+  command {
+    echo "${str}" | wc -c
+  }
+  output {
+    int count = read_int("stdout") - 1
+  }
+}
 
-Long Form:
-(0) bwa
-(1) mem
-(2) [param name=cpus qualifier=? attrs={'type': string, 'prefix': '-t '}]
-(3) [param name=min_std_max_min qualifier=None attrs={'type': array[int], 'prefix': '-I ', 'sep': ','}]
-(4) [param name=minimum_seed_length qualifier=None attrs={'type': int, 'prefix': '-m '}]
-(5) [param name=reference qualifier=None attrs={'type': uri}]
-(6) [param name=reads qualifier=None attrs={'type': array[uri], 'sep': ' '}]
+workflow wf {
+  array[string] str_array
+  scatter(s in str_array) {
+    call wc{input: str=s}
+  }
+}
 ```
 
-Also, providing an JSON file with mappings for the inputs, `wdl.py` will generate a command line:
+Project Goals
+-------------
 
-```
-$ python wdl.py run bwa-mem.wdl input.json
-bwa mem -t 2 -I 1,2,3 -m 9 gs://bucket/object gs://bucket/read1 gs://bucket/read2
+The Workflow Description Language project aims to provide the following:
+
+* The full language specification
+* Parsers in a few languages
+* Language bindings to make working with WDL easier in the client language
+
+### Tool Authors
+
+WDL aims to make it as easy as possible to create `task` and `workflow` definitions in a WDL file and then validate that your syntax is correct and the wiring is done properly.
+
+### Execution Engine Implementers
+
+The WDL project wants to make it easy for an execution engine to quickly be able to understand WDL files and translate them into a native objects in their language of choice.
+
+For example, using [Cromwell](http://github.com/broadinstitute/cromwell) (Java/Scala implemenation) as the WDL language bindings layer, it should be as easy as the following code to use a WDL file:
+
+```scala
+val binding = WdlBinding.process(new File("/path/to/workflow.wdl"))
+for(task <- binding.tasks) {
+    println(task)
+    println(task.command)
+}
 ```
 
-It also provides basic type checking... if an input specified in the JSON is incorrect:
+Architecture
+------------
 
-```
-$ python wdl.py run bwa-mem.wdl input.json
-Parameter min_std_max_min requires type array[int], got: ['1', 2, 3]
-```
+![WDL Arch](http://i.imgur.com/OYtIYjf.png)
