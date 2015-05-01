@@ -107,3 +107,11 @@ Architecture
 ------------
 
 ![WDL Arch](http://i.imgur.com/OYtIYjf.png)
+
+The WDL Project aims to provide at the very least a language specification and parsers in a few languages.
+
+Scala parser and language bindings will be implemented in the [Cromwell](http://github.com/broadinstitute/cromwell) project.  This implementation will also contain an optional execution engine.
+
+Python parser and language bindings will be provided by the [reference implementation](https://github.com/broadinstitute/wdl/tree/wdl2/python).  This implementation can also be used as an execution engine to run workflows locally.
+
+A Java parser is provided [here](https://github.com/broadinstitute/wdl/tree/wdl2/java)
