@@ -1,25 +1,25 @@
 from setuptools import setup
 
-version = '1.0'
-long_description = 'Runs CWL tasks and workflows locally'
+version = '1.0.2'
+long_description = 'Runs WDL tasks and workflows locally'
 
 setup(
-  name='cwlrunner',
+  name='wdl',
   version=version,
   description=long_description,
   author='Scott Frazer',
   author_email='scott.d.frazer@gmail.com',
-  packages=['cwlrunner'],
+  packages=['wdl'],
   install_requires=[
       "xtermcolor",
       "nose"
   ],
   scripts={
-      'scripts/cwlrunner',
+      'scripts/wdl',
   },
   license = 'MIT',
   keywords = "Workflow, Task",
-  url = "http://github.com/broadinstitute/common-workflow-language",
+  url = "http://github.com/broadinstitute/wdl",
   classifiers=[
       'License :: OSI Approved :: MIT License',
       "Programming Language :: Python",

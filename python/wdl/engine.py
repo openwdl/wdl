@@ -1,4 +1,5 @@
-from binding import *
+from wdl.binding import *
+import wdl.parser
 import re
 import subprocess
 import tempfile
@@ -185,18 +186,18 @@ class SymbolTable(list):
                     input_name = '{}.{}'.format(node.fully_qualified_name, input_name)
                     for index, x in enumerate(self):
                         if x[0] == input_name:
-                            if isinstance(expression.ast, cwl_parser.Terminal) and expression.ast.str == 'identifier':
+                            if isinstance(expression.ast, wdl.parser.Terminal) and expression.ast.str == 'identifier':
                                 self[index][1] = '%ref:' + self.get_fully_qualified_name(expression.ast.source_string, node.parent)
                             else:
                                 value = eval(expression.ast, lookup_function(self, node))
-                                self[index][1] = value if not isinstance(value, CwlUndefined) else '%expr:' + expr_str(expression.ast)
+                                self[index][1] = value if not isinstance(value, WdlUndefined) else '%expr:' + expr_str(expression.ast)
 
                 for output_name, expression in node.outputs.items():
                     output_name = self.get_fully_qualified_name(output_name, node.parent)
                     reference = self.get_fully_qualified_name(expression.ast.source_string, node)
                     for index, x in enumerate(self):
                         if x[0] == reference:
-                            if isinstance(expression.ast, cwl_parser.Terminal) and expression.ast.str == 'identifier':
+                            if isinstance(expression.ast, wdl.parser.Terminal) and expression.ast.str == 'identifier':
                                 self[index][1] = '%ref:' + output_name
                             else:
                                 self[index][1] = eval(expression.ast, lookup_function(self, node))
@@ -254,7 +255,7 @@ class SymbolTable(list):
         scatter_item = self.get_fully_qualified_name(scatter_node.item, call)
         if var in call.inputs:
             expr = call.inputs[var].ast
-            if isinstance(expr, cwl_parser.Terminal) and expr.str == 'identifier':
+            if isinstance(expr, wdl.parser.Terminal) and expr.str == 'identifier':
                 val_fqn = self.get_fully_qualified_name(expr.source_string, call)
                 if val_fqn == scatter_item:
                     return val_fqn
@@ -287,9 +288,9 @@ class SymbolTable(list):
                     return self.get(re.sub('^%ref:', '', value))
                 if evaluate and isinstance(value, str) and value.startswith('%expr:'):
                     expr_string = re.sub('^%expr:', '', value)
-                    tokens = cwl_parser.lex(expr_string, 'string')
-                    parser_ctx = cwl_parser.ParserContext(tokens, cwl_parser.DefaultSyntaxErrorHandler(expr_string, 'string'))
-                    expr = cwl_parser.parse_e(parser_ctx).ast()
+                    tokens = wdl.parser.lex(expr_string, 'string')
+                    parser_ctx = wdl.parser.ParserContext(tokens, wdl.parser.DefaultSyntaxErrorHandler(expr_string, 'string'))
+                    expr = wdl.parser.parse_e(parser_ctx).ast()
                     scope = self.get_scope(name)
                     # TODO: this is duplicated from post_process
                     try:
@@ -335,10 +336,10 @@ def lookup_function(table, scope, iteration=None):
                 if iteration is not None:
                     task_prefix = task_prefix + '._i' + str(iteration)
                 # Return an object with attributes being the outputs of that task
-                obj = CwlObject()
+                obj = WdlObject()
                 for output in table.get_outputs(task_prefix):
                     value = table.get(output[0])
-                    obj.set(re.match(r'.*\.(.*)$', output[0]).group(1), value if value is not None else CwlUndefined())
+                    obj.set(re.match(r'.*\.(.*)$', output[0]).group(1), value if value is not None else WdlUndefined())
                 return obj
             else:
                 cvar = '{}.{}'.format(cscope.fully_qualified_name, var)
@@ -414,11 +415,11 @@ class CommandPartValue:
     def __str__(self):
         return 'CommandPartValue: {} {} = {}'.format(self.type, self.name, self.value)
 
-def run(cwl_file, inputs=None):
-    with open(cwl_file) as fp:
-        cwl_document = parse_document(fp.read())
+def run(wdl_file, inputs=None):
+    with open(wdl_file) as fp:
+        wdl_document = parse_document(fp.read())
 
-    workflow = cwl_document.workflows[0]
+    workflow = wdl_document.workflows[0]
     job = Job(workflow)
     if inputs:
         for k, v in inputs.items():
@@ -460,7 +461,7 @@ def run(cwl_file, inputs=None):
                 ready = True
                 param_dict = {}
                 for (name, value, type, io)  in inputs:
-                    if value is None or isinstance(value, CwlUndefined):
+                    if value is None or isinstance(value, WdlUndefined):
                         ready = False
                     name = re.sub('^'+fqn+'.', '', name)
                     param_dict[name] = CommandPartValue(name, type, value)

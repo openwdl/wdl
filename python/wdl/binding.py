@@ -1,4 +1,4 @@
-import cwl_parser
+import wdl.parser
 from copy import deepcopy
 import re
 import os
@@ -149,10 +149,10 @@ class Scatter(Scope):
 
 def get_nodes(ast_root, name):
     nodes = []
-    if isinstance(ast_root, cwl_parser.AstList):
+    if isinstance(ast_root, wdl.parser.AstList):
         for node in ast_root:
             nodes.extend(get_nodes(node, name))
-    elif isinstance(ast_root, cwl_parser.Ast):
+    elif isinstance(ast_root, wdl.parser.Ast):
         if ast_root.name == name:
             nodes.append(ast_root)
         for attr_name, attr in ast_root.attributes.items():
@@ -160,19 +160,19 @@ def get_nodes(ast_root, name):
     return nodes
 
 def assign_ids(ast_root, id=0):
-    if isinstance(ast_root, cwl_parser.AstList):
+    if isinstance(ast_root, wdl.parser.AstList):
         ast_root.id = id
         for index, node in enumerate(ast_root):
             assign_ids(node, id+index)
-    elif isinstance(ast_root, cwl_parser.Ast):
+    elif isinstance(ast_root, wdl.parser.Ast):
         ast_root.id = id
         for index, attr in enumerate(ast_root.attributes.values()):
             assign_ids(attr, id+index)
-    elif isinstance(ast_root, cwl_parser.Terminal):
+    elif isinstance(ast_root, wdl.parser.Terminal):
         ast_root.id = id
 
 def parse(string):
-    ast = cwl_parser.parse(string).ast()
+    ast = wdl.parser.parse(string).ast()
     # TODO: Do further syntax checks
     assign_ids(ast)
     return ast
@@ -210,7 +210,7 @@ def parse_workflow(ast, tasks):
     return Workflow(name, declarations, body, ast)
 
 def parse_runtime(ast):
-    if not isinstance(ast, cwl_parser.Ast) or ast.name != 'Runtime':
+    if not isinstance(ast, wdl.parser.Ast) or ast.name != 'Runtime':
         raise BindingException('Expecting a "Runtime" AST')
     runtime = {}
     for attr in ast.attr('map'):
@@ -218,7 +218,7 @@ def parse_runtime(ast):
     return runtime
 
 def parse_declaration(ast):
-    if not isinstance(ast, cwl_parser.Ast) or ast.name != 'Declaration':
+    if not isinstance(ast, wdl.parser.Ast) or ast.name != 'Declaration':
         raise BindingException('Expecting a "Declaration" AST')
     type = parse_type(ast.attr('type'))
     name = ast.attr('name').source_string
@@ -261,7 +261,7 @@ def parse_scatter(ast, tasks):
     return Scatter(item, collection, declarations, body, ast)
 
 def parse_call(ast, tasks):
-    if not isinstance(ast, cwl_parser.Ast) or ast.name != 'Call':
+    if not isinstance(ast, wdl.parser.Ast) or ast.name != 'Call':
         raise BindingException('Expecting a "Call" AST')
     task_name = ast.attr('task').source_string
     alias = ast.attr('alias').source_string if ast.attr('alias') else None
@@ -297,9 +297,9 @@ def parse_command_variable_attrs(ast):
     return attrs
 
 def parse_command_variable(ast):
-    if not isinstance(ast, cwl_parser.Ast) or ast.name != 'CommandParameter':
+    if not isinstance(ast, wdl.parser.Ast) or ast.name != 'CommandParameter':
         raise BindingException('Expecting a "CommandParameter" AST')
-    type_ast = ast.attr('type') if ast.attr('type') else cwl_parser.Terminal(cwl_parser.terminals['type'], 'type', 'string', 'fake', ast.attr('name').line, ast.attr('name').col)
+    type_ast = ast.attr('type') if ast.attr('type') else wdl.parser.Terminal(wdl.parser.terminals['type'], 'type', 'string', 'fake', ast.attr('name').line, ast.attr('name').col)
     return CommandLineVariable(
         ast.attr('name').source_string,
         parse_type(type_ast),
@@ -310,32 +310,32 @@ def parse_command_variable(ast):
     )
 
 def parse_command(ast):
-    if not isinstance(ast, cwl_parser.Ast) or ast.name != 'Command':
+    if not isinstance(ast, wdl.parser.Ast) or ast.name != 'Command':
         raise BindingException('Expecting a "Command" AST')
     parts = []
     for node in ast.attr('parts'):
-        if isinstance(node, cwl_parser.Terminal):
+        if isinstance(node, wdl.parser.Terminal):
             part = node.source_string
             if (part[0] == "'" and part[-1] == "'") or (part[0] == '"' and part[-1] == '"'):
                 part = part[1:-1]
             parts.append(part)
-        if isinstance(node, cwl_parser.Ast) and node.name == 'CommandParameter':
+        if isinstance(node, wdl.parser.Ast) and node.name == 'CommandParameter':
             parts.append(parse_command_variable(node))
     return CommandLine(parts, ast)
 
 def parse_raw_command(ast):
-    if not isinstance(ast, cwl_parser.Ast) or ast.name != 'RawCommand':
+    if not isinstance(ast, wdl.parser.Ast) or ast.name != 'RawCommand':
         raise BindingException('Expecting a "RawCommand" AST')
     parts = []
     for node in ast.attr('parts'):
-        if isinstance(node, cwl_parser.Terminal):
+        if isinstance(node, wdl.parser.Terminal):
             parts.append(node.source_string)
-        if isinstance(node, cwl_parser.Ast) and node.name == 'CommandParameter':
+        if isinstance(node, wdl.parser.Ast) and node.name == 'CommandParameter':
             parts.append(parse_command_variable(node))
     return RawCommandLine(parts, ast)
 
 def parse_output(ast):
-    if not isinstance(ast, cwl_parser.Ast) or ast.name != 'Output':
+    if not isinstance(ast, wdl.parser.Ast) or ast.name != 'Output':
         raise BindingException('Expecting an "Output" AST')
     type = parse_type(ast.attr('type'))
     var = ast.attr('var').source_string
@@ -343,11 +343,11 @@ def parse_output(ast):
     return Declaration(var, type, expression, ast)
 
 def parse_type(ast):
-    if isinstance(ast, cwl_parser.Terminal):
+    if isinstance(ast, wdl.parser.Terminal):
         if ast.str != 'type':
             raise BindingException('Expecting an "Type" AST')
         return Type(ast.source_string, None, ast)
-    if not isinstance(ast, cwl_parser.Ast) or ast.name != 'Type':
+    if not isinstance(ast, wdl.parser.Ast) or ast.name != 'Type':
         raise BindingException('Expecting an "Type" AST')
     name = ast.attr('name').source_string
     subtypes = [parse_type(subtype_ast) for subtype_ast in ast.attr('subtype')]
@@ -370,11 +370,11 @@ unary_operators = [
     'LogicalNot', 'UnaryPlus', 'UnaryMinus'
 ]
 
-class CwlUndefined:
+class WdlUndefined:
     def __str__(self):
         return 'undefined'
 
-class CwlObject:
+class WdlObject:
     def set(self, key, value):
         self.__dict__[key] = value
     def get(self, key):
@@ -383,7 +383,7 @@ class CwlObject:
         return str(self.__dict__)
 
 def eval(ast, lookup=lambda var: None, ctx=None):
-    if isinstance(ast, cwl_parser.Terminal):
+    if isinstance(ast, wdl.parser.Terminal):
         if ast.str == 'integer':
             return int(ast.source_string)
         elif ast.str == 'string':
@@ -393,15 +393,15 @@ def eval(ast, lookup=lambda var: None, ctx=None):
         elif ast.str == 'identifier':
             symbol = lookup(ast.source_string)
             if symbol is None:
-                return CwlUndefined()
+                return WdlUndefined()
             return symbol
-    elif isinstance(ast, cwl_parser.Ast):
+    elif isinstance(ast, wdl.parser.Ast):
         if ast.name in binary_operators:
             lhs = eval(ast.attr('lhs'), lookup, ctx)
-            if isinstance(lhs, CwlUndefined): return lhs
+            if isinstance(lhs, WdlUndefined): return lhs
 
             rhs = eval(ast.attr('rhs'), lookup, ctx)
-            if isinstance(rhs, CwlUndefined): return rhs
+            if isinstance(rhs, WdlUndefined): return rhs
 
             # TODO: do type checking to make sure running
             # the specified operator on the operands is allowed
@@ -420,17 +420,17 @@ def eval(ast, lookup=lambda var: None, ctx=None):
             if ast.name == 'GreaterThanOrEqual': return lhs >= rhs
         if ast.name in unary_operators:
             expr = eval(ast.attr('expression'), lookup, ctx)
-            if isinstance(expr, CwlUndefined): return expr
+            if isinstance(expr, WdlUndefined): return expr
 
             if ast.name == 'LogicalNot': return not expr
             if ast.name == 'UnaryPlus': return +expr
             if ast.name == 'UnaryMinus': return -expr
         if ast.name == 'ObjectLiteral':
-            obj = CwlObject()
+            obj = WdlObject()
             for member in ast.attr('map'):
                 key = member.attr('key').source_string
                 value = eval(member.attr('value'), lookup, ctx)
-                if value is None or isinstance(value, CwlUndefined):
+                if value is None or isinstance(value, WdlUndefined):
                     raise EvalException('Cannot evaluate expression')
                 obj.set(key, value)
             return obj
@@ -442,9 +442,9 @@ def eval(ast, lookup=lambda var: None, ctx=None):
             object = eval(ast.attr('lhs'), lookup, ctx)
             member = ast.attr('rhs')
 
-            if isinstance(object, CwlUndefined):
+            if isinstance(object, WdlUndefined):
                 return object
-            if not isinstance(member, cwl_parser.Terminal) or member.str != 'identifier':
+            if not isinstance(member, wdl.parser.Terminal) or member.str != 'identifier':
                 # TODO: maybe enforce this in the grammar?
                 raise EvalException('rhs needs to be an identifier')
 
@@ -490,11 +490,11 @@ def cast(var, type):
     return var
 
 def expr_str(ast):
-    if isinstance(ast, cwl_parser.Terminal):
+    if isinstance(ast, wdl.parser.Terminal):
         if ast.str == 'string':
             return '"{}"'.format(ast.source_string)
         return ast.source_string
-    elif isinstance(ast, cwl_parser.Ast):
+    elif isinstance(ast, wdl.parser.Ast):
         if ast.name == 'Add':
             return '{}+{}'.format(expr_str(ast.attr('lhs')), expr_str(ast.attr('rhs')))
         if ast.name == 'Subtract':
