@@ -355,7 +355,6 @@ def parse_type(ast):
 
 def parse_document(string):
     ast = parse(string)
-    print(ast.dumps(indent=2))
     tasks = get_tasks(ast)
     workflows = get_workflows(ast, tasks)
     return Document(tasks, workflows, ast)
