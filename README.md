@@ -97,7 +97,7 @@ For example, using [Cromwell](http://github.com/broadinstitute/cromwell) (Java/S
 
 ```scala
 val binding = WdlBinding.process(new File("/path/to/workflow.wdl"))
-for(task <- binding.tasks) {
+binding.tasks foreach { task =>
     println(task)
     println(task.command)
 }
