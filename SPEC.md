@@ -109,7 +109,7 @@
 
 ## Introduction
 
-The CWL DSL is meant to be a *human readable and writable* way to express tools and workflows.  The "Hello World" tool in CWL would look like this:
+WDL is meant to be a *human readable and writable* way to express tools and workflows.  The "Hello World" tool in WDL would look like this:
 
 ```
 task hello {
@@ -316,18 +316,18 @@ $document = ($import | $task | $workflow)+
 
 ## Import Statements
 
-A CWL file may contain import statements to include CWL code from other sources
+A WDL file may contain import statements to include WDL code from other sources
 
 ```
 $import = 'import' $string ('as' $identifier)?
 ```
 
-The import statement specifies that `$string` which is to be interpted as a URI which points to a CWL file.  The basename of that URI is the namespace which contains the workflows and tasks from that file.  If the `$identifier` is specified, then this will be used as the namespace for imported CWL files.
+The import statement specifies that `$string` which is to be interpted as a URI which points to a WDL file.  The basename of that URI is the namespace which contains the workflows and tasks from that file.  If the `$identifier` is specified, then this will be used as the namespace for imported WDL files.
 
 ```
 import "http://example.com/lib/stdlib"
 import "http://example.com/lib/analysis_tasks" as analysis
-import "lib.cwl"
+import "lib.wdl"
 
 workflow wf {
   call stdlib.file_size
@@ -621,7 +621,7 @@ task runtime_meta {
 
 #### Example 4: BWA mem
 
-This is an redesign of [BWA mem in CWL](https://github.com/common-workflow-language/common-workflow-language/blob/master/examples/draft-2/bwa-mem-tool.cwl)
+This is an redesign of [BWA mem in CWL](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/bwa-mem-tool.cwl)
 
 ```
 task bwa-mem-tool {
@@ -649,7 +649,7 @@ The 'docker' portion of this task definition specifies which that this task must
 
 #### Example 5: Word Count
 
-Here's an example of how to rewrite [wc2-tool](https://github.com/common-workflow-language/common-workflow-language/blob/master/examples/draft-2/wc2-tool.cwl) and [count-lines4-wf](https://github.com/common-workflow-language/common-workflow-language/blob/master/examples/draft-2/count-lines4-wf.cwl) (also as a [generalized collection](https://gist.github.com/dshiga/3c3c54ee8468e23d0a5b)):
+Here's an example of how to rewrite [wc2-tool](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/wc2-tool.cwl) and [count-lines4-wf](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/count-lines4-wf.cwl) (also as a [generalized collection](https://gist.github.com/dshiga/3c3c54ee8468e23d0a5b)):
 
 ```
 task wc2-tool {
@@ -663,7 +663,9 @@ task wc2-tool {
 
 workflow count-lines4-wf {
   scatter(f in files) {
-    call wc2-tool(file1=f)
+    call wc2-tool {
+      input: file1=f
+    }
   }
   output {
     wc2-tool.count
@@ -675,7 +677,7 @@ In this example, it's all pretty boilerplate, declarative code, except for some 
 
 #### Example 6: tmap
 
-Next, is an implementation of the [tmap-tool](https://github.com/common-workflow-language/common-workflow-language/blob/master/examples/draft-2/tmap-tool.cwl) (and corresponding job, [tmap-job](https://github.com/common-workflow-language/common-workflow-language/blob/master/examples/draft-2/tmap-job.json))
+Next, is an implementation of the [tmap-tool](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/tmap-tool.cwl) (and corresponding job, [tmap-job](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/tmap-job.json))
 
 This should produce a command line like this:
 
@@ -965,14 +967,13 @@ Compound Types:
 
 ## Serialization
 
-These types are then passed to the task via a serialization method.  This is the main contract between CWL and the tools themselves.  Tools are expected to understand these the serialization formats for the types that they need to deal with, but CWL offers flexibility in how the data types can be serialized.
+These types are then passed to the task via a serialization method.  This is the main contract between WDL and the tools themselves.  Tools are expected to understand these the serialization formats for the types that they need to deal with, but WDL offers flexibility in how the data types can be serialized.
 
 For example, if I'm writing a tool that operates on a list of FASTQ files, there are a variety of ways that this list can be passed to that task:
 
 * A file containing one file path per line (e.g. `./mytool fastq_list.txt`)
 * A file containing a JSON list (e.g. `./mytool fastq_list.json`)
 * Enumerated on the command line (e.g. (`./mytool 1.fastq 2.fastq 3.fastq`)
-* A file containing ALL inputs to the task, as JSON (e.g. `./mytool --cwl_inputs=job.cwl.json`)
 
 Each of these methods has its merits and one method might be better for one tool while another method would be better for another tool.
 
@@ -985,8 +986,6 @@ This specification lays out the serialization format for three major types:
 * Single-File JSON - All inputs and all outputs are done through one file each.
 
 The rest of this spec outlines the types and how they serialize in TSV format.
-
-> **TODO**: Describe serialization in TSV, JSON, and single-file JSON
 
 ### Serialization of Primitive Output Types
 
@@ -2048,7 +2047,7 @@ See [corresponding section](#outputs) for details
 
 Possible syntax:
 
-* `import "github.com/path/to/task.cwl"`
+* `import "github.com/path/to/task.wdl"`
 * `import "https://methods-repo/task/09af5/" as my_task`
 
 Since tasks define a name inside the task definition itself, how do we reconsile that with the URL?  For example, if `http://methods-repo/task/7suf45jskc04fjsk` contains:
@@ -2067,15 +2066,15 @@ Perhaps a more Go-like import statement:
 
 ```
 import (
-  task1,task2 from "http://github.com/path/to/task.cwl"
-  * from "http://methods-repo/helpers.cwl"
+  task1,task2 from "http://github.com/path/to/task.wdl"
+  * from "http://methods-repo/helpers.wdl"
   my_wf from "http://methods-repo/task/7suf45jskc04fjsk"
 )
 ```
 
 ## public/private -or- export statements
 
-We need a way to declare which parts of a CWL file are exported and which parts are private
+We need a way to declare which parts of a WDL file are exported and which parts are private
 
 Perhaps a NodeJS-like model of explicit exports:
 
@@ -2119,7 +2118,7 @@ Though, the more I play around with this syntax the more I don't like the implic
 * It *looks* like a type mismatch
 * Trying to do something like `map[string, string] my_var = subdir + "my_output"` looks more like a type mismatch.
 
-Since function calls are *very* easily supported in CWL, I propose going back to two built-in functions: `tsv()` and `json()`
+Since function calls are *very* easily supported in WDL, I propose going back to two built-in functions: `tsv()` and `json()`
 
 * `map[string, string] blah = tsv(subdir + "somefile.tsv")`
 * `array[file] out = json("stdout")`
