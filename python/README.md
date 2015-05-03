@@ -46,7 +46,7 @@ print(wdl_document.workflows)
 
 ```
 $ wdl --help
-usage: wdl [-h] [--version] [--debug] [--no-color] {runarse} ...
+usage: wdl [-h] [--version] [--debug] [--no-color] {run,parse} ...
 
 Workflow Description Language (WDL)
 
