@@ -8,7 +8,7 @@ setup(
   version=version,
   description=long_description,
   author='Scott Frazer',
-  author_email='scott.d.frazer@gmail.com',
+  author_email='sfrazer@broadinstitute.org',
   packages=['wdl'],
   install_requires=[
       "xtermcolor",
@@ -25,7 +25,6 @@ setup(
       "Programming Language :: Python",
       "Development Status :: 4 - Beta",
       "Intended Audience :: Developers",
-      "Natural Language :: English",
-      "Topic :: Software Development :: Compilers"
+      "Natural Language :: English"
   ]
 )
