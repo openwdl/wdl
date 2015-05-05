@@ -28,17 +28,19 @@ class CommandLine:
     def __str__(self):
         return ' '.join([str(part) for part in self.parts])
 
-class RawCommandLine:
-    def __init__(self, parts, ast):
-        self.__dict__.update(locals())
-    def __str__(self):
-        return ''.join([str(part) for part in self.parts])
+class CommandLinePart: pass
 
-class CommandLineVariable:
+class CommandLineVariable(CommandLinePart):
     def __init__(self, name, type, prefix, attributes, postfix_qualifier, ast):
         self.__dict__.update(locals())
     def __str__(self):
         return '[CommandLineVariable name={}, type={}, postfix={}]'.format(self.name, self.type, self.postfix_qualifier)
+
+class CommandLineString(CommandLinePart):
+    def __init__(self, string, terminal):
+        self.__dict__.update(locals())
+    def __str__(self):
+        return '[CommandLineString str={}]'.format(self.string)
 
 class Type:
     def __init__(self, name, subtypes, ast):
@@ -187,12 +189,8 @@ def get_workflows(ast, tasks):
 
 def parse_task(ast):
     name = ast.attr('name').source_string
-    command_ast = get_nodes(ast, 'Command')
-    if command_ast:
-        command = parse_command(command_ast[0])
-    else:
-        command_ast = get_nodes(ast, 'RawCommand')
-        command = parse_raw_command(command_ast[0])
+    command_ast = get_nodes(ast, 'RawCommand')
+    command = parse_command(command_ast[0])
     output_list = [parse_output(output_ast) for output_ast in get_nodes(ast, 'Output')]
     runtime_asts = get_nodes(ast, 'Runtime')
     runtime = parse_runtime(runtime_asts[0]) if len(runtime_asts) else {}
@@ -310,29 +308,15 @@ def parse_command_variable(ast):
     )
 
 def parse_command(ast):
-    if not isinstance(ast, wdl.parser.Ast) or ast.name != 'Command':
-        raise BindingException('Expecting a "Command" AST')
-    parts = []
-    for node in ast.attr('parts'):
-        if isinstance(node, wdl.parser.Terminal):
-            part = node.source_string
-            if (part[0] == "'" and part[-1] == "'") or (part[0] == '"' and part[-1] == '"'):
-                part = part[1:-1]
-            parts.append(part)
-        if isinstance(node, wdl.parser.Ast) and node.name == 'CommandParameter':
-            parts.append(parse_command_variable(node))
-    return CommandLine(parts, ast)
-
-def parse_raw_command(ast):
     if not isinstance(ast, wdl.parser.Ast) or ast.name != 'RawCommand':
         raise BindingException('Expecting a "RawCommand" AST')
     parts = []
     for node in ast.attr('parts'):
         if isinstance(node, wdl.parser.Terminal):
-            parts.append(node.source_string)
+            parts.append(CommandLineString(node.source_string, node))
         if isinstance(node, wdl.parser.Ast) and node.name == 'CommandParameter':
             parts.append(parse_command_variable(node))
-    return RawCommandLine(parts, ast)
+    return CommandLine(parts, ast)
 
 def parse_output(ast):
     if not isinstance(ast, wdl.parser.Ast) or ast.name != 'Output':

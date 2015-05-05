@@ -37,6 +37,9 @@ class Job:
     def __init__(self, workflow):
         self.dir = os.path.abspath('workflow_{}_{}'.format(workflow.name, str(uuid.uuid4()).split('-')[0]))
         self.symbol_table = SymbolTable(workflow)
+        #print(self.symbol_table)
+        #import sys
+        #sys.exit(-1)
         self.execution_table = ExecutionTable(workflow, self.symbol_table, 2)
 
 class ExecutionTable(list):
@@ -144,6 +147,21 @@ class ExecutionTable(list):
             self.populate(node, iteration=loop_entry[3])
     def __str__(self):
         return md_table(self, ['Name', 'Status', 'Index', 'Iter', 'PID', 'rc'])
+
+class SymbolTable2(list):
+    def __init__(self, root):
+        def populate(node):
+            if isinstance(node, Scatter):
+                pass
+            if isinstance(node, Scope):
+                pass
+            if isinstance(node, Call):
+                pass
+            if isinstance(node, Task):
+                pass
+        populate(root)
+    def __str__(self):
+        return md_table(self, ['ID', 'Scope', 'Name', 'Iter', 'Value', 'Type', 'I/O'])
 
 class SymbolTable(list):
     def __init__(self, root):
@@ -418,8 +436,8 @@ class CommandPartValue:
 def make_command(call, symbol_table, index, param_dict, job_cwd):
     cmd = []
     for part in call.task.command.parts:
-        if isinstance(part, str):
-            cmd.append(part)
+        if isinstance(part, CommandLineString):
+            cmd.append(part.string)
         elif isinstance(part, CommandLineVariable):
             scatter_var = symbol_table.is_scatter_var(call, part.name)
             if scatter_var:
@@ -441,7 +459,7 @@ def make_command(call, symbol_table, index, param_dict, job_cwd):
             if str(part.type) == 'file' and value[0] != '/':
                 value = os.path.abspath(value)
             cmd.append(value)
-    cmd_separator = '' if isinstance(call.task.command, RawCommandLine) else ' '
+    cmd_separator = '' if isinstance(call.task.command, CommandLine) else ' '
     return strip_leading_ws(cmd_separator.join(cmd))
 
 def run(wdl_file, inputs=None):
