@@ -415,6 +415,35 @@ class CommandPartValue:
     def __str__(self):
         return 'CommandPartValue: {} {} = {}'.format(self.type, self.name, self.value)
 
+def make_command(call, symbol_table, index, param_dict, job_cwd):
+    cmd = []
+    for part in call.task.command.parts:
+        if isinstance(part, str):
+            cmd.append(part)
+        elif isinstance(part, CommandLineVariable):
+            scatter_var = symbol_table.is_scatter_var(call, part.name)
+            if scatter_var:
+                value = str(symbol_table.get(scatter_var)[index])
+            else:
+                # TODO is part.type compatible with param_dict[part.name].type
+                cmd_value = param_dict[part.name]
+                if cmd_value.type.is_primitive():
+                    if part.postfix_qualifier in ['+', '*']:
+                        value = part.attributes['sep'].join([cmd_value.value] if not isinstance(cmd_value.value, list) else cmd_value.value)
+                    else:
+                        value = str(cmd_value.value)
+                elif cmd_value.type.is_tsv_serializable():
+                    pass
+                elif cmd_value.type.is_json_serializable():
+                    value = os.path.join(job_cwd, cmd_value.name + '.json')
+                    with open(value, 'w') as fp:
+                        fp.write(json.dumps(cmd_value.value))
+            if str(part.type) == 'file' and value[0] != '/':
+                value = os.path.abspath(value)
+            cmd.append(value)
+    cmd_separator = '' if isinstance(call.task.command, RawCommandLine) else ' '
+    return strip_leading_ws(cmd_separator.join(cmd))
+
 def run(wdl_file, inputs=None):
     with open(wdl_file) as fp:
         wdl_document = parse_document(fp.read())
@@ -471,33 +500,7 @@ def run(wdl_file, inputs=None):
                     if index is not None:
                         job_cwd = os.path.join(job_cwd, str(index))
                     os.makedirs(job_cwd)
-                    cmd = []
-                    for part in call.task.command.parts:
-                        if isinstance(part, str):
-                            cmd.append(part)
-                        elif isinstance(part, CommandLineVariable):
-                            scatter_var = job.symbol_table.is_scatter_var(call, part.name)
-                            if scatter_var:
-                                value = str(job.symbol_table.get(scatter_var)[index])
-                            else:
-                                # TODO is part.type compatible with param_dict[part.name].type
-                                cmd_value = param_dict[part.name]
-                                if cmd_value.type.is_primitive():
-                                    if part.postfix_qualifier in ['+', '*']:
-                                        value = part.attributes['sep'].join([cmd_value.value] if not isinstance(cmd_value.value, list) else cmd_value.value)
-                                    else:
-                                        value = str(cmd_value.value)
-                                elif cmd_value.type.is_tsv_serializable():
-                                    pass
-                                elif cmd_value.type.is_json_serializable():
-                                    value = os.path.join(job_cwd, cmd_value.name + '.json')
-                                    with open(value, 'w') as fp:
-                                        fp.write(json.dumps(cmd_value.value))
-                            if str(part.type) == 'file' and value[0] != '/':
-                                value = os.path.abspath(value)
-                            cmd.append(value)
-                    cmd_separator = '' if isinstance(call.task.command, RawCommandLine) else ' '
-                    cmd_string = strip_leading_ws(cmd_separator.join(cmd))
+                    cmd_string = make_command(call, job.symbol_table, index, param_dict, job_cwd)
                     docker = eval(call.task.runtime['docker'].ast, lookup_function(job.symbol_table, call)) if 'docker' in call.task.runtime else None
                     (pid, rc, stdout, stderr) = run_subprocess(cmd_string, docker=docker, cwd=job_cwd)
                     execution_context = ExecutionContext(fqn, call, index, pid, rc, stdout, stderr, job_cwd)
