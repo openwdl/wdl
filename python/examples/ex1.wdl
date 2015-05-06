@@ -1,13 +1,13 @@
 task grep_words {
   command {
-    grep '^${start}' ${file infile}
+    grep '^${start}' ${File infile}
   }
   output {
-    array[string] words = tsv("stdout")
+    Array[String] words = tsv("stdout")
   }
 }
 workflow wf {
-  file dictionary
+  File dictionary
   call grep_words as grep_pythonic_words {
     input: start="pythonic", infile=dictionary
   }

@@ -65,7 +65,7 @@
     * [Serialization of Primitive Output Types](#serialization-of-primitive-output-types)
     * [Serialization of Compound Output Types](#serialization-of-compound-output-types)
   * [Primitive Types](#primitive-types)
-    * [string](#string)
+    * [String](#string)
     * [int and float](#int-and-float)
     * [file and uri](#file-and-uri)
     * [boolean](#boolean)
@@ -114,7 +114,7 @@ WDL is meant to be a *human readable and writable* way to express tools and work
 ```
 task hello {
   command {
-    egrep '${pattern}' '${file in}'
+    egrep '${pattern}' '${File in}'
   }
 }
 ```
@@ -136,7 +136,7 @@ A simple workflow that runs this task in parallel would look like this:
 
 ```
 workflow example {
-  array[file] files
+  Array[File] files
   scatter(path in files) {
     call hello {input: in=path}
   }
@@ -167,17 +167,17 @@ All inputs and outputs must be typed.
 
 ```
 $type = $primitive_type | $collection_type
-$primitive_type = ('boolean' | 'int' | 'float' | 'uri' | 'file' | 'string' | 'object')
-$collection_type = 'array' '[' $type ']'
-$collection_type = 'map' '[' ($primitive_type - 'object') ',' ($primitive_type - 'object') ']'
+$primitive_type = ('Boolean' | 'Int' | 'Float' | 'Uri' | 'File' | 'String' | 'Object')
+$collection_type = 'Array' '[' $type ']'
+$collection_type = 'Map' '[' ($primitive_type - 'object') ',' ($primitive_type - 'object') ']'
 ```
 
 Some examples of types:
 
-* `file`
-* `array[file]`
-* `map[string, string]`
-* `object`
+* `File`
+* `Array[File]`
+* `Map[String, String]`
+* `Object`
 
 For more information on types, see the [Data Types & Serialization](#data-types--serialization) section.
 
@@ -195,11 +195,11 @@ If a declaration does not have an initialization, then the value is expected to 
 
 Some examples of declarations:
 
-* `file x`
-* `string y = "abc"`
-* `float pi = 3 + .14`
-* `object z = object {a: "1", b: "2", c: "3"}`
-* `map[string, string] m`
+* `File x`
+* `String y = "abc"`
+* `Float pi = 3 + .14`
+* `Object z = object {a: "1", b: "2", c: "3"}`
+* `Map[String, String] m`
 
 ### Expressions
 
@@ -226,25 +226,25 @@ $expression = $expression '&&' $expression
 $expression = $expression '||' $expression
 ```
 
-Truth values are: boolean true, integer != 0, and float != 0.0
+Truth values are: Boolean true, integer != 0, and float != 0.0
 
-False values are: boolean false, integer == 0, and float == 0.0
+False values are: Boolean false, integer == 0, and float == 0.0
 
 Below are the valid results for operators on types.  Any combination not in the list will result in an error.
 
 |Type       |Operators  |Type             |Result                            |
 |-----------|-----------|-----------------|----------------------------------|
-|int        |arithmetic |int              |int                               |
-|int        |arithmetic |float            |float                             |
-|int        |arithmetic |boolean          |int (true=1, false=0)             |
-|int        |comparison |int,float,boolean|boolean                           |
-|float      |arithmetic |boolean          |float (true=1, false=0)           |
-|float      |comparison |int,float,boolean|boolean                           |
-|string     |`==`,`!=`  |string           |boolean                           |
-|string     |`[]`       |int              |string                            |
-|object     |`.`        |identifier       |mixed (object attr)               |
-|map        |`[]`       |string,int       |mixed (map index)                 |
-|array      |`[]`       |int              |mixed (array index)               |
+|Int        |arithmetic |Int              |Int                               |
+|Int        |arithmetic |Float            |Float                             |
+|Int        |arithmetic |Boolean          |Int (true=1, false=0)             |
+|Int        |comparison |Int,Float,Boolean|Boolean                           |
+|Float      |arithmetic |Boolean          |Float (true=1, false=0)           |
+|Float      |comparison |Int,Float,Boolean|Boolean                           |
+|String     |`==`,`!=`  |String           |Boolean                           |
+|String     |`[]`       |Int              |String                            |
+|Object     |`.`        |identifier       |mixed (object attr)               |
+|Map        |`[]`       |String,Int       |mixed (map index)                 |
+|Array      |`[]`       |Int              |mixed (array index)               |
 
 > aritmetic operators are `*`, `/`, `%`, `+`, `-`
 >
@@ -393,7 +393,7 @@ The `$postfix_quantifier` are regular expression-like modifiers for a parameter.
 > *Additional requirement*: If `$postfix_quantifier` is either `+` or `*`, 'sep' must be set for `$var_option`
 
 ```
-grep '${start}...${end}' ${file input}
+grep '${start}...${end}' ${File input}
 ```
 
 This command would be parsed as:
@@ -403,7 +403,7 @@ This command would be parsed as:
 * `...` - command_part_string
 * `${end}` - command_part_var
 * `' ` - command_part_string
-* `${file input}` - command_part_var
+* `${File input}` - command_part_var
 
 
 ### Command Parts (alternative heredoc syntax)
@@ -414,7 +414,7 @@ Sometimes a command is sufficiently long enough or might use `{` characters that
 task heredoc {
   command<<<
   python <<CODE
-    with open("${file in}") as fp:
+    with open("${File in}") as fp:
       for line in fp:
         if not line.startswith('#'):
           print(line.strip())
@@ -459,16 +459,16 @@ python script.py 1 2 3
 
 #### true and false
 
-'true' and 'false' are only used for type boolean and they specify what the parameter returns when the boolean is true or false, respectively.
+'true' and 'false' are only used for type Boolean and they specify what the parameter returns when the Boolean is true or false, respectively.
 
-For example, `${true='--enable-foo', false='--disable-foo' boolean yes_or_no}` would evaluate to either `--enable-foo` or `--disable-foo` based on the value of yes_or_no.
+For example, `${true='--enable-foo', false='--disable-foo' Boolean yes_or_no}` would evaluate to either `--enable-foo` or `--disable-foo` based on the value of yes_or_no.
 
-If either value is left out, then it's equivalent to specifying the empty string.  If the parameter is `${true='--enable-foo' boolean yes_or_no}`, and a value of false is specified for this parameter, then the parameter will evaluate to the empty string.
+If either value is left out, then it's equivalent to specifying the empty string.  If the parameter is `${true='--enable-foo' Boolean yes_or_no}`, and a value of false is specified for this parameter, then the parameter will evaluate to the empty string.
 
 > *Additional Requirement*:
 >
 > 1.  `true` and `false` values MUST be strings.
-> 2.  `true` and `false` are only allowed if the type is `boolean`
+> 2.  `true` and `false` are only allowed if the type is `Boolean`
 
 #### serialize
 
@@ -514,7 +514,7 @@ The filename strings may also contain variable definitions themselves:
 
 ```
 output {
-  array[string] quality_scores = "${sample_id}.scores.txt"
+  Array[String] quality_scores = "${sample_id}.scores.txt"
 }
 ```
 
@@ -586,7 +586,7 @@ task hello_world {
 ```
 task one_and_one {
   command {
-    grep ${pattern} ${file infile}
+    grep ${pattern} ${File infile}
   }
   output {
     file filtered = "stdout"
@@ -626,10 +626,10 @@ This is an redesign of [BWA mem in CWL](https://github.com/common-workflow-langu
 ```
 task bwa-mem-tool {
   command {
-    bwa mem -t ${int threads} \
-            -k ${int min_seed_length} \
+    bwa mem -t ${Int threads} \
+            -k ${Int min_seed_length} \
             -I ${sep=',' int min_std_max_min+} \
-            ${file reference} \
+            ${File reference} \
             ${sep=' ' file reads+} > output.sam
   }
   output {
@@ -641,7 +641,7 @@ task bwa-mem-tool {
 }
 ```
 
-Notable pieces in this example is `${sep=',' int min_std_max_min+}` which specifies that min_std_max_min can be one or more integers (the `+` after the variable name indicates that it can be one or more).  If an `array[int]` is passed into this parameter, then it's flattened by combining the elements with the separator character (`sep=','`).
+Notable pieces in this example is `${sep=',' int min_std_max_min+}` which specifies that min_std_max_min can be one or more integers (the `+` after the variable name indicates that it can be one or more).  If an `Array[Int]` is passed into this parameter, then it's flattened by combining the elements with the separator character (`sep=','`).
 
 This task also defines that it exports one file, called 'sam', which is the stdout of the execution of bwa mem.
 
@@ -654,7 +654,7 @@ Here's an example of how to rewrite [wc2-tool](https://github.com/common-workflo
 ```
 task wc2-tool {
   command {
-    wc ${file file1}
+    wc ${File file1}
   }
   output {
     int count = read_int("stdout")
@@ -694,7 +694,7 @@ Task definition would look like this:
 ```
 task tmap-tool {
   command {
-    tmap mapall ${sep=' ' stages+} < ${file reads} > output.sam
+    tmap mapall ${sep=' ' stages+} < ${File reads} > output.sam
   }
   output {
     file sam = "output.sam"
@@ -722,9 +722,9 @@ A workflow is defined as the keyword `workflow` and the body being in curly brac
 
 ```
 workflow wf {
-  array[file] files
-  int threshold
-  map[string, string] my_map
+  Array[File] files
+  Int threshold
+  Map[String, String] my_map
 }
 ```
 
@@ -765,7 +765,7 @@ task task1 {
   output {file results = "stdout"}
 }
 task task2 {
-  command {python do_stuff2.py ${file foobar}}
+  command {python do_stuff2.py ${File foobar}}
   output {file results = "stdout"}
 }
 workflow wf {
@@ -914,10 +914,10 @@ For example, if I write a task that outputs a file to `./results/file_list.tsv`,
 ```
 task do_stuff {
   command {
-    python do_stuff.py ${file input}
+    python do_stuff.py ${File input}
   }
   output {
-    array[file] outputs = tsv("./results/file_list.tsv")
+    Array[File] outputs = tsv("./results/file_list.tsv")
   }
 }
 ```
@@ -928,40 +928,40 @@ Then when the task finishes, to fulfull the `outputs` variable, `./results/file_
 
 This function works exactly like `tsv()` except that the parameter is expected to be a path to a JSON file containing the data structure
 
-## int read_int(string)
+## Int read_int(string)
 
 The `read_int()` function takes a file path which is expected to contain 1 line with 1 integer on it.  This function returns that integer.
 
-## string read_string(string)
+## String read_string(string)
 
 The `read_string()` function takes a file path which is expected to contain 1 line with 1 string on it.  This function returns that string.
 
-## float read_float(string)
+## Float read_float(string)
 
 The `read_float()` function takes a file path which is expected to contain 1 line with 1 floating point number on it.  This function returns that float.
 
-## boolean read_boolean(string)
+## Boolean read_boolean(string)
 
-The `read_boolean()` function takes a file path which is expected to contain 1 line with 1 boolean value (either "true" or "false" on it.  This function returns that boolean value.
+The `read_boolean()` function takes a file path which is expected to contain 1 line with 1 Boolean value (either "true" or "false" on it.  This function returns that Boolean value.
 
 # Data Types & Serialization
 
 ## Overview
 
-Tasks and workflows are given values for their input parameters in order to run.  The type of each of those parameters is specified in the `${`...`}` syntax in the task definition.  For example, `${float quality_score}` or `${array[file] bams}`.  If no type is specified, the default type is `string`.  Those input parameters can be any of the following types:
+Tasks and workflows are given values for their input parameters in order to run.  The type of each of those parameters is specified in the `${`...`}` syntax in the task definition.  For example, `${float quality_score}` or `${Array[File] bams}`.  If no type is specified, the default type is `string`.  Those input parameters can be any of the following types:
 
 Primitives:
-* [string](#string)
-* [int](#int-and-float)
-* [float](#int-and-float)
-* [file](#file-and-uri)
-* [uri](#file-and-uri)
-* [boolean](#boolean)
+* [String](#string)
+* [Int](#int-and-float)
+* [Float](#int-and-float)
+* [File](#file-and-uri)
+* [Uri](#file-and-uri)
+* [Boolean](#boolean)
 
 Compound Types:
-* [array\[type\]](#array) (e.g. `array[int]`, `array[file]`)
-* [map\[type, type\]](#map) (e.g. `map[string, file]`)
-* [object](#object)
+* [Array\[Type\]](#array) (e.g. `Array[Int]`, `Array[File]`)
+* [Map\[Type, Type\]](#map) (e.g. `Map[String, File]`)
+* [Object](#object)
 
 > **Question**: Will we be able to support "stream" types?  This could be as simple as named pipes or as complex as a new system like `stream://path/to/stream` which would mean the contract between tasks and workflows would require tasks to support this protocol.
 
@@ -977,12 +977,12 @@ For example, if I'm writing a tool that operates on a list of FASTQ files, there
 
 Each of these methods has its merits and one method might be better for one tool while another method would be better for another tool.
 
-On the other end, tasks need to be able to communicate data structures back to the workflow engine.  For example, let's say this same tool that takes a list of FASTQs wants to return back a `map[file, int]` representing the number of reads in each FASTQ.  A tool might choose to output it as a two-column TSV or as a JSON object.
+On the other end, tasks need to be able to communicate data structures back to the workflow engine.  For example, let's say this same tool that takes a list of FASTQs wants to return back a `Map[File, Int]` representing the number of reads in each FASTQ.  A tool might choose to output it as a two-column TSV or as a JSON object.
 
 This specification lays out the serialization format for three major types:
 
 * TSV - flat-file serialization meant to capture all basic data structures and providing easy reading/writing.  Also great for compatibility with UNIX tools.
-* JSON - for higher-order data types (i.e. `array[string, map[int, file]]`) or for tools that prefer JSON over TSV
+* JSON - for higher-order data types (i.e. `Array[String, Map[int, file]]`) or for tools that prefer JSON over TSV
 * Single-File JSON - All inputs and all outputs are done through one file each.
 
 The rest of this spec outlines the types and how they serialize in TSV format.
@@ -1001,8 +1001,8 @@ task output_example {
     python do_work.py ${param1} ${param2}
   }
   output {
-    int my_int = "file_with_int"
-    uri my_uri = "file_with_uri"
+    Int my_int = "file_with_int"
+    Uri my_uri = "file_with_uri"
   }
 }
 ```
@@ -1021,8 +1021,8 @@ task output_example {
     python do_work.py ${param1} ${param2}
   }
   output {
-    map[string, file] my_map = "file_with_string_to_file.tsv"
-    array[int] my_ints = "file_with_ints.json"
+    Map[String, file] my_map = "file_with_string_to_file.tsv"
+    Array[Int] my_ints = "file_with_ints.json"
   }
 }
 ```
@@ -1035,9 +1035,9 @@ In this case, `my_map` comes from a [TSV file](#map-serialization-as-tsv) and `m
 
 All primitive types are serialized as a string and provided as-is to the command line.
 
-### string
+### String
 
-The string type is the most basic and default type.  The value is serialized directly as a parameter on the command line, quoted.
+The String type is the most basic and default type.  The value is serialized directly as a parameter on the command line, quoted.
 
 ```
 java -jar MyTool.jar ${my_param}
@@ -1049,28 +1049,28 @@ If an invocation of this tool is "foo bar" the value for `my_param`, the resulti
 java -jar MyTool.jar foo bar
 ```
 
-### int and float
+### Int and Float
 
-The int and float types are similar in a lot of ways to the string type except that the workflow engine must verify that the provided value for these parameters is compatible with either float or int types.
+The Int and Float types are similar in a lot of ways to the String type except that the workflow engine must verify that the provided value for these parameters is compatible with either float or int types.
 
 ```
-sh script.sh ${int iterations} --pi=${float pi}
+sh script.sh ${Int iterations} --pi=${Float pi}
 ```
 
-if "foobar" is provided for the `iterations` parameter, the workflow engine should return an error.  However, if the string "2" is provided for `iterations` this should be considered int compatible.  Likewise, valid values for pi could be: 3, "3.14", 3.1.  If we were to provide the values iterations=2 and pi=3.14, the resulting command line would be:
+if "foobar" is provided for the `iterations` parameter, the workflow engine should return an error.  However, if the String "2" is provided for `iterations` this should be considered int compatible.  Likewise, valid values for pi could be: 3, "3.14", 3.1.  If we were to provide the values iterations=2 and pi=3.14, the resulting command line would be:
 
 ```
 sh script.sh 2 --pi=3.14
 ```
 
-> **TODO**: regular expression patterns for int and float (steal from a language standard)
+> **TODO**: regular expression patterns for Int and Float (steal from a language standard)
 
-### file and uri
+### File and Uri
 
-Like int and float types, file and uri types are a special case and the workflow engine must verify the values of these before calling the tool.  The file type may be a URI starting with `file://`, but the schema is striped when it is called.  URIs are any string that conform to [RFC 3986](https://tools.ietf.org/html/rfc3986).
+Like Int and Float types, File and Uri types are a special case and the workflow engine must verify the values of these before calling the tool.  The file type may be a URI starting with `file://`, but the schema is striped when it is called.  URIs are any string that conform to [RFC 3986](https://tools.ietf.org/html/rfc3986).
 
 ```
-python algorithm.py ${file bam} ${uri gcs_bucket}
+python algorithm.py ${File bam} ${Uri gcs_bucket}
 ```
 
 If we provide `bam=file:///root/input.bam` and `gcs_bucket=gs://bucket/`, then the resulting command line is:
@@ -1079,9 +1079,9 @@ If we provide `bam=file:///root/input.bam` and `gcs_bucket=gs://bucket/`, then t
 python algorithm.py /root/input.bam gs://bucket/
 ```
 
-### boolean
+### Boolean
 
-boolean types are serialized as either the string `true` or `false` on the command line.
+Boolean types are serialized as either the string `true` or `false` on the command line.
 
 ## Compound Types
 
@@ -1123,7 +1123,7 @@ Would produce the command `python script.py --bams=/path/to/1.bam,/path/to/2.bam
 An array may be turned into a file with each element in the array occupying a line in the file.
 
 ```
-sh script.sh ${serialize='tsv' array[file] bams}
+sh script.sh ${serialize='tsv' Array[File] bams}
 ```
 
 > **NOTE**: the `serialize='tsv'` option is only here for completeness.  A default value for serialization may be provided at the task level or the workflow engine.
@@ -1150,14 +1150,14 @@ Where `/jobs/564758/bams.tsv` would contain:
 /path/to/3.bam
 ```
 
-> *Additional requirement*: Because of the limitations of the TSV file format, multi-dimensional arrays may not be expressed using this approach.  Trying to serialize an `array[array[array[string]]]` in TSV is too cumbersome to support.  Because of this, only arrays of primitive types are supported with TSV serialization.  The syntax checker MUST check that if the serialization format is TSV that the type is compatible
+> *Additional requirement*: Because of the limitations of the TSV file format, multi-dimensional arrays may not be expressed using this approach.  Trying to serialize an `Array[Array[Array[String]]]` in TSV is too cumbersome to support.  Because of this, only arrays of primitive types are supported with TSV serialization.  The syntax checker MUST check that if the serialization format is TSV that the type is compatible
 
 #### array serialization as JSON
 
 The array may be turned into a JSON document with the file path for the JSON file passed in as the parameter:
 
 ```
-sh script.sh ${serialize='json' array[file] bams}
+sh script.sh ${serialize='json' Array[File] bams}
 ```
 
 > **NOTE**: the `serialize='json'` option is only here for completeness.  A default value for serialization may be provided at the task level or the workflow engine.
@@ -1195,7 +1195,7 @@ Map types cannot be serialized on the command line directly and must be serializ
 The map type can be serialized as a two-column TSV file and the parameter on the command line is given the path to that file.
 
 ```
-sh script.sh ${map[string, float] sample_quality_scores}
+sh script.sh ${Map[String, Float] sample_quality_scores}
 ```
 
 if sample_quality_scores is given this map:
@@ -1225,7 +1225,7 @@ sample3\t75
 The map type can also be serialized as a JSON file and the parameter on the command line is given the path to that file.
 
 ```
-sh script.sh ${map[string, float] sample_quality_scores}
+sh script.sh ${Map[String, Float] sample_quality_scores}
 ```
 
 if sample_quality_scores is given this map:
@@ -1315,9 +1315,9 @@ Where `/jobs/564759/sample.json` would contain:
   "attr4": "value4",
 }
 ```
-#### array[object]
+#### Array[object]
 
-In the case of TSV serialization, the only difference between `array[object]` and `object` is that an array would contain more rows.
+In the case of TSV serialization, the only difference between `Array[object]` and `object` is that an array would contain more rows.
 
 In the case of JSON serialization, it would be a list of objects.
 
@@ -1343,8 +1343,8 @@ Determining the **Symbol Table** entries is done by examining all the tasks in t
 
 ```
 task t1 {
-  command {python script.py ${file path} -n ${sample_name}}
-  output {list[string] result = "${sample_name}.data.txt"}
+  command {python script.py ${File path} -n ${sample_name}}
+  output {Array[String] result = "${sample_name}.data.txt"}
   runtime {docker: "broadinstitute/job-runner:${docker_version}"}
 }
 task t2 {
@@ -1454,10 +1454,10 @@ A workflow is defined as finished if the following conditions are met:
 ```
 task grep_words {
   command {
-    grep '^${start}' ${file infile}
+    grep '^${start}' ${File infile}
   }
   output {
-    array[string] words = tsv("stdout")
+    Array[String] words = tsv("stdout")
   }
 }
 workflow wf {
@@ -1482,12 +1482,12 @@ At start of execution, **Symbol Table** looks like this:
 |Name                         |Value                                  |Type         |I/O   |
 |-----------------------------|---------------------------------------|-------------|------|
 |wf.dictionary                |/usr/share/dict/words                  |file         |input |
-|wf.grep_pythonic_words.start |pythonic                               |string       |input |
+|wf.grep_pythonic_words.start |pythonic                               |String       |input |
 |wf.grep_pythonic_words.infile|%ref:wf.dictionary                     |file         |input |
-|wf.grep_pythonic_words.words |['pythonic', 'pythonical']             |array[string]|output|
-|wf.grep_workf_words.start    |workf                                  |string       |input |
+|wf.grep_pythonic_words.words |['pythonic', 'pythonical']             |Array[String]|output|
+|wf.grep_workf_words.start    |workf                                  |String       |input |
 |wf.grep_workf_words.infile   |%ref:wf.dictionary                     |file         |input |
-|wf.grep_workf_words.words    |['workfellow', 'workfolk', 'workfolks']|array[string]|output|
+|wf.grep_workf_words.words    |['workfellow', 'workfolk', 'workfolks']|Array[String]|output|
 
 And **Execution Table** looks like this:
 
@@ -1512,7 +1512,7 @@ The workflow engine is responsible for updating all fields besides the first thr
 |wf.grep_pythonic_words|successful |     |1643|0   |
 |wf.grep_workf_words   |started    |     |1644|    |
 
-Upon a job finishing and the return code being set, the `outputs` section is processed for that task.  In the case of the above example, when `wf.grep_pythonic_words` finishes the output mapping `array[string] words = tsv("stdout")` is processed.  The workflow engine looks for the file called `stdout` in the current working directory where the process was launched.  If it is not found, the task's status gets set to `error` and optionally an error message field gets set describing the nature of why the field was set.
+Upon a job finishing and the return code being set, the `outputs` section is processed for that task.  In the case of the above example, when `wf.grep_pythonic_words` finishes the output mapping `Array[String] words = tsv("stdout")` is processed.  The workflow engine looks for the file called `stdout` in the current working directory where the process was launched.  If it is not found, the task's status gets set to `error` and optionally an error message field gets set describing the nature of why the field was set.
 
 A workflow is defined as finished when all the tasks in the workflow are in a terminal state (i.e. `skipped`, `successful`, `failed`, or `error`).  For this example, let's say the first task succeeds and the second task fails.  The terminal state of the workflow is:
 
@@ -1530,10 +1530,10 @@ This is a less common case, and likely will only be used in the iterative scatte
 ```
 task scatter_task {
   command <<<
-    egrep ^.{${count}}$ ${file in} || exit 0
+    egrep ^.{${Int count}}$ ${File in} || exit 0
   >>>
   output {
-    array[string] words = tsv("stdout")
+    Array[String] words = tsv("stdout")
   }
 }
 
@@ -1542,19 +1542,19 @@ task gather_task {
     python3 <<CODE
     import json
     with open('count', 'w') as fp:
-      fp.write(str(int(${int count}) - 1))
+      fp.write(str(int(${Int count}) - 1))
     with open('wc', 'w') as fp:
-      fp.write(str(sum([len(x) for x in json.loads(open("${array[array[string]] word_lists}").read())])))
+      fp.write(str(sum([len(x) for x in json.loads(open("${Array[Array[String]] word_lists}").read())])))
     CODE
   }
   output {
-    int count = read_int("count")
+    Int count = read_int("count")
   }
 }
 
 workflow wf {
-  array[file] files
-  int count
+  Array[File] files
+  Int count
 
   while(count > 3) {
     scatter(filename in files) {
@@ -1618,19 +1618,19 @@ The symbol table starts out with the following values defined as a combination o
 
 |Name                         |Value                           |Type                |I/O   |
 |-----------------------------|--------------------------------|--------------------|------|
-|wf.files                     |['test/languages', 'test/words']|array[file]         |input |
-|wf.count                     |6                               |int                 |input |
-|wf._w5._s6.filename          |%ref:wf.files                   |array[file]         |input |
-|wf._w5._s6.scatter_task.count|%ref:wf.count                   |string              |input |
-|wf._w5._s6.scatter_task.in   |%ref:wf._w5._s6.filename        |file                |input |
-|wf._w5._s6.scatter_task.words|                                |array[array[string]]|output|
-|wf._w5.gather_task.count     |%ref:wf.count                   |int                 |input |
-|wf._w5.gather_task.word_lists|%expr:scatter_task.words        |array[array[string]]|input |
-|wf._w5.gather_task.count     |%ref:wf.count                   |int                 |output|
+|wf.files                     |['test/languages', 'test/words']|Array[File]         |input |
+|wf.count                     |6                               |Int                 |input |
+|wf._w5._s6.filename          |%ref:wf.files                   |Array[File]         |input |
+|wf._w5._s6.scatter_task.count|%ref:wf.count                   |String              |input |
+|wf._w5._s6.scatter_task.in   |%ref:wf._w5._s6.filename        |File                |input |
+|wf._w5._s6.scatter_task.words|                                |Array[Array[String]]|output|
+|wf._w5.gather_task.count     |%ref:wf.count                   |Int                 |input |
+|wf._w5.gather_task.word_lists|%expr:scatter_task.words        |Array[Array[String]]|input |
+|wf._w5.gather_task.count     |%ref:wf.count                   |Int                 |output|
 
 The fully qualified names in this symbol table also include the scopes that a `call` lives inside.  `_s6` refers to a scatter block with an arbitrary unique ID of 6.  `_w5` refers to a while loop with arbitrary unique ID of 5.
 
-If `scatter_task` were not being executed inside of a scatter block, the output (`wf._w5._s6.scatter_task.words`) would only be of type `array[string]`, but any task executed in a scatter block will have all of its outputs in an array (one entry for each scatter).  This is why `wf._w5._s6.scatter_task.words` has type `array[array[string]]`.  Since the scatter and gather steps are inside of a loop, the entries that exist initially in the symbol table are only place holders that will be copied for each iteration.
+If `scatter_task` were not being executed inside of a scatter block, the output (`wf._w5._s6.scatter_task.words`) would only be of type `Array[String]`, but any task executed in a scatter block will have all of its outputs in an array (one entry for each scatter).  This is why `wf._w5._s6.scatter_task.words` has type `Array[Array[String]]`.  Since the scatter and gather steps are inside of a loop, the entries that exist initially in the symbol table are only place holders that will be copied for each iteration.
 
 **Execution Table Construction**
 
@@ -1668,21 +1668,21 @@ After the tables are constructed, since the loop is `not_started` and the iterat
 
 |Name                             |Value                           |Type                |I/O   |
 |---------------------------------|--------------------------------|--------------------|------|
-|wf.files                         |['test/languages', 'test/words']|array[file]         |input |
-|wf.count                         |6                               |int                 |input |
-|wf._w5._s6.filename              |%ref:wf.files                   |array[file]         |input |
-|wf._w5._s6.scatter_task.count    |%ref:wf.count                   |string              |input |
+|wf.files                         |['test/languages', 'test/words']|Array[File]         |input |
+|wf.count                         |6                               |Int                 |input |
+|wf._w5._s6.filename              |%ref:wf.files                   |Array[File]         |input |
+|wf._w5._s6.scatter_task.count    |%ref:wf.count                   |String              |input |
 |wf._w5._s6.scatter_task.in       |%ref:wf._w5._s6.filename        |file                |input |
-|wf._w5._s6.scatter_task.words    |                                |array[array[string]]|output|
-|wf._w5.gather_task.count         |%ref:wf.count                   |int                 |input |
-|wf._w5.gather_task.word_lists    |%expr:scatter_task.words        |array[array[string]]|input |
-|wf._w5.gather_task.count         |%ref:wf.count                   |int                 |output|
-|wf._w5._s6.scatter_task._i1.count|%ref:wf.count                   |string              |input |
+|wf._w5._s6.scatter_task.words    |                                |Array[Array[String]]|output|
+|wf._w5.gather_task.count         |%ref:wf.count                   |Int                 |input |
+|wf._w5.gather_task.word_lists    |%expr:scatter_task.words        |Array[Array[String]]|input |
+|wf._w5.gather_task.count         |%ref:wf.count                   |Int                 |output|
+|wf._w5._s6.scatter_task._i1.count|%ref:wf.count                   |String              |input |
 |wf._w5._s6.scatter_task._i1.in   |%ref:wf._w5._s6.filename        |file                |input |
-|wf._w5._s6.scatter_task._i1.words|                                |array[array[string]]|output|
-|wf._w5.gather_task._i1.count     |%ref:wf.count                   |int                 |input |
-|wf._w5.gather_task._i1.word_lists|%expr:scatter_task.words        |array[array[string]]|input |
-|wf._w5.gather_task._i1.count     |%ref:wf.count                   |int                 |output|
+|wf._w5._s6.scatter_task._i1.words|                                |Array[Array[String]]|output|
+|wf._w5.gather_task._i1.count     |%ref:wf.count                   |Int                 |input |
+|wf._w5.gather_task._i1.word_lists|%expr:scatter_task.words        |Array[Array[String]]|input |
+|wf._w5.gather_task._i1.count     |%ref:wf.count                   |Int                 |output|
 
 **Execution Table**
 
@@ -1709,21 +1709,21 @@ egrep ^.{6}$ python/test/words || exit 0
 
 |Name                             |Value                           |Type                |I/O   |
 |---------------------------------|--------------------------------|--------------------|------|
-|wf.files                         |['test/languages', 'test/words']|array[file]         |input |
-|wf.count                         |6                               |int                 |input |
-|wf._w5._s6.filename              |%ref:wf.files                   |array[file]         |input |
-|wf._w5._s6.scatter_task.count    |%ref:wf.count                   |string              |input |
+|wf.files                         |['test/languages', 'test/words']|Array[File]         |input |
+|wf.count                         |6                               |Int                 |input |
+|wf._w5._s6.filename              |%ref:wf.files                   |Array[File]         |input |
+|wf._w5._s6.scatter_task.count    |%ref:wf.count                   |String              |input |
 |wf._w5._s6.scatter_task.in       |%ref:wf._w5._s6.filename        |file                |input |
-|wf._w5._s6.scatter_task.words    |                                |array[array[string]]|output|
-|wf._w5.gather_task.count         |%ref:wf.count                   |int                 |input |
-|wf._w5.gather_task.word_lists    |%expr:scatter_task.words        |array[array[string]]|input |
-|wf._w5.gather_task.count         |%ref:wf.count                   |int                 |output|
-|wf._w5._s6.scatter_task._i1.count|%ref:wf.count                   |string              |input |
+|wf._w5._s6.scatter_task.words    |                                |Array[Array[String]]|output|
+|wf._w5.gather_task.count         |%ref:wf.count                   |Int                 |input |
+|wf._w5.gather_task.word_lists    |%expr:scatter_task.words        |Array[Array[String]]|input |
+|wf._w5.gather_task.count         |%ref:wf.count                   |Int                 |output|
+|wf._w5._s6.scatter_task._i1.count|%ref:wf.count                   |String              |input |
 |wf._w5._s6.scatter_task._i1.in   |%ref:wf._w5._s6.filename        |file                |input |
-|wf._w5._s6.scatter_task._i1.words|[['python'], []]                |array[array[string]]|output|
-|wf._w5.gather_task._i1.count     |%ref:wf.count                   |int                 |input |
-|wf._w5.gather_task._i1.word_lists|%expr:scatter_task.words        |array[array[string]]|input |
-|wf._w5.gather_task._i1.count     |%ref:wf.count                   |int                 |output|
+|wf._w5._s6.scatter_task._i1.words|[['python'], []]                |Array[Array[String]]|output|
+|wf._w5.gather_task._i1.count     |%ref:wf.count                   |Int                 |input |
+|wf._w5.gather_task._i1.word_lists|%expr:scatter_task.words        |Array[Array[String]]|input |
+|wf._w5.gather_task._i1.count     |%ref:wf.count                   |Int                 |output|
 
 The only thing that changed was a new value for `wf._w5._s6.scatter_task._i1.words`
 
@@ -1748,7 +1748,7 @@ with open('wc', 'w') as fp:
 CODE
 ```
 
-Notice here that the `${array[array[string]] word_lists}` parameter is serialized in JSON and the value is a path to the JSON file: `open("word_lists.json").read()`.
+Notice here that the `${Array[Array[String]] word_lists}` parameter is serialized in JSON and the value is a path to the JSON file: `open("word_lists.json").read()`.
 
 The resulting symbol table and execution table looks as follows:
 
@@ -1756,21 +1756,21 @@ The resulting symbol table and execution table looks as follows:
 
 |Name                             |Value                           |Type                |I/O   |
 |---------------------------------|--------------------------------|--------------------|------|
-|wf.files                         |['test/languages', 'test/words']|array[file]         |input |
-|wf.count                         |5                               |int                 |input |
-|wf._w5._s6.filename              |%ref:wf.files                   |array[file]         |input |
-|wf._w5._s6.scatter_task.count    |%ref:wf.count                   |string              |input |
+|wf.files                         |['test/languages', 'test/words']|Array[File]         |input |
+|wf.count                         |5                               |Int                 |input |
+|wf._w5._s6.filename              |%ref:wf.files                   |Array[File]         |input |
+|wf._w5._s6.scatter_task.count    |%ref:wf.count                   |String              |input |
 |wf._w5._s6.scatter_task.in       |%ref:wf._w5._s6.filename        |file                |input |
-|wf._w5._s6.scatter_task.words    |                                |array[array[string]]|output|
-|wf._w5.gather_task.count         |%ref:wf.count                   |int                 |input |
-|wf._w5.gather_task.word_lists    |%expr:scatter_task.words        |array[array[string]]|input |
-|wf._w5.gather_task.count         |%ref:wf.count                   |int                 |output|
-|wf._w5._s6.scatter_task._i1.count|%ref:wf.count                   |string              |input |
+|wf._w5._s6.scatter_task.words    |                                |Array[Array[String]]|output|
+|wf._w5.gather_task.count         |%ref:wf.count                   |Int                 |input |
+|wf._w5.gather_task.word_lists    |%expr:scatter_task.words        |Array[Array[String]]|input |
+|wf._w5.gather_task.count         |%ref:wf.count                   |Int                 |output|
+|wf._w5._s6.scatter_task._i1.count|%ref:wf.count                   |String              |input |
 |wf._w5._s6.scatter_task._i1.in   |%ref:wf._w5._s6.filename        |file                |input |
-|wf._w5._s6.scatter_task._i1.words|[['python'], []]                |array[array[string]]|output|
-|wf._w5.gather_task._i1.count     |%ref:wf.count                   |int                 |input |
-|wf._w5.gather_task._i1.word_lists|%expr:scatter_task.words        |array[array[string]]|input |
-|wf._w5.gather_task._i1.count     |%ref:wf.count                   |int                 |output|
+|wf._w5._s6.scatter_task._i1.words|[['python'], []]                |Array[Array[String]]|output|
+|wf._w5.gather_task._i1.count     |%ref:wf.count                   |Int                 |input |
+|wf._w5.gather_task._i1.word_lists|%expr:scatter_task.words        |Array[Array[String]]|input |
+|wf._w5.gather_task._i1.count     |%ref:wf.count                   |Int                 |output|
 
 **Execution Table**
 
@@ -1787,33 +1787,33 @@ After two more iterations, when count is 3 and the loop condition evaluates to `
 
 |Name                             |Value                                            |Type                |I/O   |
 |---------------------------------|-------------------------------------------------|--------------------|------|
-|wf.files                         |['test/languages', 'test/words']                 |array[file]         |input |
-|wf.count                         |3                                                |int                 |input |
-|wf._w5._s6.filename              |%ref:wf.files                                    |array[file]         |input |
-|wf._w5._s6.scatter_task.count    |%ref:wf.count                                    |string              |input |
+|wf.files                         |['test/languages', 'test/words']                 |Array[File]         |input |
+|wf.count                         |3                                                |Int                 |input |
+|wf._w5._s6.filename              |%ref:wf.files                                    |Array[File]         |input |
+|wf._w5._s6.scatter_task.count    |%ref:wf.count                                    |String              |input |
 |wf._w5._s6.scatter_task.in       |%ref:wf._w5._s6.filename                         |file                |input |
-|wf._w5._s6.scatter_task.words    |                                                 |array[array[string]]|output|
-|wf._w5.gather_task.count         |%ref:wf.count                                    |int                 |input |
-|wf._w5.gather_task.word_lists    |%expr:scatter_task.words                         |array[array[string]]|input |
-|wf._w5.gather_task.count         |%ref:wf.count                                    |int                 |output|
-|wf._w5._s6.scatter_task._i1.count|%ref:wf.count                                    |string              |input |
+|wf._w5._s6.scatter_task.words    |                                                 |Array[Array[String]]|output|
+|wf._w5.gather_task.count         |%ref:wf.count                                    |Int                 |input |
+|wf._w5.gather_task.word_lists    |%expr:scatter_task.words                         |Array[Array[String]]|input |
+|wf._w5.gather_task.count         |%ref:wf.count                                    |Int                 |output|
+|wf._w5._s6.scatter_task._i1.count|%ref:wf.count                                    |String              |input |
 |wf._w5._s6.scatter_task._i1.in   |%ref:wf._w5._s6.filename                         |file                |input |
-|wf._w5._s6.scatter_task._i1.words|[['python'], []]                                 |array[array[string]]|output|
-|wf._w5.gather_task._i1.count     |%ref:wf.count                                    |int                 |input |
-|wf._w5.gather_task._i1.word_lists|%expr:scatter_task.words                         |array[array[string]]|input |
-|wf._w5.gather_task._i1.count     |%ref:wf.count                                    |int                 |output|
-|wf._w5._s6.scatter_task._i2.count|%ref:wf.count                                    |string              |input |
+|wf._w5._s6.scatter_task._i1.words|[['python'], []]                                 |Array[Array[String]]|output|
+|wf._w5.gather_task._i1.count     |%ref:wf.count                                    |Int                 |input |
+|wf._w5.gather_task._i1.word_lists|%expr:scatter_task.words                         |Array[Array[String]]|input |
+|wf._w5.gather_task._i1.count     |%ref:wf.count                                    |Int                 |output|
+|wf._w5._s6.scatter_task._i2.count|%ref:wf.count                                    |String              |input |
 |wf._w5._s6.scatter_task._i2.in   |%ref:wf._w5._s6.filename                         |file                |input |
-|wf._w5._s6.scatter_task._i2.words|[['scala', 'shell'], ['doggy', 'daily', 'dairy']]|array[array[string]]|output|
-|wf._w5.gather_task._i2.count     |%ref:wf.count                                    |int                 |input |
-|wf._w5.gather_task._i2.word_lists|%expr:scatter_task.words                         |array[array[string]]|input |
-|wf._w5.gather_task._i2.count     |%ref:wf.count                                    |int                 |output|
-|wf._w5._s6.scatter_task._i3.count|%ref:wf.count                                    |string              |input |
+|wf._w5._s6.scatter_task._i2.words|[['scala', 'shell'], ['doggy', 'daily', 'dairy']]|Array[Array[String]]|output|
+|wf._w5.gather_task._i2.count     |%ref:wf.count                                    |Int                 |input |
+|wf._w5.gather_task._i2.word_lists|%expr:scatter_task.words                         |Array[Array[String]]|input |
+|wf._w5.gather_task._i2.count     |%ref:wf.count                                    |Int                 |output|
+|wf._w5._s6.scatter_task._i3.count|%ref:wf.count                                    |String              |input |
 |wf._w5._s6.scatter_task._i3.in   |%ref:wf._w5._s6.filename                         |file                |input |
-|wf._w5._s6.scatter_task._i3.words|[['java', 'lisp'], ['cage', 'cake', 'call']]     |array[array[string]]|output|
-|wf._w5.gather_task._i3.count     |%ref:wf.count                                    |int                 |input |
-|wf._w5.gather_task._i3.word_lists|%expr:scatter_task.words                         |array[array[string]]|input |
-|wf._w5.gather_task._i3.count     |%ref:wf.count                                    |int                 |output|
+|wf._w5._s6.scatter_task._i3.words|[['java', 'lisp'], ['cage', 'cake', 'call']]     |Array[Array[String]]|output|
+|wf._w5.gather_task._i3.count     |%ref:wf.count                                    |Int                 |input |
+|wf._w5.gather_task._i3.word_lists|%expr:scatter_task.words                         |Array[Array[String]]|input |
+|wf._w5.gather_task._i3.count     |%ref:wf.count                                    |Int                 |output|
 
 **Execution Table**
 
@@ -1843,7 +1843,7 @@ task wc {
 }
 
 workflow wf {
-  array[array[array[string]]] triple_array
+  Array[Array[Array[String]]] triple_array
   scatter(double_array in triple_array) {
     scatter(single_array in double_array) {
       scatter(item in single_array) {
@@ -1866,12 +1866,12 @@ The initial symbol table and execution table would look as follows:
 
 |Name                   |Value                                                           |Type                       |I/O   |
 |-----------------------|----------------------------------------------------------------|---------------------------|------|
-|wf.triple_array        |[[['0', '1'], ['9', '10']], [['a', 'b'], ['c', 'd']], [['w', ...|array[array[array[string]]]|input |
-|wf._s3.double_array    |%ref:wf.triple_array                                            |array[array[array[string]]]|input |
-|wf._s3._s5.single_array|%flatten:1:wf.triple_array                                      |array[array[string]]       |input |
-|wf._s3._s5._s7.item    |%flatten:2:wf.triple_array                                      |array[string]              |input |
-|wf._s3._s5._s7.wc.str  |%ref:wf._s3._s5._s7.item                                        |string                     |input |
-|wf._s3._s5._s7.wc.count|                                                                |array[int]                 |output|
+|wf.triple_array        |[[['0', '1'], ['9', '10']], [['a', 'b'], ['c', 'd']], [['w', ...|Array[Array[Array[String]]]|input |
+|wf._s3.double_array    |%ref:wf.triple_array                                            |Array[Array[Array[String]]]|input |
+|wf._s3._s5.single_array|%flatten:1:wf.triple_array                                      |Array[Array[String]]       |input |
+|wf._s3._s5._s7.item    |%flatten:2:wf.triple_array                                      |Array[String]              |input |
+|wf._s3._s5._s7.wc.str  |%ref:wf._s3._s5._s7.item                                        |String                     |input |
+|wf._s3._s5._s7.wc.count|                                                                |Array[Int]                 |output|
 
 **Execution Table**
 
@@ -1898,12 +1898,12 @@ This workflow then runs these 12 steps in parallel and then the workflow is comp
 
 |Name                   |Value                                                           |Type                       |I/O   |
 |-----------------------|----------------------------------------------------------------|---------------------------|------|
-|wf.triple_array        |[[['0', '1'], ['9', '10']], [['a', 'b'], ['c', 'd']], [['w', ...|array[array[array[string]]]|input |
-|wf._s3.double_array    |%ref:wf.triple_array                                            |array[array[array[string]]]|input |
-|wf._s3._s5.single_array|%flatten:1:wf.triple_array                                      |array[array[string]]       |input |
-|wf._s3._s5._s7.item    |['0', '1', '9', '10', 'a', 'b', 'c', 'd', 'w', 'x', 'y', 'z']   |array[string]              |input |
-|wf._s3._s5._s7.wc.str  |%ref:wf._s3._s5._s7.item                                        |string                     |input |
-|wf._s3._s5._s7.wc.count|[1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1]                            |array[int]                 |output|
+|wf.triple_array        |[[['0', '1'], ['9', '10']], [['a', 'b'], ['c', 'd']], [['w', ...|Array[Array[Array[String]]]|input |
+|wf._s3.double_array    |%ref:wf.triple_array                                            |Array[Array[Array[String]]]|input |
+|wf._s3._s5.single_array|%flatten:1:wf.triple_array                                      |Array[Array[String]]       |input |
+|wf._s3._s5._s7.item    |['0', '1', '9', '10', 'a', 'b', 'c', 'd', 'w', 'x', 'y', 'z']   |Array[String]              |input |
+|wf._s3._s5._s7.wc.str  |%ref:wf._s3._s5._s7.item                                        |String                     |input |
+|wf._s3._s5._s7.wc.count|[1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1]                            |Array[Int]                 |output|
 
 **Execution Table**
 
@@ -1931,7 +1931,7 @@ task task1 {
 }
 
 task task2 {
-  command {sh script.sh ${file x} ${file y}}
+  command {sh script.sh ${File x} ${File y}}
 }
 
 workflow wf {
@@ -1967,13 +1967,13 @@ task prepare_task {
     sh prepare.sh ${a} ${b} ${c}
   }
   output {
-    array[string] intervals = tsv("stdout")
+    Array[String] intervals = tsv("stdout")
   }
 }
 
 task scatter_task {
   command {
-    sh scatter.sh ${file bam} --interval ${interval}
+    sh scatter.sh ${File bam} --interval ${Interval}
   }
   output {
     file vcf = "output.vcf"
@@ -1982,7 +1982,7 @@ task scatter_task {
 
 task gather_task {
   command {
-    sh gather.sh ${array[file] vcfs}
+    sh gather.sh ${Array[File] vcfs}
   }
 }
 
@@ -2000,7 +2000,7 @@ workflow wf {
 ```
 task cut_sh {
   command {
-    sh cut-to-two.sh ${file tsv_file} ${'-n ' lines?}
+    sh cut-to-two.sh ${File tsv_file} ${'-n ' lines?}
   }
   output {
     file out1 = "col1.tsv"
@@ -2010,7 +2010,7 @@ task cut_sh {
 
 task grep {
   command {
-    grep some_pattern ${file file1} > grep-output.tsv
+    grep some_pattern ${File file1} > grep-output.tsv
   }
   output {
     file grepped = "grep-output.tsv"
@@ -2032,8 +2032,8 @@ Task that operates on a file that's a map of string->file (sample_id -> clean_ba
 
 ```
 task map-test {
-  command { sh foobar.sh ${map[string, file] in} > something.tsv }
-  output { map[string, int] out = "something.tsv" }
+  command { sh foobar.sh ${Map[String, file] in} > something.tsv }
+  output { Map[String, Int] out = "something.tsv" }
 }
 ```
 
@@ -2107,7 +2107,7 @@ public wf my_wf {...}
 Problem:  It's not obvious from this output mapping if it should parse it as TSV or JSON:
 
 ```
-map[string, string] my_var = "stdout"
+Map[String, String] my_var = "stdout"
 ```
 
 We could just say "all outputs for a task must use the exact same serialization method".
@@ -2116,12 +2116,12 @@ Though, the more I play around with this syntax the more I don't like the implic
 
 * The syntax doesn't guide the user well.  It's a convention, and not an obvious one.
 * It *looks* like a type mismatch
-* Trying to do something like `map[string, string] my_var = subdir + "my_output"` looks more like a type mismatch.
+* Trying to do something like `Map[String, String] my_var = subdir + "my_output"` looks more like a type mismatch.
 
 Since function calls are *very* easily supported in WDL, I propose going back to two built-in functions: `tsv()` and `json()`
 
-* `map[string, string] blah = tsv(subdir + "somefile.tsv")`
-* `array[file] out = json("stdout")`
+* `Map[String, String] blah = tsv(subdir + "somefile.tsv")`
+* `Array[File] out = json("stdout")`
 
 What about reading primitives from files?
 
@@ -2144,35 +2144,3 @@ What about reading primitives from files?
 Current implementations of the common workflow language tool description:
 
 * [Reference implementation (Python)](python/)
-
-# Contributing
-
-If you are interested in contributing ideas or code, please join the
-[mailing list](https://groups.google.com/forum/#!forum/common-workflow-language) or fork
-the repository and send a pull request!
-
-# Participating Organizations
-
-* [The Broad Institute](http://broadinstitute.org)
-* [Curoverse](http://curoverse.com)
-* [Seven Bridges Genomics](http://sbgenomics.com)
-* [Galaxy](http://galaxyproject.org/)
-* [Institut Pasteur](http://www.pasteur.fr)
-* [BioDatomics](http://www.biodatomics.com/)
-* [Michigan State University](http://ged.msu.edu/)
-
-# Individual Contributors
-
-* Scott Frazer <sfrazer@broadinstitute.org>
-* Douglas Voet <dvoet@broadinstitute.org>
-* David Shiga <dshiga@broadinstitute.org>
-* Peter Amstutz <peter.amstutz@curoverse.com>
-* John Chilton <jmchilton@gmail.com>
-* Michael Crusoe <michael.crusoe@gmail.com>
-* John Kern <kern3020@gmail.com>
-* Hervé Ménager <herve.menager@gmail.com>
-* Maxim Mikheev <mikhmv@biodatomics.com>
-* Tim Pierce <twp@unchi.org>
-* Stian Soiland-Reyes <soiland-reyes@cs.manchester.ac.uk>
-* Luka Stojanovic <luka.stojanovic@sbgenomics.com>
-* Nebojsa Tijanic <nebojsa.tijanic@sbgenomics.com>

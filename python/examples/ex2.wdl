@@ -1,9 +1,9 @@
 task scatter_task {
   command <<<
-    egrep ^.{${count}}$ ${file in} || exit 0
+    egrep ^.{${count}}$ ${File in} || exit 0
   >>>
   output {
-    array[string] words = tsv("stdout")
+    Array[String] words = tsv("stdout")
   }
 }
 
@@ -12,19 +12,19 @@ task gather_task {
     python3 <<CODE
     import json
     with open('count', 'w') as fp:
-      fp.write(str(int(${int count}) - 1))
+      fp.write(str(int(${Int count}) - 1))
     with open('wc', 'w') as fp:
-      fp.write(str(sum([len(x) for x in json.loads(open("${array[array[string]] word_lists}").read())])))
+      fp.write(str(sum([len(x) for x in json.loads(open("${Array[Array[String]] word_lists}").read())])))
     CODE
   }
   output {
-    int count = read_int("count")
+    Int count = read_int("count")
   }
 }
 
 workflow wf {
-  array[file] files
-  int count
+  Array[File] files
+  Int count
 
   while(count > 3) {
     scatter(filename in files) {

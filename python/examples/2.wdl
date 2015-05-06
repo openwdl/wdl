@@ -1,9 +1,9 @@
 task scatter_task {
   command <<<
-    egrep ^[a-f]{${count}}$ ${file in}
+    egrep ^[a-f]{${Int count}}$ ${File in}
   >>>
   output {
-    array[string] words = tsv("stdout")
+    Array[String] words = tsv("stdout")
   }
   runtime {
     docker: docker
@@ -14,7 +14,7 @@ task gather_task {
   command {
     python3 <<CODE
     import sys
-    count = int(${count}) - 1
+    count = int(${Int count}) - 1
     with open('count', 'w') as fp:
       fp.write(str(count))
     with open('reiterate', 'w') as fp:
@@ -22,8 +22,8 @@ task gather_task {
     CODE
   }
   output {
-    boolean re_iterate = read_boolean("reiterate")
-    int count = read_int("count")
+    Boolean re_iterate = read_boolean("reiterate")
+    Int count = read_int("count")
   }
   runtime {
     docker: docker
@@ -31,10 +31,10 @@ task gather_task {
 }
 
 workflow loop_wf {
-  boolean iterate = true
-  array[file] files
-  int count
-  string docker
+  Boolean iterate = true
+  Array[File] files
+  Int count
+  String docker
 
   while(iterate) {
     scatter(filename in files) {

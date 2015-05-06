@@ -1,7 +1,7 @@
 task inline {
   command<<<
     python3 <<CODE
-    with open('${file path}') as fp:
+    with open('${File path}') as fp:
       for line in fp:
         if line.startswith('zoologic'):
           print(line.strip())
@@ -14,11 +14,11 @@ task inline {
 
 task task1 {
   command {
-    grep '^aberran' ${quote=false file infile}
+    grep '^aberran' ${File infile}
   }
   output {
-    array[string] words_a = tsv("stdout")
-    int blah = 1+1
+    Array[String] words_a = tsv("stdout")
+    Int blah = 1+1
   }
   runtime {
     docker: docker
@@ -27,10 +27,10 @@ task task1 {
 
 task task2 {
   command {
-    grep '^backbone' ${file infile}
+    grep '^backbone' ${File infile}
   }
   output {
-    array[string] words_b = tsv("stdout")
+    Array[String] words_b = tsv("stdout")
   }
   runtime {
     docker: docker
@@ -39,10 +39,10 @@ task task2 {
 
 task task3 {
   command {
-    grep '^xantha' ${file infile} || exit 0
+    grep '^xantha' ${File infile} || exit 0
   }
   output {
-    array[string] words_x = tsv("stdout")
+    Array[String] words_x = tsv("stdout")
   }
   runtime {
     docker: docker
@@ -50,16 +50,16 @@ task task3 {
 }
 
 workflow simple {
-  array[string] array_of_str
-  array[array[array[file]]] scatter_files
-  string docker
-  string words = "w"+"o"+"r"+"d"+"s"
-  file dict_file = "/usr/share/dict/" + words
-  boolean b = false
+  Array[String] array_of_str
+  Array[Array[Array[File]]] scatter_files
+  String docker
+  String words = "w"+"o"+"r"+"d"+"s"
+  File dict_file = "/usr/share/dict/" + words
+  Boolean b = false
 
   call task1 {
-    int x = (1 + 2) * (10 - 4) * 7
-    int y = strlen("hello world") + 10 + x
+    Int x = (1 + 2) * (10 - 4) * 7
+    Int y = strlen("hello world") + 10 + x
     input: docker=docker, infile=dict_file
   }
   call task2 {
