@@ -17,8 +17,11 @@ class Expression:
         return expr_str(self.ast) if self.ast else str(None)
 
 class Task:
-    def __init__(self, name, command, output_list, runtime, parameter_meta, meta, ast):
+    def __init__(self, name, command, outputs, runtime, parameter_meta, meta, ast):
         self.__dict__.update(locals())
+    def __getattr__(self, name):
+        if name == 'inputs':
+            return [part for part in self.command.parts if isinstance(part, TaskVariable)]
     def __str__(self):
         return '[Task name={} command={}]'.format(self.name, self.command)
 
@@ -30,11 +33,11 @@ class CommandLine:
 
 class CommandLinePart: pass
 
-class CommandLineVariable(CommandLinePart):
+class TaskVariable(CommandLinePart):
     def __init__(self, name, type, prefix, attributes, postfix_qualifier, ast):
         self.__dict__.update(locals())
     def __str__(self):
-        return '[CommandLineVariable name={}, type={}, postfix={}]'.format(self.name, self.type, self.postfix_qualifier)
+        return '[TaskVariable name={}, type={}, postfix={}]'.format(self.name, self.type, self.postfix_qualifier)
 
 class CommandLineString(CommandLinePart):
     def __init__(self, string, terminal):
@@ -46,13 +49,13 @@ class Type:
     def __init__(self, name, subtypes, ast):
         self.__dict__.update(locals())
     def is_primitive(self):
-        return self.name not in ['array', 'map']
+        return self.name not in ['Array', 'Map']
     def is_tsv_serializable(self):
         if self.is_primitive():
             return False
-        if self.name == 'array' and len(self.subtypes) == 1 and self.subtypes[0].is_primitive():
+        if self.name == 'Array' and len(self.subtypes) == 1 and self.subtypes[0].is_primitive():
             return True
-        if self.name == 'map' and len(self.subtypes) == 2 and self.subtypes[0].is_primitive() and self.subtypes[1].is_primitive():
+        if self.name == 'Map' and len(self.subtypes) == 2 and self.subtypes[0].is_primitive() and self.subtypes[1].is_primitive():
             return True
     def is_json_serializable(self):
         if self.is_primitive():
@@ -103,12 +106,7 @@ class Workflow(Scope):
 class Call(Scope):
     def __init__(self, task, alias, declarations, inputs, outputs, ast):
         self.__dict__.update(locals())
-        super(Call, self).__init__(alias if alias else task.name, declarations, [task])
-        for output in task.output_list:
-            output.parent = self
-        for part in task.command.parts:
-            if isinstance(part, CommandLineVariable):
-                part.parent = self
+        super(Call, self).__init__(alias if alias else task.name, declarations, [])
     def get_scatter_parent(self, node=None):
         parents = self.get_parents()
         for parent in parents:
@@ -191,10 +189,10 @@ def parse_task(ast):
     name = ast.attr('name').source_string
     command_ast = get_nodes(ast, 'RawCommand')
     command = parse_command(command_ast[0])
-    output_list = [parse_output(output_ast) for output_ast in get_nodes(ast, 'Output')]
+    outputs = [parse_output(output_ast) for output_ast in get_nodes(ast, 'Output')]
     runtime_asts = get_nodes(ast, 'Runtime')
     runtime = parse_runtime(runtime_asts[0]) if len(runtime_asts) else {}
-    return Task(name, command, output_list, runtime, {}, {}, ast)
+    return Task(name, command, outputs, runtime, {}, {}, ast)
 
 def parse_workflow(ast, tasks):
     body = []
@@ -265,11 +263,11 @@ def parse_call(ast, tasks):
     alias = ast.attr('alias').source_string if ast.attr('alias') else None
     declarations = [parse_declaration(decl_ast) for decl_ast in get_nodes(ast, 'Declaration')]
 
-    task_copy = None
     for task in tasks:
         if task.name == task_name:
-            task_copy = deepcopy(task)
-    if task_copy is None:
+            break
+
+    if task is None:
         raise BindingException('Could not find task with name: ' + task_name)
 
     inputs = {}
@@ -286,7 +284,7 @@ def parse_call(ast, tasks):
     except IndexError:
         pass
 
-    return Call(task_copy, alias, declarations, inputs, outputs, ast)
+    return Call(task, alias, declarations, inputs, outputs, ast)
 
 def parse_command_variable_attrs(ast):
     attrs = {}
@@ -298,7 +296,7 @@ def parse_command_variable(ast):
     if not isinstance(ast, wdl.parser.Ast) or ast.name != 'CommandParameter':
         raise BindingException('Expecting a "CommandParameter" AST')
     type_ast = ast.attr('type') if ast.attr('type') else wdl.parser.Terminal(wdl.parser.terminals['type'], 'type', 'string', 'fake', ast.attr('name').line, ast.attr('name').col)
-    return CommandLineVariable(
+    return TaskVariable(
         ast.attr('name').source_string,
         parse_type(type_ast),
         ast.attr('prefix').source_string if ast.attr('prefix') else None,

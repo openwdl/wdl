@@ -1,20 +1,21 @@
 WDL Java Parser
 ===============
 
-`WdlParser.java` is a Java 8 parser for WDL.  The `Main.java` file is a simple client that parses a WDL file and then prints out the abstract syntax tree
+`java8/WdlParser.java` is a Java 8 parser for WDL.  The `Main.java` file is a simple client that parses a WDL file and then prints out the abstract syntax tree
 
-`WdlParser.java.7` is a Java 7 parser for WDL.  This parser, however, has a dependency on [Apache Commons Codec](https://commons.apache.org/proper/commons-codec/).
+`java7/WdlParser.java` is a Java 7 parser for WDL.  This parser, however, has a dependency on [Apache Commons Codec](https://commons.apache.org/proper/commons-codec/).
 
 Usage
 -----
 
 ```
+$ cd java8
 $ java -version
 java version "1.8.0_45"
 Java(TM) SE Runtime Environment (build 1.8.0_45-b14)
 Java HotSpot(TM) 64-Bit Server VM (build 25.45-b02, mixed mode)
 $ javac *.java
-$ java Main example.wdl
+$ java Main ../example.wdl
 (Document:
   definitions=[
     (Task:
@@ -26,6 +27,8 @@ $ java Main example.wdl
             <example.wdl:2:12 cmd_part "CiAgICBlY2hvICI=">,
             (CommandParameter:
               name=<example.wdl:3:13 identifier "c3Ry">,
+
+
               type=None,
               prefix=None,
               attributes=[],
@@ -37,7 +40,7 @@ $ java Main example.wdl
         (Outputs:
           attributes=[
             (Output:
-              type=<example.wdl:6:5 type "aW50">,
+              type=<example.wdl:6:5 type "SW50">,
               var=<example.wdl:6:9 identifier "Y291bnQ=">,
               expression=(Subtract:
                 lhs=(FunctionCall:
@@ -58,9 +61,9 @@ $ java Main example.wdl
       body=[
         (Declaration:
           type=(Type:
-            name=<example.wdl:11:3 type "YXJyYXk=">,
+            name=<example.wdl:11:3 type "QXJyYXk=">,
             subtype=[
-              <example.wdl:11:9 type "c3RyaW5n">
+              <example.wdl:11:9 type "U3RyaW5n">
             ]
           ),
           name=<example.wdl:11:17 identifier "c3RyX2FycmF5">,
