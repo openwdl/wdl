@@ -39,7 +39,7 @@ task task2 {
 
 task task3 {
   command {
-    grep '^xantha' ${File infile} || exit 0
+    grep '^xyl' ${File infile} || exit 0
   }
   output {
     Array[String] words_x = tsv("stdout")
@@ -71,11 +71,6 @@ workflow simple {
   }
   call inline {
     input: path=dict_file, docker=docker
-  }
-  while(b) {
-    call task3 as alias1 {
-      input: docker=docker, infile=dict_file
-    }
   }
   scatter(x in scatter_files) {
     scatter(y in x) {
