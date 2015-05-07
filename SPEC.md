@@ -440,13 +440,13 @@ The `$var_option` is a set of key-value pairs for any additional and less-used o
 
 #### sep
 
-'sep' is interpreted as the separator string used to join multiple parameters together.  For example, passing the list `[1,2,3]` as a parameter to the command `python script.py ${sep=',' int numbers+}` would yield the command line:
+'sep' is interpreted as the separator string used to join multiple parameters together.  For example, passing the list `[1,2,3]` as a parameter to the command `python script.py ${sep=',' Int numbers+}` would yield the command line:
 
 ```
 python script.py 1,2,3
 ```
 
-Alternatively, if the command were `python script.py ${sep=' ' int numbers+}` it would parse to:
+Alternatively, if the command were `python script.py ${sep=' ' Int numbers+}` it would parse to:
 
 ```
 python script.py 1 2 3
@@ -504,7 +504,7 @@ For example, if a task's output section looks like this:
 
 ```
 output {
-  int threshold = "threshold.txt"
+  Int threshold = "threshold.txt"
 }
 ```
 
@@ -589,7 +589,7 @@ task one_and_one {
     grep ${pattern} ${File infile}
   }
   output {
-    file filtered = "stdout"
+    File filtered = "stdout"
   }
 }
 ```
@@ -602,7 +602,7 @@ task runtime_meta {
     java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
   }
   output {
-    file results = "${sample_id}.out"
+    File results = "${sample_id}.out"
   }
   runtime {
     docker: "broadinstitute/baseimg"
@@ -628,12 +628,12 @@ task bwa-mem-tool {
   command {
     bwa mem -t ${Int threads} \
             -k ${Int min_seed_length} \
-            -I ${sep=',' int min_std_max_min+} \
+            -I ${sep=',' Int min_std_max_min+} \
             ${File reference} \
-            ${sep=' ' file reads+} > output.sam
+            ${sep=' ' File reads+} > output.sam
   }
   output {
-    file sam = "output.sam"
+    File sam = "output.sam"
   }
   runtime {
     docker: "images.sbgenomics.com/rabix/bwa:9d3b9b0359cf"
@@ -641,7 +641,7 @@ task bwa-mem-tool {
 }
 ```
 
-Notable pieces in this example is `${sep=',' int min_std_max_min+}` which specifies that min_std_max_min can be one or more integers (the `+` after the variable name indicates that it can be one or more).  If an `Array[Int]` is passed into this parameter, then it's flattened by combining the elements with the separator character (`sep=','`).
+Notable pieces in this example is `${sep=',' Int min_std_max_min+}` which specifies that min_std_max_min can be one or more integers (the `+` after the variable name indicates that it can be one or more).  If an `Array[Int]` is passed into this parameter, then it's flattened by combining the elements with the separator character (`sep=','`).
 
 This task also defines that it exports one file, called 'sam', which is the stdout of the execution of bwa mem.
 
@@ -657,7 +657,7 @@ task wc2-tool {
     wc ${File file1}
   }
   output {
-    int count = read_int("stdout")
+    Int count = read_int("stdout")
   }
 }
 
@@ -697,7 +697,7 @@ task tmap-tool {
     tmap mapall ${sep=' ' stages+} < ${File reads} > output.sam
   }
   output {
-    file sam = "output.sam"
+    File sam = "output.sam"
   }
 }
 ```
@@ -883,18 +883,18 @@ Inside of any scope, variables may be [declared](#TODO).  The variables declared
 
 ```
 task my_task {
-  int x
+  Int x
   command {
     my_cmd --integer=${var}
   }
 }
 
 workflow wf {
-  int x = 2
+  Int x = 2
   workflow wf2 {
-    int x = 3
+    Int x = 3
     call my_task {
-      int x = 4
+      Int x = 4
       input: var=x
     }
   }
@@ -1100,10 +1100,10 @@ Arrays can be serialized in two ways:
 
 #### array serialization by expansion
 
-The array flattening approach can be done if a parameter is specified as `${sep=' ' file my_param+}`.  This format for specifying a parameter means that `my_param` may take a single file or an array of files.  If an array is specified, then the values are joined together with the separator character (a space).  For example:
+The array flattening approach can be done if a parameter is specified as `${sep=' ' File my_param+}`.  This format for specifying a parameter means that `my_param` may take a single file or an array of files.  If an array is specified, then the values are joined together with the separator character (a space).  For example:
 
 ```
-python script.py --bams=${sep=',' file bams*}
+python script.py --bams=${sep=',' File bams*}
 ```
 
 If passed an array for the value of `bams`:
@@ -1461,7 +1461,7 @@ task grep_words {
   }
 }
 workflow wf {
-  file dictionary
+  File dictionary
   call grep_words as grep_pythonic_words {
     input: start="pythonic", infile=dictionary
   }
@@ -1838,7 +1838,7 @@ task wc {
     echo "${str}" | wc -c
   }
   output {
-    int count = read_int("stdout") - 1
+    Int count = read_int("stdout") - 1
   }
 }
 
@@ -1938,11 +1938,11 @@ workflow wf {
   call task1
 
   workflow nested {
-    file a_file
+    File a_file
     call task2 as alias1 {input: x=task1.out, y=a_file}
 
     workflow nested2 {
-      file b_file
+      File b_file
       call task2 as alias2 {input: x=a_file, y=b_file}
     }
 
@@ -1976,7 +1976,7 @@ task scatter_task {
     sh scatter.sh ${File bam} --interval ${Interval}
   }
   output {
-    file vcf = "output.vcf"
+    File vcf = "output.vcf"
   }
 }
 
@@ -2003,8 +2003,8 @@ task cut_sh {
     sh cut-to-two.sh ${File tsv_file} ${'-n ' lines?}
   }
   output {
-    file out1 = "col1.tsv"
-    file out2 = "col2.tsv"
+    File out1 = "col1.tsv"
+    File out2 = "col2.tsv"
   }
 }
 
@@ -2013,7 +2013,7 @@ task grep {
     grep some_pattern ${File file1} > grep-output.tsv
   }
   output {
-    file grepped = "grep-output.tsv"
+    File grepped = "grep-output.tsv"
   }
 }
 
