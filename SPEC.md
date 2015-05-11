@@ -1,10 +1,10 @@
-# Common Workflow Language DSL Proposal
+# Workflow Description Language
 
 ## Table Of Contents
 
 <!---toc start-->
 
-* [Common Workflow Language DSL Proposal](#common-workflow-language-dsl-proposal)
+* [Workflow Description Language](#workflow-description-language)
   * [Table Of Contents](#table-of-contents)
   * [Introduction](#introduction)
 * [Language Specification](#language-specification)
@@ -2141,6 +2141,6 @@ What about reading primitives from files?
 
 # Implementations
 
-Current implementations of the common workflow language tool description:
+Current implementations of the workflow description language description:
 
 * [Reference implementation (Python)](python/)
