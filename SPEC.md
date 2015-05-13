@@ -145,6 +145,18 @@ workflow example {
 
 The inputs to this workflow would be `files` and `hello.pattern`.
 
+## State of the Specification
+
+This specification is still in the draft phase.  Most of the basics are fairly set in stone but there are some areas of this spec that will be changing rapidly.
+
+Current things that are being worked out:
+
+1.  [Loop syntax and semantics](https://groups.google.com/forum/#!topic/workflow-description-language/FvzQVOs1KFs)
+2.  Expression Semantics
+3.  [Workflow Output Syntax](https://groups.google.com/forum/#!topic/workflow-description-language/EE-mDCACToY)
+4.  Literal syntax for Object, Array, Map, and File types
+5.  Objects vs. Maps.  Should objects even exist?  How will they be specified?
+
 # Language Specification
 
 ## Global Grammar Rules
@@ -735,7 +747,6 @@ $call = 'call' $namespaced_task ('as' $identifier)? $call_body?
 $namespaced_task = $identifier ('.' $identifier)*
 $call_body = '{' $inputs? $outputs? '}'
 $inputs = 'input' ':' $variable_mappings
-$outputs = 'output' ':' $variable_mappings
 $variable_mappings = $identifier '=' $expression (',' $identifier '=' $expression)*
 ```
 
