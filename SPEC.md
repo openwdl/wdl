@@ -7,6 +7,7 @@
 * [Workflow Description Language](#workflow-description-language)
   * [Table Of Contents](#table-of-contents)
   * [Introduction](#introduction)
+  * [State of the Specification](#state-of-the-specification)
 * [Language Specification](#language-specification)
   * [Global Grammar Rules](#global-grammar-rules)
     * [Whitespace, Strings, Identifiers](#whitespace-strings-identifiers)
@@ -53,12 +54,14 @@
       * [Example 1: dRanger](#example-1-dranger)
 * [Variable Resolution & Scoping](#variable-resolution--scoping)
 * [Standard Library Functions](#standard-library-functions)
-  * [mixed tsv(string)](#mixed-tsvstring)
-  * [mixed json(string)](#mixed-jsonstring)
-  * [int read_int(string)](#int-read_intstring)
-  * [string read_string(string)](#string-read_stringstring)
-  * [float read_float(string)](#float-read_floatstring)
-  * [boolean read_boolean(string)](#boolean-read_booleanstring)
+  * [mixed stdout()](#mixed-stdout)
+  * [mixed stderr()](#mixed-stderr)
+  * [mixed tsv(String|File|Uri)](#mixed-tsvstringfileuri)
+  * [mixed json(String|File|Uri)](#mixed-jsonstringfileuri)
+  * [Int read_int(String|File|Uri)](#int-read_intstringfileuri)
+  * [String read_string(String|File|Uri)](#string-read_stringstringfileuri)
+  * [Float read_float(String|File|Uri)](#float-read_floatstringfileuri)
+  * [Boolean read_boolean(String|File|Uri)](#boolean-read_booleanstringfileuri)
 * [Data Types & Serialization](#data-types--serialization)
   * [Overview](#overview)
   * [Serialization](#serialization)
@@ -66,9 +69,9 @@
     * [Serialization of Compound Output Types](#serialization-of-compound-output-types)
   * [Primitive Types](#primitive-types)
     * [String](#string)
-    * [int and float](#int-and-float)
-    * [file and uri](#file-and-uri)
-    * [boolean](#boolean)
+    * [Int and Float](#int-and-float)
+    * [File and Uri](#file-and-uri)
+    * [Boolean](#boolean)
   * [Compound Types](#compound-types)
     * [array](#array)
       * [array serialization by expansion](#array-serialization-by-expansion)
@@ -80,7 +83,7 @@
     * [object](#object)
       * [object serialization as TSV](#object-serialization-as-tsv)
       * [object serialization as JSON](#object-serialization-as-json)
-      * [array\[object\]](#arrayobject)
+      * [Array\[object\]](#arrayobject)
 * [Workflow Execution Algorithm](#workflow-execution-algorithm)
   * [Symbol Table Construction](#symbol-table-construction)
   * [Symbol Table Initial Population](#symbol-table-initial-population)
@@ -100,10 +103,8 @@
   * [public/private -or- export statements](#publicprivate--or--export-statements)
   * [Various loop issues](#various-loop-issues)
   * [Explicit vs. Implicit output mappings](#explicit-vs-implicit-output-mappings)
+  * [Additional Syntax Checks](#additional-syntax-checks)
 * [Implementations](#implementations)
-* [Contributing](#contributing)
-* [Participating Organizations](#participating-organizations)
-* [Individual Contributors](#individual-contributors)
 
 <!---toc end-->
 
@@ -244,25 +245,82 @@ False values are: Boolean false, integer == 0, and float == 0.0
 
 Below are the valid results for operators on types.  Any combination not in the list will result in an error.
 
-|Type       |Operators  |Type             |Result                            |
-|-----------|-----------|-----------------|----------------------------------|
-|Int        |arithmetic |Int              |Int                               |
-|Int        |arithmetic |Float            |Float                             |
-|Int        |arithmetic |Boolean          |Int (true=1, false=0)             |
-|Int        |comparison |Int,Float,Boolean|Boolean                           |
-|Float      |arithmetic |Boolean          |Float (true=1, false=0)           |
-|Float      |comparison |Int,Float,Boolean|Boolean                           |
-|String     |`==`,`!=`  |String           |Boolean                           |
-|String     |`[]`       |Int              |String                            |
-|Object     |`.`        |identifier       |mixed (object attr)               |
-|Map        |`[]`       |String,Int       |mixed (map index)                 |
-|Array      |`[]`       |Int              |mixed (array index)               |
-
-> aritmetic operators are `*`, `/`, `%`, `+`, `-`
->
-> comparison operators are `<`, `<=`, `>`, `>=`, `==`, `!=`
-
-> **TODO**: Finish this table
+|LHS Type   |Operators  |RHS Type         |Result   |Semantics|
+|-----------|-----------|-----------------|---------|---------|
+|`Boolean`|`==`|`Boolean`|`Boolean`||
+|`Boolean`|`!=`|`Boolean`|`Boolean`||
+|`Boolean`|`>`|`Boolean`|`Boolean`||
+|`Boolean`|`>=`|`Boolean`|`Boolean`||
+|`Boolean`|`<`|`Boolean`|`Boolean`||
+|`Boolean`|`<=`|`Boolean`|`Boolean`||
+|`Boolean`|`||`|`Boolean`|`Boolean`||
+|`Boolean`|`&&`|`Boolean`|`Boolean`||
+|`File`|`+`|`File`|`File`||
+|`File`|`==`|`File`|`Boolean`||
+|`File`|`!=`|`File`|`Boolean`||
+|`File`|`+`|`String`|`File`||
+|`File`|`==`|`String`|`Boolean`||
+|`File`|`!=`|`String`|`Boolean`||
+|`Float`|`+`|`Float`|`Float`||
+|`Float`|`-`|`Float`|`Float`||
+|`Float`|`*`|`Float`|`Float`||
+|`Float`|`/`|`Float`|`Float`||
+|`Float`|`%`|`Float`|`Float`||
+|`Float`|`==`|`Float`|`Boolean`||
+|`Float`|`!=`|`Float`|`Boolean`||
+|`Float`|`>`|`Float`|`Boolean`||
+|`Float`|`>=`|`Float`|`Boolean`||
+|`Float`|`<`|`Float`|`Boolean`||
+|`Float`|`<=`|`Float`|`Boolean`||
+|`Float`|`+`|`Int`|`Float`||
+|`Float`|`-`|`Int`|`Float`||
+|`Float`|`*`|`Int`|`Float`||
+|`Float`|`/`|`Int`|`Float`||
+|`Float`|`%`|`Int`|`Float`||
+|`Float`|`==`|`Int`|`Boolean`||
+|`Float`|`!=`|`Int`|`Boolean`||
+|`Float`|`>`|`Int`|`Boolean`||
+|`Float`|`>=`|`Int`|`Boolean`||
+|`Float`|`<`|`Int`|`Boolean`||
+|`Float`|`<=`|`Int`|`Boolean`||
+|`Float`|`+`|`String`|`String`||
+|`Int`|`+`|`Float`|`Float`||
+|`Int`|`-`|`Float`|`Float`||
+|`Int`|`*`|`Float`|`Float`||
+|`Int`|`/`|`Float`|`Float`||
+|`Int`|`%`|`Float`|`Float`||
+|`Int`|`==`|`Float`|`Boolean`||
+|`Int`|`!=`|`Float`|`Boolean`||
+|`Int`|`>`|`Float`|`Boolean`||
+|`Int`|`>=`|`Float`|`Boolean`||
+|`Int`|`<`|`Float`|`Boolean`||
+|`Int`|`<=`|`Float`|`Boolean`||
+|`Int`|`+`|`Int`|`Int`||
+|`Int`|`-`|`Int`|`Int`||
+|`Int`|`*`|`Int`|`Int`||
+|`Int`|`/`|`Int`|`Int`||
+|`Int`|`%`|`Int`|`Int`||
+|`Int`|`==`|`Int`|`Boolean`||
+|`Int`|`!=`|`Int`|`Boolean`||
+|`Int`|`>`|`Int`|`Boolean`||
+|`Int`|`>=`|`Int`|`Boolean`||
+|`Int`|`<`|`Int`|`Boolean`||
+|`Int`|`<=`|`Int`|`Boolean`||
+|`Int`|`+`|`String`|`String`||
+|`String`|`+`|`Float`|`String`||
+|`String`|`+`|`Int`|`String`||
+|`String`|`+`|`String`|`String`||
+|`String`|`==`|`String`|`Boolean`||
+|`String`|`!=`|`String`|`Boolean`||
+|`String`|`>`|`String`|`Boolean`||
+|`String`|`>=`|`String`|`Boolean`||
+|`String`|`<`|`String`|`Boolean`||
+|`String`|`<=`|`String`|`Boolean`||
+||`-`|`Float`|`Float`||
+||`+`|`Float`|`Float`||
+||`-`|`Int`|`Int`||
+||`+`|`Int`|`Int`||
+||`!`|`Boolean`|`Boolean`||
 
 ### Operator Precedence Table
 
@@ -334,17 +392,23 @@ A WDL file may contain import statements to include WDL code from other sources
 $import = 'import' $string ('as' $identifier)?
 ```
 
-The import statement specifies that `$string` which is to be interpted as a URI which points to a WDL file.  The basename of that URI is the namespace which contains the workflows and tasks from that file.  If the `$identifier` is specified, then this will be used as the namespace for imported WDL files.
+The import statement specifies that `$string` which is to be interpted as a URI which points to a WDL file.  The engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code.
+
+If a namespace identifier (via the `as $identifer` syntax) is specified, then all the tasks and workflows imported will only be accessible through that namespace.  If no namespace identifier is specified, then all tasks and workflows from the URI are imported into the current namespace.
 
 ```
 import "http://example.com/lib/stdlib"
 import "http://example.com/lib/analysis_tasks" as analysis
-import "lib.wdl"
 
 workflow wf {
-  call stdlib.file_size
+  File bam_file
+
+  # file_size is from "http://example.com/lib/stdlib"
+  call file_size {
+    input: file=bam_file
+  }
   call analysis.my_analysis_task {
-    input: size=stdlib.file_size.bytes
+    input: size=file_size.bytes, file=bam_file
   }
 }
 ```
@@ -601,7 +665,7 @@ task one_and_one {
     grep ${pattern} ${File infile}
   }
   output {
-    File filtered = "stdout"
+    File filtered = stdout()
   }
 }
 ```
@@ -669,7 +733,7 @@ task wc2-tool {
     wc ${File file1}
   }
   output {
-    Int count = read_int("stdout")
+    Int count = read_int(stdout())
   }
 }
 
@@ -773,11 +837,11 @@ As an example, here is a workflow in which the second task references an output 
 ```
 task task1 {
   command {python do_stuff.py}
-  output {file results = "stdout"}
+  output {file results = stdout()}
 }
 task task2 {
   command {python do_stuff2.py ${File foobar}}
-  output {file results = "stdout"}
+  output {file results = stdout()}
 }
 workflow wf {
   call task1
@@ -916,9 +980,19 @@ workflow wf {
 
 # Standard Library Functions
 
-## mixed tsv(string)
+## mixed stdout()
 
-the `tsv` function takes one parameter, which is a file path on the filesystem that the task was run on, and returns either an `array`, `object`, or `map` depending on the contents of that file.
+Returns either a `File` or `Uri` of the stdout that this task generated.
+
+## mixed stderr()
+
+Returns either a `File` or `Uri` of the stderr that this task generated.
+
+## mixed tsv(String|File|Uri)
+
+the `tsv()` function takes one parameter, which is a file-like object (`String`, `File`, or `URI`) and returns either an `Array`, `Object`, or `Map` depending on the contents of that file.
+
+If the parameter is a `String`, this is assumed to be a local file path relative to the current working directory of the task.
 
 For example, if I write a task that outputs a file to `./results/file_list.tsv`, and my task is defined as:
 
@@ -935,23 +1009,23 @@ task do_stuff {
 
 Then when the task finishes, to fulfull the `outputs` variable, `./results/file_list.tsv` must contain a single-column TSV with file paths that are valid.
 
-## mixed json(string)
+## mixed json(String|File|Uri)
 
 This function works exactly like `tsv()` except that the parameter is expected to be a path to a JSON file containing the data structure
 
-## Int read_int(string)
+## Int read_int(String|File|Uri)
 
 The `read_int()` function takes a file path which is expected to contain 1 line with 1 integer on it.  This function returns that integer.
 
-## String read_string(string)
+## String read_string(String|File|Uri)
 
 The `read_string()` function takes a file path which is expected to contain 1 line with 1 string on it.  This function returns that string.
 
-## Float read_float(string)
+## Float read_float(String|File|Uri)
 
 The `read_float()` function takes a file path which is expected to contain 1 line with 1 floating point number on it.  This function returns that float.
 
-## Boolean read_boolean(string)
+## Boolean read_boolean(String|File|Uri)
 
 The `read_boolean()` function takes a file path which is expected to contain 1 line with 1 Boolean value (either "true" or "false" on it.  This function returns that Boolean value.
 
@@ -1360,7 +1434,7 @@ task t1 {
 }
 task t2 {
   command {wc -l ${infile1} ${infile2}}
-  output {int lines = "stdout"}
+  output {int lines = stdout()}
 }
 workflow t3 {
   call t1
@@ -1468,7 +1542,7 @@ task grep_words {
     grep '^${start}' ${File infile}
   }
   output {
-    Array[String] words = tsv("stdout")
+    Array[String] words = tsv(stdout())
   }
 }
 workflow wf {
@@ -1523,7 +1597,7 @@ The workflow engine is responsible for updating all fields besides the first thr
 |wf.grep_pythonic_words|successful |     |1643|0   |
 |wf.grep_workf_words   |started    |     |1644|    |
 
-Upon a job finishing and the return code being set, the `outputs` section is processed for that task.  In the case of the above example, when `wf.grep_pythonic_words` finishes the output mapping `Array[String] words = tsv("stdout")` is processed.  The workflow engine looks for the file called `stdout` in the current working directory where the process was launched.  If it is not found, the task's status gets set to `error` and optionally an error message field gets set describing the nature of why the field was set.
+Upon a job finishing and the return code being set, the `outputs` section is processed for that task.  In the case of the above example, when `wf.grep_pythonic_words` finishes the output mapping `Array[String] words = tsv(stdout())` is processed.  The workflow engine looks for the file called `stdout` in the current working directory where the process was launched.  If it is not found, the task's status gets set to `error` and optionally an error message field gets set describing the nature of why the field was set.
 
 A workflow is defined as finished when all the tasks in the workflow are in a terminal state (i.e. `skipped`, `successful`, `failed`, or `error`).  For this example, let's say the first task succeeds and the second task fails.  The terminal state of the workflow is:
 
@@ -1544,7 +1618,7 @@ task scatter_task {
     egrep ^.{${Int count}}$ ${File in} || exit 0
   >>>
   output {
-    Array[String] words = tsv("stdout")
+    Array[String] words = tsv(stdout())
   }
 }
 
@@ -1849,7 +1923,7 @@ task wc {
     echo "${str}" | wc -c
   }
   output {
-    Int count = read_int("stdout") - 1
+    Int count = read_int(stdout()) - 1
   }
 }
 
@@ -1938,7 +2012,7 @@ This workflow then runs these 12 steps in parallel and then the workflow is comp
 ```
 task task1 {
   command {sh script.sh}
-  output{file out = "stdout"}
+  output{file out = stdout()}
 }
 
 task task2 {
@@ -1978,7 +2052,7 @@ task prepare_task {
     sh prepare.sh ${a} ${b} ${c}
   }
   output {
-    Array[String] intervals = tsv("stdout")
+    Array[String] intervals = tsv(stdout())
   }
 }
 
@@ -2118,7 +2192,7 @@ public wf my_wf {...}
 Problem:  It's not obvious from this output mapping if it should parse it as TSV or JSON:
 
 ```
-Map[String, String] my_var = "stdout"
+Map[String, String] my_var = stdout()
 ```
 
 We could just say "all outputs for a task must use the exact same serialization method".
@@ -2132,12 +2206,12 @@ Though, the more I play around with this syntax the more I don't like the implic
 Since function calls are *very* easily supported in WDL, I propose going back to two built-in functions: `tsv()` and `json()`
 
 * `Map[String, String] blah = tsv(subdir + "somefile.tsv")`
-* `Array[File] out = json("stdout")`
+* `Array[File] out = json(stdout())`
 
 What about reading primitives from files?
 
-* `int c = "stdout"`
-* `int c = read_int("stdout")`
+* `int c = stdout()`
+* `int c = read_int(stdout())`
 
 ## Additional Syntax Checks
 
