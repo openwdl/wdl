@@ -10,14 +10,16 @@
   * [State of the Specification](#state-of-the-specification)
 * [Language Specification](#language-specification)
   * [Global Grammar Rules](#global-grammar-rules)
-    * [Whitespace, Strings, Identifiers](#whitespace-strings-identifiers)
+    * [Whitespace, Strings, Identifiers, Constants](#whitespace-strings-identifiers-constants)
     * [Types](#types)
     * [Declarations](#declarations)
     * [Expressions](#expressions)
     * [Operator Precedence Table](#operator-precedence-table)
-      * [Member Access](#member-access)
-      * [Map and Array Indexing](#map-and-array-indexing)
-      * [Function Calls](#function-calls)
+    * [Member Access](#member-access)
+    * [Map and Array Indexing](#map-and-array-indexing)
+    * [Function Calls](#function-calls)
+    * [Array Literals](#array-literals)
+    * [Map Literals](#map-literals)
   * [Document](#document)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
@@ -99,7 +101,6 @@
   * [Example 7: Output a Map](#example-7-output-a-map)
 * [Notes & Things to Clarify](#notes--things-to-clarify)
   * [Workflow output syntax](#workflow-output-syntax)
-  * [Import statements](#import-statements)
   * [public/private -or- export statements](#publicprivate--or--export-statements)
   * [Various loop issues](#various-loop-issues)
   * [Explicit vs. Implicit output mappings](#explicit-vs-implicit-output-mappings)
@@ -162,7 +163,7 @@ Current things that are being worked out:
 
 ## Global Grammar Rules
 
-### Whitespace, Strings, Identifiers
+### Whitespace, Strings, Identifiers, Constants
 
 These are common among many of the following sections
 
@@ -170,6 +171,9 @@ These are common among many of the following sections
 $ws = (0x20 | 0x9 | 0xD | 0xA)+
 $identifier = [a-zA-Z][a-zA-Z0-9_]+
 $string = "[^"]" | '[^']'
+$boolean = 'true' | 'false'
+$integer = [1-9][0-9]*
+$float = -?[0-9]*.[0-9]+
 ```
 
 > **TODO**: Allow escape sequences in strings
@@ -202,7 +206,7 @@ $declaration = $type $identifier ('=' $expression)?
 
 Declarations are declared at the top of any [scope](#TODO).
 
-In a [task definition](#TODO), declarations are interpreted as inputs to the task that are not part of the command line itself.
+In a [task definition](#task-definition), declarations are interpreted as inputs to the task that are not part of the command line itself.
 
 If a declaration does not have an initialization, then the value is expected to be provided by the user before the workflow or task is run.
 
@@ -211,7 +215,6 @@ Some examples of declarations:
 * `File x`
 * `String y = "abc"`
 * `Float pi = 3 + .14`
-* `Object z = object {a: "1", b: "2", c: "3"}`
 * `Map[String, String] m`
 
 ### Expressions
@@ -237,11 +240,10 @@ $expression = $expression '==' $expression
 $expression = $expression '!=' $expression
 $expression = $expression '&&' $expression
 $expression = $expression '||' $expression
+$expression = '{' ($expression ':' $expression)* '}'
+$expression = '[' $expression* ']'
+$expression = $string | $integer | $float | $boolean | $identifier
 ```
-
-Truth values are: Boolean true, integer != 0, and float != 0.0
-
-False values are: Boolean false, integer == 0, and float == 0.0
 
 Below are the valid results for operators on types.  Any combination not in the list will result in an error.
 
@@ -255,7 +257,7 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Boolean`|`<=`|`Boolean`|`Boolean`||
 |`Boolean`|`||`|`Boolean`|`Boolean`||
 |`Boolean`|`&&`|`Boolean`|`Boolean`||
-|`File`|`+`|`File`|`File`||
+|`File`|`+`|`File`|`File`|Append file paths|
 |`File`|`==`|`File`|`Boolean`||
 |`File`|`!=`|`File`|`Boolean`||
 |`File`|`+`|`String`|`File`||
@@ -298,8 +300,8 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Int`|`+`|`Int`|`Int`||
 |`Int`|`-`|`Int`|`Int`||
 |`Int`|`*`|`Int`|`Int`||
-|`Int`|`/`|`Int`|`Int`||
-|`Int`|`%`|`Int`|`Int`||
+|`Int`|`/`|`Int`|`Int`|Integer division|
+|`Int`|`%`|`Int`|`Int`|Integer division, return remainder|
 |`Int`|`==`|`Int`|`Boolean`||
 |`Int`|`!=`|`Int`|`Boolean`||
 |`Int`|`>`|`Int`|`Boolean`||
@@ -348,7 +350,7 @@ Below are the valid results for operators on types.  Any combination not in the 
 | 2          | Logical OR            | left-to-right | x\|\|y               |
 | 1          | Assignment            | right-to-left | x=y                  |
 
-#### Member Access
+### Member Access
 
 The syntax `x.y` refers to member access.  `x` must be an object or task in a workflow.  A Task can be thought of as an object where the attributes are the outputs of the task.
 
@@ -368,13 +370,31 @@ workflow wf {
 }
 ```
 
-#### Map and Array Indexing
+### Map and Array Indexing
 
 The syntax `x[y]` is for indexing maps and arrays.  If `x` is an array, then `y` must evaluate to an integer.  If `x` is a map, then `y` must evaluate to a key in that map.
 
-#### Function Calls
+### Function Calls
 
-Function calls, in the form of `func(p1, p2, p3, ...)`, are either [standard library functions](#TODO) or engine-defined functions.  In this current iteration of the spec, users cannot define their own functions.
+Function calls, in the form of `func(p1, p2, p3, ...)`, are either [standard library functions](#standard-library-functions) or engine-defined functions.  In this current iteration of the spec, users cannot define their own functions.
+
+### Array Literals
+
+Arrays values can be specified using Python-like syntax, as follows:
+
+```
+Array[String] a = ["a", "b", "c"]
+Array[Int] b = [0,1,2]
+```
+
+### Map Literals
+
+Maps values can be specified using a similar Python-like sytntax:
+
+```
+Map[Int, Int] = {1: 10, 2: 11}
+Map[String, Int] = {"a": 1, "b": 2}
+```
 
 ## Document
 
@@ -814,7 +834,7 @@ $inputs = 'input' ':' $variable_mappings
 $variable_mappings = $identifier '=' $expression (',' $identifier '=' $expression)*
 ```
 
-A workflow may call other tasks via the `call` keyword.  The `$namespaced_task` is the reference to which task to run, usually this is an identifier or it may use the dot notation if the task was included via an [import statement](#TODO).  All `calls` must be uniquely identifiable, which is why one would use the `as alias` syntax.
+A workflow may call other tasks via the `call` keyword.  The `$namespaced_task` is the reference to which task to run, usually this is an identifier or it may use the dot notation if the task was included via an [import statement](#import-statements).  All `calls` must be uniquely identifiable, which is why one would use the `as alias` syntax.
 
 ```
 import "lib"
@@ -954,7 +974,7 @@ Scopes are defined as:
 * `if(expr) {...}` blocks
 * `scatter(x in y) {...}` blocks
 
-Inside of any scope, variables may be [declared](#TODO).  The variables declared in that scope are visible to any sub-scope, recursively.  For example:
+Inside of any scope, variables may be [declared](#declarations).  The variables declared in that scope are visible to any sub-scope, recursively.  For example:
 
 ```
 task my_task {
@@ -2127,35 +2147,6 @@ task map-test {
 ## Workflow output syntax
 
 See [corresponding section](#outputs) for details
-
-## Import statements
-
-Possible syntax:
-
-* `import "github.com/path/to/task.wdl"`
-* `import "https://methods-repo/task/09af5/" as my_task`
-
-Since tasks define a name inside the task definition itself, how do we reconsile that with the URL?  For example, if `http://methods-repo/task/7suf45jskc04fjsk` contains:
-
-```
-task do_stuff {
-  ...
-}
-```
-
-It's not clear from `import "http://methods-repo/task/7suf45jskc04fjsk"` that it's called do_stuff.  `import "http://methods-repo/task/7suf45jskc04fjsk" as do_stuff` seems a bit redundant.  And assuming the name is `7suf45jskc04fjsk` also doesn't quite feel right.
-
-Also what about URLs that define more than one thing?
-
-Perhaps a more Go-like import statement:
-
-```
-import (
-  task1,task2 from "http://github.com/path/to/task.wdl"
-  * from "http://methods-repo/helpers.wdl"
-  my_wf from "http://methods-repo/task/7suf45jskc04fjsk"
-)
-```
 
 ## public/private -or- export statements
 
