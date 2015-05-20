@@ -19,7 +19,7 @@ task ps {
     ps
   }
   output {
-    File procs = "stdout"
+    File procs = stdout()
   }
 }
 
