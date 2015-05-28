@@ -414,7 +414,7 @@ $import = 'import' $string ('as' $identifier)?
 
 The import statement specifies that `$string` which is to be interpted as a URI which points to a WDL file.  The engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code.
 
-If a namespace identifier (via the `as $identifer` syntax) is specified, then all the tasks and workflows imported will only be accessible through that namespace.  If no namespace identifier is specified, then all tasks and workflows from the URI are imported into the current namespace.
+If a namespace identifier (via the `as $identifer` syntax) is specified, then all the tasks and workflows imported will only be accessible through that [namespace](#namespaces).  If no namespace identifier is specified, then all tasks and workflows from the URI are imported into the current namespace.
 
 ```
 import "http://example.com/lib/stdlib"
@@ -432,6 +432,12 @@ workflow wf {
   }
 }
 ```
+
+Engines should at the very least support the following protocols for import URIs:
+
+* `http://` and `https://`
+* `file://`
+* no protocol (which should be interpreted as `file://`
 
 ## Task Definition
 
@@ -998,7 +1004,49 @@ workflow wf {
 
 `my_task` will use `x=4` to set the value for `var` in its command line.  However, my_task also needs a value for `x` which is defined at the task level.  Since `my_task` has two inputs (`x` and `var`), and only one of those is set in the `call my_task` declaration, the value for `my_task.x` still needs to be provided by the user when the workflow is run.
 
-# Standard Library Functions
+# Namespaces
+
+Import statements can be used to pull in tasks/workflows from other locations as well as create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the current namespace.  For example:
+
+tasks.wdl
+```
+task x {
+  command { python script.py }
+}
+task y {
+  command { python script2.py }
+}
+```
+
+workflow.wdl
+```
+import "tasks.wdl"
+
+workflow wf {
+  call x
+  call y
+}
+```
+
+Tasks `x` and `y` are in the same namespace as workflow `wf` is.  However, if workflow.wdl could put all of those tasks behind a namespace:
+
+workflow.wdl
+```
+import "tasks.wdl" as ns
+
+workflow wf {
+  call ns.x
+  call ns.y
+}
+```
+
+Now everything inside of `tasks.wdl` must be accessed through the namespace `ns`.
+
+## Additional Namespace Requirements
+
+Each namespace contains: namespaces, tasks, and workflows.  The names of these needs to be unique within that namespace.  For example, there cannot be a task named `foo` and also a namespace named `foo`.  Also there can't be a task and a workflow with the same names, or two workflows with the same name.
+
+# Standard Library
 
 ## mixed stdout()
 

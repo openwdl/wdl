@@ -8,16 +8,19 @@ grammar {
       r'(Array|Map|Object|Boolean|Int|Float|Uri|File|String)(?!{%_identifier_follow%})' -> _type
       r'{%_identifier_start%}({%_identifier_follow%})*' -> _identifier
     }
+
     r'\s+' -> null
+
     enum {
       python: r'/\*(.*?)\*/' (DOTALL)
       c: r'/\*(.*?)\*/' (PCRE_DOTALL)
       java: r'/\*(.*?)\*/' (DOTALL)
       javascript: r'/\*(.*?)\*/' (m)
     } -> null
+
     r'#.*' -> null
     r'task(?!{%_identifier_follow%})' -> :task
-    r'call(?!{%_identifier_follow%})' -> :call
+    r'(call)\s+' -> :call[1] @task_fqn
     r'workflow(?!{%_identifier_follow%})' -> :workflow
     r'import(?!{%_identifier_follow%})' -> :import
     r'input(?!{%_identifier_follow%})' -> :input
@@ -72,6 +75,13 @@ grammar {
     r'!' -> :not
     r'-?[0-9]+\.[0-9]+' -> :float
     r'[0-9]+' -> :integer
+    mode<task_fqn> {
+      r'\s+' -> null
+      enum {
+        python: r'{%_identifier%}(\.{%_identifier%})*'
+        java: "{%_identifier%}(\\.{%_identifier%})*"
+      } -> :ns_identifier %pop
+    }
     mode<scatter> {
       r'\s+' -> null
       r'\)' -> :rparen %pop
@@ -136,6 +146,7 @@ grammar {
     $workflow_or_task = $workflow | $task
 
     $import = :import :string optional($import_namespace) -> Import(uri=$1, namespace=$2)
+    $import_namespace = :as :identifier -> $1
     $task = :task :identifier :lbrace list($declarations) list($sections) :rbrace -> Task(name=$1, declarations=$3, sections=$4)
     $sections = $command | $outputs | $runtime | $parameter_meta | $meta
     $command = :raw_command :raw_cmd_start list($command_part) :raw_cmd_end -> RawCommand(parts=$2)
@@ -191,11 +202,9 @@ grammar {
 
     $workflow = :workflow :identifier :lbrace list($wf_body_element) :rbrace -> Workflow(name=$1, body=$3)
     $wf_body_element = $call | $declaration | $while_loop | $if_stmt | $scatter
-    $call = :call :identifier optional($alias) optional($call_body) -> Call(task=$1, alias=$2, body=$3)
-    $call_body = :lbrace list($declaration) list($call_body_element) :rbrace -> CallBody(declarations=$1, io=$2)
-    $call_body_element = $call_input | $call_output
+    $call = :call :ns_identifier optional($alias) optional($call_body) -> Call(task=$1, alias=$2, body=$3)
+    $call_body = :lbrace list($declaration) list($call_input) :rbrace -> CallBody(declarations=$1, io=$2)
     $call_input = :input :colon list($mapping, :comma) -> Inputs(map=$2)
-    $call_output = :output :colon list($mapping, :comma) -> Outputs(map=$2)
     $mapping = :identifier :equal $e -> IOMapping(key=$0, value=$2)
     $alias = :as :identifier -> $1
 
