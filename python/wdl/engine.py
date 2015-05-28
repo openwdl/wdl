@@ -115,7 +115,7 @@ class WorkflowExecutor:
             for (fqn, status, index, _, _, _) in self.execution_table:
                 if status == 'not_started':
                     call = self.symbol_table.resolve_fqn(fqn)
-
+                    call.upstream()
                     # Build up parameter list for this task
                     parameters = {}
                     for entry in self.symbol_table.get_inputs(fqn):
@@ -143,6 +143,7 @@ class WorkflowExecutor:
             print(self.symbol_table)
             print('\n -- exec table')
             print(self.execution_table)
+            sys.exit(-1)
 
     def run_subprocess(self, command, docker=None, cwd='.'):
         if docker:

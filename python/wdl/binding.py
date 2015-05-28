@@ -134,8 +134,6 @@ class Scope:
     def __init__(self, name, declarations, body):
         self.__dict__.update(locals())
         self.parent = None
-        for decl in declarations:
-            decl.parent = self
         for element in body:
             element.parent = self
     def __getattr__(self, name):
@@ -162,6 +160,10 @@ class Call(Scope):
     def __init__(self, task, alias, declarations, inputs, outputs, ast):
         self.__dict__.update(locals())
         super(Call, self).__init__(alias if alias else task.name, declarations, [])
+    def upstream(self):
+        for expression in self.inputs.values():
+            for node in get_nodes(expression.ast, "MemberAccess"):
+                print(expression.ast.dumps(), node.attr('lhs').source_string)
     def get_scatter_parent(self, node=None):
         for parent in scope_hierarchy(self):
             if isinstance(parent, Scatter):
@@ -349,7 +351,7 @@ def parse_command_variable_attrs(ast):
 def parse_command_variable(ast):
     if not isinstance(ast, wdl.parser.Ast) or ast.name != 'CommandParameter':
         raise BindingException('Expecting a "CommandParameter" AST')
-    type_ast = ast.attr('type') if ast.attr('type') else wdl.parser.Terminal(wdl.parser.terminals['type'], 'type', 'string', 'fake', ast.attr('name').line, ast.attr('name').col)
+    type_ast = ast.attr('type') if ast.attr('type') else wdl.parser.Terminal(wdl.parser.terminals['type'], 'type', 'String', 'fake', ast.attr('name').line, ast.attr('name').col)
     return TaskVariable(
         ast.attr('name').source_string,
         parse_type(type_ast),

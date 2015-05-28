@@ -2090,6 +2090,21 @@ task t2 {...}
 public wf my_wf {...}
 ```
 
+## Seven Bridges Considerations
+
+1) Dependencies on ports in addition to dependencies on tasks (e.g. ps.procs instead of just ps)
+2) Defining engine behavior around setting current working directory for tasks.  Dir must be empty, task writes outputs to directory, support relative paths.  Absolute paths may work, engine specific.
+3) Enumerating success return codes?  Wrapper script?  extra definition on the task?  Special output mapping (Int rc = ...)?
+4) Defining objects (class Sample...)
+5) Heterogeneous arrays
+6) Supplying values from an object onto the command line
+    - Sample s; ${s.id} ${s.bam}; ???
+    - Array[Sample] a; ${a.join(', ')}; ???
+7) What about files that travel together, like .bam and .bai files?
+8) "docker" runtime format
+9) Expressions in runtime section
+10) Specifying environment variables and assembling / localizing a configuration file (e.g. in /etc)
+
 ## Various loop issues
 
 * What if another downstream task sets a variable used in the loop expression?  How do we know when we're *really* done executing the loop?
