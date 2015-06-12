@@ -633,7 +633,9 @@ $runtime = 'runtime' $ws* '{' ($ws* $runtime_kv $ws*)* '}'
 $runtime_kv = $identifier $ws* '=' $ws* $string
 ```
 
-The runtime section defines key/value pairs for runtime information needed for this task.  The key/value pairs are arbitrary, but a few of them have special meaning:
+The runtime section defines key/value pairs for runtime information needed for this task.  Values are only interpreted by execution backends and will be stored as raw strings until that point. Individual backends will define which keys they will inspect so a key/value pair may or may not actually be honored depending on how the task is run.
+
+While the key/value pairs are arbitrary, but a few of them have special meaning:
 
 #### serialize
 
