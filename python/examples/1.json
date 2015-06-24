@@ -1,0 +1,5 @@
+{
+    "scatter_gather_grep_wc._s5.grep.flags": "-i",
+    "scatter_gather_grep_wc._s5.grep.pattern": "^.*$",
+    "scatter_gather_grep_wc.input_files": ["examples/languages", "examples/words"]
+}

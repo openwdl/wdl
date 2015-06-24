@@ -27,7 +27,7 @@ task concat {
 
 task bytecount {
   command {
-    cat ${sep=" " File files+} | wc -l
+    cat ${sep=" " File files+} | wc -c
   }
   output {
     Int bytes = read_int(stdout())
@@ -73,23 +73,14 @@ workflow sloc {
   /* Find all Java and Scala files, count lines in each
    * and then compute the total file size
    */
-  call find_files as find_scala_files {
-    input: dir=source_dir, pattern="\.scala$"
+  call find_files as find_python_files {
+    input: dir=source_dir, pattern="\.py$"
   }
-  call find_files as find_java_files {
-    input: dir=source_dir, pattern="\.java$"
+  call bytecount as python_src_bytes {
+    input: files=find_python_files.files
   }
-  call bytecount as scala_src_bytes {
-    input: files=find_scala_files.files
-  }
-  call bytecount as java_src_bytes {
-    input: files=find_java_files.files
-  }
-  call linecount as scala_src_lines {
-    input: files=find_scala_files.files
-  }
-  call linecount as java_src_lines {
-    input: files=find_java_files.files
+  call linecount as python_src_lines {
+    input: files=find_python_files.files
   }
 }
 

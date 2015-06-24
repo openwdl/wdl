@@ -1,8 +1,0 @@
-{
-  "sloc.files": ["README.md", "build.sbt"],
-  "sloc.find_scala_files.max_depth": 10,
-  "sloc.find_java_files.max_depth": 10,
-  "sloc.source_dir": "src",
-  "sloc.concat.outfile": "renamed",
-  "sloc.ps.flags": "-ef"
-}

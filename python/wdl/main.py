@@ -55,11 +55,10 @@ def cli():
     cli = parser.parse_args()
 
     if cli.action == 'run':
-        inputs = None
+        inputs = {}
         if cli.inputs:
             with open(cli.inputs) as fp:
                 inputs = json.loads(fp.read())
-
         try:
             wdl.engine.run(cli.wdl_file, inputs)
         except wdl.engine.MissingInputsException as error:

@@ -12,8 +12,7 @@ setup(
   packages=['wdl'],
   install_requires=[
       "xtermcolor",
-      "nose",
-      "sqlite3"
+      "nose"
   ],
   scripts={
       'scripts/wdl',

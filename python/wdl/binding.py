@@ -1,7 +1,7 @@
 import wdl.parser
-from copy import deepcopy
 import re
 import os
+import json
 
 def scope_hierarchy(scope):
     if scope is None: return []
@@ -33,6 +33,10 @@ class Task:
 class CommandLine:
     def __init__(self, parts, ast):
         self.__dict__.update(locals())
+    def _stringify(self, wdl_value):
+      if isinstance(wdl_value, WdlFileValue) and wdl_value.value[0] != '/':
+          return os.path.abspath(wdl_value.value)
+      return str(wdl_value.value)
     def instantiate(self, params, job_cwd):
         cmd = []
         for part in self.parts:
@@ -40,19 +44,22 @@ class CommandLine:
                 cmd.append(part.string)
             elif isinstance(part, TaskVariable):
                 wdl_value = params[part.name]
-                if wdl_value.type.is_primitive():
-                    if part.postfix_qualifier in ['+', '*']:
-                        value = part.attributes['sep'].join([wdl_value.value] if not isinstance(wdl_value.value, list) else wdl_value.value)
-                    else:
-                        value = str(wdl_value.value)
-                elif wdl_value.type.is_tsv_serializable():
+                if isinstance(wdl_value, WdlUndefined) and part.is_optional:
+                    continue
+                if part.type.is_primitive():
+                    if wdl_value.type.is_primitive():
+                        # TODO: type check wdl_value.type vs part.type
+                        value = self._stringify(wdl_value)
+                    elif isinstance(wdl_value.type, WdlArrayType) and part.postfix_quantifier in ['+', '*']:
+                        value = part.attributes['sep'].join([self._stringify(x) for x in wdl_value.value])
+                elif part.type.is_tsv_serializable():
                     pass
-                elif wdl_value.type.is_json_serializable():
+                elif part.type.is_json_serializable():
                     value = os.path.join(job_cwd, part.name + '.json')
                     with open(value, 'w') as fp:
-                        fp.write(json.dumps(wdl_value.value))
-                if isinstance(wdl_value, WdlFileType) and wdl_value.value[0] != '/':
-                    value = os.path.abspath(wdl_value.value)
+                        fp.write(json.dumps(wdl_value_to_python(wdl_value)))
+                if part.prefix is not None:
+                    value = part.prefix + value
                 cmd.append(value)
         return self.strip_leading_ws(''.join(cmd))
     def strip_leading_ws(self, string):
@@ -72,10 +79,12 @@ class CommandLine:
 class CommandLinePart: pass
 
 class TaskVariable(CommandLinePart):
-    def __init__(self, name, type, prefix, attributes, postfix_qualifier, ast):
+    def __init__(self, name, type, prefix, attributes, postfix_quantifier, ast):
         self.__dict__.update(locals())
+    def is_optional(self):
+        return self.postfix_quantifier in ['?', '*']
     def __str__(self):
-        return '[TaskVariable name={}, type={}, postfix={}]'.format(self.name, self.type, self.postfix_qualifier)
+        return '[TaskVariable name={}, type={}, prefix={}, postfix={}]'.format(self.name, self.type, self.prefix, self.postfix_quantifier)
 
 class CommandLineString(CommandLinePart):
     def __init__(self, string, terminal):
@@ -94,8 +103,6 @@ class WdlPrimitiveType(WdlType):
 
 class WdlCompoundType(WdlType):
     def is_primitive(self): return False
-    def is_tsv_serializable(self): return True
-    def is_json_serializable(self): return True
     def __str__(self): return repr(self)
 
 class WdlBooleanType(WdlPrimitiveType):
@@ -119,6 +126,10 @@ class WdlUriType(WdlPrimitiveType):
 class WdlArrayType(WdlCompoundType):
     def __init__(self, subtype):
         self.subtype = subtype
+    def is_tsv_serializable(self):
+        return isinstance(self.subtype, WdlPrimitiveType)
+    def is_json_serializable(self):
+        return True
     def __repr__(self): return 'Array[{0}]'.format(repr(self.subtype))
 
 class WdlMapType(WdlCompoundType):
@@ -141,6 +152,16 @@ class Scope:
             if self.parent is None:
                 return self.name
             return self.parent.fully_qualified_name + '.' + self.name
+    def calls(self):
+        def calls_r(node):
+            if isinstance(node, Call):
+                return [node]
+            if isinstance(node, Scope):
+                call_list = []
+                for element in node.body:
+                    call_list.extend(calls_r(element))
+                return call_list
+        return calls_r(self)
 
 class Workflow(Scope):
     def __init__(self, name, declarations, body, ast):
@@ -161,9 +182,12 @@ class Call(Scope):
         self.__dict__.update(locals())
         super(Call, self).__init__(alias if alias else task.name, declarations, [])
     def upstream(self):
+        # TODO: this assumes MemberAccess always refers to other calls
+        up = []
         for expression in self.inputs.values():
             for node in get_nodes(expression.ast, "MemberAccess"):
-                print(expression.ast.dumps(), node.attr('lhs').source_string)
+                up.append(node.attr('lhs').source_string)
+        return up
     def get_scatter_parent(self, node=None):
         for parent in scope_hierarchy(self):
             if isinstance(parent, Scatter):
@@ -505,33 +529,34 @@ class WdlUriValue(WdlValue):
         pass # TODO: implement
 
 class WdlArrayValue(WdlValue):
-    def __init__(self, value):
+    def __init__(self, subtype, value):
         if not isinstance(value, list):
             raise WdlValueException("WdlArrayValue must be a Python 'list'")
-        if not all(type(x) == type(value[0]) for x in value):
+        if not all(type(x.type) == type(subtype) for x in value):
             raise WdlValueException("WdlArrayValue must contain elements of the same type: {}".format(value))
-        self.type = WdlArrayType(value[0].type)
+        self.type = WdlArrayType(subtype)
+        self.subtype = subtype
         self.value = value
     def flatten(self):
         flat = lambda l: [item for sublist in l for item in sublist.value]
         if not isinstance(self.type.subtype, WdlArrayType):
             raise WdlValueException("Cannot flatten {} (type {})".format(self.value, self.type))
-        return WdlArrayValue(flat(self.value))
+        return WdlArrayValue(self.subtype.subtype, flat(self.value))
     def __str__(self):
         return '[{}: {}]'.format(self.type, ', '.join([str(x) for x in self.value]))
 
 class WdlMapValue(WdlValue):
     def __init__(self, value):
         if not isinstance(value, dict):
-            raise WdlValueException("WdlArrayValue must be a Python 'dict'")
+            raise WdlValueException("WdlMapValue must be a Python 'dict'")
         if not all(type(x) == WdlPrimitiveType for x in value.keys()):
-            raise WdlValueException("WdlArrayValue must contain WdlPrimitiveValues keys")
+            raise WdlValueException("WdlMapValue must contain WdlPrimitiveValues keys")
         if not all(type(x) == WdlPrimitiveType for x in value.values()):
-            raise WdlValueException("WdlArrayValue must contain WdlPrimitiveValues values")
+            raise WdlValueException("WdlMapValue must contain WdlPrimitiveValues values")
         if not all(type(x) == type(value[0]) for x in value.keys()):
-            raise WdlValueException("WdlArrayValue must contain keys of the same type: {}".format(value))
+            raise WdlValueException("WdlMapValue must contain keys of the same type: {}".format(value))
         if not all(type(x) == type(value[0]) for x in value.values()):
-            raise WdlValueException("WdlArrayValue must contain values of the same type: {}".format(value))
+            raise WdlValueException("WdlMapValue must contain values of the same type: {}".format(value))
         (k, v) = list(value.items())[0]
         self.type = WdlMapType(k.type, v.type)
         self.value = value
@@ -568,12 +593,18 @@ def python_to_wdl_value(py_value, wdl_type):
         if not isinstance(py_value, list):
             raise WdlValueException("{} must be constructed from Python list, got {}".format(wdl_type, py_value))
         members = [python_to_wdl_value(x, wdl_type.subtype) for x in py_value]
-        return WdlArrayValue(members)
+        return WdlArrayValue(wdl_type.subtype, members)
     if isinstance(wdl_type, WdlMapType):
         if not isinstance(py_value, list):
             raise WdlValueException("{} must be constructed from Python dict, got {}".format(wdl_type, py_value))
         members = {python_to_wdl_value(k): python_to_wdl_value(v) for k,v in py_value.items()}
         return WdlMapValue(members)
+
+def wdl_value_to_python(wdl_value):
+    if isinstance(wdl_value.type, WdlPrimitiveType):
+        return wdl_value.value
+    if isinstance(wdl_value.type, WdlArrayType):
+        return [wdl_value_to_python(x) for x in wdl_value.value]
 
 binary_operators = [
     'Add', 'Subtract', 'Multiply', 'Divide', 'Remainder', 'Equals',

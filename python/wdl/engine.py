@@ -6,16 +6,27 @@ import subprocess
 import tempfile
 import uuid
 import json
+import sys
 from xtermcolor import colorize
 
 def lookup_function(symbol_table, scope, scatter_vars=[], index=None):
     def lookup(var):
-        for node in scope_hierarchy(scope):
-            val = symbol_table.get(node, var)
-            if not isinstance(val, WdlUndefined):
-                if var in scatter_vars:
-                    return val.value[index]
-                return val
+        if var in scatter_vars:
+            for s in scope_hierarchy(scope):
+                val = symbol_table.get(s, var)
+                if not isinstance(val, WdlUndefined):
+                    if var in scatter_vars:
+                        return val.value[index]
+                    return val
+            return WdlUndefined()
+
+        for s in scope_hierarchy(scope):
+            for d in s.declarations:
+                if d.name == var:
+                    return symbol_table.get(s, var)
+            for c in s.calls():
+                if c.fully_qualified_name == '{}.{}'.format(c.parent.fully_qualified_name, var):
+                    return symbol_table.get(c.parent.fully_qualified_name, var)
         return WdlUndefined()
     return lookup
 
@@ -35,35 +46,93 @@ class ScatterOutput(list):
 
 def engine_functions(execution_context=None):
     def tsv(parameters):
-        if len(parameters) != 1 or not isinstance(parameters[0], WdlStringValue):
-            raise EvalException("tsv() expects one string parameter")
-        file_path = parameters[0].value
-        if file_path == 'stdout':
-            stdout = execution_context.stdout.strip('\n')
-            lines = stdout.split('\n') if len(stdout) else []
-            lines = [WdlStringValue(x) for x in lines]
-            return WdlArrayValue(lines)
+        if len(parameters) != 1 or not parameters[0].__class__ in [WdlFileValue, WdlStringValue]:
+            raise EvalException("tsv(): expecting one String or File parameter")
+
+        def _tsv(abspath):
+            with open(abspath) as fp:
+                contents = fp.read().strip('\n')
+            lines = contents.split('\n') if len(contents) else []
+            if len(lines) == 0:
+                if isinstance(execution_context.type, WdlArrayType):
+                    return WdlArrayValue(execution_context.type.subtype, [])
+                if isinstance(execution_context.type, WdlMapType):
+                    return WdlMapType(execution_context.type.key_type, execution_context.type.value_type, {})
+
+            # Determine number of columns, error if they do not match expected type.
+            rows = [line.split('\t') for line in lines]
+            columns = set([len(row) for row in rows])
+            if len(columns) != 1:
+                raise EvalException("tsv(): File contains rows with mixed number of columns")
+            columns = next(iter(columns))
+            if isinstance(execution_context.type, WdlArrayType):
+                if columns != 1:
+                    raise EvalException("tsv(): Array types expect a one-column TSV")
+                array_elements = [python_to_wdl_value(row[0], execution_context.type.subtype) for row in rows]
+                return WdlArrayValue(execution_context.type.subtype, array_elements)
+            # Otherwise, if columns == 1, output an Array, columns == 2 output a Map
+            raise EvalException("Bad value")
+
+        if isinstance(parameters[0], WdlStringValue):
+            return _tsv(os.path.join(execution_context.cwd, parameters[0].value))
+        if isinstance(parameters[0], WdlFileValue):
+            return _tsv(parameters[0].value)
 
     def read_int(parameters):
-        if len(parameters) != 1 or not isinstance(parameters[0], WdlStringValue):
-            raise EvalException("read_int() expects one string parameter")
-        file_path = parameters[0].value
-        with open(os.path.join(execution_context.cwd, file_path)) as fp:
-            contents = fp.read().strip('\n')
+        if len(parameters) != 1 or not parameters[0].__class__ in [WdlFileValue, WdlStringValue]:
+            raise EvalException("read_int(): expecting one String or File parameter")
+        def _read_int(abspath):
+            with open(abspath) as fp:
+                contents = fp.read().strip('\n')
             if len(contents):
-                return WdlIntegerValue(int(contents.split('\n')[0]))
-        raise EvalException("read_int(): empty file found")
+                try:
+                    return WdlIntegerValue(int(contents.split('\n')[0]))
+                except ValueError:
+                    raise EvalException("read_int(): First line of file is not an integer: " + abspath)
+            raise EvalException("read_int(): empty file found: " + abspath)
+        if isinstance(parameters[0], WdlStringValue):
+            return _read_int(os.path.join(execution_context.cwd, parameters[0].value))
+        if isinstance(parameters[0], WdlFileValue):
+            return _read_int(parameters[0].value)
 
     def read_boolean(parameters):
-        if len(parameters) != 1 or not isinstance(parameters[0], WdlStringValue):
-            raise EvalException("read_boolean() expects one string parameter")
-        file_path = parameters[0].value
-        with open(os.path.join(execution_context.cwd, file_path)) as fp:
-            contents = fp.read().strip('\n')
+        if len(parameters) != 1 or not parameters[0].__class__ in [WdlFileValue, WdlStringValue]:
+            raise EvalException("read_boolean(): expecting one String or File parameter")
+        def _read_boolean(abspath):
+            with open(abspath) as fp:
+                contents = fp.read().strip('\n')
             if len(contents):
                 line = contents.split('\n')[0].lower()
                 return WdlBooleanValue(True if line in ['1', 'true'] else False)
-        raise EvalException("read_boolean(): empty file found")
+            raise EvalException("read_boolean(): empty file found: " + abspath)
+        if isinstance(parameters[0], WdlStringValue):
+            return _read_boolean(os.path.join(execution_context.cwd, parameters[0].value))
+        if isinstance(parameters[0], WdlFileValue):
+            return _read_boolean(parameters[0].value)
+
+    def read_string(parameters):
+        if len(parameters) != 1 or not parameters[0].__class__ in [WdlFileValue, WdlStringValue]:
+            raise EvalException("read_string(): expecting one String or File parameter")
+        def _read_string(abspath):
+            with open(abspath) as fp:
+                contents = fp.read().strip('\n')
+            if len(contents):
+                return WdlStringValue(contents.split('\n')[0])
+            raise EvalException("read_string(): empty file found: " + abspath)
+        if isinstance(parameters[0], WdlStringValue):
+            return _read_string(os.path.join(execution_context.cwd, parameters[0].value))
+        if isinstance(parameters[0], WdlFileValue):
+            return _read_string(parameters[0].value)
+
+    def stdout(parameters):
+        if len(parameters) != 0:
+            raise EvalException("stdout() expects zero parameters")
+        return WdlFileValue(os.path.join(execution_context.cwd, "stdout"))
+
+    def stderr(parameters):
+        if len(parameters) != 0:
+            raise EvalException("stderr() expects zero parameters")
+        return WdlFileValue(os.path.join(execution_context.cwd, "stderr"))
 
     def strlen(parameters):
         return WdlIntegerValue(len(parameters[0].value))
@@ -72,6 +141,9 @@ def engine_functions(execution_context=None):
         if name == 'tsv': return tsv
         elif name == 'read_int': return read_int
         elif name == 'read_boolean': return read_boolean
+        elif name == 'read_string': return read_string
+        elif name == 'stdout': return stdout
+        elif name == 'stderr': return stderr
         elif name == 'strlen': return strlen
         else: raise EvalException("Function {} not defined".format(name))
 
@@ -94,7 +166,7 @@ class WorkflowExecutor:
             self.symbol_table.set(scope, name, python_to_wdl_value(v, wdl_type))
 
         # Return error if any inputs are missing
-        missing_inputs = self.symbol_table.missing_inputs()
+        missing_inputs = self.symbol_table.missing_inputs(workflow)
         if missing_inputs:
             raise MissingInputsException(missing_inputs)
 
@@ -115,7 +187,17 @@ class WorkflowExecutor:
             for (fqn, status, index, _, _, _) in self.execution_table:
                 if status == 'not_started':
                     call = self.symbol_table.resolve_fqn(fqn)
-                    call.upstream()
+
+                    skipped = False
+                    upstream_calls = call.upstream()
+                    for upstream in upstream_calls:
+                        upstream_call_status = self.execution_table.aggregate_status(upstream)
+                        if upstream_call_status in ['failed', 'error', 'skipped']:
+                            self.execution_table.set_status(fqn, None, 'skipped')
+                        if upstream_call_status != 'successful':
+                            skipped = True
+                    if skipped: continue
+
                     # Build up parameter list for this task
                     parameters = {}
                     for entry in self.symbol_table.get_inputs(fqn):
@@ -125,12 +207,7 @@ class WorkflowExecutor:
                         value = self.symbol_table.eval_entry(entry, scatter_vars, index)
                         parameters[name] = value
 
-                    # Do not run if any inputs are WdlUndefined
-                    if any(map(lambda x: isinstance(x, WdlUndefined), parameters.values())):
-                        print('\n -- Skipping task "{}": some inputs not defined'.format(call.name))
-                        continue
-
-                    print('\n -- running task: {}'.format(colorize(call.name, ansi=26)))
+                    print('\n -- Running task: {}'.format(colorize(call.name, ansi=26)))
                     job_cwd = os.path.join(self.dir, fqn, str(index) if index is not None else '')
                     os.makedirs(job_cwd)
                     cmd_string = call.task.command.instantiate(parameters, job_cwd)
@@ -143,7 +220,6 @@ class WorkflowExecutor:
             print(self.symbol_table)
             print('\n -- exec table')
             print(self.execution_table)
-            sys.exit(-1)
 
     def run_subprocess(self, command, docker=None, cwd='.'):
         if docker:
@@ -173,10 +249,11 @@ class WorkflowExecutor:
         self.execution_table.set_column(execution_context.fqn, execution_context.index, 5, execution_context.rc)
         if status == 'successful':
             for output in execution_context.call.task.outputs:
+                execution_context.type = output.type
                 value = eval(output.expression, functions=engine_functions(execution_context))
                 if isinstance(value.type, WdlFileType):
                     value = WdlFileValue(os.path.join(execution_context.cwd, value.value))
-                self.symbol_table.set(execution_context.call, output.name, value, execution_context.index)
+                self.symbol_table.set(execution_context.call, output.name, value, execution_context.index, io='output')
 
 class ExecutionTable(list):
     def __init__(self, root, symbol_table, extra=0):
@@ -220,6 +297,17 @@ class ExecutionTable(list):
         for entry in self:
             if entry[0] == fqn:
                 return entry
+    def aggregate_status(self, call_name):
+        statuses = []
+        for entry in self:
+            if entry[0].endswith('.{}'.format(call_name)):
+                statuses.append(entry[1])
+        # TODO: clean this up?
+        if 'failed' in statuses: return 'failed'
+        elif 'error' in statuses: return 'error'
+        elif 'skipped' in statuses: return 'skipped'
+        elif 'not_started' in statuses: return 'not_started'
+        return 'successful'
     def __str__(self):
         return md_table(self, ['Name', 'Status', 'Index', 'Iter', 'PID', 'rc'])
 
@@ -233,21 +321,26 @@ class SymbolTable(list):
                 self.append([node.fully_qualified_name, node.item, None, '%flatten:{}:{}'.format(flatten_count, var), type, 'input'])
             if isinstance(node, Scope):
                 for decl in node.declarations:
-                    self.append([node.fully_qualified_name, decl.name, None, eval(decl.expression.ast, lookup_function(self, node), engine_functions()), decl.type, 'input'])
-                for child in node.body: populate(child)
+                    if decl.expression.ast is None:
+                        value = WdlUndefined()
+                    else:
+                        value = eval(decl.expression.ast, lookup_function(self, node), engine_functions())
+                    self.append([node.fully_qualified_name, decl.name, None, value, decl.type, 'input'])
+                for child in node.body:
+                    populate(child)
             if isinstance(node, Call):
                 for task_input in node.task.inputs:
                     value = '%expr:' + expr_str(node.inputs[task_input.name].ast) if task_input.name in node.inputs else WdlUndefined()
                     self.append([node.fully_qualified_name, task_input.name, None, value, task_input.type, 'input'])
                 for task_output in node.task.outputs:
-                    value = '%expr:' + expr_str(node.outputs[task_input.name].ast) if task_input.name in node.outputs else WdlUndefined()
+                    value = '%expr:' + expr_str(node.outputs[task_output.name].ast) if task_output.name in node.outputs else WdlUndefined()
                     # TODO: Instead of constructing type like this, do something like parse_type('Array[{}]'.format(...)) ???
                     type = WdlArrayType(task_output.type) if len(re.findall(r'\._s\d+', node.fully_qualified_name)) > 0 else task_output.type
                     self.append([node.fully_qualified_name, task_output.name, None, value, type, 'output'])
         populate(root)
 
-    def set(self, scope, name, value, index=None):
-        entry = self._get_entry(scope, name)
+    def set(self, scope, name, value, index=None, io='all'):
+        entry = self._get_entry(scope, name, io)
         if index is not None:
             entry[3][index] = value
 
@@ -255,7 +348,7 @@ class SymbolTable(list):
             # TODO: this is probably not very scalable
             if isinstance(entry[3], ScatterOutput):
                 if all(map(lambda x: not isinstance(x, WdlUndefined), entry[3])):
-                    entry[3] = WdlArrayValue([x for x in entry[3]])
+                    entry[3] = WdlArrayValue(entry[3][0].type, [x for x in entry[3]])
         else:
             entry[3] = value
 
@@ -284,14 +377,21 @@ class SymbolTable(list):
         return None
 
     def get_inputs(self, scope):
-        return [entry for entry in self._get_entries(scope) if entry[5] == 'input']
+        return [entry for entry in self._get_entries(scope, io='input')]
 
-    def missing_inputs(self):
+    def missing_inputs(self, workflow):
         missing = {}
         for entry in [entry for entry in self if entry[5] == 'input']:
-            value = self.eval_entry(entry)
-            if isinstance(value, WdlUndefined):
-                missing['{}.{}'.format(entry[0], entry[1])] = entry[4]
+            value = entry[3]
+            scope = workflow.get(entry[0])
+            optional = False
+            if isinstance(scope, Call):
+                inputs = {i.name: i for i in scope.task.inputs}
+                if entry[1] in inputs:
+                    optional = inputs[entry[1]].is_optional()
+            if isinstance(value, WdlUndefined) and not optional:
+                missing['{}.{}'.format(entry[0], entry[1])] = str(entry[4])
+        return missing
 
     def is_scatter_var(self, call, var):
         if isinstance(call, str): call = self.resolve_fqn(call)
@@ -300,29 +400,35 @@ class SymbolTable(list):
             return True
         return False
 
-    def _get_entry(self, scope, name):
+    def _get_entry(self, scope, name, io='all'):
         if isinstance(scope, str): scope = self.resolve_fqn(scope)
+        if io not in ['all', 'input', 'output']: raise Exception('bad value')
         lookup_entry = None
         for entry in self:
+            if io != 'all' and io != entry[5]:
+                continue
             if entry[0] == scope.fully_qualified_name and entry[1] == name:
                 if (lookup_entry is not None and lookup_entry[2] < entry[2]) or lookup_entry is None:
                     lookup_entry = entry
         return lookup_entry
 
-    def _get_entries(self, scope):
+    def _get_entries(self, scope, io='all'):
         if isinstance(scope, str): scope = self.resolve_fqn(scope)
+        if io not in ['all', 'input', 'output']: raise Exception('bad value')
         entries = {}
         for entry in self:
-            (entry_scope, entry_name, entry_iter) = (entry[0], entry[1], entry[2])
+            (entry_scope, entry_name, entry_iter, entry_io) = (entry[0], entry[1], entry[2], entry[5])
+            if io != 'all' and io != entry_io:
+                continue
             if entry_scope == scope.fully_qualified_name:
-                if ((entry_name in entries and entries[entry_name][2] < entry_iter) or entry_name not in entries):
-                    entries[entry_name] = entry
+                key = '{}_{}'.format(entry_name, entry_io)
+                if (key in entries and entries[key][2] < entry_iter) or key not in entries:
+                    entries[key] = entry
         return list(entries.values())
 
     def _get_call_as_object(self, scope):
-        entries = self._get_entries(scope)
-        entries = list(filter(lambda x: x[5] == 'output', entries))
-        values = {e[1]: self.eval_entry(e[3]) for e in entries}
+        entries = self._get_entries(scope, io='output')
+        values = {e[1]: self.eval_entry(e) for e in entries}
         for k, v in values.items():
             if isinstance(v, WdlUndefined): return WdlUndefined()
         return WdlObject(values)
