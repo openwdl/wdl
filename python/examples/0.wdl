@@ -50,7 +50,6 @@ task task3 {
 }
 
 workflow simple {
-  Array[String] array_of_str
   Array[Array[Array[File]]] scatter_files
   String docker
   String words = "w"+"o"+"r"+"d"+"s"
@@ -67,7 +66,6 @@ workflow simple {
   }
   call task3 as alias {
     input: infile="/usr/share/dict/" + words, docker=docker
-    output: array_of_str=words_x
   }
   call inline {
     input: path=dict_file, docker=docker
