@@ -766,6 +766,7 @@ task wc2-tool {
 }
 
 workflow count-lines4-wf {
+  Array[File] files
   scatter(f in files) {
     call wc2-tool {
       input: file1=f
