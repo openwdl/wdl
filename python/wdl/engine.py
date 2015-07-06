@@ -1,27 +1,35 @@
 from wdl.binding import *
+from wdl.util import *
+import multiprocessing
 import wdl.parser
 import re
 import subprocess
 import tempfile
 import uuid
 import json
+import sys
 from xtermcolor import colorize
 
-def md_table(table, header):
-    max_len = 64
-    col_size = [len(x) for x in header]
-    def trunc(s):
-        return s[:max_len-3] + '...' if len(s) >= max_len else s
-    for row in table:
-        for index, cell in enumerate(row):
-            if len(str(cell)) > col_size[index]:
-                col_size[index] = min(len(str(cell)), max_len)
-    def make_row(row):
-        return '|{}|'.format('|'.join([trunc(str(x)).ljust(col_size[i]) if x is not None else ' ' * col_size[i] for i,x in enumerate(row)]))
-    r = make_row(header) + '\n'
-    r += '|{}|'.format('|'.join(['-' * col_size[i] for i,x in enumerate(col_size)])) + '\n'
-    r += '\n'.join([make_row(x) for x in table])
-    return r
+def lookup_function(symbol_table, scope, scatter_vars=[], index=None):
+    def lookup(var):
+        if var in scatter_vars:
+            for s in scope_hierarchy(scope):
+                val = symbol_table.get(s, var)
+                if not isinstance(val, WdlUndefined):
+                    if var in scatter_vars:
+                        return val.value[index]
+                    return val
+            return WdlUndefined()
+
+        for s in scope_hierarchy(scope):
+            for d in s.declarations:
+                if d.name == var:
+                    return symbol_table.get(s, var)
+            for c in s.calls():
+                if c.fully_qualified_name == '{}.{}'.format(c.parent.fully_qualified_name, var):
+                    return symbol_table.get(c.parent.fully_qualified_name, var)
+        return WdlUndefined()
+    return lookup
 
 class MissingInputsException(Exception):
     def __init__(self, missing):
@@ -33,14 +41,242 @@ class ExecutionContext:
     def __init__(self, fqn, call, index, pid, rc, stdout, stderr, cwd):
         self.__dict__.update(locals())
 
-class Job:
-    def __init__(self, workflow):
+class ScatterOutput(list):
+    def __str__(self):
+        return '[ScatterOutput: {}]'.format(', '.join([str(x) for x in self]))
+
+def engine_functions(execution_context=None):
+    def tsv(parameters):
+        if len(parameters) != 1 or not parameters[0].__class__ in [WdlFileValue, WdlStringValue]:
+            raise EvalException("tsv(): expecting one String or File parameter")
+
+        def _tsv(abspath):
+            with open(abspath) as fp:
+                contents = fp.read().strip('\n')
+            lines = contents.split('\n') if len(contents) else []
+            if len(lines) == 0:
+                if isinstance(execution_context.type, WdlArrayType):
+                    return WdlArrayValue(execution_context.type.subtype, [])
+                if isinstance(execution_context.type, WdlMapType):
+                    return WdlMapType(execution_context.type.key_type, execution_context.type.value_type, {})
+
+            # Determine number of columns, error if they do not match expected type.
+            rows = [line.split('\t') for line in lines]
+            columns = set([len(row) for row in rows])
+            if len(columns) != 1:
+                raise EvalException("tsv(): File contains rows with mixed number of columns")
+            columns = next(iter(columns))
+            if isinstance(execution_context.type, WdlArrayType):
+                if columns != 1:
+                    raise EvalException("tsv(): Array types expect a one-column TSV")
+                array_elements = [python_to_wdl_value(row[0], execution_context.type.subtype) for row in rows]
+                return WdlArrayValue(execution_context.type.subtype, array_elements)
+            # Otherwise, if columns == 1, output an Array, columns == 2 output a Map
+            raise EvalException("Bad value")
+
+        if isinstance(parameters[0], WdlStringValue):
+            return _tsv(os.path.join(execution_context.cwd, parameters[0].value))
+        if isinstance(parameters[0], WdlFileValue):
+            return _tsv(parameters[0].value)
+
+    def read_int(parameters):
+        if len(parameters) != 1 or not parameters[0].__class__ in [WdlFileValue, WdlStringValue]:
+            raise EvalException("read_int(): expecting one String or File parameter")
+        def _read_int(abspath):
+            with open(abspath) as fp:
+                contents = fp.read().strip('\n')
+            if len(contents):
+                try:
+                    return WdlIntegerValue(int(contents.split('\n')[0]))
+                except ValueError:
+                    raise EvalException("read_int(): First line of file is not an integer: " + abspath)
+            raise EvalException("read_int(): empty file found: " + abspath)
+        if isinstance(parameters[0], WdlStringValue):
+            return _read_int(os.path.join(execution_context.cwd, parameters[0].value))
+        if isinstance(parameters[0], WdlFileValue):
+            return _read_int(parameters[0].value)
+
+    def read_boolean(parameters):
+        if len(parameters) != 1 or not parameters[0].__class__ in [WdlFileValue, WdlStringValue]:
+            raise EvalException("read_boolean(): expecting one String or File parameter")
+        def _read_boolean(abspath):
+            with open(abspath) as fp:
+                contents = fp.read().strip('\n')
+            if len(contents):
+                line = contents.split('\n')[0].lower()
+                return WdlBooleanValue(True if line in ['1', 'true'] else False)
+            raise EvalException("read_boolean(): empty file found: " + abspath)
+        if isinstance(parameters[0], WdlStringValue):
+            return _read_boolean(os.path.join(execution_context.cwd, parameters[0].value))
+        if isinstance(parameters[0], WdlFileValue):
+            return _read_boolean(parameters[0].value)
+
+    def read_string(parameters):
+        if len(parameters) != 1 or not parameters[0].__class__ in [WdlFileValue, WdlStringValue]:
+            raise EvalException("read_string(): expecting one String or File parameter")
+        def _read_string(abspath):
+            with open(abspath) as fp:
+                contents = fp.read().strip('\n')
+            if len(contents):
+                return WdlStringValue(contents.split('\n')[0])
+            raise EvalException("read_string(): empty file found: " + abspath)
+        if isinstance(parameters[0], WdlStringValue):
+            return _read_string(os.path.join(execution_context.cwd, parameters[0].value))
+        if isinstance(parameters[0], WdlFileValue):
+            return _read_string(parameters[0].value)
+
+    def stdout(parameters):
+        if len(parameters) != 0:
+            raise EvalException("stdout() expects zero parameters")
+        return WdlFileValue(os.path.join(execution_context.cwd, "stdout"))
+
+    def stderr(parameters):
+        if len(parameters) != 0:
+            raise EvalException("stderr() expects zero parameters")
+        return WdlFileValue(os.path.join(execution_context.cwd, "stderr"))
+
+    def strlen(parameters):
+        return WdlIntegerValue(len(parameters[0].value))
+
+    def get_function(name):
+        if name == 'tsv': return tsv
+        elif name == 'read_int': return read_int
+        elif name == 'read_boolean': return read_boolean
+        elif name == 'read_string': return read_string
+        elif name == 'stdout': return stdout
+        elif name == 'stderr': return stderr
+        elif name == 'strlen': return strlen
+        else: raise EvalException("Function {} not defined".format(name))
+
+    return get_function
+
+class WdlProcess:
+    def __init__(self, call, cwd, parameters, symbol_table):
+        self.__dict__.update(locals())
+    def command(self):
+        return self.call.task.command.instantiate(self.parameters, self.job_cwd)
+    def docker(self):
+        eval(self.call.task.runtime['docker'].ast, lookup_function(self.symbol_table, self.call)).value if 'docker' in self.call.task.runtime else None
+    def __str__(self):
+        return '[WdlProcess: call={}, cwd={}, parameters={}]'.format(self.call.name, self.cwd, self.parameters)
+
+#def run_subprocess(self, command, docker=None, cwd='.'):
+def run_subprocess(wdl_process):
+    command = wdl_process.command()
+    docker = wdl_process.docker()
+    if docker is not None:
+        command = 'docker run -v {}:/root -w /root {} bash -c "{}"'.format(wdl_process.cwd, docker, command)
+    print('\n -- Running task: {}'.format(colorize(wdl_process.call.name, ansi=26)))
+    print(colorize(command, ansi=9))
+    proc = subprocess.Popen(
+        command,
+        shell=True,
+        universal_newlines=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        close_fds=True,
+        cwd=wdl_process.cwd
+    )
+    stdout, stderr = proc.communicate()
+    print(colorize('rc = {}'.format(proc.returncode), ansi=1 if proc.returncode!=0 else 2))
+    with open(os.path.join(cwd, 'stdout'), 'w') as fp:
+        fp.write(stdout.strip(' \n'))
+    with open(os.path.join(cwd, 'stderr'), 'w') as fp:
+        fp.write(stderr.strip(' \n'))
+    return (proc.pid, proc.returncode, stdout.strip(' \n'), stderr.strip(' \n'))
+
+def post_process(self, execution_context):
+    status = 'successful' if execution_context.rc == 0 else 'failed'
+    self.execution_table.set_status(execution_context.fqn, execution_context.index, status)
+    self.execution_table.set_column(execution_context.fqn, execution_context.index, 4, execution_context.pid)
+    self.execution_table.set_column(execution_context.fqn, execution_context.index, 5, execution_context.rc)
+    if status == 'successful':
+        for output in execution_context.call.task.outputs:
+            execution_context.type = output.type
+            value = eval(output.expression, functions=engine_functions(execution_context))
+            if isinstance(value.type, WdlFileType):
+                value = WdlFileValue(os.path.join(execution_context.cwd, value.value))
+            self.symbol_table.set(execution_context.call, output.name, value, execution_context.index, io='output')
+
+class WorkflowExecutor:
+    def __init__(self, workflow, inputs={}, runner=run_subprocess, threads=4):
         self.dir = os.path.abspath('workflow_{}_{}'.format(workflow.name, str(uuid.uuid4()).split('-')[0]))
+        self.workflow = workflow
+        self.inputs = inputs
+
+        # Construct the initial symbol table
         self.symbol_table = SymbolTable(workflow)
-        #print(self.symbol_table)
-        #import sys
-        #sys.exit(-1)
-        self.execution_table = ExecutionTable(workflow, self.symbol_table, 2)
+
+        # Load user inputs into symbol table
+        for k, v in inputs.items():
+            (scope, name) = k.rsplit('.', 1)
+            entry = self.symbol_table._get_entry(scope, name)
+            wdl_type = entry[4]
+            self.symbol_table.set(scope, name, python_to_wdl_value(v, wdl_type))
+
+        # Return error if any inputs are missing
+        missing_inputs = self.symbol_table.missing_inputs(workflow)
+        if missing_inputs:
+            raise MissingInputsException(missing_inputs)
+
+        # Construct the initial execution table
+        self.execution_table = ExecutionTable(workflow, self.symbol_table, extra=2)
+
+        print('\n -- symbol table (initial)')
+        print(self.symbol_table)
+        print('\n -- execution table (initial)')
+        print(self.execution_table)
+
+    def execute(self):
+        print('\n -- running workflow: {}'.format(self.workflow.name))
+        print('\n -- job dir: {}'.format(self.dir))
+        os.mkdir(self.dir)
+
+        while not self.execution_table.is_finished():
+            wdl_procs = []
+            for (fqn, status, index, _, _, _) in self.execution_table:
+                if status == 'not_started':
+                    call = self.symbol_table.resolve_fqn(fqn)
+
+                    skipped = False
+                    upstream_calls = call.upstream()
+                    for upstream in upstream_calls:
+                        upstream_call_status = self.execution_table.aggregate_status(upstream)
+                        if upstream_call_status in ['failed', 'error', 'skipped']:
+                            self.execution_table.set_status(fqn, None, 'skipped')
+                        if upstream_call_status != 'successful':
+                            skipped = True
+                    if skipped: continue
+
+                    # Build up parameter list for this task
+                    parameters = {}
+                    for entry in self.symbol_table.get_inputs(fqn):
+                        (scope, name, _, value, type, io) = entry
+                        scatter_node = call.get_scatter_parent()
+                        scatter_vars = [] if scatter_node is None else [scatter_node.item]
+                        value = self.symbol_table.eval_entry(entry, scatter_vars, index)
+                        parameters[name] = value
+
+                    job_cwd = os.path.join(self.dir, fqn, str(index) if index is not None else '')
+                    os.makedirs(job_cwd)
+                    wdl_procs.append(WdlProcess(call, job_cwd, parameters, self.symbol_table))
+                    cmd_string = call.task.command.instantiate(parameters, job_cwd)
+                    #docker = eval(call.task.runtime['docker'].ast, lookup_function(self.symbol_table, call)).value if 'docker' in call.task.runtime else None
+                    #(pid, rc, stdout, stderr) = self.run_subprocess(cmd_string, docker=docker, cwd=job_cwd)
+                    #execution_context = ExecutionContext(fqn, call, index, pid, rc, stdout, stderr, job_cwd)
+                    #self.post_process(execution_context)
+
+            for proc in wdl_procs:
+                print(proc)
+            sys.exit(-1)
+            print('\n -- symbols')
+            print(self.symbol_table)
+            print('\n -- exec table')
+            print(self.execution_table)
+
+    def run_wdl_procs(self, wdl_procs):
+        with multiprocessing.Pool(processes=self.threads) as pool:
+            pass
 
 class ExecutionTable(list):
     def __init__(self, root, symbol_table, extra=0):
@@ -48,41 +284,28 @@ class ExecutionTable(list):
         self.populate(self.root)
         self.terminal_states = ['successful', 'failed', 'error', 'skipped']
     def is_finished(self):
-        for entry in self:
-            if entry[1] not in self.terminal_states:
-                return False
-        return True
-    def populate(self, node=None, iteration=None):
-        if node is None: node = self.root
+        return all(map(lambda x: x in self.terminal_states, [entry[1] for entry in self]))
+    def populate(self, node=None):
         if isinstance(node, Call):
             index = None
             scatter = node.get_scatter_parent()
             if scatter:
-                scattered_item = self.symbol_table.get(self.symbol_table.get_fully_qualified_name(scatter.item, node))
-                if isinstance(scattered_item, list):
-                    for index in range(len(scattered_item)):
-                        self.add(node.fully_qualified_name, index, iteration)
+                scattered_item = self.symbol_table.get(scatter, scatter.item)
+                if isinstance(scattered_item, WdlArrayValue):
+                    for call_output in node.task.outputs:
+                        self.symbol_table.set(node, call_output.name, ScatterOutput([WdlUndefined()] * len(scattered_item.value)))
+                    for index in range(len(scattered_item.value)):
+                        self.add(node.fully_qualified_name, index)
             else:
-                self.add(node.fully_qualified_name, None, iteration)
-            if iteration is not None:
-                for (name, value, type, io) in self.symbol_table.get_iteration_entries_by_prefix(node.fully_qualified_name):
-                    iteration_entry = name.replace(node.fully_qualified_name, '{}._i{}'.format(node.fully_qualified_name, iteration))
-                    self.symbol_table.append([iteration_entry, value, type, io])
+                self.add(node.fully_qualified_name, None)
         if isinstance(node, Workflow) or isinstance(node, Scatter):
             for element in node.body:
-                self.populate(element, iteration)
-        if isinstance(node, WhileLoop):
-            self.add(node.fully_qualified_name, None, iteration)
-    def contains(self, search_fqn, search_index):
-        for (fqn, status, index, iter, _, _) in self:
-            if search_fqn == fqn and search_index == index:
-                return True
-    def add(self, fqn, index, iteration):
-        init_iteration = 0 if self.is_loop(fqn) else None
-        if iteration is not None:
-            fqn = fqn + '._i' + str(iteration)
+                self.populate(element)
+    def contains(self, fqn, index):
+        return any(map(lambda x: x[0] == fqn and x[2] == index, self))
+    def add(self, fqn, index):
         if not self.contains(fqn, index):
-            row = [fqn, 'not_started', index, init_iteration]
+            row = [fqn, 'not_started', index, None]
             row.extend([None]*self.extra)
             self.append(row)
     def set_status(self, fqn, index, status):
@@ -93,339 +316,180 @@ class ExecutionTable(list):
         for entry in self:
             if entry[0] == fqn and entry[2] == index:
                 entry[column] = value
-    def get_latest_iteration(self, prefix):
-        iteration = None
-        found = False
-        for entry in self:
-            if entry[0] == prefix:
-                found = True
-            if entry[0].startswith(prefix):
-                match = re.match(r'{}\._i(\d+)$'.format(prefix), entry[0])
-                if match:
-                    if iteration is None or int(match.group(1)) > iteration:
-                        iteration = int(match.group(1))
-        if iteration is not None: return '{}._i{}'.format(prefix, iteration)
-        if found: return prefix
-        return None
-    def count(self, fqn):
-        fqn = self.get_latest_iteration(fqn)
-        count = 0
-        for entry in self:
-            if entry[0] == fqn:
-                count += 1
-        return count
-    def is_loop(self, fqn):
-        return re.search('_w\d+$', fqn)
     def get(self, fqn):
         for entry in self:
             if entry[0] == fqn:
                 return entry
-    def loop_iteration_status(self, fqn): # not_started, running, successful, failed
-        # TODO: pass in loop object instead of fqn
-        if not self.is_loop(fqn):
-            raise Exception('Not a loop')
-        iteration_fqn = fqn + '.'
-        jobs = []
-        loop = self.get(fqn)
+    def aggregate_status(self, call_name):
+        statuses = []
         for entry in self:
-            if entry[0].startswith(iteration_fqn):
-                jobs.append(entry)
-        if loop[3] == 0 and loop[2] == 'not_started':
-            return 'not_started'
-        else:
-            for job_entry in jobs:
-                if job_entry[1] in ['failed', 'skipped', 'error']:
-                    return 'failed'
-                if job_entry[1] in ['not_started', 'started']:
-                    return 'running'
-            return 'successful'
-    def add_loop_iteration(self, loop):
-        fqn = loop.fully_qualified_name
-        loop_entry = self.get(fqn)
-        loop_entry[3] += 1
-        for node in loop.body:
-            self.populate(node, iteration=loop_entry[3])
+            if entry[0].endswith('.{}'.format(call_name)):
+                statuses.append(entry[1])
+        # TODO: clean this up?
+        if 'failed' in statuses: return 'failed'
+        elif 'error' in statuses: return 'error'
+        elif 'skipped' in statuses: return 'skipped'
+        elif 'not_started' in statuses: return 'not_started'
+        return 'successful'
     def __str__(self):
         return md_table(self, ['Name', 'Status', 'Index', 'Iter', 'PID', 'rc'])
 
-class SymbolTable2(list):
-    def __init__(self, root):
-        def populate(node):
-            if isinstance(node, Scatter):
-                pass
-            if isinstance(node, Scope):
-                pass
-            if isinstance(node, Call):
-                pass
-            if isinstance(node, Task):
-                pass
-        populate(root)
-    def __str__(self):
-        return md_table(self, ['ID', 'Scope', 'Name', 'Iter', 'Value', 'Type', 'I/O'])
-
 class SymbolTable(list):
     def __init__(self, root):
+        self.id = 0
         self.root = root
-        # TODO: is prefix needed?
-        def populate(node, prefix=None):
+        def populate(node):
             if isinstance(node, Scatter):
-                fqn = '{}.{}'.format(node.fully_qualified_name, node.item)
                 (var, type, flatten_count) = node.get_flatten_count()
-                var = self.get_fully_qualified_name(var, node)
-                # TODO: set the type correctly
-                if flatten_count == 0:
-                    self.append([fqn, '%ref:'+var, type, 'input'])
-                else:
-                    self.append([fqn, '%flatten:{}:{}'.format(flatten_count, var), type, 'input'])
+                self.append([node.fully_qualified_name, node.item, None, '%flatten:{}:{}'.format(flatten_count, var), type, 'input'])
             if isinstance(node, Scope):
                 for decl in node.declarations:
-                    self.append(['{}.{}'.format(
-                        node.fully_qualified_name, decl.name),
-                        eval(decl.expression.ast, lookup_function(self, node)),
-                        decl.type,
-                        'input'
-                    ])
-                    # TODO: check that the type matches for above statement
-                for element in node.body:
-                    populate(element, node.fully_qualified_name)
-            if isinstance(node, Task):
-                for cmd_part in node.command.parts:
-                    if isinstance(cmd_part, CommandLineVariable):
-                        self.append(['{}.{}'.format(prefix, cmd_part.name), None, cmd_part.type, 'input'])
-                for output in node.output_list:
-                    fqn = '{}.{}'.format(prefix, output.name)
-                    scatter_output = len(re.findall(r'\._s\d+', fqn)) > 0
-                    output_type = output.type
-                    if scatter_output:
-                        output_type = Type('array', [output.type], output.type.ast)
-                    self.append([fqn, None, output_type, 'output'])
+                    if decl.expression.ast is None:
+                        value = WdlUndefined()
+                    else:
+                        value = eval(decl.expression.ast, lookup_function(self, node), engine_functions())
+                    self.append([node.fully_qualified_name, decl.name, None, value, decl.type, 'input'])
+                for child in node.body:
+                    populate(child)
             if isinstance(node, Call):
-                for input_name, expression in node.inputs.items():
-                    input_name = '{}.{}'.format(node.fully_qualified_name, input_name)
-                    for index, x in enumerate(self):
-                        if x[0] == input_name:
-                            if isinstance(expression.ast, wdl.parser.Terminal) and expression.ast.str == 'identifier':
-                                self[index][1] = '%ref:' + self.get_fully_qualified_name(expression.ast.source_string, node.parent)
-                            else:
-                                value = eval(expression.ast, lookup_function(self, node))
-                                self[index][1] = value if not isinstance(value, WdlUndefined) else '%expr:' + expr_str(expression.ast)
-
-                for output_name, expression in node.outputs.items():
-                    output_name = self.get_fully_qualified_name(output_name, node.parent)
-                    reference = self.get_fully_qualified_name(expression.ast.source_string, node)
-                    for index, x in enumerate(self):
-                        if x[0] == reference:
-                            if isinstance(expression.ast, wdl.parser.Terminal) and expression.ast.str == 'identifier':
-                                self[index][1] = '%ref:' + output_name
-                            else:
-                                self[index][1] = eval(expression.ast, lookup_function(self, node))
+                for task_input in node.task.inputs:
+                    value = '%expr:' + expr_str(node.inputs[task_input.name].ast) if task_input.name in node.inputs else WdlUndefined()
+                    self.append([node.fully_qualified_name, task_input.name, None, value, task_input.type, 'input'])
+                for task_output in node.task.outputs:
+                    value = '%expr:' + expr_str(node.outputs[task_output.name].ast) if task_output.name in node.outputs else WdlUndefined()
+                    # TODO: Instead of constructing type like this, do something like parse_type('Array[{}]'.format(...)) ???
+                    type = WdlArrayType(task_output.type) if len(re.findall(r'\._s\d+', node.fully_qualified_name)) > 0 else task_output.type
+                    self.append([node.fully_qualified_name, task_output.name, None, value, type, 'output'])
         populate(root)
-    def get_fully_qualified_name(self, var, scope, iteration=None):
-        if scope is None:
-            return None
-        if not isinstance(scope, Scope):
-            return self.get_fully_qualified_name(var, scope.parent)
-        iteration_str = '._i{}'.format(iteration) if iteration is not None else ''
-        fqn = '{}{}.{}'.format(scope.fully_qualified_name, iteration_str, var)
-        for entry in self:
-            if entry[0] == fqn:
-                return fqn
-        return self.get_fully_qualified_name(var, scope.parent)
-    def is_task(self, prefix, name):
-        for entry in self.get_prefix(prefix):
-            match = re.match(r'^({}\.(.*?).{})\.([^\.]+)$'.format(prefix, name), entry[0])
-            if match:
-                return match.group(1)
+
+    def set(self, scope, name, value, index=None, io='all'):
+        entry = self._get_entry(scope, name, io)
+        if index is not None:
+            entry[3][index] = value
+
+            # Once the ScatterOutput is fully populated, replace it with a WdlArrayValue
+            # TODO: this is probably not very scalable
+            if isinstance(entry[3], ScatterOutput):
+                if all(map(lambda x: not isinstance(x, WdlUndefined), entry[3])):
+                    entry[3] = WdlArrayValue(entry[3][0].type, [x for x in entry[3]])
+        else:
+            entry[3] = value
+
+    # Get the evaluated value of a parameter
+    def get(self, scope, name):
+        if isinstance(scope, str): scope = self.resolve_fqn(scope)
+
+        call_fqn = '{}.{}'.format(scope.fully_qualified_name, name)
+        call = self.resolve_fqn(call_fqn)
+        if isinstance(call, Call):
+            return self._get_call_as_object(call_fqn)
+
+        entry = self._get_entry(scope, name)
+        if entry is not None:
+            return self.eval_entry(entry)
+        return WdlUndefined()
+
+    # Traverse scope hierarchy starting from 'scope' until 'name' is found.
+    # Returns the scope object where 'name' is defined
+    def resolve_name(self, scope, name):
+        if isinstance(scope, str): scope = self.resolve_fqn(scope)
+        for node in scope_hierarchy(scope):
+            for entry in self._get_entries(node):
+                if entry[1] == name:
+                    return self.resolve_fqn(entry[0])
         return None
-    def deref(self, key):
-        for entry in self:
-            if entry[0] == key:
-                if isinstance(entry[1], str) and entry[1].startswith('%ref:'):
-                    return self.deref(entry[1].replace('%ref:', ''))
-                return key
-        return None
-    def set(self, key, value, index=None, scatter_count=None):
-        key = self.deref(key)
-        for entry in self:
-            if entry[0] == key:
-                if index is not None:
-                    if entry[1] is None: entry[1] = [None] * scatter_count
-                    entry[1][index] = value
-                else:
-                    entry[1] = value
-                return True
-        raise EngineException("Symbol table entry not found: " + str(key))
-    def missing_inputs(self):
+
+    def get_inputs(self, scope):
+        return [entry for entry in self._get_entries(scope, io='input')]
+
+    def missing_inputs(self, workflow):
         missing = {}
-        for (name, value, type, io) in self:
-            if io == 'input' and value is None:
-                missing[name] = str(type)
+        for entry in [entry for entry in self if entry[5] == 'input']:
+            value = entry[3]
+            scope = workflow.get(entry[0])
+            optional = False
+            if isinstance(scope, Call):
+                inputs = {i.name: i for i in scope.task.inputs}
+                if entry[1] in inputs:
+                    optional = inputs[entry[1]].is_optional()
+            if isinstance(value, WdlUndefined) and not optional:
+                missing['{}.{}'.format(entry[0], entry[1])] = str(entry[4])
+        return missing
 
-        if len(missing):
-            return missing
-        return None
     def is_scatter_var(self, call, var):
-        # TODO: this assumes the call can only use the variable from the nearest Scatter parent
+        if isinstance(call, str): call = self.resolve_fqn(call)
         scatter_node = call.get_scatter_parent()
-        if scatter_node is None:
-            return False
-        # Nearest enclosing scatter item
-        scatter_item = self.get_fully_qualified_name(scatter_node.item, call)
-        if var in call.inputs:
-            expr = call.inputs[var].ast
-            if isinstance(expr, wdl.parser.Terminal) and expr.str == 'identifier':
-                val_fqn = self.get_fully_qualified_name(expr.source_string, call)
-                if val_fqn == scatter_item:
-                    return val_fqn
+        if scatter_node is not None and scatter_node.item == var:
+            return True
         return False
-    def get_iteration_entries_by_prefix(self, prefix):
-        # TODO: revisit this
-        entries = []
-        for entry in self:
-            if entry[0].startswith(prefix) and '._i' not in entry[0]:
-                entries.append(entry)
-        return entries
-    def get_scope(self, name):
-        def all_scopes(root):
-            if not isinstance(root, Scope): return []
-            scopes = [root]
-            for element in root.body:
-                scopes.extend(all_scopes(element))
-            return scopes
-        longest_match = None
-        for scope in all_scopes(self.root):
-            if re.match(r'^{}'.format(scope.fully_qualified_name), name):
-                if longest_match is None or len(scope.fully_qualified_name) > len(longest_match.fully_qualified_name):
-                    longest_match = scope
-        return longest_match
-    def get(self, var, evaluate=True):
-        for entry in self:
-            (name, value, type, io) = entry
-            if name == var:
-                if isinstance(value, str) and value.startswith('%ref:'):
-                    return self.get(re.sub('^%ref:', '', value))
-                if evaluate and isinstance(value, str) and value.startswith('%expr:'):
-                    expr_string = re.sub('^%expr:', '', value)
-                    tokens = wdl.parser.lex(expr_string, 'string')
-                    parser_ctx = wdl.parser.ParserContext(tokens, wdl.parser.DefaultSyntaxErrorHandler(expr_string, 'string'))
-                    expr = wdl.parser.parse_e(parser_ctx).ast()
-                    scope = self.get_scope(name)
-                    # TODO: this is duplicated from post_process
-                    try:
-                        iteration = re.findall(r'._i(\d+)', var)[-1]
-                    except IndexError:
-                        iteration = None
-                    return eval(expr, lookup_function(self, scope, iteration))
-                if isinstance(value, str) and value.startswith('%flatten:'):
-                    match = re.match('^%flatten:(\d+):(.*)$', value)
-                    count = int(match.group(1))
-                    value = self.get(match.group(2))
-                    if value:
-                        flat = lambda l: [item for sublist in l for item in sublist]
-                        for i in range(count):
-                            value = flat(value)
-                        entry[1] = value
-                        return value
-                else:
-                    return value
-        return None
-    def get_prefix(self, fqn_prefix, io_type='any', evaluate=False):
-        inputs = []
-        for (name, value, type, io) in self:
-            if name.startswith(fqn_prefix) and (io == io_type or io_type == 'any'):
-                inputs.append([name, self.get(name, evaluate), type, io])
-        return inputs
-    def get_inputs(self, fqn_prefix):
-        return self.get_prefix(fqn_prefix, 'input', evaluate=True)
-    def get_outputs(self, fqn_prefix):
-        return self.get_prefix(fqn_prefix, 'output', evaluate=True)
-    def __str__(self):
-        return md_table(self, ['Name', 'Value', 'Type', 'I/O'])
 
-def lookup_function(table, scope, iteration=None):
-    def lookup(var):
-        cscope = scope
-        while cscope:
-            if not isinstance(cscope, Scope):
-                cscope = cscope.parent
+    def _get_entry(self, scope, name, io='all'):
+        if isinstance(scope, str): scope = self.resolve_fqn(scope)
+        if io not in ['all', 'input', 'output']: raise Exception('bad value')
+        lookup_entry = None
+        for entry in self:
+            if io != 'all' and io != entry[5]:
                 continue
-            task_prefix = table.is_task(cscope.fully_qualified_name, var)
-            if task_prefix:
-                if iteration is not None:
-                    task_prefix = task_prefix + '._i' + str(iteration)
-                # Return an object with attributes being the outputs of that task
-                obj = WdlObject()
-                for output in table.get_outputs(task_prefix):
-                    value = table.get(output[0])
-                    obj.set(re.match(r'.*\.(.*)$', output[0]).group(1), value if value is not None else WdlUndefined())
-                return obj
-            else:
-                cvar = '{}.{}'.format(cscope.fully_qualified_name, var)
-                cvar = table.deref(cvar)
-                for entry in table:
-                    if entry[0] == cvar:
-                        return entry[1]
-            cscope = cscope.parent
-    return lookup
+            if entry[0] == scope.fully_qualified_name and entry[1] == name:
+                if (lookup_entry is not None and lookup_entry[2] < entry[2]) or lookup_entry is None:
+                    lookup_entry = entry
+        return lookup_entry
 
-def strip_leading_ws(string):
-    string = string.strip('\n').rstrip(' \n')
-    ws_count = []
-    for line in string.split('\n'):
-        match = re.match('^[\ \t]+', line)
-        if match:
-            ws_count.append(len(match.group(0)))
-    if len(ws_count):
-        trim_amount = min(ws_count)
-        return '\n'.join([line[trim_amount:] for line in string.split('\n')])
-    return string
+    def _get_entries(self, scope, io='all'):
+        if isinstance(scope, str): scope = self.resolve_fqn(scope)
+        if io not in ['all', 'input', 'output']: raise Exception('bad value')
+        entries = {}
+        for entry in self:
+            (entry_scope, entry_name, entry_iter, entry_io) = (entry[0], entry[1], entry[2], entry[5])
+            if io != 'all' and io != entry_io:
+                continue
+            if entry_scope == scope.fully_qualified_name:
+                key = '{}_{}'.format(entry_name, entry_io)
+                if (key in entries and entries[key][2] < entry_iter) or key not in entries:
+                    entries[key] = entry
+        return list(entries.values())
 
-def run_subprocess(command, docker=None, cwd='.'):
-    if docker:
-        command = 'docker run -v {}:/root -w /root {} bash -c "{}"'.format(cwd, docker, command)
-    print(colorize(command, ansi=9))
-    proc = subprocess.Popen(
-        command,
-        shell=True,
-        universal_newlines=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        close_fds=True,
-        cwd=cwd
-    )
-    stdout, stderr = proc.communicate()
-    print(colorize('rc = {}'.format(proc.returncode), ansi=1 if proc.returncode!=0 else 2))
-    with open(os.path.join(cwd, 'stdout'), 'w') as fp:
-        fp.write(stdout.strip(' \n'))
-    with open(os.path.join(cwd, 'stderr'), 'w') as fp:
-        fp.write(stderr.strip(' \n'))
-    return (proc.pid, proc.returncode, stdout.strip(' \n'), stderr.strip(' \n'))
+    def _get_call_as_object(self, scope):
+        entries = self._get_entries(scope, io='output')
+        values = {e[1]: self.eval_entry(e) for e in entries}
+        for k, v in values.items():
+            if isinstance(v, WdlUndefined): return WdlUndefined()
+        return WdlObject(values)
 
-def post_process(job, execution_context):
-    status = 'successful' if execution_context.rc == 0 else 'failed'
-    execution_context.fqn = job.execution_table.get_latest_iteration(execution_context.fqn)
-    job.execution_table.set_status(execution_context.fqn, execution_context.index, status)
-    job.execution_table.set_column(execution_context.fqn, execution_context.index, 4, execution_context.pid)
-    job.execution_table.set_column(execution_context.fqn, execution_context.index, 5, execution_context.rc)
-    try:
-        iteration = re.findall(r'._i(\d+)', execution_context.fqn)[-1]
-    except IndexError:
-        iteration = None
-    if status == 'successful':
-        for output in execution_context.call.task.output_list:
-            value = eval(output.expression, ctx=execution_context)
-            if str(output.type) == 'file':
-                value = os.path.join(execution_context.cwd, value)
-            job.symbol_table.set(
-                job.symbol_table.get_fully_qualified_name(output.name, execution_context.call, iteration),
-                value,
-                execution_context.index,
-                job.execution_table.count(execution_context.fqn)
-            )
-        for output, expr in execution_context.call.outputs.items():
-            output_fqn = job.symbol_table.get_fully_qualified_name(output, execution_context.call)
-            output_value = eval(expr.ast, lookup=lookup_function(job.symbol_table, execution_context.call))
-            job.symbol_table.set(output_fqn, output_value)
+    def eval_entry(self, entry, scatter_vars=[], index=None):
+        value = entry[3]
+        scope = self.resolve_fqn(entry[0])
+        if isinstance(value, str) and value.startswith('%expr:'):
+            expression = parse_expr(value.replace('%expr:', ''))
+            return eval(expression.ast, lookup_function(self, scope, scatter_vars, index))
+        if isinstance(value, str) and value.startswith('%flatten:'):
+            match = re.match('^%flatten:(\d+):(.*)$', value)
+            count = int(match.group(1))
+            expression = parse_expr(match.group(2))
+            value = eval(expression.ast, lookup_function(self, scope, scatter_vars, index))
+            if isinstance(value, WdlArrayValue):
+                for i in range(count):
+                    value = value.flatten()
+                return value
+            return WdlUndefined()
+        if isinstance(value, list):
+            for item in value:
+                if isinstance(item, WdlUndefined):
+                    return WdlUndefined()
+        return value
+
+    def resolve_fqn(self, fqn):
+        def resolve_fqn_r(node):
+            if node.fully_qualified_name == fqn: return node
+            resolved = None
+            for child in node.body:
+                resolved = resolve_fqn_r(child)
+                if resolved is not None: break
+            return resolved
+        return resolve_fqn_r(self.root)
+
+    def __str__(self):
+        return md_table(self, ['Scope', 'Name', 'Iter', 'Value', 'Type', 'I/O'])
 
 class CommandPartValue:
     def __init__(self, name, type, value):
@@ -433,100 +497,11 @@ class CommandPartValue:
     def __str__(self):
         return 'CommandPartValue: {} {} = {}'.format(self.type, self.name, self.value)
 
-def make_command(call, symbol_table, index, param_dict, job_cwd):
-    cmd = []
-    for part in call.task.command.parts:
-        if isinstance(part, CommandLineString):
-            cmd.append(part.string)
-        elif isinstance(part, CommandLineVariable):
-            scatter_var = symbol_table.is_scatter_var(call, part.name)
-            if scatter_var:
-                value = str(symbol_table.get(scatter_var)[index])
-            else:
-                # TODO is part.type compatible with param_dict[part.name].type
-                cmd_value = param_dict[part.name]
-                if cmd_value.type.is_primitive():
-                    if part.postfix_qualifier in ['+', '*']:
-                        value = part.attributes['sep'].join([cmd_value.value] if not isinstance(cmd_value.value, list) else cmd_value.value)
-                    else:
-                        value = str(cmd_value.value)
-                elif cmd_value.type.is_tsv_serializable():
-                    pass
-                elif cmd_value.type.is_json_serializable():
-                    value = os.path.join(job_cwd, cmd_value.name + '.json')
-                    with open(value, 'w') as fp:
-                        fp.write(json.dumps(cmd_value.value))
-            if str(part.type) == 'file' and value[0] != '/':
-                value = os.path.abspath(value)
-            cmd.append(value)
-    cmd_separator = '' if isinstance(call.task.command, CommandLine) else ' '
-    return strip_leading_ws(cmd_separator.join(cmd))
-
-def run(wdl_file, inputs=None):
+def run(wdl_file, inputs={}):
     with open(wdl_file) as fp:
         wdl_document = parse_document(fp.read())
-
     workflow = wdl_document.workflows[0]
-    job = Job(workflow)
-    if inputs:
-        for k, v in inputs.items():
-            job.symbol_table.set(k, v)
-    missing_inputs = job.symbol_table.missing_inputs()
-    if missing_inputs:
-        raise MissingInputsException(missing_inputs)
-
-    job.execution_table.populate()
-    print('\n -- symbols')
-    print(job.symbol_table)
-    print('\n -- exec table')
-    print(job.execution_table)
-    print('\n -- job dir')
-    print(job.dir)
-
-    os.mkdir(job.dir)
-
-    while not job.execution_table.is_finished():
-        print(' -- loop start')
-        for (fqn, status, index, iter, _, _) in job.execution_table:
-            if job.execution_table.is_loop(fqn):
-                loop = workflow.get(fqn)
-                iteration_status = job.execution_table.loop_iteration_status(fqn)
-                if iteration_status == 'failed':
-                    job.execution_table.set_status(fqn, index, 'failed')
-                elif iteration_status in ['not_started', 'successful']:
-                    while_expr = eval(loop.expression.ast, lookup=lookup_function(job.symbol_table, loop))
-                    if while_expr == False:
-                        job.execution_table.set_status(fqn, index, 'successful')
-                    elif while_expr == True:
-                        job.execution_table.add_loop_iteration(loop)
-                        job.execution_table.set_status(fqn, index, 'started')
-                        print('\n -- exec table (add loop iteration)')
-                        print(job.execution_table)
-            elif status not in job.execution_table.terminal_states:
-                inputs = job.symbol_table.get_inputs(fqn)
-                call = workflow.get(re.sub(r'._i\d+$', '', fqn))
-                ready = True
-                param_dict = {}
-                for (name, value, type, io)  in inputs:
-                    if value is None or isinstance(value, WdlUndefined):
-                        ready = False
-                    name = re.sub('^'+fqn+'.', '', name)
-                    param_dict[name] = CommandPartValue(name, type, value)
-                if ready:
-                    print('\n -- run task: {}'.format(colorize(call.name, ansi=26)))
-                    job_cwd = os.path.join(job.dir, fqn)
-                    if index is not None:
-                        job_cwd = os.path.join(job_cwd, str(index))
-                    os.makedirs(job_cwd)
-                    cmd_string = make_command(call, job.symbol_table, index, param_dict, job_cwd)
-                    docker = eval(call.task.runtime['docker'].ast, lookup_function(job.symbol_table, call)) if 'docker' in call.task.runtime else None
-                    (pid, rc, stdout, stderr) = run_subprocess(cmd_string, docker=docker, cwd=job_cwd)
-                    execution_context = ExecutionContext(fqn, call, index, pid, rc, stdout, stderr, job_cwd)
-                    post_process(job, execution_context)
-
-        print('\n -- symbols')
-        print(job.symbol_table)
-        print('\n -- exec table')
-        print(job.execution_table)
-    print('\nJob finished.  Job directory is:')
-    print(job.dir)
+    wf_exec = WorkflowExecutor(workflow, inputs)
+    wf_exec.execute()
+    print('\nWorkflow finished.  Workflow directory is:')
+    print(wf_exec.dir)

@@ -6,7 +6,7 @@ A Python implementation of a WDL parser and language bindings.  Also provides a 
 Installation
 ------------
 
-Install via `setup.py` or via pip and PyPI:
+PyWDL requires [Python 3](https://www.python.org/downloads/release/python-343/). Install via `setup.py` or via pip and PyPI:
 
 ```
 $ python setup.py install

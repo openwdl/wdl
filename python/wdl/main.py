@@ -1,4 +1,5 @@
 import wdl.engine
+from wdl.binding import *
 import wdl.parser
 import argparse
 import json
@@ -16,6 +17,7 @@ def cli():
     command_help = {
         "run": "Run you a WDL",
         "parse": "Parse a WDL file, print parse tree",
+        "expr": "Expression testing"
     }
 
     parser = argparse.ArgumentParser(description='Workflow Description Language (WDL)')
@@ -46,15 +48,17 @@ def cli():
     commands['parse'].add_argument(
         'wdl_file', help='Path to WDL File'
     )
+    commands['expr'] = subparsers.add_parser(
+        'expr', description=command_help['expr'], help=command_help['expr']
+    )
 
     cli = parser.parse_args()
 
     if cli.action == 'run':
-        inputs = None
+        inputs = {}
         if cli.inputs:
             with open(cli.inputs) as fp:
                 inputs = json.loads(fp.read())
-
         try:
             wdl.engine.run(cli.wdl_file, inputs)
         except wdl.engine.MissingInputsException as error:
@@ -68,6 +72,11 @@ def cli():
     if cli.action == 'parse':
         ast = wdl.parser.parse(open(cli.wdl_file).read(), os.path.basename(cli.wdl_file)).ast()
         print(ast.dumps(indent=2))
+    if cli.action == 'expr':
+        e = parse_expr("1+1.1")
+        v = eval(e)
+        print(e.ast.dumps(indent=2))
+        print(e, '=', v)
 
 if __name__ == '__main__':
     cli()

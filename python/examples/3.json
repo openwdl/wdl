@@ -1,5 +1,4 @@
 {
-    "scatter_gather_grep_wc._s4.grep.flags": "-i",
-    "scatter_gather_grep_wc._s4.grep.pattern": "^.*$",
-    "scatter_gather_grep_wc.input_files": ["test/languages", "test/words"]
+    "wf.files": ["examples/languages", "examples/words"],
+    "wf.count": 6
 }

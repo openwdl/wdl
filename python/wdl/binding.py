@@ -1,9 +1,14 @@
 import wdl.parser
-from copy import deepcopy
 import re
 import os
+import json
+
+def scope_hierarchy(scope):
+    if scope is None: return []
+    return [scope] + scope_hierarchy(scope.parent)
 
 class BindingException(Exception): pass
+class WdlValueException(Exception): pass
 class EvalException(Exception): pass
 
 class Document:
@@ -28,16 +33,58 @@ class Task:
 class CommandLine:
     def __init__(self, parts, ast):
         self.__dict__.update(locals())
+    def _stringify(self, wdl_value):
+      if isinstance(wdl_value, WdlFileValue) and wdl_value.value[0] != '/':
+          return os.path.abspath(wdl_value.value)
+      return str(wdl_value.value)
+    def instantiate(self, params, job_cwd):
+        cmd = []
+        for part in self.parts:
+            if isinstance(part, CommandLineString):
+                cmd.append(part.string)
+            elif isinstance(part, TaskVariable):
+                wdl_value = params[part.name]
+                if isinstance(wdl_value, WdlUndefined) and part.is_optional:
+                    continue
+                if part.type.is_primitive():
+                    if wdl_value.type.is_primitive():
+                        # TODO: type check wdl_value.type vs part.type
+                        value = self._stringify(wdl_value)
+                    elif isinstance(wdl_value.type, WdlArrayType) and part.postfix_quantifier in ['+', '*']:
+                        value = part.attributes['sep'].join([self._stringify(x) for x in wdl_value.value])
+                elif part.type.is_tsv_serializable():
+                    pass
+                elif part.type.is_json_serializable():
+                    value = os.path.join(job_cwd, part.name + '.json')
+                    with open(value, 'w') as fp:
+                        fp.write(json.dumps(wdl_value_to_python(wdl_value)))
+                if part.prefix is not None:
+                    value = part.prefix + value
+                cmd.append(value)
+        return self.strip_leading_ws(''.join(cmd))
+    def strip_leading_ws(self, string):
+        string = string.strip('\n').rstrip(' \n')
+        ws_count = []
+        for line in string.split('\n'):
+            match = re.match('^[\ \t]+', line)
+            if match:
+                ws_count.append(len(match.group(0)))
+        if len(ws_count):
+            trim_amount = min(ws_count)
+            return '\n'.join([line[trim_amount:] for line in string.split('\n')])
+        return string
     def __str__(self):
         return ' '.join([str(part) for part in self.parts])
 
 class CommandLinePart: pass
 
 class TaskVariable(CommandLinePart):
-    def __init__(self, name, type, prefix, attributes, postfix_qualifier, ast):
+    def __init__(self, name, type, prefix, attributes, postfix_quantifier, ast):
         self.__dict__.update(locals())
+    def is_optional(self):
+        return self.postfix_quantifier in ['?', '*']
     def __str__(self):
-        return '[TaskVariable name={}, type={}, postfix={}]'.format(self.name, self.type, self.postfix_qualifier)
+        return '[TaskVariable name={}, type={}, prefix={}, postfix={}]'.format(self.name, self.type, self.prefix, self.postfix_quantifier)
 
 class CommandLineString(CommandLinePart):
     def __init__(self, string, terminal):
@@ -45,49 +92,76 @@ class CommandLineString(CommandLinePart):
     def __str__(self):
         return '[CommandLineString str={}]'.format(self.string)
 
-class Type:
-    def __init__(self, name, subtypes, ast):
-        self.__dict__.update(locals())
-    def is_primitive(self):
-        return self.name not in ['Array', 'Map']
+class WdlType: pass
+
+class WdlPrimitiveType(WdlType):
+    def __init__(self): pass
+    def is_primitive(self): return True
+    def is_tsv_serializable(self): return False
+    def is_json_serializable(self): return False
+    def __str__(self): return repr(self)
+
+class WdlCompoundType(WdlType):
+    def is_primitive(self): return False
+    def __str__(self): return repr(self)
+
+class WdlBooleanType(WdlPrimitiveType):
+    def __repr__(self): return 'Boolean'
+
+class WdlIntegerType(WdlPrimitiveType):
+    def __repr__(self): return 'Int'
+
+class WdlFloatType(WdlPrimitiveType):
+    def __repr__(self): return 'Float'
+
+class WdlStringType(WdlPrimitiveType):
+    def __repr__(self): return 'String'
+
+class WdlFileType(WdlPrimitiveType):
+    def __repr__(self): return 'File'
+
+class WdlUriType(WdlPrimitiveType):
+    def __repr__(self): return 'Uri'
+
+class WdlArrayType(WdlCompoundType):
+    def __init__(self, subtype):
+        self.subtype = subtype
     def is_tsv_serializable(self):
-        if self.is_primitive():
-            return False
-        if self.name == 'Array' and len(self.subtypes) == 1 and self.subtypes[0].is_primitive():
-            return True
-        if self.name == 'Map' and len(self.subtypes) == 2 and self.subtypes[0].is_primitive() and self.subtypes[1].is_primitive():
-            return True
+        return isinstance(self.subtype, WdlPrimitiveType)
     def is_json_serializable(self):
-        if self.is_primitive():
-            return False
         return True
-    def __str__(self):
-        string = self.name
-        if self.subtypes and len(self.subtypes):
-            string += '[{}]'.format(','.join([str(subtype) for subtype in self.subtypes]))
-        return string
+    def __repr__(self): return 'Array[{0}]'.format(repr(self.subtype))
+
+class WdlMapType(WdlCompoundType):
+    def __init__(self, key_type, value_type):
+        self.__dict__.update(locals())
+    def __repr__(self): return 'Map[{0}, {1}]'.format(repr(self.key_type), repr(self.value_type))
+
+class WdlObjectType(WdlCompoundType):
+    def __repr__(self): return 'Object'
 
 # Scope has: body, declarations, parent, prefix, name
 class Scope:
     def __init__(self, name, declarations, body):
         self.__dict__.update(locals())
         self.parent = None
-        for decl in declarations:
-            decl.parent = self
         for element in body:
             element.parent = self
-    def get_parents(self):
-        def get_parents_r(node):
-            if node is None: return []
-            r = [node]
-            r.extend(get_parents_r(node.parent))
-            return r
-        return get_parents_r(self)
     def __getattr__(self, name):
         if name == 'fully_qualified_name':
             if self.parent is None:
                 return self.name
             return self.parent.fully_qualified_name + '.' + self.name
+    def calls(self):
+        def calls_r(node):
+            if isinstance(node, Call):
+                return [node]
+            if isinstance(node, Scope):
+                call_list = []
+                for element in node.body:
+                    call_list.extend(calls_r(element))
+                return call_list
+        return calls_r(self)
 
 class Workflow(Scope):
     def __init__(self, name, declarations, body, ast):
@@ -107,9 +181,15 @@ class Call(Scope):
     def __init__(self, task, alias, declarations, inputs, outputs, ast):
         self.__dict__.update(locals())
         super(Call, self).__init__(alias if alias else task.name, declarations, [])
+    def upstream(self):
+        # TODO: this assumes MemberAccess always refers to other calls
+        up = []
+        for expression in self.inputs.values():
+            for node in get_nodes(expression.ast, "MemberAccess"):
+                up.append(node.attr('lhs').source_string)
+        return up
     def get_scatter_parent(self, node=None):
-        parents = self.get_parents()
-        for parent in parents:
+        for parent in scope_hierarchy(self):
             if isinstance(parent, Scatter):
                 return parent
     def __self__(self):
@@ -134,7 +214,7 @@ class Scatter(Scope):
         # TODO: revisit this algorithm
         count = 0
         collection = self.collection.ast.source_string
-        for node in self.get_parents():
+        for node in scope_hierarchy(self):
             if isinstance(node, Scatter):
                 if node.item == collection:
                     collection = node.collection.ast.source_string
@@ -144,7 +224,7 @@ class Scatter(Scope):
                     if decl.name == collection:
                         (var, type) = (decl.name, decl.type)
                         for i in range(count):
-                            type = type.subtypes[0]
+                            type = type.subtype
                         return (var, type, count)
 
 def get_nodes(ast_root, name):
@@ -295,7 +375,7 @@ def parse_command_variable_attrs(ast):
 def parse_command_variable(ast):
     if not isinstance(ast, wdl.parser.Ast) or ast.name != 'CommandParameter':
         raise BindingException('Expecting a "CommandParameter" AST')
-    type_ast = ast.attr('type') if ast.attr('type') else wdl.parser.Terminal(wdl.parser.terminals['type'], 'type', 'string', 'fake', ast.attr('name').line, ast.attr('name').col)
+    type_ast = ast.attr('type') if ast.attr('type') else wdl.parser.Terminal(wdl.parser.terminals['type'], 'type', 'String', 'fake', ast.attr('name').line, ast.attr('name').col)
     return TaskVariable(
         ast.attr('name').source_string,
         parse_type(type_ast),
@@ -328,18 +408,203 @@ def parse_type(ast):
     if isinstance(ast, wdl.parser.Terminal):
         if ast.str != 'type':
             raise BindingException('Expecting an "Type" AST')
-        return Type(ast.source_string, None, ast)
-    if not isinstance(ast, wdl.parser.Ast) or ast.name != 'Type':
+        if ast.source_string == 'Int': return WdlIntegerType()
+        elif ast.source_string == 'Boolean': return WdlBooleanType()
+        elif ast.source_string == 'Float': return WdlFloatType()
+        elif ast.source_string == 'String': return WdlStringType()
+        elif ast.source_string == 'File': return WdlFileType()
+        elif ast.source_string == 'Uri': return WdlUriType()
+        else: raise BindingException("Unsupported Type: {}".format(ast.source_string))
+    elif isinstance(ast, wdl.parser.Ast) and ast.name == 'Type':
+        name = ast.attr('name').source_string
+        if name == 'Array':
+            subtypes = ast.attr('subtype')
+            if len(subtypes) != 1:
+                raise BindingException("Expecting only one subtype AST")
+            return WdlArrayType(parse_type(subtypes[0]))
+        if name == 'Map':
+            subtypes = ast.attr('subtype')
+            if len(subtypes) != 2:
+                raise BindingException("Expecting only two subtype AST")
+            return WdlMapType(parse_type(subtypes[0]), parse_type(subtypes[1]))
+    else:
         raise BindingException('Expecting an "Type" AST')
-    name = ast.attr('name').source_string
-    subtypes = [parse_type(subtype_ast) for subtype_ast in ast.attr('subtype')]
-    return Type(name, subtypes, ast)
 
 def parse_document(string):
     ast = parse(string)
     tasks = get_tasks(ast)
     workflows = get_workflows(ast, tasks)
     return Document(tasks, workflows, ast)
+
+class WdlValue:
+    def __init__(self, value):
+        self.value = value
+        self.check_compatible(value)
+    def __str__(self):
+        return '[{}: {}]'.format(self.type, str(self.value))
+
+class WdlUndefined(WdlValue):
+    def __init__(self): self.type = None
+    def __repr__(self): return 'WdlUndefined'
+    def __str__(self): return repr(self)
+
+class WdlStringValue(WdlValue):
+    type = WdlStringType()
+    def check_compatible(self, value):
+        if not isinstance(value, str):
+            raise WdlValueException("WdlStringValue must hold a python 'str'")
+    def add(self, wdl_value):
+        if isinstance(wdl_value.type, WdlPrimitiveType):
+            return WdlStringValue(self.value + str(wdl_value.value))
+        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
+
+class WdlIntegerValue(WdlValue):
+    type = WdlIntegerType()
+    def check_compatible(self, value):
+        if not isinstance(value, int):
+            raise WdlValueException("WdlIntegerValue must hold a python 'int'")
+    def add(self, wdl_value):
+        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
+            return WdlIntegerValue(self.value + wdl_value.value)
+        if type(wdl_value.type) == WdlFloatType:
+            return WdlFloatValue(self.value + wdl_value.value)
+        if type(wdl_value.type) in [WdlStringType, WdlFileValue, WdlUriValue]:
+            return WdlStringValue(str(self.value) + str(wdl_value.value))
+        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
+    def subtract(self, wdl_value):
+        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
+            return WdlIntegerValue(self.value - wdl_value.value)
+        if type(wdl_value.type) == WdlFloatType:
+            return WdlFloatValue(self.value - wdl_value.value)
+        raise EvalException("Cannot subtract: {} + {}".format(self.type, wdl_value.type))
+    def multiply(self, wdl_value):
+        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
+            return WdlIntegerValue(self.value * wdl_value.value)
+        if type(wdl_value.type) == WdlFloatType:
+            return WdlFloatValue(self.value * wdl_value.value)
+        raise EvalException("Cannot multiply: {} + {}".format(self.type, wdl_value.type))
+    def divide(self, wdl_value):
+        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType, WdlFloatType]:
+            return WdlFloatValue(self.value / wdl_value.value)
+        raise EvalException("Cannot divide: {} + {}".format(self.type, wdl_value.type))
+    def mod(self, wdl_value):
+        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
+            return WdlIntegerValue(self.value % wdl_value.value)
+        if type(wdl_value.type) == WdlFloatType:
+            return WdlFloatValue(self.value % wdl_value.value)
+        raise EvalException("Cannot modulus divide: {} + {}".format(self.type, wdl_value.type))
+
+class WdlBooleanValue(WdlValue):
+    type = WdlBooleanType()
+    def check_compatible(self, value):
+        if not isinstance(value, bool):
+            raise WdlValueException("WdlBooleanValue must hold a python 'bool'")
+    def add(self, wdl_value):
+        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
+            return WdlIntegerValue(self.value + wdl_value.value)
+        if type(wdl_value.type) in [WdlFloatType]:
+            return WdlFloatValue(str(self.value) + str(wdl_value.value))
+        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
+
+class WdlFloatValue(WdlValue):
+    type = WdlFloatType()
+    def check_compatible(self, value):
+        if not isinstance(value, float):
+            raise WdlValueException("WdlFloatValue must hold a python 'float'")
+    def add(self, wdl_value):
+        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType, WdlFloatType]:
+            return WdlFloatValue(self.value + wdl_value.value)
+        if type(wdl_value.type) in [WdlStringType, WdlFileValue, WdlUriValue]:
+            return WdlStringValue(str(self.value) + str(wdl_value.value))
+        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
+
+class WdlFileValue(WdlValue):
+    type = WdlFileType()
+    def check_compatible(self, value):
+        pass # TODO: implement
+
+class WdlUriValue(WdlValue):
+    type = WdlUriType()
+    def check_compatible(self, value):
+        pass # TODO: implement
+
+class WdlArrayValue(WdlValue):
+    def __init__(self, subtype, value):
+        if not isinstance(value, list):
+            raise WdlValueException("WdlArrayValue must be a Python 'list'")
+        if not all(type(x.type) == type(subtype) for x in value):
+            raise WdlValueException("WdlArrayValue must contain elements of the same type: {}".format(value))
+        self.type = WdlArrayType(subtype)
+        self.subtype = subtype
+        self.value = value
+    def flatten(self):
+        flat = lambda l: [item for sublist in l for item in sublist.value]
+        if not isinstance(self.type.subtype, WdlArrayType):
+            raise WdlValueException("Cannot flatten {} (type {})".format(self.value, self.type))
+        return WdlArrayValue(self.subtype.subtype, flat(self.value))
+    def __str__(self):
+        return '[{}: {}]'.format(self.type, ', '.join([str(x) for x in self.value]))
+
+class WdlMapValue(WdlValue):
+    def __init__(self, value):
+        if not isinstance(value, dict):
+            raise WdlValueException("WdlMapValue must be a Python 'dict'")
+        if not all(type(x) == WdlPrimitiveType for x in value.keys()):
+            raise WdlValueException("WdlMapValue must contain WdlPrimitiveValues keys")
+        if not all(type(x) == WdlPrimitiveType for x in value.values()):
+            raise WdlValueException("WdlMapValue must contain WdlPrimitiveValues values")
+        if not all(type(x) == type(value[0]) for x in value.keys()):
+            raise WdlValueException("WdlMapValue must contain keys of the same type: {}".format(value))
+        if not all(type(x) == type(value[0]) for x in value.values()):
+            raise WdlValueException("WdlMapValue must contain values of the same type: {}".format(value))
+        (k, v) = list(value.items())[0]
+        self.type = WdlMapType(k.type, v.type)
+        self.value = value
+
+class WdlObject(WdlValue):
+    def __init__(self, dictionary):
+        for k, v in dictionary.items():
+            self.set(k, v)
+    def set(self, key, value):
+        self.__dict__[key] = value
+    def get(self, key):
+        return self.__dict__[key]
+    def __str__(self):
+        return '[WdlObject: {}]'.format(str(self.__dict__))
+
+def parse_expr(expr_string):
+    ctx = wdl.parser.ParserContext(wdl.parser.lex(expr_string, 'string'), wdl.parser.DefaultSyntaxErrorHandler())
+    return Expression(wdl.parser.parse_e(ctx).ast())
+
+def python_to_wdl_value(py_value, wdl_type):
+    if isinstance(wdl_type, WdlStringType):
+        return WdlStringValue(py_value)
+    if isinstance(wdl_type, WdlIntegerType):
+        return WdlIntegerValue(py_value)
+    if isinstance(wdl_type, WdlFloatType):
+        return WdlFloatValue(py_value)
+    if isinstance(wdl_type, WdlBooleanType):
+        return WdlBooleanValue(py_value)
+    if isinstance(wdl_type, WdlFileType):
+        return WdlFileValue(py_value)
+    if isinstance(wdl_type, WdlUriType):
+        return WdlUriValue(py_value)
+    if isinstance(wdl_type, WdlArrayType):
+        if not isinstance(py_value, list):
+            raise WdlValueException("{} must be constructed from Python list, got {}".format(wdl_type, py_value))
+        members = [python_to_wdl_value(x, wdl_type.subtype) for x in py_value]
+        return WdlArrayValue(wdl_type.subtype, members)
+    if isinstance(wdl_type, WdlMapType):
+        if not isinstance(py_value, list):
+            raise WdlValueException("{} must be constructed from Python dict, got {}".format(wdl_type, py_value))
+        members = {python_to_wdl_value(k): python_to_wdl_value(v) for k,v in py_value.items()}
+        return WdlMapValue(members)
+
+def wdl_value_to_python(wdl_value):
+    if isinstance(wdl_value.type, WdlPrimitiveType):
+        return wdl_value.value
+    if isinstance(wdl_value.type, WdlArrayType):
+        return [wdl_value_to_python(x) for x in wdl_value.value]
 
 binary_operators = [
     'Add', 'Subtract', 'Multiply', 'Divide', 'Remainder', 'Equals',
@@ -351,26 +616,17 @@ unary_operators = [
     'LogicalNot', 'UnaryPlus', 'UnaryMinus'
 ]
 
-class WdlUndefined:
-    def __str__(self):
-        return 'undefined'
-
-class WdlObject:
-    def set(self, key, value):
-        self.__dict__[key] = value
-    def get(self, key):
-        return self.__dict__[key]
-    def __str__(self):
-        return str(self.__dict__)
-
-def eval(ast, lookup=lambda var: None, ctx=None):
+def eval(ast, lookup=lambda var: None, functions=None):
+    if isinstance(ast, Expression): return eval(ast.ast, lookup, functions)
     if isinstance(ast, wdl.parser.Terminal):
         if ast.str == 'integer':
-            return int(ast.source_string)
+            return WdlIntegerValue(int(ast.source_string))
+        if ast.str == 'float':
+            return WdlFloatValue(float(ast.source_string))
         elif ast.str == 'string':
-            return ast.source_string
+            return WdlStringValue(ast.source_string)
         elif ast.str == 'boolean':
-            return True if ast.source_string == 'true' else False
+            return WdlBooleanValue(True if ast.source_string == 'true' else False)
         elif ast.str == 'identifier':
             symbol = lookup(ast.source_string)
             if symbol is None:
@@ -378,29 +634,29 @@ def eval(ast, lookup=lambda var: None, ctx=None):
             return symbol
     elif isinstance(ast, wdl.parser.Ast):
         if ast.name in binary_operators:
-            lhs = eval(ast.attr('lhs'), lookup, ctx)
+            lhs = eval(ast.attr('lhs'), lookup, functions)
             if isinstance(lhs, WdlUndefined): return lhs
 
-            rhs = eval(ast.attr('rhs'), lookup, ctx)
+            rhs = eval(ast.attr('rhs'), lookup, functions)
             if isinstance(rhs, WdlUndefined): return rhs
 
             # TODO: do type checking to make sure running
             # the specified operator on the operands is allowed
             # for now, just assume it is
 
-            if ast.name == 'Add': return lhs + rhs
-            if ast.name == 'Subtract': return lhs - rhs
-            if ast.name == 'Multiply': return lhs * rhs
-            if ast.name == 'Divide': return lhs / rhs
-            if ast.name == 'Remainder': return lhs % rhs
-            if ast.name == 'Equals': return lhs == rhs
-            if ast.name == 'NotEquals': return lhs != rhs
-            if ast.name == 'LessThan': return lhs < rhs
-            if ast.name == 'LessThanOrEqual': return lhs <= rhs
-            if ast.name == 'GreaterThan': return lhs > rhs
-            if ast.name == 'GreaterThanOrEqual': return lhs >= rhs
+            if ast.name == 'Add': return lhs.add(rhs)
+            if ast.name == 'Subtract': return lhs.subtract(rhs)
+            if ast.name == 'Multiply': return lhs.multiply(rhs)
+            if ast.name == 'Divide': return lhs.divide(rhs)
+            if ast.name == 'Remainder': return lhs.mod(rhs)
+            if ast.name == 'Equals': return lhs.is_equal(rhs)
+            if ast.name == 'NotEquals': return not lhs.is_equal(rhs)
+            if ast.name == 'LessThan': return lhs.less_than(rhs)
+            if ast.name == 'LessThanOrEqual': return lhs.less_than(rhs) or lhs.is_equal(rhs)
+            if ast.name == 'GreaterThan': return lhs.greater_than(rhs)
+            if ast.name == 'GreaterThanOrEqual': return lhs.greater_than(rhs) or lhs.is_equal(rhs)
         if ast.name in unary_operators:
-            expr = eval(ast.attr('expression'), lookup, ctx)
+            expr = eval(ast.attr('expression'), lookup, functions)
             if isinstance(expr, WdlUndefined): return expr
 
             if ast.name == 'LogicalNot': return not expr
@@ -410,17 +666,17 @@ def eval(ast, lookup=lambda var: None, ctx=None):
             obj = WdlObject()
             for member in ast.attr('map'):
                 key = member.attr('key').source_string
-                value = eval(member.attr('value'), lookup, ctx)
+                value = eval(member.attr('value'), lookup, functions)
                 if value is None or isinstance(value, WdlUndefined):
                     raise EvalException('Cannot evaluate expression')
                 obj.set(key, value)
             return obj
         if ast.name == 'ArrayIndex':
             array = ast.attr('lhs')
-            index = eval(ast.attr('rhs'), lookup, ctx)
+            index = eval(ast.attr('rhs'), lookup, functions)
             raise EvalException('ArrayIndex not implemented yet')
         if ast.name == 'MemberAccess':
-            object = eval(ast.attr('lhs'), lookup, ctx)
+            object = eval(ast.attr('lhs'), lookup, functions)
             member = ast.attr('rhs')
 
             if isinstance(object, WdlUndefined):
@@ -433,42 +689,8 @@ def eval(ast, lookup=lambda var: None, ctx=None):
             return object.get(member)
         if ast.name == 'FunctionCall':
             function = ast.attr('name').source_string
-            parameters = [eval(x, lookup, ctx) for x in ast.attr('params')]
-            if function == 'strlen' and len(parameters) == 1 and isinstance(parameters[0], str):
-                return len(parameters[0])
-            if function == 'tsv' and len(parameters) == 1 and isinstance(parameters[0], str):
-                return process_tsv(parameters[0], ctx)
-            if function in ['read_int', 'read_boolean'] and len(parameters) == 1 and isinstance(parameters[0], str):
-                val = process_read(parameters[0], ctx)
-                if function == 'read_int':
-                    return cast(val, 'int')
-                if function == 'read_boolean':
-                    return cast(val, 'boolean')
-            raise EvalException('Function "{}" is not defined'.format(function))
-
-def process_tsv(file_path, ctx):
-    if file_path == 'stdout':
-        stdout = ctx.stdout.strip('\n')
-        return stdout.split('\n') if len(stdout) else []
-
-def process_read(file_path, ctx):
-    with open(os.path.join(ctx.cwd, file_path)) as fp:
-        contents = fp.read().strip('\n')
-        return contents.split('\n')[0] if len(contents) else []
-
-class CastException: pass
-
-def cast(var, type):
-    if str(type) == 'boolean':
-        if var not in ['true', 'false']:
-            raise CastException('cannot cast {} as {}'.format(var, type))
-        return True if var == 'true' else False
-    if str(type) == 'int':
-        try:
-            return int(var)
-        except ValueError:
-            raise CastException('cannot cast {} as {}'.format(var, type))
-    return var
+            parameters = [eval(x, lookup, functions) for x in ast.attr('params')]
+            return functions(function)(parameters)
 
 def expr_str(ast):
     if isinstance(ast, wdl.parser.Terminal):
