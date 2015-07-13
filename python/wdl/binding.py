@@ -171,8 +171,10 @@ def assign_ids(ast_root, id=0):
     elif isinstance(ast_root, wdl.parser.Terminal):
         ast_root.id = id
 
-def parse(string):
-    ast = wdl.parser.parse(string).ast()
+def parse(string, resource):
+    errors = wdl.parser.DefaultSyntaxErrorHandler()
+    tokens = wdl.parser.lex(string, resource, errors)
+    ast = wdl.parser.parse(tokens).ast()
     # TODO: Do further syntax checks
     assign_ids(ast)
     return ast
@@ -335,8 +337,8 @@ def parse_type(ast):
     subtypes = [parse_type(subtype_ast) for subtype_ast in ast.attr('subtype')]
     return Type(name, subtypes, ast)
 
-def parse_document(string):
-    ast = parse(string)
+def parse_document(string, resource):
+    ast = parse(string, resource)
     tasks = get_tasks(ast)
     workflows = get_workflows(ast, tasks)
     return Document(tasks, workflows, ast)

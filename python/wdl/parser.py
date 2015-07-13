@@ -57,8 +57,9 @@ class Terminal:
   def ast(self):
       return self
   def dumps(self, b64_source=True, **kwargs):
-      source_string = base64.b64encode(self.source_string.encode('utf-8')).decode('utf-8') if b64_source else self.source_string
-      return '<{resource}:{line}:{col} {terminal} "{source}">'.format(
+      #source_string = base64.b64encode(self.source_string.encode('utf-8')).decode('utf-8') if b64_source else self.source_string
+      source_string = repr(self.source_string)
+      return '<{resource}:{line}:{col} {terminal} {source}>'.format(
           resource=self.resource,
           line=self.line,
           col=self.col,

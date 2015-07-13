@@ -464,7 +464,7 @@ def make_command(call, symbol_table, index, param_dict, job_cwd):
 
 def run(wdl_file, inputs=None):
     with open(wdl_file) as fp:
-        wdl_document = parse_document(fp.read())
+        wdl_document = parse_document(fp.read(), wdl_file)
 
     workflow = wdl_document.workflows[0]
     job = Job(workflow)
