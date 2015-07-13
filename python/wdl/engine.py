@@ -1,6 +1,5 @@
 from wdl.binding import *
 from wdl.util import *
-import multiprocessing
 import wdl.parser
 import re
 import subprocess
@@ -150,56 +149,8 @@ def engine_functions(execution_context=None):
 
     return get_function
 
-class WdlProcess:
-    def __init__(self, call, cwd, parameters, symbol_table):
-        self.__dict__.update(locals())
-    def command(self):
-        return self.call.task.command.instantiate(self.parameters, self.job_cwd)
-    def docker(self):
-        eval(self.call.task.runtime['docker'].ast, lookup_function(self.symbol_table, self.call)).value if 'docker' in self.call.task.runtime else None
-    def __str__(self):
-        return '[WdlProcess: call={}, cwd={}, parameters={}]'.format(self.call.name, self.cwd, self.parameters)
-
-#def run_subprocess(self, command, docker=None, cwd='.'):
-def run_subprocess(wdl_process):
-    command = wdl_process.command()
-    docker = wdl_process.docker()
-    if docker is not None:
-        command = 'docker run -v {}:/root -w /root {} bash -c "{}"'.format(wdl_process.cwd, docker, command)
-    print('\n -- Running task: {}'.format(colorize(wdl_process.call.name, ansi=26)))
-    print(colorize(command, ansi=9))
-    proc = subprocess.Popen(
-        command,
-        shell=True,
-        universal_newlines=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        close_fds=True,
-        cwd=wdl_process.cwd
-    )
-    stdout, stderr = proc.communicate()
-    print(colorize('rc = {}'.format(proc.returncode), ansi=1 if proc.returncode!=0 else 2))
-    with open(os.path.join(cwd, 'stdout'), 'w') as fp:
-        fp.write(stdout.strip(' \n'))
-    with open(os.path.join(cwd, 'stderr'), 'w') as fp:
-        fp.write(stderr.strip(' \n'))
-    return (proc.pid, proc.returncode, stdout.strip(' \n'), stderr.strip(' \n'))
-
-def post_process(self, execution_context):
-    status = 'successful' if execution_context.rc == 0 else 'failed'
-    self.execution_table.set_status(execution_context.fqn, execution_context.index, status)
-    self.execution_table.set_column(execution_context.fqn, execution_context.index, 4, execution_context.pid)
-    self.execution_table.set_column(execution_context.fqn, execution_context.index, 5, execution_context.rc)
-    if status == 'successful':
-        for output in execution_context.call.task.outputs:
-            execution_context.type = output.type
-            value = eval(output.expression, functions=engine_functions(execution_context))
-            if isinstance(value.type, WdlFileType):
-                value = WdlFileValue(os.path.join(execution_context.cwd, value.value))
-            self.symbol_table.set(execution_context.call, output.name, value, execution_context.index, io='output')
-
 class WorkflowExecutor:
-    def __init__(self, workflow, inputs={}, runner=run_subprocess, threads=4):
+    def __init__(self, workflow, inputs={}):
         self.dir = os.path.abspath('workflow_{}_{}'.format(workflow.name, str(uuid.uuid4()).split('-')[0]))
         self.workflow = workflow
         self.inputs = inputs
@@ -233,7 +184,6 @@ class WorkflowExecutor:
         os.mkdir(self.dir)
 
         while not self.execution_table.is_finished():
-            wdl_procs = []
             for (fqn, status, index, _, _, _) in self.execution_table:
                 if status == 'not_started':
                     call = self.symbol_table.resolve_fqn(fqn)
@@ -257,26 +207,53 @@ class WorkflowExecutor:
                         value = self.symbol_table.eval_entry(entry, scatter_vars, index)
                         parameters[name] = value
 
+                    print('\n -- Running task: {}'.format(colorize(call.name, ansi=26)))
                     job_cwd = os.path.join(self.dir, fqn, str(index) if index is not None else '')
                     os.makedirs(job_cwd)
-                    wdl_procs.append(WdlProcess(call, job_cwd, parameters, self.symbol_table))
                     cmd_string = call.task.command.instantiate(parameters, job_cwd)
-                    #docker = eval(call.task.runtime['docker'].ast, lookup_function(self.symbol_table, call)).value if 'docker' in call.task.runtime else None
-                    #(pid, rc, stdout, stderr) = self.run_subprocess(cmd_string, docker=docker, cwd=job_cwd)
-                    #execution_context = ExecutionContext(fqn, call, index, pid, rc, stdout, stderr, job_cwd)
-                    #self.post_process(execution_context)
+                    docker = eval(call.task.runtime['docker'].ast, lookup_function(self.symbol_table, call)).value if 'docker' in call.task.runtime else None
+                    (pid, rc, stdout, stderr) = self.run_subprocess(cmd_string, docker=docker, cwd=job_cwd)
+                    execution_context = ExecutionContext(fqn, call, index, pid, rc, stdout, stderr, job_cwd)
+                    self.post_process(execution_context)
 
-            for proc in wdl_procs:
-                print(proc)
-            sys.exit(-1)
             print('\n -- symbols')
             print(self.symbol_table)
             print('\n -- exec table')
             print(self.execution_table)
 
-    def run_wdl_procs(self, wdl_procs):
-        with multiprocessing.Pool(processes=self.threads) as pool:
-            pass
+    def run_subprocess(self, command, docker=None, cwd='.'):
+        if docker:
+            command = 'docker run -v {}:/root -w /root {} bash -c "{}"'.format(cwd, docker, command)
+        print(colorize(command, ansi=9))
+        proc = subprocess.Popen(
+            command,
+            shell=True,
+            universal_newlines=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            close_fds=True,
+            cwd=cwd
+        )
+        stdout, stderr = proc.communicate()
+        print(colorize('rc = {}'.format(proc.returncode), ansi=1 if proc.returncode!=0 else 2))
+        with open(os.path.join(cwd, 'stdout'), 'w') as fp:
+            fp.write(stdout.strip(' \n'))
+        with open(os.path.join(cwd, 'stderr'), 'w') as fp:
+            fp.write(stderr.strip(' \n'))
+        return (proc.pid, proc.returncode, stdout.strip(' \n'), stderr.strip(' \n'))
+
+    def post_process(self, execution_context):
+        status = 'successful' if execution_context.rc == 0 else 'failed'
+        self.execution_table.set_status(execution_context.fqn, execution_context.index, status)
+        self.execution_table.set_column(execution_context.fqn, execution_context.index, 4, execution_context.pid)
+        self.execution_table.set_column(execution_context.fqn, execution_context.index, 5, execution_context.rc)
+        if status == 'successful':
+            for output in execution_context.call.task.outputs:
+                execution_context.type = output.type
+                value = eval(output.expression, functions=engine_functions(execution_context))
+                if isinstance(value.type, WdlFileType):
+                    value = WdlFileValue(os.path.join(execution_context.cwd, value.value))
+                self.symbol_table.set(execution_context.call, output.name, value, execution_context.index, io='output')
 
 class ExecutionTable(list):
     def __init__(self, root, symbol_table, extra=0):
