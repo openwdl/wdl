@@ -476,7 +476,8 @@ class CommandPartValue:
 
 def run(wdl_file, inputs={}):
     with open(wdl_file) as fp:
-        wdl_document = parse_document(fp.read())
+        wdl_document = parse_document(fp.read(), wdl_file)
+
     workflow = wdl_document.workflows[0]
     wf_exec = WorkflowExecutor(workflow, inputs)
     wf_exec.execute()
