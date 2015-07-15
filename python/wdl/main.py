@@ -70,7 +70,7 @@ def cli():
                 print("Then, pass this file in as the --inputs option:\n")
             print(json.dumps(error.missing, indent=4))
     if cli.action == 'parse':
-        ast = wdl.parser.parse(open(cli.wdl_file).read(), os.path.basename(cli.wdl_file)).ast()
+        ast = wdl.binding.parse(open(cli.wdl_file).read(), os.path.basename(cli.wdl_file))
         print(ast.dumps(indent=2))
     if cli.action == 'expr':
         e = parse_expr("1+1.1")
