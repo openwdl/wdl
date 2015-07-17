@@ -14,7 +14,7 @@ task grep {
 
 task wc {
   command {
-    wc -l ${sep=' ' File files+} | tail -1 | cut -d' ' -f 2
+    wc -l ${sep=' ' File files+} | tail -1 | tr -s ' ' | cut -d' ' -f 2
   }
   output {
     Int count = read_int(stdout())
