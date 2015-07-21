@@ -1,12 +1,9 @@
 from wdl.binding import *
 from wdl.util import *
-import wdl.parser
 import re
 import subprocess
 import tempfile
 import uuid
-import json
-import sys
 import xml.etree.ElementTree as ETree
 import time
 from xtermcolor import colorize
@@ -151,8 +148,12 @@ def engine_functions(execution_context=None):
 
     return get_function
 
-class ProcState:
-    def __init__(self, pid, cwd, outputs, retcode=None, status_file=None):
+class LocalProcState:
+    def __init__(self, pid, cwd, outputs, proc):
+        self.__dict__.update(locals())
+
+class SGEProcState:
+    def __init__(self, pid, cwd, outputs, retcode, status_file):
         self.__dict__.update(locals())
 
 class SGERunner:
@@ -201,7 +202,7 @@ class SGERunner:
 
 
         print(colorize("Started as SGE job {}".format(sge_job_id), ansi=9))
-        self.pid_to_state[sge_job_id] = ProcState(sge_job_id, cwd, (stdout_path, stderr_path), retcode=None, status_file=status_file)
+        self.pid_to_state[sge_job_id] = SGEProcState(sge_job_id, cwd, (stdout_path, stderr_path), None, status_file)
         return sge_job_id
 
     def _get_job_states(self):
@@ -289,22 +290,23 @@ class LocalRunner:
 
         pid = proc.pid
         print(colorize("Started as pid {}".format(pid), ansi=9))
-        self.pid_to_state[pid] = ProcState(pid, cwd, (stdout_path, stderr_path))
+        self.pid_to_state[pid] = LocalProcState(pid, cwd, (stdout_path, stderr_path), proc)
         return pid
 
     def get_rc(self, pid):
-        proc = self.pid_to_state[pid].pid
+        proc = self.pid_to_state[pid].proc
         return proc.poll()
 
     def get_outputs(self, pid):
-        return [open(x).read() for x in self.pid_to_outputs[pid]]
+        outputs = self.pid_to_state[pid].outputs
+        return [open(x).read() for x in outputs]
 
 class WorkflowExecutor:
-    def __init__(self, workflow, inputs={}):
+    def __init__(self, workflow, inputs, runner):
         self.dir = os.path.abspath('workflow_{}_{}'.format(workflow.name, str(uuid.uuid4()).split('-')[0]))
         self.workflow = workflow
         self.inputs = inputs
-        self.runner = SGERunner()
+        self.runner = runner
 
         # Construct the initial symbol table
         self.symbol_table = SymbolTable(workflow)
@@ -638,12 +640,13 @@ class CommandPartValue:
     def __str__(self):
         return 'CommandPartValue: {} {} = {}'.format(self.type, self.name, self.value)
 
-def run(wdl_file, inputs={}):
+def run(wdl_file, run_service_name="local", inputs={}):
     with open(wdl_file) as fp:
         wdl_document = parse_document(fp.read(), wdl_file)
 
     workflow = wdl_document.workflows[0]
-    wf_exec = WorkflowExecutor(workflow, inputs)
+    runner = {"local": LocalRunner, "sge": SGERunner}[run_service_name]
+    wf_exec = WorkflowExecutor(workflow, inputs, runner())
     wf_exec.execute()
     print('\nWorkflow finished.  Workflow directory is:')
     print(wf_exec.dir)

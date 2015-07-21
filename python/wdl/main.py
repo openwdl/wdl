@@ -42,6 +42,9 @@ def cli():
     commands['run'].add_argument(
         '--inputs', help='Path to JSON file to define inputs'
     )
+    commands['run'].add_argument(
+        '--sge', action="store_true", help='Use SGE to execute tasks'
+    )
     commands['parse'] = subparsers.add_parser(
         'parse', description=command_help['parse'], help=command_help['parse']
     )
@@ -56,11 +59,17 @@ def cli():
 
     if cli.action == 'run':
         inputs = {}
+        run_service_name = "local"
+
+        if cli.sge:
+            run_service_name = "sge"
+
         if cli.inputs:
             with open(cli.inputs) as fp:
                 inputs = json.loads(fp.read())
+
         try:
-            wdl.engine.run(cli.wdl_file, inputs)
+            wdl.engine.run(cli.wdl_file, run_service_name, inputs)
         except wdl.engine.MissingInputsException as error:
             print("Your workflow cannot be run because it is missing some inputs!")
             if cli.inputs:
