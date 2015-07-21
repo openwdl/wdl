@@ -389,11 +389,12 @@ class WorkflowExecutor:
 
         return updates
 
-    def execute(self):
+    def execute(self, max_sleep_secs=30):
         print('\n -- running workflow: {}'.format(self.workflow.name))
         print('\n -- job dir: {}'.format(self.dir))
         os.mkdir(self.dir)
 
+        sleep_secs = 1
         while not self.execution_table.is_finished():
             updates = 0
             
@@ -405,7 +406,12 @@ class WorkflowExecutor:
             print(self.execution_table)
 
             if updates == 0:
-                time.sleep(1)
+                print("\n {} sleeping for {} seconds\n".format(time.asctime(), sleep_secs))
+                time.sleep(sleep_secs)
+                # backoff polling frequency if nothing has changed
+                sleep_secs = min(max_sleep_secs, sleep_secs * 2)
+            else:
+                sleep_secs = 1
 
     def post_process(self, execution_context):
         status = 'successful' if execution_context.rc == 0 else 'failed'
