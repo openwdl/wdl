@@ -18,6 +18,6 @@ Installation
 This set of instructions assumes SublimeText running on a Mac
 
 * Create a directory `~/Library/Application Support/Sublime Text 3/Packages/WDL Syntax Highlighting`
-** For version 2, replace *Sublime Text 3* with *Sublime Text 2*
+  * For version 2, replace *Sublime Text 3* with *Sublime Text 2*
 * Copy the `WDL.tmLanguage` file to this new directory
 * Restart SublimeText, open a WDL file, enjoy!
