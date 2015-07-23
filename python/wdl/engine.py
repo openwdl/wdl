@@ -1,12 +1,11 @@
 from wdl.binding import *
 from wdl.util import *
-import wdl.parser
 import re
 import subprocess
 import tempfile
 import uuid
-import json
-import sys
+import xml.etree.ElementTree as ETree
+import time
 from xtermcolor import colorize
 
 def lookup_function(symbol_table, scope, scatter_vars=[], index=None):
@@ -149,11 +148,165 @@ def engine_functions(execution_context=None):
 
     return get_function
 
+class LocalProcState:
+    def __init__(self, pid, cwd, outputs, proc):
+        self.__dict__.update(locals())
+
+class SGEProcState:
+    def __init__(self, pid, cwd, outputs, retcode, status_file):
+        self.__dict__.update(locals())
+
+class SGERunner:
+    def __init__(self, min_refresh_seconds=1):
+        self.__dict__.update(locals())
+        self.last_state_refresh = None
+        self.pid_to_state = {}
+
+    # TODO: this state should probably live in execution table, not in runner
+    def get_cwd(self, pid):
+        return self.pid_to_state[pid].cwd
+
+    def run(self, cmd_string, docker, cwd):
+        if docker:
+            cmd_string = 'docker run -v {}:/root -w /root {} bash -c "{}"'.format(cwd, docker, cmd_string)
+
+        # TODO: previously these files were having trailing whitespace stripped when written.  Need to move that to when they're read
+        stdout_path = os.path.join(cwd, 'stdout')
+        stderr_path = os.path.join(cwd, 'stderr')
+        status_file = os.path.join(cwd, 'status')
+
+        print(colorize(cmd_string, ansi=9))
+        with tempfile.NamedTemporaryFile(prefix="command", suffix=".sh", dir=cwd, delete=False,mode='w+t') as fd:
+            script_name = fd.name
+            fd.write("#!/bin/sh\n")
+            fd.write(cmd_string)
+            fd.write("\necho $? > {}\n".format(status_file))
+
+        job_name = "job"
+
+        cmd = ["qsub", "-N", job_name, "-V", "-b", "n", "-cwd", "-o", stdout_path, "-e", stderr_path, script_name]
+        print(colorize("executing qsub command: {}".format(" ".join(cmd)), ansi=9))
+        handle = subprocess.Popen(cmd, stdout=subprocess.PIPE, cwd=cwd)
+        stdout, stderr = handle.communicate()
+        stdout = stdout.decode("utf-8")
+
+        bjob_id_pattern = re.compile("Your job (\\d+) \\(.* has been submitted.*")
+        sge_job_id = None
+        for line in stdout.split("\n"):
+            m = bjob_id_pattern.match(line)
+            if m != None:
+                sge_job_id = m.group(1)
+
+        if sge_job_id == None:
+            raise Exception("Could not parse output from qsub: %s" % stdout)
+
+
+        print(colorize("Started as SGE job {}".format(sge_job_id), ansi=9))
+        self.pid_to_state[sge_job_id] = SGEProcState(sge_job_id, cwd, (stdout_path, stderr_path), None, status_file)
+        return sge_job_id
+
+    def _get_job_states(self):
+        handle = subprocess.Popen(["qstat", "-xml"], stdout=subprocess.PIPE)
+        stdout, stderr = handle.communicate()
+
+        doc = ETree.fromstring(stdout)
+        job_list = doc.findall(".//job_list")
+
+        active_jobs = {}
+        for job in job_list:
+            job_id = job.find("JB_job_number").text
+
+            state = job.attrib['state']
+            if state == "running":
+                active_jobs[job_id] = "running"
+            elif state == "pending":
+                active_jobs[job_id] = "pending"
+            else:
+                active_jobs[job_id] = "queued-unknown"
+        return active_jobs
+
+    def _update_job_states(self):
+        unseen = set(self.pid_to_state.keys())
+        active_jobs = self._get_job_states()
+        for job_id, state in active_jobs.items():
+            if not job_id in self.pid_to_state:
+                continue
+            state = self.pid_to_state[job_id]
+            state.status = state
+            unseen.remove(job_id)
+
+        # those jobs which are not in the qstat output have either succeeded or failed
+        # look on the filesystem for status file which should be there if successful
+        for job_id in unseen:
+            state = self.pid_to_state[job_id]
+            with open(state.status_file, "rt") as fd:
+                retcode = int(fd.read().strip())
+            if retcode == 0:
+                state.status = "successful"
+            else:
+                state.status = "failed"
+            state.retcode = retcode
+
+        self.last_state_refresh = time.time()
+
+    def get_rc(self, pid):
+        now = time.time()
+        if self.last_state_refresh is None or now - self.last_state_refresh > self.min_refresh_seconds:
+            self._update_job_states()
+        return self.pid_to_state[pid].retcode
+
+    def get_outputs(self, pid):
+        return [open(x).read() for x in self.pid_to_state[pid].outputs]
+    
+
+class LocalRunner:
+    def __init__(self):
+        self.pid_to_state = {}
+    
+    # TODO: this state should probably live in execution table, not in runner
+    def get_cwd(self, pid):
+        return self.pid_to_state[pid].cwd
+        
+    def run(self, cmd_string, docker, cwd):
+        if docker:
+            cmd_string = 'docker run -v {}:/root -w /root {} bash -c "{}"'.format(cwd, docker, cmd_string)
+
+        # TODO: previously these files were having trailing whitespace stripped when written.  Need to move that to when they're read
+        stdout_path = os.path.join(cwd, 'stdout')
+        stderr_path = os.path.join(cwd, 'stderr')
+        stdout_file = open(stdout_path, 'w')
+        stderr_file = open(stderr_path, 'w')
+            
+        print(colorize(cmd_string, ansi=9))
+        proc = subprocess.Popen(
+            cmd_string,
+            shell=True,
+            universal_newlines=True,
+            stdout=stdout_file,
+            stderr=stderr_file,
+            close_fds=True,
+            cwd=cwd
+        )
+
+        pid = proc.pid
+        print(colorize("Started as pid {}".format(pid), ansi=9))
+        self.pid_to_state[pid] = LocalProcState(pid, cwd, (stdout_path, stderr_path), proc)
+        return pid
+
+    def get_rc(self, pid):
+        proc = self.pid_to_state[pid].proc
+        return proc.poll()
+
+    def get_outputs(self, pid):
+        outputs = self.pid_to_state[pid].outputs
+        return [open(x).read() for x in outputs]
+
 class WorkflowExecutor:
-    def __init__(self, workflow, inputs={}):
+    def __init__(self, workflow, inputs, runner):
         self.dir = os.path.abspath('workflow_{}_{}'.format(workflow.name, str(uuid.uuid4()).split('-')[0]))
         self.workflow = workflow
         self.inputs = inputs
+        self.runner = runner
 
         # Construct the initial symbol table
         self.symbol_table = SymbolTable(workflow)
@@ -178,69 +331,87 @@ class WorkflowExecutor:
         print('\n -- execution table (initial)')
         print(self.execution_table)
 
-    def execute(self):
+    def _execute_next(self, ):
+        updates = 0
+        
+        for (fqn, status, index, _, _, _) in self.execution_table:
+            if status == 'not_started':
+                call = self.symbol_table.resolve_fqn(fqn)
+
+                skipped = False
+                upstream_calls = call.upstream()
+                print ("fqn {} upstream {}".format(fqn, upstream_calls))
+                for upstream in upstream_calls:
+                    upstream_call_status = self.execution_table.aggregate_status(upstream)
+                    print ("upstream {} status {}".format(upstream, upstream_call_status))
+                    if upstream_call_status in ['failed', 'error', 'skipped', 'started']:
+                        self.execution_table.set_status(fqn, None, 'skipped')
+                    if upstream_call_status != 'successful':
+                        skipped = True
+                if skipped: continue
+
+                # Build up parameter list for this task
+                parameters = {}
+                for entry in self.symbol_table.get_inputs(fqn):
+                    (scope, name, _, value, type, io) = entry
+                    scatter_node = call.get_scatter_parent()
+                    scatter_vars = [] if scatter_node is None else [scatter_node.item]
+                    value = self.symbol_table.eval_entry(entry, scatter_vars, index)
+                    parameters[name] = value
+
+                print('\n -- Running task: {}'.format(colorize(call.name, ansi=26)))
+                job_cwd = os.path.join(self.dir, fqn, str(index) if index is not None else '')
+                os.makedirs(job_cwd)
+                cmd_string = call.task.command.instantiate(parameters, job_cwd)
+                docker = eval(call.task.runtime['docker'].ast, lookup_function(self.symbol_table, call)).value if 'docker' in call.task.runtime else None
+                pid = self.runner.run(cmd_string, docker=docker, cwd=job_cwd)
+                self.execution_table.set_status(fqn, index, "started")
+                self.execution_table.set_column(fqn, index, 4, pid)
+                updates += 1
+                
+        return updates
+        
+    def _post_process_next(self):
+        updates = 0
+        
+        for (fqn, status, index, _, pid, _) in self.execution_table:
+            if status == "started":
+                rc = self.runner.get_rc(pid)
+                if rc == None: # still running
+                    continue
+                
+                stdout, stderr = self.runner.get_outputs(pid)
+                job_cwd = self.runner.get_cwd(pid)
+                call = self.symbol_table.resolve_fqn(fqn)
+                execution_context = ExecutionContext(fqn, call, index, pid, rc, stdout, stderr, job_cwd)
+                self.post_process(execution_context)
+                updates += 1
+
+        return updates
+
+    def execute(self, max_sleep_secs=30):
         print('\n -- running workflow: {}'.format(self.workflow.name))
         print('\n -- job dir: {}'.format(self.dir))
         os.mkdir(self.dir)
 
+        sleep_secs = 1
         while not self.execution_table.is_finished():
-            for (fqn, status, index, _, _, _) in self.execution_table:
-                if status == 'not_started':
-                    call = self.symbol_table.resolve_fqn(fqn)
-
-                    skipped = False
-                    upstream_calls = call.upstream()
-                    for upstream in upstream_calls:
-                        upstream_call_status = self.execution_table.aggregate_status(upstream)
-                        if upstream_call_status in ['failed', 'error', 'skipped']:
-                            self.execution_table.set_status(fqn, None, 'skipped')
-                        if upstream_call_status != 'successful':
-                            skipped = True
-                    if skipped: continue
-
-                    # Build up parameter list for this task
-                    parameters = {}
-                    for entry in self.symbol_table.get_inputs(fqn):
-                        (scope, name, _, value, type, io) = entry
-                        scatter_node = call.get_scatter_parent()
-                        scatter_vars = [] if scatter_node is None else [scatter_node.item]
-                        value = self.symbol_table.eval_entry(entry, scatter_vars, index)
-                        parameters[name] = value
-
-                    print('\n -- Running task: {}'.format(colorize(call.name, ansi=26)))
-                    job_cwd = os.path.join(self.dir, fqn, str(index) if index is not None else '')
-                    os.makedirs(job_cwd)
-                    cmd_string = call.task.command.instantiate(parameters, job_cwd)
-                    docker = eval(call.task.runtime['docker'].ast, lookup_function(self.symbol_table, call)).value if 'docker' in call.task.runtime else None
-                    (pid, rc, stdout, stderr) = self.run_subprocess(cmd_string, docker=docker, cwd=job_cwd)
-                    execution_context = ExecutionContext(fqn, call, index, pid, rc, stdout, stderr, job_cwd)
-                    self.post_process(execution_context)
-
+            updates = 0
+            
+            updates += self._execute_next()
+            updates += self._post_process_next()
             print('\n -- symbols')
             print(self.symbol_table)
             print('\n -- exec table')
             print(self.execution_table)
 
-    def run_subprocess(self, command, docker=None, cwd='.'):
-        if docker:
-            command = 'docker run -v {}:/root -w /root {} bash -c "{}"'.format(cwd, docker, command)
-        print(colorize(command, ansi=9))
-        proc = subprocess.Popen(
-            command,
-            shell=True,
-            universal_newlines=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            close_fds=True,
-            cwd=cwd
-        )
-        stdout, stderr = proc.communicate()
-        print(colorize('rc = {}'.format(proc.returncode), ansi=1 if proc.returncode!=0 else 2))
-        with open(os.path.join(cwd, 'stdout'), 'w') as fp:
-            fp.write(stdout.strip(' \n'))
-        with open(os.path.join(cwd, 'stderr'), 'w') as fp:
-            fp.write(stderr.strip(' \n'))
-        return (proc.pid, proc.returncode, stdout.strip(' \n'), stderr.strip(' \n'))
+            if updates == 0:
+                print("\n {} sleeping for {} seconds\n".format(time.asctime(), sleep_secs))
+                time.sleep(sleep_secs)
+                # backoff polling frequency if nothing has changed
+                sleep_secs = min(max_sleep_secs, sleep_secs * 2)
+            else:
+                sleep_secs = 1
 
     def post_process(self, execution_context):
         status = 'successful' if execution_context.rc == 0 else 'failed'
@@ -307,6 +478,7 @@ class ExecutionTable(list):
         elif 'error' in statuses: return 'error'
         elif 'skipped' in statuses: return 'skipped'
         elif 'not_started' in statuses: return 'not_started'
+        elif 'started' in statuses: return 'started'
         return 'successful'
     def __str__(self):
         return md_table(self, ['Name', 'Status', 'Index', 'Iter', 'PID', 'rc'])
@@ -474,12 +646,13 @@ class CommandPartValue:
     def __str__(self):
         return 'CommandPartValue: {} {} = {}'.format(self.type, self.name, self.value)
 
-def run(wdl_file, inputs={}):
+def run(wdl_file, run_service_name="local", inputs={}):
     with open(wdl_file) as fp:
         wdl_document = parse_document(fp.read(), wdl_file)
 
     workflow = wdl_document.workflows[0]
-    wf_exec = WorkflowExecutor(workflow, inputs)
+    runner = {"local": LocalRunner, "sge": SGERunner}[run_service_name]
+    wf_exec = WorkflowExecutor(workflow, inputs, runner())
     wf_exec.execute()
     print('\nWorkflow finished.  Workflow directory is:')
     print(wf_exec.dir)
