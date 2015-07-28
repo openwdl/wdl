@@ -908,7 +908,7 @@ workflow wf {
 $scatter = 'scatter' '(' $identifier 'in' $expression ')' '{' $workflow_element* '}'
 ```
 
-A "scatter" clause defines that the everything in the body can be run in parallel.  The clause in parenthesis declares which collection to scatter over and what to call each element.
+A "scatter" clause defines that everything in the body can be run in parallel.  The clause in parenthesis declares which collection to scatter over and what to call each element.
 
 For example, if `$expression` is an array of integers of size 3, then the body of the scatter clause can be executed 3-times in parallel.  `$identifier` would refer to each integer in the array.
 
