@@ -12,6 +12,7 @@
   * [Global Grammar Rules](#global-grammar-rules)
     * [Whitespace, Strings, Identifiers, Constants](#whitespace-strings-identifiers-constants)
     * [Types](#types)
+    * [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
     * [Declarations](#declarations)
     * [Expressions](#expressions)
     * [Operator Precedence Table](#operator-precedence-table)
@@ -25,18 +26,16 @@
   * [Task Definition](#task-definition)
     * [Sections](#sections)
     * [Command Section](#command-section)
-    * [Command Parts](#command-parts)
+      * [Command Parts](#command-parts)
+      * [Command Part Options](#command-part-options)
+        * [sep](#sep)
+        * [true and false](#true-and-false)
+        * [default](#default)
       * [Alternative heredoc syntax](#alternative-heredoc-syntax)
-      * [Parameters Used Multiple Times](#parameters-used-multiple-times)
-    * [Command Part Options](#command-part-options)
-      * [sep](#sep)
-      * [true and false](#true-and-false)
-      * [serialize](#serialize)
-      * [default](#default)
+      * [Stripping Leading Whitespace](#stripping-leading-whitespace)
     * [Outputs Section](#outputs-section)
     * [String Interpolation](#string-interpolation)
     * [Runtime Section](#runtime-section)
-      * [serialize](#serialize)
       * [docker](#docker)
       * [memory](#memory)
     * [Parameter Metadata Section](#parameter-metadata-section)
@@ -54,44 +53,68 @@
     * [Loops](#loops)
     * [Conditionals](#conditionals)
     * [Outputs](#outputs)
-    * [Examples](#examples)
-      * [Example 1: dRanger](#example-1-dranger)
-* [Variable Resolution & Scoping](#variable-resolution--scoping)
 * [Namespaces](#namespaces)
-  * [Additional Namespace Requirements](#additional-namespace-requirements)
+* [Scope](#scope)
+* [Optional Parameters & Type Constraints](#optional-parameters--type-constraints)
+  * [Prepending a String to an Optional Parameter](#prepending-a-string-to-an-optional-parameter)
+* [Scatter / Gather](#scatter--gather)
+* [Variable Resolution](#variable-resolution)
+  * [Task-Level Resolution](#task-level-resolution)
+  * [Workflow-Level Resolution](#workflow-level-resolution)
+* [Computing Inputs](#computing-inputs)
+  * [Task Inputs](#task-inputs)
+  * [Workflow Inputs](#workflow-inputs)
+  * [Specifying Workflow Inputs in JSON](#specifying-workflow-inputs-in-json)
+* [Type Coercion](#type-coercion)
 * [Standard Library](#standard-library)
   * [mixed stdout()](#mixed-stdout)
   * [mixed stderr()](#mixed-stderr)
   * [Array\[String\] read_lines(String|File|Uri)](#arraystring-read_linesstringfileuri)
   * [Array\[Array\[String\]\] read_tsv(String|File|Uri)](#arrayarraystring-read_tsvstringfileuri)
   * [Map\[String, String\] read_map(String|File|Uri)](#mapstring-string-read_mapstringfileuri)
+  * [Object read_object(String|File|Uri)](#object-read_objectstringfileuri)
+  * [Array\[Object\] read_objects(String|File|Uri)](#arrayobject-read_objectsstringfileuri)
   * [mixed read_json(String|File|Uri)](#mixed-read_jsonstringfileuri)
   * [Int read_int(String|File|Uri)](#int-read_intstringfileuri)
   * [String read_string(String|File|Uri)](#string-read_stringstringfileuri)
   * [Float read_float(String|File|Uri)](#float-read_floatstringfileuri)
   * [Boolean read_boolean(String|File|Uri)](#boolean-read_booleanstringfileuri)
+  * [File write_lines(Array\[String\])](#file-write_linesarraystring)
+  * [File write_tsv(Array\[Array\[String\]\])](#file-write_tsvarrayarraystring)
+  * [File write_map(Map\[String, String\])](#file-write_mapmapstring-string)
+  * [File write_object(Object)](#file-write_objectobject)
+  * [File write_objects(Array\[Object\])](#file-write_objectsarrayobject)
+  * [File write_json(mixed)](#file-write_jsonmixed)
 * [Data Types & Serialization](#data-types--serialization)
-  * [Overview](#overview)
-  * [Serialization](#serialization)
-    * [Serialization of Primitive Output Types](#serialization-of-primitive-output-types)
-    * [Serialization of Compound Output Types](#serialization-of-compound-output-types)
-  * [Primitive Types](#primitive-types)
-    * [String](#string)
-    * [Int and Float](#int-and-float)
-    * [File and Uri](#file-and-uri)
-    * [Boolean](#boolean)
-  * [Compound Types](#compound-types)
-    * [array](#array)
-      * [array serialization by expansion](#array-serialization-by-expansion)
-      * [array serialization as TSV](#array-serialization-as-tsv)
-      * [array serialization as JSON](#array-serialization-as-json)
-    * [map](#map)
-      * [map serialization as TSV](#map-serialization-as-tsv)
-      * [map serialization as JSON](#map-serialization-as-json)
-    * [object](#object)
-      * [object serialization as TSV](#object-serialization-as-tsv)
-      * [object serialization as JSON](#object-serialization-as-json)
-      * [Array\[object\]](#arrayobject)
+  * [Serialization of Task Inputs](#serialization-of-task-inputs)
+    * [Primitive Types](#primitive-types)
+    * [Compound Types](#compound-types)
+      * [Array serialization](#array-serialization)
+        * [Array serialization by expansion](#array-serialization-by-expansion)
+        * [Array serialization using write_lines()](#array-serialization-using-write_lines)
+        * [Array serialization using write_json()](#array-serialization-using-write_json)
+      * [Map serialization](#map-serialization)
+        * [Map serialization using write_map()](#map-serialization-using-write_map)
+        * [Map serialization using write_json()](#map-serialization-using-write_json)
+      * [Object serialization](#object-serialization)
+        * [Object serialization using write_object()](#object-serialization-using-write_object)
+        * [Object serialization using write_json()](#object-serialization-using-write_json)
+      * [Array\[Object\] serialization](#arrayobject-serialization)
+        * [Array\[Object\] serialization using write_objects()](#arrayobject-serialization-using-write_objects)
+        * [Array\[Object\] serialization using write_json()](#arrayobject-serialization-using-write_json)
+  * [De-serialization of Task Outputs](#de-serialization-of-task-outputs)
+    * [Primitive Types](#primitive-types)
+    * [Compound Types](#compound-types)
+      * [Array deserialization](#array-deserialization)
+        * [Array deserialization using read_lines()](#array-deserialization-using-read_lines)
+        * [Array deserialization using read_json()](#array-deserialization-using-read_json)
+      * [Map deserialization](#map-deserialization)
+        * [Map deserialization using read_map()](#map-deserialization-using-read_map)
+        * [Map deserialization using read_json()](#map-deserialization-using-read_json)
+      * [Object deserialization](#object-deserialization)
+        * [Object deserialization using read_object()](#object-deserialization-using-read_object)
+      * [Array\[Object\] deserialization](#arrayobject-deserialization)
+        * [Object deserialization using read_objects()](#object-deserialization-using-read_objects)
 
 <!---toc end-->
 
@@ -101,20 +124,40 @@ WDL is meant to be a *human readable and writable* way to express tools and work
 
 ```
 task hello {
+  String pattern
+  File in
+
   command {
-    egrep '${pattern}' '${File in}'
+    egrep '${pattern}' '${in}'
   }
+
+  output {
+    Array[String] matches = read_lines(stdout())
+  }
+}
+
+workflow wf {
+  call hello
 }
 ```
 
-This describes a task, called 'hello', which has one parameter (message).  The value of the parameters (called "job parameters") is provided in a language specific way.  The reference implementation accepts the value of the parameters in JSON.  For example:
+This describes a task, called 'hello', which has one parameter (message).  The value of the parameters (called "job parameters") is provided in a language specific way.  Implementations of WDL should accept their [inputs as JSON format](#specifying-workflow-inputs-in-json).  For example, the above task needs values for two parameters: `String pattern` and `File in`:
 
 |Variable|Value    |
 |--------|---------|
 |pattern |^[a-z]+$ |
 |in      |/file.txt|
 
-Running the hello tool with these job parameters would yield a command line:
+Or, in JSON format:
+
+```json
+{
+  "wf.hello.pattern": "^[a-z]+$",
+  "wf.hello.in": "/file.txt"
+}
+```
+
+Running the `wf` workflow with these parameters would yield a command line from the `call hello`:
 
 ```
 egrep '^[a-z]+$' '/file.txt'
@@ -131,19 +174,19 @@ workflow example {
 }
 ```
 
-The inputs to this workflow would be `files` and `hello.pattern`.
+The inputs to this workflow would be `example.files` and `example.hello.pattern`.
 
 ## State of the Specification
 
-This specification is still in the draft phase.  Most of the basics are fairly set in stone but there are some areas of this spec that will be changing rapidly.
+**7 August 2015**
 
-Current things that are being worked out:
-
-1.  [Loop syntax and semantics](https://groups.google.com/forum/#!topic/workflow-description-language/FvzQVOs1KFs)
-2.  Expression Semantics
-3.  [Workflow Output Syntax](https://groups.google.com/forum/#!topic/workflow-description-language/EE-mDCACToY)
-4.  Literal syntax for Object, Array, Map, and File types
-5.  Objects vs. Maps.  Should objects even exist?  How will they be specified?
+* Added concept of fully-qualified-name as well as namespace identifier.
+* Changed task definitions to have all inputs as declarations.
+* Changed command parameters (`${`...`}`) to accept expressions and fewer "declarative" elements
+  * command parameters also are required to evaluate to primitive types
+* Added a `output` section to workflows
+* Added a lot of functions to the standard library for serializing/deserializing WDL values
+* Specified scope, namespace, and variable resolution semantics
 
 # Language Specification
 
@@ -156,23 +199,32 @@ These are common among many of the following sections
 ```
 $ws = (0x20 | 0x9 | 0xD | 0xA)+
 $identifier = [a-zA-Z][a-zA-Z0-9_]+
-$string = "[^"]" | '[^']'
+$string = "([^\\\"\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"
+$string = '([^\\\'\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'
 $boolean = 'true' | 'false'
-$integer = [1-9][0-9]*
-$float = -?[0-9]*.[0-9]+
+$integer = [1-9][0-9]*|0[xX][0-9a-fA-F]+|0[0-7]*
+$float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 ```
 
-> **TODO**: Allow escape sequences in strings
+`$string` can accept the following between single or double-quotes:
+
+* Any character not in set: `\\`, `"` (or `'` for single-quoted string), `\n`
+* An escape sequence starting with `\\`, followed by one of the following characters: `\\`, `"`, `'`, `[nrbtfav]`, `?`
+* An escape sequence starting with `\\`, followed by 1 to 3 digits of value 0 through 7 inclusive.  This specifies an octal escape code.
+* An escape sequence starting with `\\x`, followed by hexadecimal characters `0-9a-fA-F`.  This specifies a hexidecimal escape code.
+* An escape sequence starting with `\\u` or `\\U` followed by either 4 or 8 hexadecimal characters `0-9a-fA-F`.  This specifies a unicode code point
 
 ### Types
 
 All inputs and outputs must be typed.
 
 ```
-$type = $primitive_type | $collection_type
-$primitive_type = ('Boolean' | 'Int' | 'Float' | 'Uri' | 'File' | 'String' | 'Object')
-$collection_type = 'Array' '[' $type ']'
-$collection_type = 'Map' '[' ($primitive_type - 'object') ',' ($primitive_type - 'object') ']'
+$type = ($primitive_type | $array_type | $map_type | $object_type) $type_postfix_quantifier?
+$primitive_type = ('Boolean' | 'Int' | 'Float' | 'Uri' | 'File' | 'String')
+$array_type = 'Array' '[' ($primitive_type | $object_type | $array_type) ']'
+$object_type = 'Object'
+$map_type = 'Map' '[' $primitive_type ',' ($primitive_type | $array_type | $map_type | $object_type) ']'
+$type_postfix_quantifier = '?' | '+'
 ```
 
 Some examples of types:
@@ -182,7 +234,95 @@ Some examples of types:
 * `Map[String, String]`
 * `Object`
 
-For more information on types, see the [Data Types & Serialization](#data-types--serialization) section.
+Types can also have a `$type_postfix_quantifier` (either `?` or `+`):
+
+* `?` means that the value is optional.  Any expressions that fail to evaluate because this value is missing will evaluate to the empty string.
+* `+` can only be applied to `Array` types, and it signifies that the array is required to have one or more values in it
+
+For more details on the `$type_postfix_quantifier`, see the section on [Optional Parameters & Type Constraints](#optional-parameters--type-constraints)
+
+For more information on type and how they are used to construct commands and define outputs of tasks, see the [Data Types & Serialization](#data-types--serialization) section.
+
+### Fully Qualified Names & Namespaced Identifiers
+
+```
+$fully_qualified_name = $identifier ('.' $identifier)*
+$namespaced_identifier = $identifier ('.' $identifier)*
+```
+
+A fully qualified name is the unique identifier of any particular `call` or call input or output.  For example:
+
+other.wdl
+```
+task foobar {
+  File input
+  command {
+    sh setup.sh ${input}
+  }
+  output {
+    File results = stdout()
+  }
+}
+```
+
+main.wdl
+```
+import "other.wdl" as other
+
+task test {
+  String my_var
+  command {
+    ./script ${my_var}
+  }
+  output {
+    File results = stdout()
+  }
+}
+
+workflow wf {
+  Array[String] arr = ["a", "b", "c"]
+  call test
+  call test as test2
+  call other.foobar
+  output {
+    test.results,
+    foobar.results
+  }
+  scatter(x in arr) {
+    call test as scattered_test {
+      input: my_var=x
+    }
+  }
+}
+```
+
+The following fully-qualified names would exist within `workflow wf` in main.wdl:
+
+* `wf` - References top-level workflow
+* `wf.test` - References the first call to task `test`
+* `wf.test2` - References the second call to task `test` (aliased as test2)
+* `wf.test.my_var` - References the `String` input of first call to task `test`
+* `wf.test.results` - References the `File` output of first call to task `test`
+* `wf.test2.my_var` - References the `String` input of second call to task `test`
+* `wf.test2.results` - References the `File` output of second call to task `test`
+* `wf.foobar.results` - References the `File` output of the call to `other.foobar`
+* `wf.foobar.input` - References the `File` input of the call to `other.foobar`
+* `wf.arr` - References the `Array[String]` declaration on the workflow
+* `wf.scattered_test` - References the scattered version of `call test`
+* `wf.scattered_test.my_var` - References an `Array[String]` for each element used as `my_var` when running the scattered version of `call test`.
+* `wf.scattered_test.results` - References an `Array[File]` which are the accumulated results from scattering `call test`
+* `wf.scattered_test.1.results` - References an `File` from the second invocation (0-indexed) of `call test` within the scatter block.  This particular invocation used value "b" for `my_var`
+
+A namespaced identifier has the same syntax as a fully-qualified name.  It is interpreted as the left-hand side being the name of a namespace and then the right-hand side being the name of a workflow, task, or namespace within that namespace.  Consider this workflow:
+
+```
+import "other.wdl" as ns
+workflow wf {
+  call ns.ns2.task
+}
+```
+
+Here, `ns.ns2.task` is a namespace identifier (see the [Call Statement](#call-statement) section for more details).  Namespace identifiers, like fully-qualified names are left-associative, which means `ns.ns2.task` is interpreted as `((ns.ns2).task)`, which means `ns.ns2` would have to resolve to a namespace so that `.task` could be applied.  If `ns2` was a task definition within `ns`, then this namespaced identifier would be invalid.
 
 ### Declarations
 
@@ -190,7 +330,7 @@ For more information on types, see the [Data Types & Serialization](#data-types-
 $declaration = $type $identifier ('=' $expression)?
 ```
 
-Declarations are declared at the top of any [scope](#TODO).
+Declarations are declared at the top of any [scope](#scope).
 
 In a [task definition](#task-definition), declarations are interpreted as inputs to the task that are not part of the command line itself.
 
@@ -202,6 +342,39 @@ Some examples of declarations:
 * `String y = "abc"`
 * `Float pi = 3 + .14`
 * `Map[String, String] m`
+
+A declaration may also refer to elements that are outputs of tasks.  For example:
+
+```
+task test {
+  String var
+  command {
+    ./script ${var}
+  }
+  output {
+    String value = read_string(stdout())
+  }
+}
+
+task test2 {
+  Array[String] array
+  command {
+    ./script ${write_lines(array)}
+  }
+  output {
+    Int value = read_int(stdout())
+  }
+}
+
+workflow wf {
+  call test as x {input: var="x"}
+  call test as y {input: var="y"}
+  Array[String] strs = [x.value, y.value]
+  call test2 as z {input: array=strs}
+}
+```
+
+`strs` in this case would not be defined until both `call test as x` and `call test as y` have successfully completed.  Before that's the case, `strs` is undefined.  If any of the two tasks fail, then evaluation of `strs` should return an error to indicate that the `call test2 as z` operation should be skipped.
 
 ### Expressions
 
@@ -342,16 +515,18 @@ The syntax `x.y` refers to member access.  `x` must be an object or task in a wo
 
 ```
 workflow wf {
-  object obj
+  Object obj
 
-  # This would cause a syntax error, because task1 is defined twice
-  object task1
+  Object foo
 
-  call task1 {
+  # This would cause a syntax error,
+  # because foo is defined twice in the same namespace.
+  call foo {
     input: var=obj.attr # Object attribute
   }
-  call task2 {
-    input: task1.output # Task output
+
+  call foo as foo2 {
+    input: var=foo.output # Task output
   }
 }
 ```
@@ -362,7 +537,9 @@ The syntax `x[y]` is for indexing maps and arrays.  If `x` is an array, then `y`
 
 ### Function Calls
 
-Function calls, in the form of `func(p1, p2, p3, ...)`, are either [standard library functions](#standard-library-functions) or engine-defined functions.  In this current iteration of the spec, users cannot define their own functions.
+Function calls, in the form of `func(p1, p2, p3, ...)`, are either [standard library functions](#standard-library-functions) or engine-defined functions.
+
+In this current iteration of the spec, users cannot define their own functions.
 
 ### Array Literals
 
@@ -442,7 +619,7 @@ For example, `task name { ... }`.  Inside the curly braces defines the sections.
 The task has one or more sections:
 
 ```
-$task_sections = ($command | $runtime | $outputs | $parameter_meta | $meta)+
+$task_sections = ($command | $runtime | $task_output | $parameter_meta | $meta)+
 ```
 
 > *Additional requirement*: Exactly one `$command` section needs to be defined, preferably as the first section.
@@ -454,34 +631,39 @@ $command = 'command' $ws* '{' (0xA | 0xD)* $command_part+ $ws+ '}'
 $command = 'command' $ws* '<<<' (0xA | 0xD)* $command_part+ $ws+ '>>>'
 ```
 
-A command is a *task section* that starts with the keyword 'command', and is enclosed in curly braces.  The body of the command specifies the literal command line to run with placeholders (`$command_part_var`) for the parts of the command line that needs to be filled in.
+A command is a *task section* that starts with the keyword 'command', and is enclosed in curly braces or `<<<` `>>>`.  The body of the command specifies the literal command line to run with placeholders (`$command_part_var`) for the parts of the command line that needs to be filled in.
 
-### Command Parts
+#### Command Parts
 
 ```
 $command_part = $command_part_string | $command_part_var
 $command_part_string = ^'${'+
-$command_part_var = '${' $var_option* $string? $type? $identifier $postfix_quantifier? '}'
-$postfix_quantifier = '?' | '+' | '*'
+$command_part_var = '${' $var_option* $expression '}'
 ```
 
 The parser should read characters from the command line until it reaches a `${` character sequence.  This is interpreted as a literal string (`$command_part_string`).
 
 The parser should interpret any variable enclosed in `${`...`}` as a `$command_part_var`.
 
-The `$string?` portion of `$command_part_var` is interpreted as a prefix that should be prepended to the variable if it's specified.  In the case where the parameter is required, it is better practice to keep this *outside* of the variable (e.g. `-t ${my_param}`) however, if the parameter is optional, it's necessary to keep it *inside* the variable definition to avoid a straggling flag if the parameter is not specified (e.g. `${'-t ' my_param?}`)
-
-the `$type?` portion of `$command_part_var` is also optional, and the default is `string`.
-
-The `$postfix_quantifier` are regular expression-like modifiers for a parameter.
-
-* `?` means this parameter is optional
-* `+` and `*` mean that this parameter can accept 1 or more, or 0 or more (respectively) values.  If one value is given it is treated as normal.  If an *array* of values is passed in then the values are joined together using the 'sep' field in `$var_option`
-
-> *Additional requirement*: If `$postfix_quantifier` is either `+` or `*`, 'sep' must be set for `$var_option`
+The `$expression` usually references declarations at the task level.  For example:
 
 ```
-grep '${start}...${end}' ${File input}
+task test {
+  String flags
+  command {
+    ps ${flags}
+  }
+}
+```
+
+In this case `flags` within the `${`...`}` is an expression.  The `$expression` can also be more complex, like a function call: `write_lines(some_array_value)`
+
+> **NOTE**: the `$expression` in this context can only evaluate to a primitive type (e.g. not `Array`, `Map`, or `Object`).  The only exception to this rule is when `sep` is specified as one of the `$var_option` fields
+
+As another example, consider how the parser would parse the following command:
+
+```
+grep '${start}...${end}' ${input}
 ```
 
 This command would be parsed as:
@@ -491,70 +673,29 @@ This command would be parsed as:
 * `...` - command_part_string
 * `${end}` - command_part_var
 * `' ` - command_part_string
-* `${File input}` - command_part_var
+* `${input}` - command_part_var
 
-
-#### Alternative heredoc syntax
-
-Sometimes a command is sufficiently long enough or might use `{` characters that using a different set of delimiters would make it more clear.  In this case, enclose the command in `<<<`...`>>>`, as follows:
-
-```
-task heredoc {
-  command<<<
-  python <<CODE
-    with open("${File in}") as fp:
-      for line in fp:
-        if not line.startswith('#'):
-          print(line.strip())
-  CODE
-  >>>
-  }
-}
-```
-
-Parsing of this command should be the same as the prior section describes.
-
-> **Note**: the parser should strip any whitespace common to each line in the command.  In the example above, 2 characters should be stripped from the beginning of each line.
-
-#### Parameters Used Multiple Times
-
-In some cases it is desirable to use the same parameter twice in a command.  A parameter can be declared multiple times if each declaration is the same.
-
-For example,
-
-```
-task test {
-  command {
-    ./script ${x} ${String x} ${x}
-  }
-}
-```
-
-Since the default type if one isn't specified is `String`, this should be allowed.  If a value of `foo` is specified for `x`, then the command would instantiate to:
-
-```
-./script foo foo foo
-```
-
-### Command Part Options
+#### Command Part Options
 
 ```
 $var_option = $var_option_key $ws* '=' $ws* $var_option_value
-$var_option_key = 'sep' | 'true' | 'false' | 'serialize' | 'quote' | 'default'
+$var_option_key = 'sep' | 'true' | 'false' | 'quote' | 'default'
 $var_option_value = $expression
 ```
 
 The `$var_option` is a set of key-value pairs for any additional and less-used options that need to be set on a parameter.
 
-#### sep
+##### sep
 
-'sep' is interpreted as the separator string used to join multiple parameters together.  For example, passing the list `[1,2,3]` as a parameter to the command `python script.py ${sep=',' Int numbers+}` would yield the command line:
+'sep' is interpreted as the separator string used to join multiple parameters together.  `sep` is only valid if the expression evaluates to an `Array`.
+
+For example, if there were a declaration `Array[Int] ints = [1,2,3]`, the command `python script.py ${sep=',' numbers}` would yield the command line:
 
 ```
 python script.py 1,2,3
 ```
 
-Alternatively, if the command were `python script.py ${sep=' ' Int numbers+}` it would parse to:
+Alternatively, if the command were `python script.py ${sep=' ' numbers}` it would parse to:
 
 ```
 python script.py 1 2 3
@@ -563,9 +704,8 @@ python script.py 1 2 3
 > *Additional Requirements*:
 >
 > 1.  sep MUST accept only a string as its value
-> 2.  sep MUST be set if the postfix quantifier is `+` or `*`
 
-#### true and false
+##### true and false
 
 'true' and 'false' are only used for type Boolean and they specify what the parameter returns when the Boolean is true or false, respectively.
 
@@ -578,28 +718,61 @@ If either value is left out, then it's equivalent to specifying the empty string
 > 1.  `true` and `false` values MUST be strings.
 > 2.  `true` and `false` are only allowed if the type is `Boolean`
 
-#### serialize
-
-'serialize' expresses how this parameter expects its input to be serialized.  For compound types, the value for this key is the serialization format (e.g. `json`, `tsv`).  A default may be set at the task level under the runtime section.
-
-> *Additional Requirement*: if serialize is specified, the type MUST be a compound type (e.g. `array`, `map`).  Valid values for this parameter are implementation specific but `json` and `tsv` MUST be allowed.
-
-#### default
+##### default
 
 This specifies the default value if no other value is specified for this parameter.
 
 > *Additional Requirements*:
 >
 > 1.  The type of the expression must match the type of the parameter
-> 2.  If 'default' is specified, the `$postfix_quantifier` MUST be `?`
+> 2.  If 'default' is specified, the `$type_postfix_quantifier` for the variable's type MUST be `?`
+
+#### Alternative heredoc syntax
+
+Sometimes a command is sufficiently long enough or might use `{` characters that using a different set of delimiters would make it more clear.  In this case, enclose the command in `<<<`...`>>>`, as follows:
+
+```
+task heredoc {
+  File in
+
+  command<<<
+  python <<CODE
+    with open("${in}") as fp:
+      for line in fp:
+        if not line.startswith('#'):
+          print(line.strip())
+  CODE
+  >>>
+  }
+}
+```
+
+Parsing of this command should be the same as the prior section describes.
+
+#### Stripping Leading Whitespace
+
+Any text inside of the `command` section, after instantiated, should have all *common trailing whitespace* removed.  In the `task heredoc` example in the previous section, if the user specifies a value of `/path/to/file` as the value for `File in`, then the command should be:
+
+```
+python <<CODE
+  with open("/path/to/file") as fp:
+    for line in fp:
+      if not line.startswith('#'):
+        print(line.strip())
+CODE
+```
+
+The 2-spaces that were common to each line were removed.
+
+If the user mixes tabs and spaces, the behavior is undefined.  A warning is suggested, and perhaps a convention of 4 spaces per tab.  Other implementations might return an error in this case.
 
 ### Outputs Section
 
 The outputs section defines which of the files and values should be exported after a successful run of this tool.
 
 ```
-$outputs = 'outputs' $ws* '{' ($ws* $output_kv $ws*)* '}'
-$output_kv = $type $identifier $ws* '=' $ws* $string
+$task_output = 'output' $ws* '{' ($ws* $task_output_kv $ws*)* '}'
+$task_output_kv = $type $identifier $ws* '=' $ws* $string
 ```
 
 The outputs section contains typed variable definitions and a binding to the variable that they export.
@@ -638,7 +811,11 @@ Within tasks, any string literal can use string interpolation to access the valu
 
 ```
 task example {
-  python analysis.py --prefix=${prefix} ${File bam}
+  String prefix
+  File bam
+  command {
+    python analysis.py --prefix=${prefix} ${bam}
+  }
   output {
     File analyzed = "${prefix}.out"
     File bam_sibling = "${bam}.suffix"
@@ -659,23 +836,13 @@ The runtime section defines key/value pairs for runtime information needed for t
 
 While the key/value pairs are arbitrary, but a few of them have special meaning:
 
-#### serialize
-
-Can contain values `json`, `tsv`, or any implementation specific values.
-
-This value specifies the default serialization method for inputs and outputs of this task.  See the section on [Data Types & Serialization](#data-types--serialization) for more information.
-
-
 #### docker
 
 Location of a Docker image for which this task ought to be run
 
-> **TODO**: What is the actual format of the docker field?  URI?
-
 #### memory
 
 Memory requirements for this task.  This should be an integer value with suffixes like `B`, `KB`, `MB`, ... or binary suffixes `KiB`, `MiB`, ...
-
 
 ### Parameter Metadata Section
 
@@ -711,8 +878,11 @@ task hello_world {
 
 ```
 task one_and_one {
+  String pattern
+  File infile
+
   command {
-    grep ${pattern} ${File infile}
+    grep ${pattern} ${infile}
   }
   output {
     File filtered = stdout()
@@ -724,6 +894,11 @@ task one_and_one {
 
 ```
 task runtime_meta {
+  String memory_mb
+  String sample_id
+  String param
+  String sample_id
+
   command {
     java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
   }
@@ -751,12 +926,18 @@ This is an redesign of [BWA mem in CWL](https://github.com/common-workflow-langu
 
 ```
 task bwa-mem-tool {
+  Int threads
+  Int min_seed_length
+  Int min_std_max_min
+  File reference
+  File reads
+
   command {
-    bwa mem -t ${Int threads} \
-            -k ${Int min_seed_length} \
-            -I ${sep=',' Int min_std_max_min+} \
-            ${File reference} \
-            ${sep=' ' File reads+} > output.sam
+    bwa mem -t ${threads} \
+            -k ${min_seed_length} \
+            -I ${sep=',' min_std_max_min+} \
+            ${reference} \
+            ${sep=' ' reads+} > output.sam
   }
   output {
     File sam = "output.sam"
@@ -767,7 +948,7 @@ task bwa-mem-tool {
 }
 ```
 
-Notable pieces in this example is `${sep=',' Int min_std_max_min+}` which specifies that min_std_max_min can be one or more integers (the `+` after the variable name indicates that it can be one or more).  If an `Array[Int]` is passed into this parameter, then it's flattened by combining the elements with the separator character (`sep=','`).
+Notable pieces in this example is `${sep=',' min_std_max_min+}` which specifies that min_std_max_min can be one or more integers (the `+` after the variable name indicates that it can be one or more).  If an `Array[Int]` is passed into this parameter, then it's flattened by combining the elements with the separator character (`sep=','`).
 
 This task also defines that it exports one file, called 'sam', which is the stdout of the execution of bwa mem.
 
@@ -779,8 +960,9 @@ Here's an example of how to rewrite [wc2-tool](https://github.com/common-workflo
 
 ```
 task wc2-tool {
+  File file1
   command {
-    wc ${File file1}
+    wc ${file1}
   }
   output {
     Int count = read_int(stdout())
@@ -820,8 +1002,11 @@ Task definition would look like this:
 
 ```
 task tmap-tool {
+  Array[String] stages
+  File reads
+
   command {
-    tmap mapall ${sep=' ' stages+} < ${File reads} > output.sam
+    tmap mapall ${sep=' ' stages} < ${reads} > output.sam
   }
   output {
     File sam = "output.sam"
@@ -841,7 +1026,7 @@ For this particular case where the command line is *itself* a mini DSL, The best
 ## Workflow Definition
 
 ```
-$workflow = 'workflow' $ws* '{' $workflow_element* '}'
+$workflow = 'workflow' $ws* '{' $ws* $workflow_element* $ws* '}'
 $workflow_element = $call | $loop | $conditional | $declaration | $scatter
 ```
 
@@ -858,14 +1043,18 @@ workflow wf {
 ### Call Statement
 
 ```
-$call = 'call' $namespaced_task_or_wf ('as' $identifier)? $call_body?
-$namespaced_task_or_wf = $identifier ('.' $identifier)*
-$call_body = '{' $inputs? $outputs? '}'
-$inputs = 'input' ':' $variable_mappings
-$variable_mappings = $identifier '=' $expression (',' $identifier '=' $expression)*
+$call = 'call' $ws* $namespaced_identifier $ws+ ('as' $identifier)? $ws* $call_body?
+$call_body = '{' $ws* $inputs? $ws* '}'
+$inputs = 'input' $ws* ':' $ws* $variable_mappings
+$variable_mappings = $variable_mapping_kv (',' $variable_mapping_kv)*
+$variable_mapping_kv = $identifier $ws* '=' $ws* $expression
 ```
 
-A workflow may call other tasks/workflows via the `call` keyword.  The `$namespaced_task_or_wf` is the reference to which task to run, usually this is an identifier or it may use the dot notation if the task was included via an [import statement](#import-statements).  All `calls` must be uniquely identifiable, which is why one would use the `as alias` syntax.
+A workflow may call other tasks/workflows via the `call` keyword.  The `$namespaced_identifier` is the reference to which task to run.  Most commonly, it's simply the name of a task (see examples below), but it can also use `.` as a namespace resolver.
+
+See the section on [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details about how the `$namespaced_identifier` ought to be interpreted
+
+All `calls` must be uniquely identifiable, which is why one would use the `as alias` syntax.
 
 A `call` statement may reference a workflow too (e.g. `call other_workflow`).
 
@@ -881,7 +1070,7 @@ workflow wf {
 }
 ```
 
-The `$call_body` is optional and is meant to specify how to satisfy a subset of the the task's input parameters as well as a way to map tasks outputs to variables defined in the [visible scopes](#TODO).
+The `$call_body` is optional and is meant to specify how to satisfy a subset of the the task's input parameters as well as a way to map tasks outputs to variables defined in the [visible scopes](#scope).
 
 A `$variable_mapping` in the `$inputs` section maps parameters in the task to expressions.  These expressions usually reference outputs of other tasks, but they can be arbitrary expressions.
 
@@ -889,41 +1078,58 @@ As an example, here is a workflow in which the second task references an output 
 
 ```
 task task1 {
-  command {python do_stuff.py}
-  output {File results = stdout()}
+  command {
+    python do_stuff.py
+  }
+  output {
+    File results = stdout()
+  }
 }
 task task2 {
-  command {python do_stuff2.py ${File foobar}}
-  output {File results = stdout()}
+  File foobar
+  command {
+    python do_stuff2.py ${foobar}
+  }
+  output {
+    File results = stdout()
+  }
 }
 workflow wf {
   call task1
-  call task2 {input: foobar=task1.results}
+  call task2 {
+    input: foobar=task1.results
+  }
 }
 ```
 
 ### Scatter
 
 ```
-$scatter = 'scatter' '(' $identifier 'in' $expression ')' '{' $workflow_element* '}'
+$scatter = 'scatter' $ws* '(' $ws* $scatter_iteration_statment $ws*  ')' $ws* $scatter_body
+$scatter_iteration_statment = $identifier $ws* 'in' $ws* $expression
+$scatter_body = '{' $ws* $workflow_element* $ws* '}'
 ```
 
-A "scatter" clause defines that everything in the body can be run in parallel.  The clause in parentheses declares which collection to scatter over and what to call each element.
+A "scatter" clause defines that everything in the body (`$scatter_body`) can be run in parallel.  The clause in parentheses (`$scatter_iteration_statement`) declares which collection to scatter over and what to call each element.
+
+The `$scatter_iteration_statement` has two parts: the "item" and the "collection".  For example, `scatter(x in y)` would define `x` as the item, and `y` as the collection.  The item is always an identifier, while the collection is an expression that MUST evaluate to an `Array` type.  The item will represent each item in that expression.  For example, if `y` evaluated to an `Array[String]` then `x` would be a `String`.
+
+The `$scatter_body` defines a set of scopes that will execute in the context of this scatter block.
 
 For example, if `$expression` is an array of integers of size 3, then the body of the scatter clause can be executed 3-times in parallel.  `$identifier` would refer to each integer in the array.
-
-> **Question** can the `$expression` be a map?
 
 ```
 scatter(i in integers) {
   call task1{input: num=i}
-  call task2{input: num=task1.output[i.index]}
+  call task2{input: num=task1.output}
 }
 ```
 
 In this example, `task2` depends on `task1`.  Variable `i` has an implicit `index` attribute to make sure we can access the right output from `task1`.  Since both task1 and task2 run N times where N is the length of the array `integers`, any scalar outputs of these tasks is now an array.
 
 ### Loops
+
+> **TODO**: This section is not complete
 
 ```
 $loop = 'while' '(' $expression ')' '{' $workflow_element* '}'
@@ -942,94 +1148,41 @@ Conditionals only execute the body if the expression evaluates to true
 ### Outputs
 
 ```
-$outputs = 'output' '{' ($expression (',' $expression)*)? '}'
+$workflow_output = 'output' '{' ($workflow_output_fqn (',' $workflow_output_fqn)* '}'
+$workflow_output_fqn = $fully_qualified_name '.*'?
 ```
 
-Some ideas for workflow output syntax:
+There MUST be at most one output per `workflow` definition.  This section describes fully-qualified names to `call`s that you want to expose as outputs to the workflow.
+
+If this section is omitted, then it considers all outputs from all tasks to be the workflow's outputs.
+
+The fully-qualified names specified in this section do not need to include the workflow name, as that would be redundant.
 
 ```
-task1 # All outputs of task1  
-task1.* # Same  
-task1 <*, !out1, !out2> # Exclusion list  
-task1 <!out1, !out2> # Maybe implies *?  
-task1 <out3, out4> # Inclusion list  
-task1.<out2, !out3> # Dot notation?  
-task1.<out5, *> # Error, * and inclusion elements are mutually exclusive?  
-```
-
-This section defines what variables the workflow exports.
-
-> **TODO**: Need to define how these are structured
-
-> **Question**: Is there a way to specify exclusion lists?  We can specify `some_task.*` for all of that task's outputs, but what about all of that task's outputs except for a few?
-
-### Examples
-
-#### Example 1: dRanger
-
-```
-workflow dRanger {
-  call LaneBlackList
-  scatter(sample in samples) {
-    call dRangerPreprocess {
-      input: blacklist=LaneBlackList.blacklist
-    }
-  }
-  call dRangerRun {
-    input: dirs = dRangerPreprocess.dir
-  }
-  scatter(sample in samples) {
-    call BreakPointer {
-      input: lane.blacklist=LaneBlackList.blacklist,
-             dRanger_results.txt=dRangerRun.forBP,
-             insertionsize=dRangerPreprocess.all_isz[sample.index]
-    }
-  }
-  call CreateCircosPlot {
-    input: dRanger_file=dRangerRun.forBP
-  }
-  call dRangerFinalize {
-    input: BP=BreakPointer.BP, dRmatfile=dRangerRun.mat, circospng=CreateCircosPlot.circos_png
-  }
-  output {
-    dRangerFinalize.dRanger_results
-  }
+task task1 {
+  command { ./script }
+  output { File results = stdout() }
 }
-```
 
-# Variable Resolution & Scoping
-
-Scopes are defined as:
-
-* `workflow {...}` blocks
-* `call` statements
-* `while(expr) {...}` blocks
-* `if(expr) {...}` blocks
-* `scatter(x in y) {...}` blocks
-
-Inside of any scope, variables may be [declared](#declarations).  The variables declared in that scope are visible to any sub-scope, recursively.  For example:
-
-```
-task my_task {
-  Int x
-  command {
-    my_cmd --integer=${var}
+task task2 {
+  command { ./script2 }
+  output {
+    File results = stdout()
+    String value = read_string("some_file")
   }
 }
 
 workflow wf {
-  Int x = 2
-  workflow wf2 {
-    Int x = 3
-    call my_task {
-      Int x = 4
-      input: var=x
-    }
+  call task1
+  call task2
+  output {
+    task1.*,
+    task2.output
   }
 }
 ```
 
-`my_task` will use `x=4` to set the value for `var` in its command line.  However, my_task also needs a value for `x` which is defined at the task level.  Since `my_task` has two inputs (`x` and `var`), and only one of those is set in the `call my_task` declaration, the value for `my_task.x` still needs to be provided by the user when the workflow is run.
+In this example, the fully-qualified names that would be exposed as workflow outputs would be `wf.task1.results`, `wf.task2.output`.
 
 # Namespaces
 
@@ -1069,9 +1222,386 @@ workflow wf {
 
 Now everything inside of `tasks.wdl` must be accessed through the namespace `ns`.
 
-## Additional Namespace Requirements
-
 Each namespace contains: namespaces, tasks, and workflows.  The names of these needs to be unique within that namespace.  For example, there cannot be a task named `foo` and also a namespace named `foo`.  Also there can't be a task and a workflow with the same names, or two workflows with the same name.
+
+# Scope
+
+Scopes are defined as:
+
+* `workflow {...}` blocks
+* `call` blocks
+* `while(expr) {...}` blocks
+* `if(expr) {...}` blocks
+* `scatter(x in y) {...}` blocks
+
+Inside of any scope, variables may be [declared](#declarations).  The variables declared in that scope are visible to any sub-scope, recursively.  For example:
+
+```
+task my_task {
+  Int x
+  File f
+  command {
+    my_cmd --integer=${var} ${f}
+  }
+}
+
+workflow wf {
+  Array[File] files
+  Int x = 2
+  scatter(file in files) {
+    Int x = 3
+    call my_task {
+      Int x = 4
+      input: var=x, f=file
+    }
+  }
+}
+```
+
+`my_task` will use `x=4` to set the value for `var` in its command line.  However, `my_task` also needs a value for `x` which is defined at the task level.  Since `my_task` has two inputs (`x` and `var`), and only one of those is set in the `call my_task` declaration, the value for `my_task.x` still needs to be provided by the user when the workflow is run.
+
+# Optional Parameters & Type Constraints
+
+[Types](#types) can be optionally suffixed with a `?` or `+` in certain cases.
+
+* `?` means that the parameter is optional.  A user does not need to specify a value for the parameter in order to satisfy all the inputs to the workflow.
+* `+` applies only to `Array` types and it represents a constraint that the `Array` value must containe one-or-more elements.
+
+```
+task test {
+  Array[File]  a
+  Array[File]+ b
+  Array[File]? c
+  #File+ d <-- can't do this, + only applies to Arrays
+
+  command {
+    /bin/mycmd ${sep=" " a}
+    /bin/mycmd ${sep="," b}
+    /bin/mycmd ${write_lines(c)}
+  }
+}
+
+workflow wf {
+  call test
+}
+```
+
+If you provided these values for inputs:
+
+|var      |value|
+|---------|-----|
+|wf.test.a|["1", "2", "3"]|
+|wf.test.b|[]|
+
+The workflow engine should reject this because `wf.test.b` is required to have at least one element.  If we change it to:
+
+|var      |value|
+|---------|-----|
+|wf.test.a|["1", "2", "3"]|
+|wf.test.b|["x"]|
+
+This would be valid input because `wf.test.c` is not required.  Given these values, the command would be instantiated as:
+
+```
+/bin/mycmd 1 2 3
+/bin/mycmd x
+/bin/mycmd
+```
+
+If our inputs were:
+
+|var      |value|
+|---------|-----|
+|wf.test.a|["1", "2", "3"]|
+|wf.test.b|["x","y"]|
+|wf.test.c|["a","b","c","d"]|
+
+Then the command would be instantiated as:
+
+```
+/bin/mycmd 1 2 3
+/bin/mycmd x,y
+/bin/mycmd /path/to/c.txt
+```
+
+## Prepending a String to an Optional Parameter
+
+Sometimes, optional parameters need a string prefix.  Consider this task:
+
+```wdl
+task {
+  String? val
+  command {
+    python script.py --val=${val}
+  }
+}
+```
+
+Since `val` is optional, this command line can be instantiated in two ways:
+
+```
+python script.py --val=foobar
+```
+
+Or
+
+```
+python script.py --val=
+```
+
+The latter case is very likely an error case, and this `--val=` part should be left off if a value for `val` is omitted.  To solve this problem, modify the expression inside the template tag as follows:
+
+```
+python script.py ${"--val=" + val}
+```
+
+# Scatter / Gather
+
+The `scatter` block is meant to parallelize a series of identical tasks but give them slightly different inputs.  The simplest example is:
+
+```
+task inc {
+  Int i
+
+  command <<<
+  python -c "print(${i} + 1)"
+  >>>
+
+  output {
+    Int incremented = read_int(stdout())
+  }
+}
+
+workflow wf {
+  Array[Int] integers = [1,2,3,4,5]
+  scatter(i in integers) {
+    call inc{input: i=i}
+  }
+}
+```
+
+Running this workflow (which needs no inputs), would yield a value of `[2,3,4,5,6]` for `wf.inc`.  While `task inc` itself returns an `Int`, when it is called inside a scatter block, that type becomes an `Array[Int]`.
+
+Any task that's downstream from the call to `inc` and outside the scatter block must accept an `Array[Int]`:
+
+
+```
+task inc {
+  Int i
+
+  command <<<
+  python -c "print(${i} + 1)"
+  >>>
+
+  output {
+    Int incremented = read_int(stdout())
+  }
+}
+
+task sum {
+  Array[Int] ints
+
+  command <<<
+  python -c "print(${sep="+" ints})"
+  <<<
+
+  output {
+    Int sum = read_int(stdout())
+  }
+}
+
+workflow wf {
+  Array[Int] integers = [1,2,3,4,5]
+  scatter (i in integers) {
+    call inc {input: i=i}
+  }
+  call sum {input: ints = inc.increment}
+}
+```
+
+This workflow will output a value of `20` for `wf.sum.sum`.  This works because `call inc` will output an `Array[Int]` because it is in the scatter block.
+
+However, from inside the scope of the scatter block, the output of `call inc` is still an `Int`.  So the following is valid:
+
+```
+workflow wf {
+  Array[Int] integers = [1,2,3,4,5]
+  scatter(i in integers) {
+    call inc {input: i=i}
+    call inc as inc2 {input: i=inc.incremented}
+  }
+  call sum {input: ints = inc2.increment}
+}
+```
+
+In this example, `inc` and `inc2` are being called in serial where the output of one is fed to another.  inc2 would output the array `[3,4,5,6,7]`
+
+# Variable Resolution
+
+Inside of [expressions](#expressions), variables are resolved differently depending on if the expression is in a `task` declaration or a `workflow` declaration
+
+## Task-Level Resolution
+
+Inside a task, resolution is trivial: The variable referenced MUST be a [declaration](#declarations) of the task.  For example:
+
+```
+task my_task {
+  Array[String] strings
+  command {
+    python analyze.py --strings-file=${write_lines(strings)}
+  }
+}
+```
+
+Inside of this task, there exists only one expression: `write_lines(strings)`.  In here, when the expression evaluator tries to resolve `strings`, which must be a declaration of the task (in this case it is).
+
+## Workflow-Level Resolution
+
+In a workflow, resolution works by traversing the scope heirarchy starting from expression that references the variable.
+
+```
+workflow wf {
+  String s = "wf_s"
+  Strnig t = "t"
+  call my_task {
+    String s = "my_task_s"
+    input: in0 = s+"-suffix", in1 = t+"-suffix"
+  }
+}
+```
+
+In this example, there are two expressions: `s+"-suffix"` and `t+"-suffix"`.  `s` is resolved as `"my_task_s"` and `t` is resolved as `"t"`.
+
+# Computing Inputs
+
+Both tasks and workflows have a typed inputs that must be satisfied in order to run.  The following sections describe how to compute inputs for `task` and `workflow` declarations
+
+## Task Inputs
+
+Tasks define all their outputs as declarations at the top of the task definition.
+
+```
+task test {
+  String s
+  Int i
+  Float f
+
+  command {
+    ./script.sh -i ${i} -f ${f}
+  }
+}
+```
+
+In this example, `s`, `i`, and `f` are inputs to this task.  Even though the command line does not reference `${s}`.  Implementations of WDL engines may display a warning or report an error in this case, since `s` isn't used.
+
+## Workflow Inputs
+
+Workflows have declarations, like tasks, but a workflow must also account for all calls to sub-tasks when determining inputs.
+
+Workflows also return their inputs as fully qualified names.  Tasks only return the names of the variables as inputs (as they're guaranteed to be unique within a task).  However, since workflows can call the same task twice, names might collide.  The general algorithm for computing inputs going something like this:
+
+* Take all inputs to all `call` statements in the workflow
+* Subtract out all inputs that are satisfied through the `input: ` section
+* Add in all declarations which don't have a static value defined
+
+Consider the following workflow:
+
+```
+task t1 {
+  String s
+  Int x
+
+  command {
+    ./script --action=${s} -x${x}
+  }
+  output {
+    Int count = read_int(stdout())
+  }
+}
+
+task t2 {
+  String s
+  Int t
+  Int x
+
+  command {
+    ./script2 --action=${s} -x${x} --other=${t}
+  }
+  output {
+    Int count = read_int(stdout())
+  }
+}
+
+task t3 {
+  Int y
+  File ref_file # Do nothing with this
+
+  command {
+    python -c "print(${y} + 1)"
+  }
+  output {
+    Int incr = read_int(stdout())
+  }
+}
+
+workflow wf {
+  Int int_val
+  Int int_val2 = 10
+  Array[Int] my_ints
+  File ref_file
+
+  call t1 {
+    input: x=int_val
+  }
+  call t2 {
+    input: x=int_val, t=t1.count
+  }
+  scatter(i in my_ints) {
+    call t3 {
+      input: y=i, ref=ref_file
+    }
+  }
+}
+```
+
+The inputs to `wf` would be:
+
+* `wf.t1.s` as a `String`
+* `wf.t2.s` as a `String`
+* `wf.int_val` as an `Int`
+* `wf.my_ints` as an `Array[Int]`
+* `wf.ref_file` as a `File`
+
+## Specifying Workflow Inputs in JSON
+
+Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow.  Workflow inputs are specified in JSON or YAML format.  In JSON, the inputs to the workflow in the previous section can be:
+
+```
+{
+  "wf.t1.s": "some_string",
+  "wf.t2.s": "some_string",
+  "wf.int_val": 3,
+  "wf.my_ints": [5,6,7,8],
+  "wf.ref_file": "/path/to/file.txt"
+}
+```
+
+It's important to note that the type in JSON must be coercable to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "3"`, this coercion from string to integer is not valid and would result in a type error.  See the section on [Type Coercion](#type-coercion) for more details.
+
+# Type Coercion
+
+Within WDL files as well as converting from JSON types to WDL types, there are some situations where a WDL type can be constructed from a non-obvious type.  The table below shows how to construct each WDL type from other types:
+
+|WDL Type     |Can Accept    |Notes / Constraints                                   |
+|-------------|--------------|------------------------------------------------------|
+|`Integer`    |JSON Number   |Interpreted as the floor of the value for non-integers|
+|`Float`      |JSON Number   ||
+|             |`Integer`     ||
+|`File`       |JSON String   |Interpreted opaquely as file path|
+|             |`String`      |Interpreted opaquely as file path|
+|`String`     |JSON String   ||
+|`Array[T]`   |JSON Array    |Elements must be coercable to `T`|
+|`Map[K, V]`  |JSON Object   |keys and values must be coercable to `K` and `V`, respectively|
 
 # Standard Library
 
@@ -1093,8 +1623,10 @@ This task would `grep` through a file and return all strings that matched the pa
 
 ```
 task do_stuff {
+  String pattern
+  File input
   command {
-    grep '${pattern}' ${File input}
+    grep '${pattern}' ${input}
   }
   output {
     Array[String] matches = read_lines(stdout())
@@ -1112,8 +1644,9 @@ For example, if I write a task that outputs a file to `./results/file_list.tsv`,
 
 ```
 task do_stuff {
+  File input
   command {
-    python do_stuff.py ${File input}
+    python do_stuff.py ${input}
   }
   output {
     Array[Array[String]] output_table = read_tsv("./results/file_list.tsv")
@@ -1133,14 +1666,92 @@ The following task would write a two-column TSV to standard out and that would b
 
 ```
 task do_stuff {
+  String flags
+  File input
   command {
-    ./script --flags=${flags} ${File input}
+    ./script --flags=${flags} ${input}
   }
   output {
     Map[String, String] mapping = read_map(stdout())
   }
 }
 ```
+
+## Object read_object(String|File|Uri)
+
+Given a file-like object that contains a 2-row and n-column TSV file, this function will turn that into an Object.
+
+```
+task test {
+  command <<<
+    python <<CODE
+    print('\t'.join(["key_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    CODE
+  >>>
+  output {
+    Object my_obj = read_object(stdout())
+  }
+}
+```
+
+The command will output to stdout the following:
+
+```
+key_1\tkey_2\tkey_3
+value_1\tvalue_2\tvalue_3
+```
+
+Which would be turned into an `Object` in WDL that would look like this:
+
+|Attribute|Value|
+|---------|-----|
+|key_1    |"value_1"|
+|key_2    |"value_2"|
+|key_3    |"value_3"|
+
+## Array[Object] read_objects(String|File|Uri)
+
+Given a file-like object that contains a 2-row and n-column TSV file, this function will turn that into an Object.
+
+```
+task test {
+  command <<<
+    python <<CODE
+    print('\t'.join(["key_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    CODE
+  >>>
+  output {
+    Array[Object] my_obj = read_objects(stdout())
+  }
+}
+```
+
+The command will output to stdout the following:
+
+```
+key_1\tkey_2\tkey_3
+value_1\tvalue_2\tvalue_3
+value_1\tvalue_2\tvalue_3
+value_1\tvalue_2\tvalue_3
+```
+
+Which would be turned into an `Array[Object]` in WDL that would look like this:
+
+|Index|Attribute|Value|
+|-----|---------|-----|
+|0    |key_1    |"value_1"|
+|     |key_2    |"value_2"|
+|     |key_3    |"value_3"|
+|1    |key_1    |"value_1"|
+|     |key_2    |"value_2"|
+|     |key_3    |"value_3"|
+|2    |key_1    |"value_1"|
+|     |key_2    |"value_2"|
+|     |key_3    |"value_3"|
 
 ## mixed read_json(String|File|Uri)
 
@@ -1161,8 +1772,9 @@ For example, if I write a task that outputs a file to `./results/file_list.json`
 
 ```
 task do_stuff {
+  File input
   command {
-    python do_stuff.py ${File input}
+    python do_stuff.py ${input}
   }
   output {
     Map[String, String] output_table = read_json("./results/file_list.json")
@@ -1188,13 +1800,201 @@ The `read_float()` function takes a file path which is expected to contain 1 lin
 
 ## Boolean read_boolean(String|File|Uri)
 
-The `read_boolean()` function takes a file path which is expected to contain 1 line with 1 Boolean value (either "true" or "false" on it.  This function returns that Boolean value.
+The `read_boolean()` function takes a file path which is expected to contain 1 line with 1 Boolean value (either "true" or "false" on it).  This function returns that Boolean value.
+
+## File write_lines(Array[String])
+
+Given something that's compatible with `Array[String]`, this writes each element to it's own line on a file.  with newline `\n` characters as line separators.
+
+```
+task example {
+  Array[String] array = ["first", "second" "third"]
+  command {
+    ./script --file-list=${write_lines(array)}
+  }
+}
+```
+
+If this task were run, the command might look like:
+
+```
+./script --file-list=/local/fs/tmp/array.txt
+```
+
+And `/local/fs/tmp/array.txt` would contain:
+
+```
+first
+second
+third
+```
+
+## File write_tsv(Array[Array[String]])
+
+Given something that's compatible with `Array[Array[String]]`, this writes a TSV file of the data structure.
+
+```
+task example {
+  Array[String] array = [["one", "two" "three"], ["un", "deux", "trois"]]
+  command {
+    ./script --tsv=${write_tsv(array)}
+  }
+}
+```
+
+If this task were run, the command might look like:
+
+```
+./script --tsv=/local/fs/tmp/array.tsv
+```
+
+And `/local/fs/tmp/array.tsv` would contain:
+
+```
+one\ttwo\tthree
+un\tdeux\ttrois
+```
+
+## File write_map(Map[String, String])
+
+Given something that's compatible with `Map[String, String]`, this writes a TSV file of the data structure.
+
+```
+task example {
+  Map[String, String] map = {"key1": "value1", "key2": "value2"}
+  command {
+    ./script --map=${write_map(map)}
+  }
+}
+```
+
+If this task were run, the command might look like:
+
+```
+./script --tsv=/local/fs/tmp/map.tsv
+```
+
+And `/local/fs/tmp/map.tsv` would contain:
+
+```
+key1\tvalue1
+key2\tvalue2
+```
+
+## File write_object(Object)
+
+Given any `Object`, this will write out a 2-row, n-column TSV file with the object's attributes and values.
+
+```
+task test {
+  Object input
+  command <<<
+    /bin/do_work --obj=${write_object(input)}
+  >>>
+  output {
+    File results = stdout()
+  }
+}
+```
+
+if `input` were to have the value:
+
+|Attribute|Value|
+|---------|-----|
+|key_1    |"value_1"|
+|key_2    |"value_2"|
+|key_3    |"value_3"|
+
+The command would instantiate to:
+
+```
+/bin/do_work --obj=/path/to/input.tsv
+```
+
+Where `/path/to/input.tsv` would contain:
+
+```
+key_1\tkey_2\tkey_3
+value_1\tvalue_2\tvalue_3
+```
+
+## File write_objects(Array[Object])
+
+Given any `Array[Object]`, this will write out a 2+ row, n-column TSV file with each object's attributes and values.
+
+```
+task test {
+  Array[Object] input
+  command <<<
+    /bin/do_work --obj=${write_objects(input)}
+  >>>
+  output {
+    File results = stdout()
+  }
+}
+```
+
+if `input` were to have the value:
+
+|Index|Attribute|Value|
+|-----|---------|-----|
+|0    |key_1    |"value_1"|
+|     |key_2    |"value_2"|
+|     |key_3    |"value_3"|
+|1    |key_1    |"value_4"|
+|     |key_2    |"value_5"|
+|     |key_3    |"value_6"|
+|2    |key_1    |"value_7"|
+|     |key_2    |"value_8"|
+|     |key_3    |"value_9"|
+
+The command would instantiate to:
+
+```
+/bin/do_work --obj=/path/to/input.tsv
+```
+
+Where `/path/to/input.tsv` would contain:
+
+```
+key_1\tkey_2\tkey_3
+value_1\tvalue_2\tvalue_3
+value_4\tvalue_5\tvalue_6
+value_7\tvalue_8\tvalue_9
+```
+
+## File write_json(mixed)
+
+Given something with any type, this writes the JSON equivalent to a file.  See the table in the definition of [read_json()](#mixed-read_jsonstringfileuri)
+
+```
+task example {
+  Map[String, String] map = {"key1": "value1", "key2": "value2"}
+  command {
+    ./script --map=${write_json(map)}
+  }
+}
+```
+
+If this task were run, the command might look like:
+
+```
+./script --tsv=/local/fs/tmp/map.json
+```
+
+And `/local/fs/tmp/map.json` would contain:
+
+```
+{
+  "key1": "value1"
+  "key2": "value2"
+}
+```
+
 
 # Data Types & Serialization
 
-## Overview
-
-Tasks and workflows are given values for their input parameters in order to run.  The type of each of those parameters is specified in the `${`...`}` syntax in the task definition.  For example, `${float quality_score}` or `${Array[File] bams}`.  If no type is specified, the default type is `string`.  Those input parameters can be any of the following types:
+Tasks and workflows are given values for their input parameters in order to run.  The type of each of those input parameters are declarations on the `task` or `workflow`.  Those input parameters can be any of the following types:
 
 Primitives:
 * [String](#string)
@@ -1209,147 +2009,94 @@ Compound Types:
 * [Map\[Type, Type\]](#map) (e.g. `Map[String, File]`)
 * [Object](#object)
 
-> **Question**: Will we be able to support "stream" types?  This could be as simple as named pipes or as complex as a new system like `stream://path/to/stream` which would mean the contract between tasks and workflows would require tasks to support this protocol.
-
-## Serialization
-
-These types are then passed to the task via a serialization method.  This is the main contract between WDL and the tools themselves.  Tools are expected to understand these the serialization formats for the types that they need to deal with, but WDL offers flexibility in how the data types can be serialized.
+When a WDL workflow engine instantiates a command specified in the `command` section of a `task`, it must serialize all `${...}` tags in the command into primitive types.
 
 For example, if I'm writing a tool that operates on a list of FASTQ files, there are a variety of ways that this list can be passed to that task:
 
-* A file containing one file path per line (e.g. `./mytool fastq_list.txt`)
-* A file containing a JSON list (e.g. `./mytool fastq_list.json`)
-* Enumerated on the command line (e.g. (`./mytool 1.fastq 2.fastq 3.fastq`)
+* A file containing one file path per line (e.g. `Rscript analysis.R --files=fastq_list.txt`)
+* A file containing a JSON list (e.g. `Rscript analysis.R --files=fastq_list.json`)
+* Enumerated on the command line (e.g. (`Rscript analysis.R 1.fastq 2.fastq 3.fastq`)
 
 Each of these methods has its merits and one method might be better for one tool while another method would be better for another tool.
 
-On the other end, tasks need to be able to communicate data structures back to the workflow engine.  For example, let's say this same tool that takes a list of FASTQs wants to return back a `Map[File, Int]` representing the number of reads in each FASTQ.  A tool might choose to output it as a two-column TSV or as a JSON object.
+On the other end, tasks need to be able to communicate data structures back to the workflow engine.  For example, let's say this same tool that takes a list of FASTQs wants to return back a `Map[File, Int]` representing the number of reads in each FASTQ.  A tool might choose to output it as a two-column TSV or as a JSON object and WDL needs to know how to convert that to the proper data type.
 
-This specification lays out the serialization format for three major types:
+WDL provides some [standard library functions](#standard-library) for converting compound types like `Array` into primitive types, like `File`.
 
-* TSV - flat-file serialization meant to capture all basic data structures and providing easy reading/writing.  Also great for compatibility with UNIX tools.
-* JSON - for higher-order data types (i.e. `Array[String, Map[int, file]]`) or for tools that prefer JSON over TSV
-* Single-File JSON - All inputs and all outputs are done through one file each.
-
-The rest of this spec outlines the types and how they serialize in TSV format.
-
-### Serialization of Primitive Output Types
-
-Serializing primitive inputs makes intuitive sense because the value is just turned into a string and inserted into the command line.
-
-However, outputting primitive types requires that the task write files with those values in them.  The contract is that any task that wants to output a primitive must write that primitive to a file.  The file should only contain one-line for clarity.
-
-For example, if I have a task that outputs a URI and an integer:
+When a task finishes, the `output` section defines how to convert the files and stdout/stderr into WDL types.  For example,
 
 ```
-task output_example {
+task test {
+  Array[File] files
   command {
-    python do_work.py ${param1} ${param2}
+    Rscript analysis.R --files=${sep=',' files}
   }
   output {
-    Int my_int = "file_with_int"
-    Uri my_uri = "file_with_uri"
+    Array[String] strs = read_lines(stdout())
   }
 }
 ```
 
-> **TODO**: What about single-file JSON?
+Here, the expression `read_lines(stdout())` says "take the output from stdout, break into lines, and return that result as an Array[String]".  See the definition of [read_lines](#arraystring-read_linesstringfileuri) and [stdout](#mixed-stdout) for more details.
 
-Both of `file_with_int` and `file_with_uri` should contain one line with the value on that line.  This value is then validated against the type of the variable.  If `file_with_int` contains a line with the text "foobar", the workflow must fail this task with an error.
+## Serialization of Task Inputs
 
-### Serialization of Compound Output Types
+### Primitive Types
 
-Compound types must be outputted via a TSV or JSON file with corresponding file extension.
+Serializing primitive inputs into strings is intuitively easy because the value is just turned into a string and inserted into the command line.
+
+Consider this example:
 
 ```
 task output_example {
+  String s
+  Int i
+  Float f
+  Uri u
+
   command {
-    python do_work.py ${param1} ${param2}
-  }
-  output {
-    Map[String, file] my_map = "file_with_string_to_file.tsv"
-    Array[Int] my_ints = "file_with_ints.json"
+    python do_work.py ${s} ${i} ${f} ${u}
   }
 }
 ```
 
-In this case, `my_map` comes from a [TSV file](#map-serialization-as-tsv) and `my_ints` comes from a [JSON File](#array-serialization-as-json).
+If I provide values for the declarations in the task as:
 
-> **TODO**: What about single-file JSON?
+|var|value|
+|---|-----|
+|s  |"str"|
+|i  |2    |
+|f  |1.3  |
+|u  |scheme://path|
 
-## Primitive Types
-
-All primitive types are serialized as a string and provided as-is to the command line.
-
-### String
-
-The String type is the most basic and default type.  The value is serialized directly as a parameter on the command line, quoted.
-
-```
-java -jar MyTool.jar ${my_param}
-```
-
-If an invocation of this tool is "foo bar" the value for `my_param`, the resulting command line is:
+Then, the command would be instantiated as:
 
 ```
-java -jar MyTool.jar foo bar
+python do_work.py str 2 1.3 scheme://path
 ```
 
-### Int and Float
+### Compound Types
 
-The Int and Float types are similar in a lot of ways to the String type except that the workflow engine must verify that the provided value for these parameters is compatible with either float or int types.
+Compound types, like `Array` and `Map` must be converted to a primitive type before it can be used in the command.  There are many ways to turn a compound types into primitive types, as laid out in following sections
 
-```
-sh script.sh ${Int iterations} --pi=${Float pi}
-```
-
-if "foobar" is provided for the `iterations` parameter, the workflow engine should return an error.  However, if the String "2" is provided for `iterations` this should be considered int compatible.  Likewise, valid values for pi could be: 3, "3.14", 3.1.  If we were to provide the values iterations=2 and pi=3.14, the resulting command line would be:
-
-```
-sh script.sh 2 --pi=3.14
-```
-
-> **TODO**: regular expression patterns for Int and Float (steal from a language standard)
-
-### File and Uri
-
-Like Int and Float types, File and Uri types are a special case and the workflow engine must verify the values of these before calling the tool.  The file type may be a URI starting with `file://`, but the schema is striped when it is called.  URIs are any string that conform to [RFC 3986](https://tools.ietf.org/html/rfc3986).
-
-```
-python algorithm.py ${File bam} ${Uri gcs_bucket}
-```
-
-If we provide `bam=file:///root/input.bam` and `gcs_bucket=gs://bucket/`, then the resulting command line is:
-
-```
-python algorithm.py /root/input.bam gs://bucket/
-```
-
-### Boolean
-
-Boolean types are serialized as either the string `true` or `false` on the command line.
-
-## Compound Types
-
-Compound types cannot always be serialized directly to the command line, so there are different strategies for serializing them, which is described in the sections below
-
-> **Note**: The location of the TSV/JSON file is implementation specific.  The only requirement is that it's a path on the local file system.
-
-> **Note**: new-line characters must be \n (0xA) characters.
-
-### array
+#### Array serialization
 
 Arrays can be serialized in two ways:
 
 * **Array Expansion**: elements in the list are flattened to a string with a separator character.
 * **File Creation**: create a file with the elements of the array in it and passing that file as the parameter on the command line.
 
-#### array serialization by expansion
+##### Array serialization by expansion
 
-The array flattening approach can be done if a parameter is specified as `${sep=' ' File my_param+}`.  This format for specifying a parameter means that `my_param` may take a single file or an array of files.  If an array is specified, then the values are joined together with the separator character (a space).  For example:
+The array flattening approach can be done if a parameter is specified as `${sep=' ' my_param}`.  `my_param` must be declared as an `Array` of primitive types.  When the value of `my_param` is specified, then the values are joined together with the separator character (a space in this case).  For example:
 
 ```
-python script.py --bams=${sep=',' File bams*}
+task test {
+  Array[File] bams
+  command {
+    python script.py --bams=${sep=',' bams}
+  }
+}
 ```
 
 If passed an array for the value of `bams`:
@@ -1362,17 +2109,18 @@ If passed an array for the value of `bams`:
 
 Would produce the command `python script.py --bams=/path/to/1.bam,/path/to/2.bam,/path/to/1.bam`
 
-> **Question**: What about if sep=' ' and you don't want to quote?
-
-#### array serialization as TSV
+##### Array serialization using write_lines()
 
 An array may be turned into a file with each element in the array occupying a line in the file.
 
 ```
-sh script.sh ${serialize='tsv' Array[File] bams}
+task test {
+  Array[File] bams
+  command {
+    sh script.sh ${write_lines(bams)}
+  }
+}
 ```
-
-> **NOTE**: the `serialize='tsv'` option is only here for completeness.  A default value for serialization may be provided at the task level or the workflow engine.
 
 if `bams` is given this array:
 
@@ -1385,10 +2133,10 @@ if `bams` is given this array:
 Then, the resulting command line could look like:
 
 ```
-sh script.sh /jobs/564758/bams.tsv
+sh script.sh /jobs/564758/bams
 ```
 
-Where `/jobs/564758/bams.tsv` would contain:
+Where `/jobs/564758/bams` would contain:
 
 ```
 /path/to/1.bam
@@ -1396,17 +2144,18 @@ Where `/jobs/564758/bams.tsv` would contain:
 /path/to/3.bam
 ```
 
-> *Additional requirement*: Because of the limitations of the TSV file format, multi-dimensional arrays may not be expressed using this approach.  Trying to serialize an `Array[Array[Array[String]]]` in TSV is too cumbersome to support.  Because of this, only arrays of primitive types are supported with TSV serialization.  The syntax checker MUST check that if the serialization format is TSV that the type is compatible
-
-#### array serialization as JSON
+##### Array serialization using write_json()
 
 The array may be turned into a JSON document with the file path for the JSON file passed in as the parameter:
 
 ```
-sh script.sh ${serialize='json' Array[File] bams}
+task test {
+  Array[File] bams
+  command {
+    sh script.sh ${write_json(bams)}
+  }
+}
 ```
-
-> **NOTE**: the `serialize='json'` option is only here for completeness.  A default value for serialization may be provided at the task level or the workflow engine.
 
 if `bams` is given this array:
 
@@ -1432,19 +2181,24 @@ Where `/jobs/564758/bams.json` would contain:
 ]
 ```
 
-### map
+#### Map serialization
 
 Map types cannot be serialized on the command line directly and must be serialized through a file
 
-#### map serialization as TSV
+##### Map serialization using write_map()
 
-The map type can be serialized as a two-column TSV file and the parameter on the command line is given the path to that file.
+The map type can be serialized as a two-column TSV file and the parameter on the command line is given the path to that file, using the `write_map()` function:
 
 ```
-sh script.sh ${Map[String, Float] sample_quality_scores}
+task test {
+  Map[String, Float] sample_quality_scores
+  command {
+    sh script.sh ${write_map(sample_quality_scores)}
+  }
+}
 ```
 
-if sample_quality_scores is given this map:
+if `sample_quality_scores` is given this Map[String, Float] as:
 
 |Key    |Value |
 |-------|------|
@@ -1466,12 +2220,17 @@ sample2\t95
 sample3\t75
 ```
 
-#### map serialization as JSON
+##### Map serialization using write_json()
 
-The map type can also be serialized as a JSON file and the parameter on the command line is given the path to that file.
+The map type can also be serialized as a JSON file and the parameter on the command line is given the path to that file, using the `write_json()` function:
 
 ```
-sh script.sh ${Map[String, Float] sample_quality_scores}
+task test {
+  Map[String, Float] sample_quality_scores
+  command {
+    sh script.sh ${write_json(sample_quality_scores)}
+  }
+}
 ```
 
 if sample_quality_scores is given this map:
@@ -1498,14 +2257,19 @@ Where `/jobs/564757/sample_quality_scores.json` would contain:
 }
 ```
 
-### object
+#### Object serialization
 
-An object is a more general case of a map where the keys are strings and the values are of arbitrary types and treated as strings.
+An object is a more general case of a map where the keys are strings and the values are of arbitrary types and treated as strings.  Objects can be serialized with either `write_object()` or `write_json()` functions:
 
-#### object serialization as TSV
+##### Object serialization using write_object()
 
 ```
-perl script.pl ${object sample}
+task test {
+  Object sample
+  command {
+    perl script.pl ${write_object(sample)}
+  }
+}
 ```
 
 if sample is provided as:
@@ -1530,10 +2294,15 @@ attr1\tattr2\tattr3\tattr4
 value1\tvalue2\tvalue3\tvalue4
 ```
 
-#### object serialization as JSON
+##### Object serialization using write_json()
 
 ```
-perl script.pl ${object sample}
+task test {
+  Object sample
+  command {
+    perl script.pl ${write_json(sample)}
+  }
+}
 ```
 
 if sample is provided as:
@@ -1561,8 +2330,279 @@ Where `/jobs/564759/sample.json` would contain:
   "attr4": "value4",
 }
 ```
-#### Array[object]
+#### Array[Object] serialization
 
-In the case of TSV serialization, the only difference between `Array[object]` and `object` is that an array would contain more rows.
+`Array[Object]` must guarantee that all objects in the array have the same set of attributes.  These can be serialized with either `write_objects()` or `write_json()` functions, as described in following sections.
 
-In the case of JSON serialization, it would be a list of objects.
+##### Array[Object] serialization using write_objects()
+
+an `Array[Object]` can be serialized using `write_objects()` into a TSV file:
+
+```
+task test {
+  Array[Object] sample
+  command {
+    perl script.pl ${write_objects(sample)}
+  }
+}
+```
+
+if sample is provided as:
+
+|Index|Attribute|Value  |
+|-----|---------|-------|
+|0    |attr1    |value1 |
+|     |attr2    |value2 |
+|     |attr3    |value3 |
+|     |attr4    |value4 |
+|1    |attr1    |value5 |
+|     |attr2    |value6 |
+|     |attr3    |value7 |
+|     |attr4    |value8 |
+
+Then, the resulting command line could look like:
+
+```
+perl script.pl /jobs/564759/sample.tsv
+```
+
+Where `/jobs/564759/sample.tsv` would contain:
+
+```
+attr1\tattr2\tattr3\tattr4
+value1\tvalue2\tvalue3\tvalue4
+value5\tvalue6\tvalue7\tvalue8
+```
+
+##### Array[Object] serialization using write_json()
+
+an `Array[Object]` can be serialized using `write_json()` into a JSON file:
+
+```
+task test {
+  Array[Object] sample
+  command {
+    perl script.pl ${write_json(sample)}
+  }
+}
+```
+
+if sample is provided as:
+
+|Index|Attribute|Value  |
+|-----|---------|-------|
+|0    |attr1    |value1 |
+|     |attr2    |value2 |
+|     |attr3    |value3 |
+|     |attr4    |value4 |
+|1    |attr1    |value5 |
+|     |attr2    |value6 |
+|     |attr3    |value7 |
+|     |attr4    |value8 |
+
+Then, the resulting command line could look like:
+
+```
+perl script.pl /jobs/564759/sample.json
+```
+
+Where `/jobs/564759/sample.json` would contain:
+
+```
+[
+  {
+    "attr1": "value1",
+    "attr2": "value2",
+    "attr3": "value3",
+    "attr4": "value4"
+  },
+  {
+    "attr1": "value5",
+    "attr2": "value6",
+    "attr3": "value7",
+    "attr4": "value8"
+  }
+]
+```
+
+## De-serialization of Task Outputs
+
+A task's command can only output data as files.  Therefore, every de-serialization function in WDL takes a file input and returns a WDL type
+
+### Primitive Types
+
+De-serialization of primitive types is done through a `read_*` function.  For example, `read_int("file/path")` and `read_string("file/path")`.
+
+For example, if I have a task that outputs a `String` and an `Int`:
+
+```
+task output_example {
+  String param1
+  String param2
+  command {
+    python do_work.py ${param1} ${param2} --out1=int_file --out2=str_file
+  }
+  output {
+    Int my_int = read_int("int_file")
+    String my_str = read_string("str_file")
+  }
+}
+```
+
+Both files `file_with_int` and `file_with_uri` should contain one line with the value on that line.  This value is then validated against the type of the variable.  If `file_with_int` contains a line with the text "foobar", the workflow must fail this task with an error.
+
+### Compound Types
+
+Tasks can also output to a file or stdout/stderr an `Array`, `Map`, or `Object` data structure in a two major formats:
+
+* JSON - because it fits naturally with the types within WDL
+* Text based / TSV - These are usually simple table and text-based encodings (e.g. `Array[String]` could be serialized by having each element be a line in a file)
+
+#### Array deserialization
+
+Maps are deserialized from:
+
+* Files that contain a JSON Array as their top-level element.
+* Any file where it is desirable to interpret each line as an element of the `Array`.
+
+##### Array deserialization using read_lines()
+
+`read_lines()` will return an `Array[String]` where each element in the array is a line in the file.
+
+This return value can be auto converted to other `Array` types.  For example:
+
+```
+task test {
+  command <<<
+    python <<CODE
+    import random
+    for i in range(10):
+      print(random.randrange(10))
+    CODE
+  >>>
+  output {
+    Array[Int] my_ints = read_lines(stdout())
+  }
+}
+```
+
+`my_ints` would contain ten random integers ranging from 0 to 10.
+
+##### Array deserialization using read_json()
+
+`read_json()` will return whatever data type resides in that JSON file
+
+```
+task test {
+  command <<<
+    echo '["foo", "bar"]'
+  >>>
+  output {
+    Array[String] my_array = read_json(stdout())
+  }
+}
+```
+
+This task would assign the array with elements `"foo"` and `"bar"` to `my_array`.
+
+If the echo statement was instead `echo '{"foo": "bar"}'`, the engine MUST fail the task for a type mismatch.
+
+#### Map deserialization
+
+Maps are deserialized from:
+
+* Files that contain a JSON Object as their top-level element.
+* Files that contain a two-column TSV file.
+
+##### Map deserialization using read_map()
+
+`read_map()` will return an `Map[String, String]` where the keys are the first column in the TSV input file and the corresponding values are the second column.
+
+This return value can be auto converted to other `Map` types.  For example:
+
+```
+task test {
+  command <<<
+    python <<CODE
+    for i in range(3):
+      print("key_{idx}\t{idx}".format(idx=i)
+    CODE
+  >>>
+  output {
+    Map[String, Int] my_ints = read_map(stdout())
+  }
+}
+```
+
+This would put a map containing three keys (`key_0`, `key_1`, and `key_2`) and three respective values (`0`, `1`, and `2`) as the value of `my_ints`
+
+##### Map deserialization using read_json()
+
+`read_json()` will return whatever data type resides in that JSON file.  If that file contains a JSON object with homogeneous key/value pair types (e.g. `string -> int` pairs), then the `read_json()` function would return a `Map`.
+
+```
+task test {
+  command <<<
+    echo '{"foo":"bar"}'
+  >>>
+  output {
+    Map[String, String] my_map = read_json(stdout())
+  }
+}
+```
+
+This task would assign the one key-value pair map in the echo statement to `my_map`.
+
+If the echo statement was instead `echo '["foo", "bar"]'`, the engine MUST fail the task for a type mismatch.
+
+#### Object deserialization
+
+Objects are deserialized from files that contain a two-row, n-column TSV file.  The first row are the object attribute names and the corresponding entries on the second row are the values.
+
+##### Object deserialization using read_object()
+
+`read_object()` will return an `Object` where the keys are the first row in the TSV input file and the corresponding values are the second row (corresponding column).
+
+```
+task test {
+  command <<<
+    python <<CODE
+    print('\t'.join(["key_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    CODE
+  >>>
+  output {
+    Object my_obj = read_object(stdout())
+  }
+}
+```
+
+This would put an object containing three attributes (`key_0`, `key_1`, and `key_2`) and three respective values (`value_0`, `value_1`, and `value_2`) as the value of `my_obj`
+
+#### Array[Object] deserialization
+
+`Array[Object]` MUST assume that all objects in the array are homogeneous (they have the same attributes, but the attributes don't have to have the same values)
+
+An `Array[Object]` is deserialized from files that contains at least 2 rows and a uniform n-column TSV file.  The first row are the object attribute names and the corresponding entries on the subsequent rows are the values
+
+##### Object deserialization using read_objects()
+
+`read_object()` will return an `Object` where the keys are the first row in the TSV input file and the corresponding values are the second row (corresponding column).
+
+```
+task test {
+  command <<<
+    python <<CODE
+    print('\t'.join(["key_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    CODE
+  >>>
+  output {
+    Array[Object] my_obj = read_objects(stdout())
+  }
+}
+```
+
+This would create an array of **three identical** `Object`s containing three attributes (`key_0`, `key_1`, and `key_2`) and three respective values (`value_0`, `value_1`, and `value_2`) as the value of `my_obj`
