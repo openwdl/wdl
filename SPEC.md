@@ -122,7 +122,7 @@
 
 WDL is meant to be a *human readable and writable* way to express tools and workflows.  The "Hello World" tool in WDL would look like this:
 
-```
+```wdl
 task hello {
   String pattern
   File in
@@ -165,7 +165,7 @@ egrep '^[a-z]+$' '/file.txt'
 
 A simple workflow that runs this task in parallel would look like this:
 
-```
+```wdl
 workflow example {
   Array[File] files
   scatter(path in files) {
@@ -253,11 +253,11 @@ $namespaced_identifier = $identifier ('.' $identifier)*
 A fully qualified name is the unique identifier of any particular `call` or call input or output.  For example:
 
 other.wdl
-```
+```wdl
 task foobar {
-  File input
+  File in
   command {
-    sh setup.sh ${input}
+    sh setup.sh ${in}
   }
   output {
     File results = stdout()
@@ -266,7 +266,7 @@ task foobar {
 ```
 
 main.wdl
-```
+```wdl
 import "other.wdl" as other
 
 task test {
@@ -315,7 +315,7 @@ The following fully-qualified names would exist within `workflow wf` in main.wdl
 
 A namespaced identifier has the same syntax as a fully-qualified name.  It is interpreted as the left-hand side being the name of a namespace and then the right-hand side being the name of a workflow, task, or namespace within that namespace.  Consider this workflow:
 
-```
+```wdl
 import "other.wdl" as ns
 workflow wf {
   call ns.ns2.task
@@ -345,7 +345,7 @@ Some examples of declarations:
 
 A declaration may also refer to elements that are outputs of tasks.  For example:
 
-```
+```wdl
 task test {
   String var
   command {
@@ -513,7 +513,7 @@ Below are the valid results for operators on types.  Any combination not in the 
 
 The syntax `x.y` refers to member access.  `x` must be an object or task in a workflow.  A Task can be thought of as an object where the attributes are the outputs of the task.
 
-```
+```wdl
 workflow wf {
   Object obj
 
@@ -526,7 +526,7 @@ workflow wf {
   }
 
   call foo as foo2 {
-    input: var=foo.output # Task output
+    input: var=foo.out # Task output
   }
 }
 ```
@@ -579,7 +579,7 @@ The import statement specifies that `$string` which is to be interpted as a URI 
 
 If a namespace identifier (via the `as $identifer` syntax) is specified, then all the tasks and workflows imported will only be accessible through that [namespace](#namespaces).  If no namespace identifier is specified, then all tasks and workflows from the URI are imported into the current namespace.
 
-```
+```wdl
 import "http://example.com/lib/stdlib"
 import "http://example.com/lib/analysis_tasks" as analysis
 
@@ -647,7 +647,7 @@ The parser should interpret any variable enclosed in `${`...`}` as a `$command_p
 
 The `$expression` usually references declarations at the task level.  For example:
 
-```
+```wdl
 task test {
   String flags
   command {
@@ -1329,7 +1329,7 @@ Then the command would be instantiated as:
 Sometimes, optional parameters need a string prefix.  Consider this task:
 
 ```wdl
-task {
+task test {
   String? val
   command {
     python script.py --val=${val}
@@ -1359,7 +1359,7 @@ python script.py ${"--val=" + val}
 
 The `scatter` block is meant to parallelize a series of identical tasks but give them slightly different inputs.  The simplest example is:
 
-```
+```wdl
 task inc {
   Int i
 
@@ -1385,7 +1385,7 @@ Running this workflow (which needs no inputs), would yield a value of `[2,3,4,5,
 Any task that's downstream from the call to `inc` and outside the scatter block must accept an `Array[Int]`:
 
 
-```
+```wdl
 task inc {
   Int i
 
@@ -1403,7 +1403,7 @@ task sum {
 
   command <<<
   python -c "print(${sep="+" ints})"
-  <<<
+  >>>
 
   output {
     Int sum = read_int(stdout())
@@ -1423,7 +1423,7 @@ This workflow will output a value of `20` for `wf.sum.sum`.  This works because 
 
 However, from inside the scope of the scatter block, the output of `call inc` is still an `Int`.  So the following is valid:
 
-```
+```wdl
 workflow wf {
   Array[Int] integers = [1,2,3,4,5]
   scatter(i in integers) {
@@ -1444,7 +1444,7 @@ Inside of [expressions](#expressions), variables are resolved differently depend
 
 Inside a task, resolution is trivial: The variable referenced MUST be a [declaration](#declarations) of the task.  For example:
 
-```
+```wdl
 task my_task {
   Array[String] strings
   command {
@@ -1459,10 +1459,10 @@ Inside of this task, there exists only one expression: `write_lines(strings)`.  
 
 In a workflow, resolution works by traversing the scope heirarchy starting from expression that references the variable.
 
-```
+```wdl
 workflow wf {
   String s = "wf_s"
-  Strnig t = "t"
+  String t = "t"
   call my_task {
     String s = "my_task_s"
     input: in0 = s+"-suffix", in1 = t+"-suffix"
@@ -1480,7 +1480,7 @@ Both tasks and workflows have a typed inputs that must be satisfied in order to 
 
 Tasks define all their outputs as declarations at the top of the task definition.
 
-```
+```wdl
 task test {
   String s
   Int i
@@ -1506,7 +1506,7 @@ Workflows also return their inputs as fully qualified names.  Tasks only return 
 
 Consider the following workflow:
 
-```
+```wdl
 task t1 {
   String s
   Int x
@@ -1621,12 +1621,12 @@ The order of the lines in the returned `Array[String]` must be the order in whic
 
 This task would `grep` through a file and return all strings that matched the pattern:
 
-```
+```wdl
 task do_stuff {
   String pattern
-  File input
+  File file
   command {
-    grep '${pattern}' ${input}
+    grep '${pattern}' ${file}
   }
   output {
     Array[String] matches = read_lines(stdout())
@@ -1642,11 +1642,11 @@ If the parameter is a `String`, this is assumed to be a local file path relative
 
 For example, if I write a task that outputs a file to `./results/file_list.tsv`, and my task is defined as:
 
-```
+```wdl
 task do_stuff {
-  File input
+  File file
   command {
-    python do_stuff.py ${input}
+    python do_stuff.py ${file}
   }
   output {
     Array[Array[String]] output_table = read_tsv("./results/file_list.tsv")
@@ -1664,12 +1664,12 @@ This task would `grep` through a file and return all strings that matched the pa
 
 The following task would write a two-column TSV to standard out and that would be interpreted as a `Map[String, String]`:
 
-```
+```wdl
 task do_stuff {
   String flags
-  File input
+  File file
   command {
-    ./script --flags=${flags} ${input}
+    ./script --flags=${flags} ${file}
   }
   output {
     Map[String, String] mapping = read_map(stdout())
@@ -1681,7 +1681,7 @@ task do_stuff {
 
 Given a file-like object that contains a 2-row and n-column TSV file, this function will turn that into an Object.
 
-```
+```wdl
 task test {
   command <<<
     python <<CODE
@@ -1714,7 +1714,7 @@ Which would be turned into an `Object` in WDL that would look like this:
 
 Given a file-like object that contains a 2-row and n-column TSV file, this function will turn that into an Object.
 
-```
+```wdl
 task test {
   command <<<
     python <<CODE
@@ -1770,11 +1770,11 @@ If the parameter is a `String`, this is assumed to be a local file path relative
 
 For example, if I write a task that outputs a file to `./results/file_list.json`, and my task is defined as:
 
-```
+```wdl
 task do_stuff {
-  File input
+  File file
   command {
-    python do_stuff.py ${input}
+    python do_stuff.py ${file}
   }
   output {
     Map[String, String] output_table = read_json("./results/file_list.json")
@@ -1806,9 +1806,9 @@ The `read_boolean()` function takes a file path which is expected to contain 1 l
 
 Given something that's compatible with `Array[String]`, this writes each element to it's own line on a file.  with newline `\n` characters as line separators.
 
-```
+```wdl
 task example {
-  Array[String] array = ["first", "second" "third"]
+  Array[String] array = ["first", "second", "third"]
   command {
     ./script --file-list=${write_lines(array)}
   }
@@ -1833,9 +1833,9 @@ third
 
 Given something that's compatible with `Array[Array[String]]`, this writes a TSV file of the data structure.
 
-```
+```wdl
 task example {
-  Array[String] array = [["one", "two" "three"], ["un", "deux", "trois"]]
+  Array[String] array = [["one", "two", "three"], ["un", "deux", "trois"]]
   command {
     ./script --tsv=${write_tsv(array)}
   }
@@ -1859,7 +1859,7 @@ un\tdeux\ttrois
 
 Given something that's compatible with `Map[String, String]`, this writes a TSV file of the data structure.
 
-```
+```wdl
 task example {
   Map[String, String] map = {"key1": "value1", "key2": "value2"}
   command {
@@ -1922,11 +1922,11 @@ value_1\tvalue_2\tvalue_3
 
 Given any `Array[Object]`, this will write out a 2+ row, n-column TSV file with each object's attributes and values.
 
-```
+```wdl
 task test {
-  Array[Object] input
+  Array[Object] in
   command <<<
-    /bin/do_work --obj=${write_objects(input)}
+    /bin/do_work --obj=${write_objects(in)}
   >>>
   output {
     File results = stdout()
@@ -1934,7 +1934,7 @@ task test {
 }
 ```
 
-if `input` were to have the value:
+if `in` were to have the value:
 
 |Index|Attribute|Value|
 |-----|---------|-----|
@@ -1967,7 +1967,7 @@ value_7\tvalue_8\tvalue_9
 
 Given something with any type, this writes the JSON equivalent to a file.  See the table in the definition of [read_json()](#mixed-read_jsonstringfileuri)
 
-```
+```wdl
 task example {
   Map[String, String] map = {"key1": "value1", "key2": "value2"}
   command {
@@ -2025,7 +2025,7 @@ WDL provides some [standard library functions](#standard-library) for converting
 
 When a task finishes, the `output` section defines how to convert the files and stdout/stderr into WDL types.  For example,
 
-```
+```wdl
 task test {
   Array[File] files
   command {
@@ -2047,7 +2047,7 @@ Serializing primitive inputs into strings is intuitively easy because the value 
 
 Consider this example:
 
-```
+```wdl
 task output_example {
   String s
   Int i
@@ -2090,7 +2090,7 @@ Arrays can be serialized in two ways:
 
 The array flattening approach can be done if a parameter is specified as `${sep=' ' my_param}`.  `my_param` must be declared as an `Array` of primitive types.  When the value of `my_param` is specified, then the values are joined together with the separator character (a space in this case).  For example:
 
-```
+```wdl
 task test {
   Array[File] bams
   command {
@@ -2113,7 +2113,7 @@ Would produce the command `python script.py --bams=/path/to/1.bam,/path/to/2.bam
 
 An array may be turned into a file with each element in the array occupying a line in the file.
 
-```
+```wdl
 task test {
   Array[File] bams
   command {
@@ -2148,7 +2148,7 @@ Where `/jobs/564758/bams` would contain:
 
 The array may be turned into a JSON document with the file path for the JSON file passed in as the parameter:
 
-```
+```wdl
 task test {
   Array[File] bams
   command {
@@ -2189,7 +2189,7 @@ Map types cannot be serialized on the command line directly and must be serializ
 
 The map type can be serialized as a two-column TSV file and the parameter on the command line is given the path to that file, using the `write_map()` function:
 
-```
+```wdl
 task test {
   Map[String, Float] sample_quality_scores
   command {
@@ -2224,7 +2224,7 @@ sample3\t75
 
 The map type can also be serialized as a JSON file and the parameter on the command line is given the path to that file, using the `write_json()` function:
 
-```
+```wdl
 task test {
   Map[String, Float] sample_quality_scores
   command {
@@ -2263,7 +2263,7 @@ An object is a more general case of a map where the keys are strings and the val
 
 ##### Object serialization using write_object()
 
-```
+```wdl
 task test {
   Object sample
   command {
@@ -2296,7 +2296,7 @@ value1\tvalue2\tvalue3\tvalue4
 
 ##### Object serialization using write_json()
 
-```
+```wdl
 task test {
   Object sample
   command {
@@ -2338,7 +2338,7 @@ Where `/jobs/564759/sample.json` would contain:
 
 an `Array[Object]` can be serialized using `write_objects()` into a TSV file:
 
-```
+```wdl
 task test {
   Array[Object] sample
   command {
@@ -2378,7 +2378,7 @@ value5\tvalue6\tvalue7\tvalue8
 
 an `Array[Object]` can be serialized using `write_json()` into a JSON file:
 
-```
+```wdl
 task test {
   Array[Object] sample
   command {
@@ -2435,7 +2435,7 @@ De-serialization of primitive types is done through a `read_*` function.  For ex
 
 For example, if I have a task that outputs a `String` and an `Int`:
 
-```
+```wdl
 task output_example {
   String param1
   String param2
@@ -2471,7 +2471,7 @@ Maps are deserialized from:
 
 This return value can be auto converted to other `Array` types.  For example:
 
-```
+```wdl
 task test {
   command <<<
     python <<CODE
@@ -2492,7 +2492,7 @@ task test {
 
 `read_json()` will return whatever data type resides in that JSON file
 
-```
+```wdl
 task test {
   command <<<
     echo '["foo", "bar"]'
@@ -2520,7 +2520,7 @@ Maps are deserialized from:
 
 This return value can be auto converted to other `Map` types.  For example:
 
-```
+```wdl
 task test {
   command <<<
     python <<CODE
@@ -2540,7 +2540,7 @@ This would put a map containing three keys (`key_0`, `key_1`, and `key_2`) and t
 
 `read_json()` will return whatever data type resides in that JSON file.  If that file contains a JSON object with homogeneous key/value pair types (e.g. `string -> int` pairs), then the `read_json()` function would return a `Map`.
 
-```
+```wdl
 task test {
   command <<<
     echo '{"foo":"bar"}'
@@ -2563,7 +2563,7 @@ Objects are deserialized from files that contain a two-row, n-column TSV file.  
 
 `read_object()` will return an `Object` where the keys are the first row in the TSV input file and the corresponding values are the second row (corresponding column).
 
-```
+```wdl
 task test {
   command <<<
     python <<CODE
@@ -2589,7 +2589,7 @@ An `Array[Object]` is deserialized from files that contains at least 2 rows and 
 
 `read_object()` will return an `Object` where the keys are the first row in the TSV input file and the corresponding values are the second row (corresponding column).
 
-```
+```wdl
 task test {
   command <<<
     python <<CODE
