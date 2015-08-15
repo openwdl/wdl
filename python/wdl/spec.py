@@ -29,10 +29,18 @@ with open('SPEC.md') as fp:
 toc.modify_and_write("SPEC.md")
 
 source_regex = re.compile(r'```wdl(.*?)```', re.DOTALL)
+count = 0
+wdl_lines = 0
+
+def lines(string, index=None):
+  string = string[:index] if index else string
+  return sum([1 for c in string if c == '\n']) + 1
 
 for match in source_regex.finditer(contents):
+    count += 1
     wdl_source = match.group(1)
-    line = sum([1 for c in contents[:match.start(1)] if c == '\n']) + 1
+    wdl_lines += lines(wdl_source)
+    line = lines(contents, match.start(1))
     wdl_file = write_and_close(wdl_source)
     cmd = 'java -jar ../cromwell/target/scala-2.11/cromwell-0.9.jar parse ' + wdl_file
     (rc, stdout, stderr) = run(cmd)
@@ -46,3 +54,4 @@ for match in source_regex.finditer(contents):
     else:
         print("Line {}: Success".format(line))
         os.unlink(wdl_file)
+print('Total: {}'.format(wdl_lines))

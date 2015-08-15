@@ -731,7 +731,7 @@ This specifies the default value if no other value is specified for this paramet
 
 Sometimes a command is sufficiently long enough or might use `{` characters that using a different set of delimiters would make it more clear.  In this case, enclose the command in `<<<`...`>>>`, as follows:
 
-```
+```wdl
 task heredoc {
   File in
 
@@ -743,7 +743,6 @@ task heredoc {
           print(line.strip())
   CODE
   >>>
-  }
 }
 ```
 
@@ -751,7 +750,7 @@ Parsing of this command should be the same as the prior section describes.
 
 #### Stripping Leading Whitespace
 
-Any text inside of the `command` section, after instantiated, should have all *common trailing whitespace* removed.  In the `task heredoc` example in the previous section, if the user specifies a value of `/path/to/file` as the value for `File in`, then the command should be:
+Any text inside of the `command` section, after instantiated, should have all *common leading whitespace* removed.  In the `task heredoc` example in the previous section, if the user specifies a value of `/path/to/file` as the value for `File in`, then the command should be:
 
 ```
 python <<CODE
@@ -809,7 +808,7 @@ Finally, glob-style `*` may be used in the filename.  The glob may only match mo
 
 Within tasks, any string literal can use string interpolation to access the value of any of the task's inputs.  The most obvious example of this is being able to define an output file which is named as function of its input.  For example:
 
-```
+```wdl
 task example {
   String prefix
   File bam
@@ -868,7 +867,7 @@ This purely optional section contains key/value pairs for any additional meta da
 
 #### Example 1: Simplest Task
 
-```
+```wdl
 task hello_world {
   command {echo hello world}
 }
@@ -876,7 +875,7 @@ task hello_world {
 
 #### Example 2: Inputs/Outputs
 
-```
+```wdl
 task one_and_one {
   String pattern
   File infile
@@ -892,7 +891,7 @@ task one_and_one {
 
 #### Example 3: Runtime/Metadata
 
-```
+```wdl
 task runtime_meta {
   String memory_mb
   String sample_id
@@ -924,8 +923,8 @@ task runtime_meta {
 
 This is an redesign of [BWA mem in CWL](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/bwa-mem-tool.cwl)
 
-```
-task bwa-mem-tool {
+```wdl
+task bwa_mem_tool {
   Int threads
   Int min_seed_length
   Int min_std_max_min
@@ -943,7 +942,7 @@ task bwa-mem-tool {
     File sam = "output.sam"
   }
   runtime {
-    docker: "images.sbgenomics.com/rabix/bwa:9d3b9b0359cf"
+    docker: "broadinstitute/baseimg"
   }
 }
 ```
@@ -958,8 +957,8 @@ The 'docker' portion of this task definition specifies which that this task must
 
 Here's an example of how to rewrite [wc2-tool](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/wc2-tool.cwl) and [count-lines4-wf](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/count-lines4-wf.cwl) (also as a [generalized collection](https://gist.github.com/dshiga/3c3c54ee8468e23d0a5b)):
 
-```
-task wc2-tool {
+```wdl
+task wc2_tool {
   File file1
   command {
     wc ${file1}
@@ -969,15 +968,15 @@ task wc2-tool {
   }
 }
 
-workflow count-lines4-wf {
+workflow count_lines4_wf {
   Array[File] files
   scatter(f in files) {
-    call wc2-tool {
+    call wc2_tool {
       input: file1=f
     }
   }
   output {
-    wc2-tool.count
+    wc2_tool.count
   }
 }
 ```
@@ -1000,8 +999,8 @@ stage2 map1 --max-seq-length 20 --min-seq-length 10 --seed-length 16 \
 
 Task definition would look like this:
 
-```
-task tmap-tool {
+```wdl
+task tmap_tool {
   Array[String] stages
   File reads
 
@@ -1013,8 +1012,6 @@ task tmap-tool {
   }
 }
 ```
-
-The syntax element `${sep=' ' stages+}` is a compromise.  CWL's JSON implementation chooses to try to hide the flags and parameters to the `tmap` command.  The result is almost 200 lines of code leaving the user having to instead learn a JSON format for mapping to the exact same set of parameters.  Now instead of just having to learn how `tmap` works, the user has to learn how *CWL maps to tmap*.
 
 For this particular case where the command line is *itself* a mini DSL, The best option at that point is to allow the user to type in the rest of the command line, which is what `${sep=' ' stages+}` is for.  This allows the user to specify an array of strings as the value for `stages` and then it concatenates them together with a space character
 
@@ -1032,11 +1029,17 @@ $workflow_element = $call | $loop | $conditional | $declaration | $scatter
 
 A workflow is defined as the keyword `workflow` and the body being in curly braces.
 
-```
+An example of a workflow that runs one task (not defined here) would be:
+
+```wdl
 workflow wf {
   Array[File] files
   Int threshold
   Map[String, String] my_map
+
+  call analysis_job {
+    input: search_paths=files, threshold=threshold, gender_lookup=my_map
+  }
 }
 ```
 
@@ -1054,12 +1057,12 @@ A workflow may call other tasks/workflows via the `call` keyword.  The `$namespa
 
 See the section on [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details about how the `$namespaced_identifier` ought to be interpreted
 
-All `calls` must be uniquely identifiable, which is why one would use the `as alias` syntax.
+All `call` statements must be uniquely identifiable.  By default, the call's unique identifier is the task name (e.g. `call foo` would be referenced by name `foo`).  However, if one were to `call foo` twice in a workflow, each subsequent `call` statement will need to alias itself to a unique name using the `as` clause: `call foo as bar`.
 
-A `call` statement may reference a workflow too (e.g. `call other_workflow`).
+A `call` statement may reference a workflow too (e.g. `call other_workflow`).  In this case, the `$inputs` section specifies a subset of the workflow's inputs and must specify fully qualified names.
 
-```
-import "lib"
+```wdl
+import "lib.wdl" as lib
 workflow wf {
   call my_task
   call my_task as my_task_alias
@@ -1070,13 +1073,13 @@ workflow wf {
 }
 ```
 
-The `$call_body` is optional and is meant to specify how to satisfy a subset of the the task's input parameters as well as a way to map tasks outputs to variables defined in the [visible scopes](#scope).
+The `$call_body` is optional and is meant to specify how to satisfy a subset of the the task or workflow's input parameters as well as a way to map tasks outputs to variables defined in the [visible scopes](#scope).
 
 A `$variable_mapping` in the `$inputs` section maps parameters in the task to expressions.  These expressions usually reference outputs of other tasks, but they can be arbitrary expressions.
 
-As an example, here is a workflow in which the second task references an output from the first task:
+As an example, here is a workflow in which the second task requires an output from the first task:
 
-```
+```wdl
 task task1 {
   command {
     python do_stuff.py
