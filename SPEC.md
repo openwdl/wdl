@@ -120,7 +120,7 @@
 
 ## Introduction
 
-WDL is meant to be a *human readable and writable* way to express tools and workflows.  The "Hello World" tool in WDL would look like this:
+WDL is meant to be a *human readable and writable* way to express tasks and workflows.  The "Hello World" tool in WDL would look like this:
 
 ```wdl
 task hello {
@@ -129,6 +129,10 @@ task hello {
 
   command {
     egrep '${pattern}' '${in}'
+  }
+
+  runtime {
+    docker: "broadinstitute/my_image"
   }
 
   output {
@@ -141,12 +145,14 @@ workflow wf {
 }
 ```
 
-This describes a task, called 'hello', which has one parameter (message).  The value of the parameters (called "job parameters") is provided in a language specific way.  Implementations of WDL should accept their [inputs as JSON format](#specifying-workflow-inputs-in-json).  For example, the above task needs values for two parameters: `String pattern` and `File in`:
+This describes a task, called 'hello', which has two parameters (`String pattern` and `File in`).  A `task` definition is a way of **encapsulating a UNIX command and environment and presenting them as functions**.  Tasks have both inputs and outputs.  Inputs are declared as declarations at the top of the `task` definition, while outputs are defined in the `output` section.
 
-|Variable|Value    |
-|--------|---------|
-|pattern |^[a-z]+$ |
-|in      |/file.txt|
+The user must provide a value for these two parameters in order for this task to be runnable.  Implementations of WDL should accept their [inputs as JSON format](#specifying-workflow-inputs-in-json).  For example, the above task needs values for two parameters: `String pattern` and `File in`:
+
+|Variable           |Value    |
+|-------------------|---------|
+|wf.hello.pattern   |^[a-z]+$ |
+|wf.hello.in        |/file.txt|
 
 Or, in JSON format:
 
@@ -178,7 +184,7 @@ The inputs to this workflow would be `example.files` and `example.hello.pattern`
 
 ## State of the Specification
 
-**7 August 2015**
+**17 August 2015**
 
 * Added concept of fully-qualified-name as well as namespace identifier.
 * Changed task definitions to have all inputs as declarations.
@@ -516,7 +522,6 @@ The syntax `x.y` refers to member access.  `x` must be an object or task in a wo
 ```wdl
 workflow wf {
   Object obj
-
   Object foo
 
   # This would cause a syntax error,
@@ -572,7 +577,7 @@ $document = ($import | $task | $workflow)+
 A WDL file may contain import statements to include WDL code from other sources
 
 ```
-$import = 'import' $string ('as' $identifier)?
+$import = 'import' $ws+ $string ($ws+ 'as' $ws+ $identifier)?
 ```
 
 The import statement specifies that `$string` which is to be interpted as a URI which points to a WDL file.  The engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code.
@@ -609,7 +614,7 @@ A task is a declarative construct with a focus on constructing a command from a 
 Tasks also define their outputs, which is essential for building dependencies between tasks.  Any other data specified in the task definition (e.g. runtime information and meta-data) is optional.
 
 ```
-$task = 'task' $ws+ $identifier $ws* '{' $declaration* $task_sections '}'
+$task = 'task' $ws+ $identifier $ws* '{' $ws* $declaration* $task_sections $ws* '}'
 ```
 
 For example, `task name { ... }`.  Inside the curly braces defines the sections.
