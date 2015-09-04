@@ -9,6 +9,7 @@ task wc {
 }
 
 workflow wf {
+  String esc = "a\n\"b\t\""
   Array[String] str_array
   scatter(s in str_array) {
     call wc{input: str=s}
