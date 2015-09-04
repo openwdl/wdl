@@ -24,8 +24,10 @@ task ps {
 }
 
 task cgrep {
+  String pattern
+  File in_file
   command {
-    grep '${pattern}' ${File in_file} | wc -l
+    grep '${pattern}' ${in_file} | wc -l
   }
   output {
     Int count = read_int("stdout")
@@ -33,8 +35,9 @@ task cgrep {
 }
 
 task wc {
+  File in_file
   command {
-    cat ${File in_file} | wc -l
+    cat ${in_file} | wc -l
   }
   output {
     Int count = read_int("stdout")
@@ -60,6 +63,7 @@ WDL also lets you define more advanced structures, like the ability to call a ta
 
 ```
 task wc {
+  String str
   command {
     echo "${str}" | wc -c
   }
@@ -71,7 +75,9 @@ task wc {
 workflow wf {
   Array[String] str_array
   scatter(s in str_array) {
-    call wc{input: str=s}
+    call wc {
+      input: str=s
+    }
   }
 }
 ```
@@ -85,24 +91,6 @@ The Workflow Description Language project aims to provide the following:
 * Parsers in a few languages
 * Language bindings to make working with WDL easier in the client language
 
-### Tool Authors
-
-WDL aims to make it as easy as possible to create `task` and `workflow` definitions in a WDL file and then validate that your syntax is correct and the wiring is done properly.
-
-### Execution Engine Implementers
-
-The WDL project wants to make it easy for an execution engine to quickly be able to understand WDL files and translate them into a native objects in their language of choice.
-
-For example, using [Cromwell](http://github.com/broadinstitute/cromwell) (Java/Scala implemenation) as the WDL language bindings layer, it should be as easy as the following code to use a WDL file:
-
-```scala
-val binding = WdlBinding.process(new File("/path/to/workflow.wdl"))
-binding.tasks foreach { task =>
-    println(task)
-    println(task.command)
-}
-```
-
 Architecture
 ------------
 
@@ -112,6 +100,6 @@ The WDL Project aims to provide at the very least a language specification and p
 
 Scala parser and language bindings will be implemented in the [Cromwell](http://github.com/broadinstitute/cromwell) project.  This implementation will also contain an optional execution engine.
 
-Python parser and language bindings will be provided by the [reference implementation](https://github.com/broadinstitute/wdl/tree/wdl2/python).  This implementation can also be used as an execution engine to run workflows locally.
+Python parser and language bindings will be provided by [PyWDL](https://github.com/broadinstitute/wdl/tree/wdl2/python).  This implementation can also be used as an execution engine to run workflows locally.
 
 A Java parser is provided [here](https://github.com/broadinstitute/wdl/tree/wdl2/java)

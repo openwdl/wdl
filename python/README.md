@@ -3,6 +3,13 @@ PyWDL
 
 A Python implementation of a WDL parser and language bindings.  Also provides a local execution engine.
 
+WARNING
+-------
+
+This implementation is out of date with the specification.  It was meant as a prototype and may be updated in the future to make it more robust
+
+For a better implementation of WDL, use [Cromwell](http://github.com/broadinstitute/cromwell).
+
 Installation
 ------------
 
