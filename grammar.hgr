@@ -43,11 +43,11 @@ grammar {
     enum {
       python: r'"([^\"]*)"'
       java: "\"([^\"]*)\""
-    } -> :string[1]
+    } -> unescape(:string[1])
     enum {
       python: r'\'([^\']*)\''
       java: "'([^']*)'"
-    } -> :string[1]
+    } -> unescape(:string[1])
 
     r':' -> :colon
     r',' -> :comma
@@ -155,7 +155,6 @@ grammar {
       r'=' -> :equal
       r'\.' -> :dot
       r'\{' -> :lbrace
-      r'\}' -> :rbrace
       r'\(' -> :lparen
       r'\)' -> :rparen
       r'\[' -> :lsquare
@@ -175,18 +174,36 @@ grammar {
       enum {
         python: r'"([^\"]+)"'
         java: "\"([^\"]+)\""
-      } -> :string[1]
+      } -> unescape(:string[1])
       enum {
         python: r'\'([^\']+)\''
         java: "'([^']+)'"
-      } -> :string[1]
+      } -> unescape(:string[1])
       r'-?[0-9]+\.[0-9]+' -> :float
       r'[0-9]+' -> :integer
     }
 
     code<python> << PYTHON
     def init():
-        return {'context': None}
+        return {
+            'context': None,
+            'replacements': {
+                re.compile(r"\\n"): 0x000A,
+                re.compile(r"\\r"): 0x000D,
+                re.compile(r"\\b"): 0x0008,
+                re.compile(r"\\t"): 0x0009,
+                re.compile(r"\\a"): 0x0007,
+                re.compile(r"\\v"): 0x000B,
+                re.compile(r'\\"'): 0x0022,
+                re.compile(r"\\'"): 0x0027,
+                re.compile(r"\\\?"): 0x003F
+            },
+            'escapes': {
+                re.compile(r'(\\([0-7]{1,3}))'): 8,
+                re.compile(r'(\\[xX]([0-9a-fA-F]{1,4}))'): 16,
+                re.compile(r'(\\[uU]([0-9a-fA-F]{4}))'): 16
+            }
+        }
     def workflow(ctx, terminal, source_string, line, col):
         ctx.user_context['context'] = 'workflow'
         default_action(ctx, terminal, source_string, line, col)
@@ -197,11 +214,41 @@ grammar {
         if ctx.user_context['context'] == 'workflow':
             ctx.stack.append('wf_output')
         default_action(ctx, terminal, source_string, line, col)
+    def unescape(ctx, terminal, source_string, line, col):
+
+        for regex, c in ctx.user_context['replacements'].items():
+            source_string = regex.sub(chr(c), source_string)
+
+        source_string = source_string.replace("\u005C\u005C", "\u005C")
+
+        for regex, base in ctx.user_context['escapes'].items():
+            for escape_sequence, number in regex.findall(source_string):
+                source_string = source_string.replace(escape_sequence, chr(int(number, base)))
+        default_action(ctx, terminal, source_string, line, col)
     PYTHON
 
     code<java> << JAVA
     private class WdlContext {
         public String wf_or_task = null;
+        public Map<String, Integer> replacements;
+        public Map<Pattern, Integer> escapes;
+        public WdlContext() {
+          replacements = new HashMap<String, Integer>();
+          escapes = new HashMap<Pattern, Integer>();
+          replacements.put("\\\\n", 0x000A);
+          replacements.put("\\\\r", 0x000D);
+          replacements.put("\\\\b", 0x0008);
+          replacements.put("\\\\t", 0x0009);
+          replacements.put("\\\\a", 0x0007);
+          replacements.put("\\\\v", 0x000B);
+          replacements.put("\\\\\"", 0x0022);
+          replacements.put("\\\\'", 0x0027);
+          replacements.put("\\\\\\?", 0x003F);
+          replacements.put("\\\\\\\\", 0x005C);
+          escapes.put(Pattern.compile("\\\\([0-7]{1,3})"), 8);
+          escapes.put(Pattern.compile("\\\\[xX]([0-9a-fA-F]{1,4})"), 16);
+          escapes.put(Pattern.compile("\\\\[uU]([0-9a-fA-F]{4})"), 16);
+        }
     }
     public Object init() {
         return new WdlContext();
@@ -218,6 +265,26 @@ grammar {
         WdlContext user_ctx = (WdlContext) ctx.context;
         if (user_ctx.wf_or_task != null && user_ctx.wf_or_task.equals("workflow")) {
             ctx.stack.push("wf_output");
+        }
+        default_action(ctx, terminal, source_string, line, col);
+    }
+    public void unescape(LexerContext ctx, TerminalIdentifier terminal, String source_string, int line, int col) {
+        WdlContext wdl_ctx = (WdlContext) ctx.context;
+
+        for (Map.Entry<String, Integer> replacement : wdl_ctx.replacements.entrySet()) {
+          String key = replacement.getKey();
+          String value = Character.toString((char) replacement.getValue().intValue());
+          source_string = source_string.replaceAll(key, value);
+        }
+
+        for (Map.Entry<Pattern, Integer> escapeSequence : wdl_ctx.escapes.entrySet()) {
+          Pattern pattern = escapeSequence.getKey();
+          int radix = escapeSequence.getValue().intValue();
+          Matcher matcher = pattern.matcher(source_string);
+          while (matcher.find()) {
+            int value = Integer.parseInt(matcher.group(1), radix);
+            source_string = source_string.replace(matcher.group(), String.format("%c", value));
+          }
         }
         default_action(ctx, terminal, source_string, line, col);
     }
@@ -277,7 +344,7 @@ grammar {
       (-:unary) $e = :plus $e -> UnaryPlus(expression=$1)
       (-:unary) $e = :dash $e -> UnaryNegation(expression=$1)
       (*:left) $e = :identifier <=> :lparen list($e, :comma) :rparen -> FunctionCall(name=$0, params=$2)
-      (*:left) $e = :identifier <=> :lsquare $e :rsquare -> ArrayIndex(lhs=$0, rhs=$2)
+      (*:left) $e = :identifier <=> :lsquare $e :rsquare -> ArrayOrMapLookup(lhs=$0, rhs=$2)
       (*:left) $e = :identifier <=> :dot :identifier -> MemberAccess(lhs=$0, rhs=$2)
       # TODO: is there a better object literal syntax?
       (*:left) $e = :object :lbrace list($object_kv, :comma) :rbrace -> ObjectLiteral(map=$2)

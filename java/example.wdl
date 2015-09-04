@@ -1,4 +1,5 @@
 task wc {
+  String str
   command {
     echo "${str}" | wc -c
   }
