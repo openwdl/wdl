@@ -228,25 +228,6 @@ grammar {
     code<java> << JAVA
     private class WdlContext {
         public String wf_or_task = null;
-        public Map<String, Integer> replacements;
-        public Map<Pattern, Integer> escapes;
-        public WdlContext() {
-          replacements = new HashMap<String, Integer>();
-          escapes = new HashMap<Pattern, Integer>();
-          replacements.put("\\\\n", 0x000A);
-          replacements.put("\\\\r", 0x000D);
-          replacements.put("\\\\b", 0x0008);
-          replacements.put("\\\\t", 0x0009);
-          replacements.put("\\\\a", 0x0007);
-          replacements.put("\\\\v", 0x000B);
-          replacements.put("\\\\\"", 0x0022);
-          replacements.put("\\\\'", 0x0027);
-          replacements.put("\\\\\\?", 0x003F);
-          replacements.put("\\\\\\\\", 0x005C);
-          escapes.put(Pattern.compile("\\\\([0-7]{1,3})"), 8);
-          escapes.put(Pattern.compile("\\\\[xX]([0-9a-fA-F]{1,4})"), 16);
-          escapes.put(Pattern.compile("\\\\[uU]([0-9a-fA-F]{4})"), 16);
-        }
     }
     public Object init() {
         return new WdlContext();
@@ -267,24 +248,7 @@ grammar {
         default_action(ctx, terminal, source_string, line, col);
     }
     public void unescape(LexerContext ctx, TerminalIdentifier terminal, String source_string, int line, int col) {
-        WdlContext wdl_ctx = (WdlContext) ctx.context;
-
-        for (Map.Entry<String, Integer> replacement : wdl_ctx.replacements.entrySet()) {
-          String key = replacement.getKey();
-          String value = Character.toString((char) replacement.getValue().intValue());
-          source_string = source_string.replaceAll(key, value);
-        }
-
-        for (Map.Entry<Pattern, Integer> escapeSequence : wdl_ctx.escapes.entrySet()) {
-          Pattern pattern = escapeSequence.getKey();
-          int radix = escapeSequence.getValue().intValue();
-          Matcher matcher = pattern.matcher(source_string);
-          while (matcher.find()) {
-            int value = Integer.parseInt(matcher.group(1), radix);
-            source_string = source_string.replace(matcher.group(), String.format("%c", value));
-          }
-        }
-        default_action(ctx, terminal, source_string.substring(1, source_string.length() - 1), line, col);
+        default_action(ctx, terminal, StringEscapeUtils.unescapeJava(source_string.substring(1, source_string.length() - 1)), line, col);
     }
     JAVA
   }
