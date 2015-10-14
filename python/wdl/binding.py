@@ -79,12 +79,10 @@ class CommandLine:
 class CommandLinePart: pass
 
 class TaskVariable(CommandLinePart):
-    def __init__(self, name, type, prefix, attributes, postfix_quantifier, ast):
+    def __init__(self, attributes, expression, ast):
         self.__dict__.update(locals())
-    def is_optional(self):
-        return self.postfix_quantifier in ['?', '*']
     def __str__(self):
-        return '[TaskVariable name={}, type={}, prefix={}, postfix={}]'.format(self.name, self.type, self.prefix, self.postfix_quantifier)
+        return '[TaskVariable attributes={}, expression={}]'.format(self.attributes, self.expression)
 
 class CommandLineString(CommandLinePart):
     def __init__(self, string, terminal):
@@ -377,13 +375,9 @@ def parse_command_variable_attrs(ast):
 def parse_command_variable(ast):
     if not isinstance(ast, wdl.parser.Ast) or ast.name != 'CommandParameter':
         raise BindingException('Expecting a "CommandParameter" AST')
-    type_ast = ast.attr('type') if ast.attr('type') else wdl.parser.Terminal(wdl.parser.terminals['type'], 'type', 'String', 'fake', ast.attr('name').line, ast.attr('name').col)
     return TaskVariable(
-        ast.attr('name').source_string,
-        parse_type(type_ast),
-        ast.attr('prefix').source_string if ast.attr('prefix') else None,
         parse_command_variable_attrs(ast.attr('attributes')),
-        ast.attr('postfix').source_string if ast.attr('postfix') else None,
+        Expression(ast.attr('expr')),
         ast
     )
 

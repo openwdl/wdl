@@ -1,9 +1,11 @@
 task grep_words {
+  String start
+  File infile
   command {
-    grep '^${start}' ${File infile}
+    grep '^${start}' ${infile}
   }
   output {
-    Array[String] words = tsv("stdout")
+    Array[String] words = read_lines("stdout")
   }
 }
 workflow wf {

@@ -1,7 +1,8 @@
 task inline {
+  File path
   command<<<
     python3 <<CODE
-    with open('${File path}') as fp:
+    with open('${path}') as fp:
       for line in fp:
         if line.startswith('zoologic'):
           print(line.strip())
@@ -13,8 +14,9 @@ task inline {
 }
 
 task task1 {
+  File infile
   command {
-    grep '^aberran' ${File infile}
+    grep '^aberran' ${infile}
   }
   output {
     Array[String] words_a = tsv("stdout")
@@ -26,8 +28,9 @@ task task1 {
 }
 
 task task2 {
+  File infile
   command {
-    grep '^backbone' ${File infile}
+    grep '^backbone' ${infile}
   }
   output {
     Array[String] words_b = tsv("stdout")
@@ -38,8 +41,9 @@ task task2 {
 }
 
 task task3 {
+  File infile
   command {
-    grep '^xyl' ${File infile} || exit 0
+    grep '^xyl' ${infile} || exit 0
   }
   output {
     Array[String] words_x = tsv("stdout")
