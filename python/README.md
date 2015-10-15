@@ -1,7 +1,7 @@
 PyWDL
 =====
 
-A Python implementation of a WDL parser and language bindings.  Also provides a local execution engine.
+A Python implementation of a WDL parser and language bindings.
 
 WARNING
 -------
@@ -25,33 +25,87 @@ Usage
 
 ### Python Module
 
+PyWDL can be used as a Python module by importing the `wdl` package and loading a string with `wdl.loads("wdl code")` or from a file-like object using `wdl.load(fp, resource_name)`.
+
+For example:
+
+```python
+import wdl
+
+wdl_code = """
+task my_task {
+  File file
+  command {
+    ./my_binary --input=${file} > results
+  }
+  output {
+    File results = "results"
+  }
+}
+
+workflow my_wf {
+  call my_task
+}
+"""
+
+# Use the language bindings to parse WDL into Python objects
+wdl_document = wdl.loads(wdl_code)
+
+for workflow in wdl_document.workflows:
+    print('Workflow "{}":'.format(workflow.name))
+    for call in workflow.calls():
+        print('    Call: {} (task {})'.format(call.name, call.task.name))
+
+for task in wdl_document.tasks:
+    name = task.name
+    abstract_command = task.command
+    instantated_command = task.command.instantiate(params={
+        'file': '/path/to/file.txt'
+    })
+    print('Task "{}":'.format(name))
+    print('    Abstract Command: {}'.format(abstract_command))
+    print('    Instantiated Command: {}'.format(instantated_command))
+```
+
+Using the language bindings as shown above is the recommended way to use PyWDL.  One can also directly access the parser to parse WDL source code into an abstract syntax tree using the `wdl.parser` package:
+
 ```python
 import wdl.parser
-import wdl.binding
 
-wdl_file = 'examples/5.wdl'
-with open(wdl_file) as fp:
-    wdl_contents = fp.read()
+wdl_code = """
+task my_task {
+  File file
+  command {
+    ./my_binary --input=${file} > results
+  }
+  output {
+    File results = "results"
+  }
+}
+
+workflow my_wf {
+  call my_task
+}
+"""
 
 # Parse source code into abstract syntax tree
-ast = wdl.parser.parse(wdl_contents).ast()
+ast = wdl.parser.parse(wdl_code).ast()
 
 # Print out abstract syntax tree
 print(ast.dumps(indent=2))
 
 # Access the first task definition, print out its name
-first_task_name = ast.attr('definitions')[0].attr('name').source_string
+print(ast.attr('definitions')[0].attr('name').source_string)
 
-# Use the language bindings to parse WDL into Python objects
-wdl_document = wdl.loads(wdl_contents)
+# Find all 'Task' ASTs
+task_asts = wdl.find_asts(ast, 'Task')
+for task_ast in task_asts:
+    print(task_ast.dumps(indent=2))
 
-for task in wdl_document.tasks:
-    task_ast_str = task.ast.dumps(indent=2)
-    name = task.name
-    command = task.command
-    print('Task "{}" has command: {}'.format(name, command))
-
-print(wdl_document.workflows)
+# Find all 'Workflow' ASTs
+workflow_asts = wdl.find_asts(ast, 'Workflow')
+for workflow_ast in workflow_asts:
+    print(workflow_ast.dumps(indent=2))
 ```
 
 ### Command Line Usage
@@ -86,24 +140,4 @@ $ wdl parse examples/ex2.wdl
       sections=[
         (RawCommand:
 ...
-```
-
-Run a workflow locally:
-
-```
-$ wdl run examples/ex2.wdl --inputs=examples/ex2.json
-```
-
-Get a sample JSON file of all the workflow's inputs by omitting the `--inputs` flag.  The runner will calculate the workflow inputs and output a JSON file to fill out
-
-```
-$ wdl run examples/ex2.wdl
-Your workflow cannot be run because it is missing some inputs!
-Use the template below to specify the inputs.  Keep the keys as-is and change the values to match the type specified
-Then, pass this file in as the --inputs option:
-
-{
-    "wf.files": "array[file]",
-    "wf.count": "int"
-}
 ```

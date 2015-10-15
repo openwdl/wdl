@@ -1,6 +1,5 @@
 import wdl.parser
 import wdl.util
-import re
 import os
 import json
 
@@ -30,9 +29,8 @@ class WdlDocument:
         self.__dict__.update(locals())
     def __str__(self):
         return '[WdlDocument tasks={} workflows={}]'.format(
-            ','.join([t.name for t in tasks]),
-            ','.join([w.name for w in workflows]),
-            source_location
+            ','.join([t.name for t in self.tasks]),
+            ','.join([w.name for w in self.workflows])
         )
 
 class Expression:
@@ -57,30 +55,17 @@ class CommandLine:
       if isinstance(wdl_value, WdlFileValue) and wdl_value.value[0] != '/':
           return os.path.abspath(wdl_value.value)
       return str(wdl_value.value)
-    def instantiate(self, params, job_cwd):
+
+    # TODO: honor lookup_function and wdl_functions
+    def instantiate(self, params, lookup_function=None, wdl_functions=None):
         cmd = []
         for part in self.parts:
             if isinstance(part, CommandLineString):
                 cmd.append(part.string)
             elif isinstance(part, TaskVariable):
-                wdl_value = params[part.name]
-                if isinstance(wdl_value, WdlUndefined) and part.is_optional:
-                    continue
-                if part.type.is_primitive():
-                    if wdl_value.type.is_primitive():
-                        # TODO: type check wdl_value.type vs part.type
-                        value = self._stringify(wdl_value)
-                    elif isinstance(wdl_value.type, WdlArrayType) and part.postfix_quantifier in ['+', '*']:
-                        value = part.attributes['sep'].join([self._stringify(x) for x in wdl_value.value])
-                elif part.type.is_tsv_serializable():
-                    pass
-                elif part.type.is_json_serializable():
-                    value = os.path.join(job_cwd, part.name + '.json')
-                    with open(value, 'w') as fp:
-                        fp.write(json.dumps(wdl_value_to_python(wdl_value)))
-                if part.prefix is not None:
-                    value = part.prefix + value
-                cmd.append(value)
+                def lookup(s): return params[s]
+                wdl_value = eval(part.expression, lookup, wdl_functions)
+                cmd.append(wdl_value)
         return wdl.util.strip_leading_ws(''.join(cmd))
     def __str__(self):
         return wdl.util.strip_leading_ws(''.join([str(part) for part in self.parts]))
@@ -194,7 +179,7 @@ class Call(Scope):
         # TODO: this assumes MemberAccess always refers to other calls
         up = []
         for expression in self.inputs.values():
-            for node in get_nodes(expression.ast, "MemberAccess"):
+            for node in wdl.find_asts(expression.ast, "MemberAccess"):
                 up.append(node.attr('lhs').source_string)
         return up
     def get_scatter_parent(self, node=None):
@@ -236,18 +221,6 @@ class Scatter(Scope):
                             type = type.subtype
                         return (var, type, count)
 
-def get_nodes(ast_root, name):
-    nodes = []
-    if isinstance(ast_root, wdl.parser.AstList):
-        for node in ast_root:
-            nodes.extend(get_nodes(node, name))
-    elif isinstance(ast_root, wdl.parser.Ast):
-        if ast_root.name == name:
-            nodes.append(ast_root)
-        for attr_name, attr in ast_root.attributes.items():
-            nodes.extend(get_nodes(attr, name))
-    return nodes
-
 def assign_ids(ast_root, id=0):
     if isinstance(ast_root, wdl.parser.AstList):
         ast_root.id = id
@@ -263,17 +236,17 @@ def assign_ids(ast_root, id=0):
 # Binding functions
 
 def get_tasks(ast):
-    return [parse_task(task_ast) for task_ast in get_nodes(ast, 'Task')]
+    return [parse_task(task_ast) for task_ast in wdl.find_asts(ast, 'Task')]
 
 def get_workflows(ast, tasks):
-    return [parse_workflow(wf_ast, tasks) for wf_ast in get_nodes(ast, 'Workflow')]
+    return [parse_workflow(wf_ast, tasks) for wf_ast in wdl.find_asts(ast, 'Workflow')]
 
 def parse_task(ast):
     name = ast.attr('name').source_string
-    command_ast = get_nodes(ast, 'RawCommand')
+    command_ast = wdl.find_asts(ast, 'RawCommand')
     command = parse_command(command_ast[0])
-    outputs = [parse_output(output_ast) for output_ast in get_nodes(ast, 'Output')]
-    runtime_asts = get_nodes(ast, 'Runtime')
+    outputs = [parse_output(output_ast) for output_ast in wdl.find_asts(ast, 'Output')]
+    runtime_asts = wdl.find_asts(ast, 'Runtime')
     runtime = parse_runtime(runtime_asts[0]) if len(runtime_asts) else {}
     return Task(name, command, outputs, runtime, {}, {}, ast)
 
@@ -344,7 +317,7 @@ def parse_call(ast, tasks):
         raise BindingException('Expecting a "Call" AST')
     task_name = ast.attr('task').source_string
     alias = ast.attr('alias').source_string if ast.attr('alias') else None
-    declarations = [parse_declaration(decl_ast) for decl_ast in get_nodes(ast, 'Declaration')]
+    declarations = [parse_declaration(decl_ast) for decl_ast in wdl.find_asts(ast, 'Declaration')]
 
     for task in tasks:
         if task.name == task_name:
@@ -355,14 +328,14 @@ def parse_call(ast, tasks):
 
     inputs = {}
     try:
-        for mapping in get_nodes(ast, 'Inputs')[0].attr('map'):
+        for mapping in wdl.find_asts(ast, 'Inputs')[0].attr('map'):
             inputs[mapping.attr('key').source_string] = Expression(mapping.attr('value'))
     except IndexError:
         pass
 
     outputs = {}
     try:
-        for mapping in get_nodes(ast, 'Outputs')[0].attr('map'):
+        for mapping in wdl.find_asts(ast, 'Outputs')[0].attr('map'):
             outputs[mapping.attr('key').source_string] = Expression(mapping.attr('value'))
     except IndexError:
         pass
