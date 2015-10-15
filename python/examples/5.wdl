@@ -1,6 +1,7 @@
 task ps {
+  String? flags
   command {
-    ps ${flags?}
+    ps ${flags}
   }
   output {
     File procs = stdout()
@@ -8,8 +9,12 @@ task ps {
 }
 
 task find_files {
+  File dir
+  Int? max_depth
+  String pattern
+
   command {
-    find ${File dir} ${'-maxdepth ' Int max_depth?} | grep '${pattern}'
+    find ${dir} ${'-maxdepth ' + max_depth} | grep '${pattern}'
   }
   output {
     Array[File] files = tsv(stdout())
@@ -17,8 +22,11 @@ task find_files {
 }
 
 task concat {
+  Array[File]+ files
+  File outfile
+
   command {
-    cat ${sep=" " File files+} > ${default="concatenated" outfile?}
+    cat ${sep=" " files} > ${outfile}
   }
   output {
     File concatenated = "${outfile}"
@@ -26,8 +34,9 @@ task concat {
 }
 
 task bytecount {
+  Array[File]+ files
   command {
-    cat ${sep=" " File files+} | wc -c
+    cat ${sep=" " files} | wc -c
   }
   output {
     Int bytes = read_int(stdout())
@@ -35,8 +44,9 @@ task bytecount {
 }
 
 task linecount {
+  Array[File]+ files
   command {
-    cat ${sep=" " File files+} | wc -l
+    cat ${sep=" " files+} | wc -l
   }
   output {
     Int lines = read_int(stdout())
@@ -74,7 +84,7 @@ workflow sloc {
    * and then compute the total file size
    */
   call find_files as find_python_files {
-    input: dir=source_dir, pattern="\.py$"
+    input: dir=source_dir, pattern="\\.py$"
   }
   call bytecount as python_src_bytes {
     input: files=find_python_files.files

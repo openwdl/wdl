@@ -1,6 +1,10 @@
 task grep {
+  String pattern
+  String? flags
+  File file_name
+
   command {
-    grep ${pattern} ${flags?} ${File file_name}
+    grep '${pattern}' ${flags} ${file_name}
   }
   output {
     File out = stdout()
@@ -13,8 +17,9 @@ task grep {
 }
 
 task wc {
+  Array[File]+ files
   command {
-    wc -l ${sep=' ' File files+} | tail -1 | tr -s ' ' | cut -d' ' -f 2
+    wc -l ${sep=' ' files} | tail -1 | tr -s ' ' | cut -d' ' -f 2
   }
   output {
     Int count = read_int(stdout())

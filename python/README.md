@@ -29,24 +29,29 @@ Usage
 import wdl.parser
 import wdl.binding
 
-wdl_file = 'examples/ex2.wdl'
+wdl_file = 'examples/5.wdl'
 with open(wdl_file) as fp:
     wdl_contents = fp.read()
 
 # Parse source code into abstract syntax tree
-ast = wdl.parser.parse(wdl_contents, wdl_file).ast()
+ast = wdl.parser.parse(wdl_contents).ast()
 
 # Print out abstract syntax tree
 print(ast.dumps(indent=2))
 
 # Access the first task definition, print out its name
-print(ast.attr('definitions')[0].attr('name').source_string)
+first_task_name = ast.attr('definitions')[0].attr('name').source_string
 
-# Use the language bindings
-wdl_document = wdl.binding.parse_document(wdl_contents)
-print(wdl_document.tasks)
+# Use the language bindings to parse WDL into Python objects
+wdl_document = wdl.loads(wdl_contents)
+
+for task in wdl_document.tasks:
+    task_ast_str = task.ast.dumps(indent=2)
+    name = task.name
+    command = task.command
+    print('Task "{}" has command: {}'.format(name, command))
+
 print(wdl_document.workflows)
-
 ```
 
 ### Command Line Usage

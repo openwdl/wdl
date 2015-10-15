@@ -1,7 +1,21 @@
 import wdl.parser
+import wdl.util
 import re
 import os
 import json
+
+def parse_document(string, resource):
+    ast = parse(string, resource)
+    tasks = get_tasks(ast)
+    workflows = get_workflows(ast, tasks)
+    return WdlDocument(resource, string, tasks, workflows, ast)
+
+def parse(string, resource):
+    errors = wdl.parser.DefaultSyntaxErrorHandler()
+    tokens = wdl.parser.lex(string, resource, errors)
+    ast = wdl.parser.parse(tokens).ast()
+    assign_ids(ast)
+    return ast
 
 def scope_hierarchy(scope):
     if scope is None: return []
@@ -11,9 +25,15 @@ class BindingException(Exception): pass
 class WdlValueException(Exception): pass
 class EvalException(Exception): pass
 
-class Document:
-    def __init__(self, tasks, workflows, ast):
+class WdlDocument:
+    def __init__(self, source_location, source_wdl, tasks, workflows, ast):
         self.__dict__.update(locals())
+    def __str__(self):
+        return '[WdlDocument tasks={} workflows={}]'.format(
+            ','.join([t.name for t in tasks]),
+            ','.join([w.name for w in workflows]),
+            source_location
+        )
 
 class Expression:
     def __init__(self, ast):
@@ -61,34 +81,25 @@ class CommandLine:
                 if part.prefix is not None:
                     value = part.prefix + value
                 cmd.append(value)
-        return self.strip_leading_ws(''.join(cmd))
-    def strip_leading_ws(self, string):
-        string = string.strip('\n').rstrip(' \n')
-        ws_count = []
-        for line in string.split('\n'):
-            match = re.match('^[\ \t]+', line)
-            if match:
-                ws_count.append(len(match.group(0)))
-        if len(ws_count):
-            trim_amount = min(ws_count)
-            return '\n'.join([line[trim_amount:] for line in string.split('\n')])
-        return string
+        return wdl.util.strip_leading_ws(''.join(cmd))
     def __str__(self):
-        return ' '.join([str(part) for part in self.parts])
+        return wdl.util.strip_leading_ws(''.join([str(part) for part in self.parts]))
 
 class CommandLinePart: pass
 
+# TODO: rename this
 class TaskVariable(CommandLinePart):
     def __init__(self, attributes, expression, ast):
         self.__dict__.update(locals())
     def __str__(self):
-        return '[TaskVariable attributes={}, expression={}]'.format(self.attributes, self.expression)
+        attr_string = ', '.join(self.attributes)
+        return '${' + '{}{}'.format(attr_string, self.expression) + '}'
 
 class CommandLineString(CommandLinePart):
     def __init__(self, string, terminal):
         self.__dict__.update(locals())
     def __str__(self):
-        return '[CommandLineString str={}]'.format(self.string)
+        return self.string
 
 class WdlType: pass
 
@@ -248,14 +259,6 @@ def assign_ids(ast_root, id=0):
             assign_ids(attr, id+index)
     elif isinstance(ast_root, wdl.parser.Terminal):
         ast_root.id = id
-
-def parse(string, resource):
-    errors = wdl.parser.DefaultSyntaxErrorHandler()
-    tokens = wdl.parser.lex(string, resource, errors)
-    ast = wdl.parser.parse(tokens).ast()
-    # TODO: Do further syntax checks
-    assign_ids(ast)
-    return ast
 
 # Binding functions
 
@@ -425,12 +428,6 @@ def parse_type(ast):
             return WdlMapType(parse_type(subtypes[0]), parse_type(subtypes[1]))
     else:
         raise BindingException('Expecting an "Type" AST')
-
-def parse_document(string, resource):
-    ast = parse(string, resource)
-    tasks = get_tasks(ast)
-    workflows = get_workflows(ast, tasks)
-    return Document(tasks, workflows, ast)
 
 class WdlValue:
     def __init__(self, value):

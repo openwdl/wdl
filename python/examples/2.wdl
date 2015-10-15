@@ -1,6 +1,7 @@
 task grep_words {
   String start
   File infile
+
   command {
     grep '^${start}' ${infile}
   }
@@ -10,6 +11,7 @@ task grep_words {
 }
 workflow wf {
   File dictionary
+
   call grep_words as grep_pythonic_words {
     input: start="pythonic", infile=dictionary
   }
