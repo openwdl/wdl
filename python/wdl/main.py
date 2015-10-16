@@ -1,5 +1,4 @@
 import wdl.engine
-from wdl.binding import *
 import wdl.parser
 import argparse
 import json
@@ -32,6 +31,7 @@ def cli():
     )
 
     subparsers = parser.add_subparsers(help='WDL Actions', dest='action')
+    subparsers.required = True
     commands = {}
     commands['run'] = subparsers.add_parser(
         'run', description=command_help['run'], help=command_help['run']
@@ -51,13 +51,12 @@ def cli():
     commands['parse'].add_argument(
         'wdl_file', help='Path to WDL File'
     )
-    commands['expr'] = subparsers.add_parser(
-        'expr', description=command_help['expr'], help=command_help['expr']
-    )
 
     cli = parser.parse_args()
 
     if cli.action == 'run':
+        sys.exit('Currently unsupported')
+
         inputs = {}
         run_service_name = "local"
 
@@ -79,13 +78,9 @@ def cli():
                 print("Then, pass this file in as the --inputs option:\n")
             print(json.dumps(error.missing, indent=4))
     if cli.action == 'parse':
-        ast = wdl.binding.parse(open(cli.wdl_file).read(), os.path.basename(cli.wdl_file))
-        print(ast.dumps(indent=2))
-    if cli.action == 'expr':
-        e = parse_expr("1+1.1")
-        v = eval(e)
-        print(e.ast.dumps(indent=2))
-        print(e, '=', v)
+        with open(cli.wdl_file) as fp:
+            ast = wdl.parser.parse(fp.read(), os.path.basename(cli.wdl_file)).ast()
+            print(ast.dumps(indent=2))
 
 if __name__ == '__main__':
     cli()

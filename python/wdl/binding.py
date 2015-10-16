@@ -3,19 +3,6 @@ import wdl.util
 import os
 import json
 
-def parse_document(string, resource):
-    ast = parse(string, resource)
-    tasks = get_tasks(ast)
-    workflows = get_workflows(ast, tasks)
-    return WdlDocument(resource, string, tasks, workflows, ast)
-
-def parse(string, resource):
-    errors = wdl.parser.DefaultSyntaxErrorHandler()
-    tokens = wdl.parser.lex(string, resource, errors)
-    ast = wdl.parser.parse(tokens).ast()
-    assign_ids(ast)
-    return ast
-
 def scope_hierarchy(scope):
     if scope is None: return []
     return [scope] + scope_hierarchy(scope.parent)
@@ -36,6 +23,8 @@ class WdlDocument:
 class Expression:
     def __init__(self, ast):
         self.__dict__.update(locals())
+    def eval(self, lookup=lambda var: None, functions=None):
+        return eval(self.ast, lookup, functions)
     def __str__(self):
         return expr_str(self.ast) if self.ast else str(None)
 
@@ -235,11 +224,14 @@ def assign_ids(ast_root, id=0):
 
 # Binding functions
 
-def get_tasks(ast):
-    return [parse_task(task_ast) for task_ast in wdl.find_asts(ast, 'Task')]
-
-def get_workflows(ast, tasks):
-    return [parse_workflow(wf_ast, tasks) for wf_ast in wdl.find_asts(ast, 'Workflow')]
+def parse_document(string, resource):
+    errors = wdl.parser.DefaultSyntaxErrorHandler()
+    tokens = wdl.parser.lex(string, resource, errors)
+    ast = wdl.parser.parse(tokens).ast()
+    assign_ids(ast)
+    tasks = [parse_task(task_ast) for task_ast in wdl.find_asts(ast, 'Task')]
+    workflows = [parse_workflow(wf_ast, tasks) for wf_ast in wdl.find_asts(ast, 'Workflow')]
+    return WdlDocument(resource, string, tasks, workflows, ast)
 
 def parse_task(ast):
     name = ast.attr('name').source_string
@@ -537,10 +529,6 @@ class WdlObject(WdlValue):
         return self.__dict__[key]
     def __str__(self):
         return '[WdlObject: {}]'.format(str(self.__dict__))
-
-def parse_expr(expr_string):
-    ctx = wdl.parser.ParserContext(wdl.parser.lex(expr_string, 'string'), wdl.parser.DefaultSyntaxErrorHandler())
-    return Expression(wdl.parser.parse_e(ctx).ast())
 
 def python_to_wdl_value(py_value, wdl_type):
     if isinstance(wdl_type, WdlStringType):

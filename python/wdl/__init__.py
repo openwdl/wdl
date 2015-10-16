@@ -17,3 +17,7 @@ def find_asts(ast_root, name):
         for attr_name, attr in ast_root.attributes.items():
             nodes.extend(find_asts(attr, name))
     return nodes
+
+def parse_expr(expr_string):
+    ctx = wdl.parser.ParserContext(wdl.parser.lex(expr_string, 'string'), wdl.parser.DefaultSyntaxErrorHandler())
+    return wdl.binding.Expression(wdl.parser.parse_e(ctx).ast())
