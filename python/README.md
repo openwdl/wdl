@@ -3,12 +3,7 @@ PyWDL
 
 A Python implementation of a WDL parser and language bindings.
 
-WARNING
--------
-
-This implementation is out of date with the specification.  It was meant as a prototype and may be updated in the future to make it more robust
-
-For a better implementation of WDL, use [Cromwell](http://github.com/broadinstitute/cromwell).
+For Scala language bindings, use [Cromwell](http://github.com/broadinstitute/cromwell).
 
 Installation
 ------------
@@ -106,6 +101,71 @@ for task_ast in task_asts:
 workflow_asts = wdl.find_asts(ast, 'Workflow')
 for workflow_ast in workflow_asts:
     print(workflow_ast.dumps(indent=2))
+```
+
+#### Working with expressions
+
+Parsing a WDL file will result in unevaluated expressions.  For example:
+
+```
+workflow test {
+  Int a = (1 + 2) * 3
+  call my_task {
+    input: var=a*2, var2="file"+".txt"
+  }
+}
+```
+
+This workflow definition has three expressions in it: `(1 + 2) * 3`, `a*2`, and `"file"+".txt"`.
+
+Expressions are stored in `wdl.binding.Expression` object.  The AST for the expression is stored in this object.
+
+Expressions can be evaluated with the `eval()` method on the `Expression` class.
+
+```python
+import wdl
+
+# Manually parse expression into wdl.binding.Expression
+expression = wdl.parse_expr("(1 + 2) * 3")
+
+# Evaluate the expression.
+# Returns a WdlValue, specifically a WdlIntegerValue(9)
+evaluated = expression.eval()
+
+# Get the Python value
+print(evaluated.value)
+```
+
+Sometimes expressions contain references to variables or functions.  In order for these to be resolved, one must pass a lookup function and an implementation of the functions that you want to support:
+
+```
+import wdl
+from wdl.binding import WdlIntegerValue
+
+def test_lookup(identifier):
+    if identifier == 'var':
+        return WdlIntegerValue(4)
+    else:
+        return WdlUndefined
+
+def test_functions():
+    def add_one(parameters):
+        if len(parameters) != 1 or not parameters[0].__class__ in [WdlIntegerValue]:
+            raise EvalException("add_one(): expecting one Integer parameter")
+        return WdlIntegerValue(parameters[0].value + 1)
+    def get_function(name):
+        if name == 'add_one': return add_one
+        else: raise EvalException("Function {} not defined".format(name))
+    return get_function
+
+# WdlIntegerValue(12)
+print(wdl.parse_expr("var * 3").eval(test_lookup))
+
+# WdlIntegerValue(8)
+print(wdl.parse_expr("var + var").eval(test_lookup))
+
+# WdlIntegerValue(9)
+print(wdl.parse_expr("add_one(var + var)").eval(test_lookup, test_functions()))
 ```
 
 ### Command Line Usage
