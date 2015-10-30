@@ -8,12 +8,6 @@ import os
 import pkg_resources
 
 def cli():
-    version = sys.version_info
-
-    if version.major < 3 or (version.major == 3 and version.minor < 4):
-        print("Python 3.4+ required. {}.{}.{} installed".format(version.major, version.minor, version.micro))
-        sys.exit(-1)
-
     command_help = {
         "run": "Run you a WDL",
         "parse": "Parse a WDL file, print parse tree",

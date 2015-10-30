@@ -1,7 +1,7 @@
 from setuptools import setup
 
-version = '1.0.5'
-long_description = 'Runs WDL tasks and workflows locally'
+version = '1.0.6'
+long_description = 'Parse and Process WDL Files'
 
 setup(
   name='wdl',

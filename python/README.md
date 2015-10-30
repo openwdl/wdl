@@ -13,7 +13,7 @@ For a better implementation of WDL, use [Cromwell](http://github.com/broadinstit
 Installation
 ------------
 
-PyWDL requires [Python 3](https://www.python.org/downloads/release/python-343/). Install via `setup.py` or via pip and PyPI:
+PyWDL will work with Python 2 or Python 3. Install via `setup.py` or via pip and PyPI:
 
 ```
 $ python setup.py install
