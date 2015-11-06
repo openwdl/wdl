@@ -138,7 +138,7 @@ print(evaluated.value)
 
 Sometimes expressions contain references to variables or functions.  In order for these to be resolved, one must pass a lookup function and an implementation of the functions that you want to support:
 
-```
+```python
 import wdl
 from wdl.binding import WdlIntegerValue
 
