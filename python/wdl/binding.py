@@ -11,7 +11,7 @@ class BindingException(Exception): pass
 class WdlValueException(Exception): pass
 class EvalException(Exception): pass
 
-class WdlDocument:
+class WdlDocument(object):
     def __init__(self, source_location, source_wdl, tasks, workflows, ast):
         self.__dict__.update(locals())
     def __str__(self):
@@ -20,7 +20,7 @@ class WdlDocument:
             ','.join([w.name for w in self.workflows])
         )
 
-class Expression:
+class Expression(object):
     def __init__(self, ast):
         self.__dict__.update(locals())
     def eval(self, lookup=lambda var: None, functions=None):
@@ -28,7 +28,7 @@ class Expression:
     def __str__(self):
         return expr_str(self.ast) if self.ast else str(None)
 
-class Task:
+class Task(object):
     def __init__(self, name, command, outputs, runtime, parameter_meta, meta, ast):
         self.__dict__.update(locals())
     def __getattr__(self, name):
@@ -37,7 +37,7 @@ class Task:
     def __str__(self):
         return '[Task name={} command={}]'.format(self.name, self.command)
 
-class CommandLine:
+class CommandLine(object):
     def __init__(self, parts, ast):
         self.__dict__.update(locals())
     def _stringify(self, wdl_value):
@@ -54,7 +54,10 @@ class CommandLine:
             elif isinstance(part, TaskVariable):
                 def lookup(s): return params[s]
                 wdl_value = eval(part.expression, lookup, wdl_functions)
-                cmd.append(wdl_value)
+                if 'sep' in part.attributes:
+                    cmd.append(part.attributes['sep'].join([str(x) for x in wdl_value]))
+                else:
+                    cmd.append(wdl_value)
         return wdl.util.strip_leading_ws(''.join(cmd))
     def __str__(self):
         return wdl.util.strip_leading_ws(''.join([str(part) for part in self.parts]))
@@ -124,7 +127,7 @@ class WdlObjectType(WdlCompoundType):
     def __repr__(self): return 'Object'
 
 # Scope has: body, declarations, parent, prefix, name
-class Scope:
+class Scope(object):
     def __init__(self, name, declarations, body):
         self.__dict__.update(locals())
         self.parent = None
