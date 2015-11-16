@@ -6,9 +6,12 @@ escape = lambda x: x.replace('[', '\\[').replace(']', '\\]')
 
 def modify_and_write(path):
     toc = []
+    is_comment_block = False
     with open(path) as fp:
         contents = fp.read()
     for line in contents.split('\n'):
+        if line.startswith('```'): is_comment_block = not is_comment_block
+        if is_comment_block: continue
         header = re.match(r'^(#+)(.*)', line)
         if header:
             level = len(header.group(1))

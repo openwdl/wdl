@@ -1,10 +1,11 @@
 Workflow Description Language (WDL)
 ===================================
 
-Language Spec
--------------
+WDL is a workflow language meant to be read and written by humans.
 
-[WDL Language Specification](SPEC.md)
+The Workflow Description Language project provides a [full language specification](SPEC.md) for WDL as well as Parsers in [Java](java) and [Python](python).
+
+For an implementation of an engine that can run WDL, try [Cromwell](http://github.com/broadinstitute/cromwell)
 
 Overview
 --------
@@ -30,7 +31,7 @@ task cgrep {
     grep '${pattern}' ${in_file} | wc -l
   }
   output {
-    Int count = read_int("stdout")
+    Int count = read_int(stdout())
   }
 }
 
@@ -40,7 +41,7 @@ task wc {
     cat ${in_file} | wc -l
   }
   output {
-    Int count = read_int("stdout")
+    Int count = read_int(stdout())
   }
 }
 
@@ -59,7 +60,7 @@ WDL aims to be able to describe tasks with abstract commands which have inputs. 
 
 Once tasks are defined, WDL allows you to construct a workflow of these tasks.  Since each task defines its inputs and outputs explicitly, you can wire together one task's output to be another task's input and create a dependency graph.  An execution engine can then collect the set of inputs it needs from the user to run each task in the workflow up front and then run the tasks in the right order.
 
-WDL also lets you define more advanced structures, like the ability to call a task in parallel (referred to as 'scattering').  In the example below, the `wc` task is being called n-times where n is the length of the `array[string] str_array` variable.  Each element of the `str_array` is used as the value of the `str` parameter in the call to the `wc` task.
+WDL also lets you define more advanced structures, like the ability to call a task in parallel (referred to as 'scattering').  In the example below, the `wc` task is being called n-times where n is the length of the `Array[String] str_array` variable.  Each element of the `str_array` is used as the value of the `str` parameter in the call to the `wc` task.
 
 ```
 task wc {
@@ -68,7 +69,7 @@ task wc {
     echo "${str}" | wc -c
   }
   output {
-    Int count = read_int("stdout") - 1
+    Int count = read_int(stdout()) - 1
   }
 }
 
@@ -82,24 +83,7 @@ workflow wf {
 }
 ```
 
-Project Goals
--------------
-
-The Workflow Description Language project aims to provide the following:
-
-* The full language specification
-* Parsers in a few languages
-* Language bindings to make working with WDL easier in the client language
-
 Architecture
 ------------
 
 ![WDL Arch](http://i.imgur.com/OYtIYjf.png)
-
-The WDL Project aims to provide at the very least a language specification and parsers in a few languages.
-
-Scala parser and language bindings will be implemented in the [Cromwell](http://github.com/broadinstitute/cromwell) project.  This implementation will also contain an optional execution engine.
-
-Python parser and language bindings will be provided by [PyWDL](https://github.com/broadinstitute/wdl/tree/wdl2/python).  This implementation can also be used as an execution engine to run workflows locally.
-
-A Java parser is provided [here](https://github.com/broadinstitute/wdl/tree/wdl2/java)

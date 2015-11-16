@@ -1,24 +1,41 @@
-PyWDL
-=====
+# PyWDL
 
 A Python implementation of a WDL parser and language bindings.
 
 For Scala language bindings, use [Cromwell](http://github.com/broadinstitute/cromwell).
 
-Installation
-------------
+<!---toc start-->
 
-PyWDL will work with Python 2 or Python 3. Install via `setup.py` or via pip and PyPI:
+* [PyWDL](#pywdl)
+* [Installation](#installation)
+* [Usage](#usage)
+  * [Python Module](#python-module)
+    * [Abstract syntax trees (ASTs)](#abstract-syntax-trees-asts)
+      * [wdl.parser.Ast](#wdlparserast)
+      * [wdl.parser.Terminal](#wdlparserterminal)
+      * [wdl.parser.AstList](#wdlparserastlist)
+    * [Working with expressions](#working-with-expressions)
+  * [Command Line Usage](#command-line-usage)
+
+<!---toc end-->
+
+# Installation
+
+PyWDL works with Python 2 or Python 3. Install via `setup.py`:
 
 ```
 $ python setup.py install
+```
+
+Or via pip:
+
+```
 $ pip install wdl
 ```
 
-Usage
------
+# Usage
 
-### Python Module
+## Python Module
 
 PyWDL can be used as a Python module by importing the `wdl` package and loading a string with `wdl.loads("wdl code")` or from a file-like object using `wdl.load(fp, resource_name)`.
 
@@ -103,7 +120,138 @@ for workflow_ast in workflow_asts:
     print(workflow_ast.dumps(indent=2))
 ```
 
-#### Working with expressions
+### Abstract syntax trees (ASTs)
+
+An AST is the output of the parsing algorithm.  It is a tree structure in which the root node is always a `Document` AST
+
+The best way to get started working with ASTs is to visualize them by using the `wdl parse` subcommand to see the AST as text.  For example, consider the following WDL file
+
+example.wdl
+```
+task a {
+  command {./foo_bin}
+}
+task b {
+  command {./bar_bin}
+}
+task c {
+  command {./baz_bin}
+}
+workflow w {}
+```
+
+Then, use the command line to parse and output the AST:
+
+```
+$ wdl parse example.wdl
+(Document:
+  imports=[],
+  definitions=[
+    (Task:
+      name=<string:1:6 identifier "YQ==">,
+      declarations=[],
+      sections=[
+        (RawCommand:
+          parts=[
+            <string:2:12 cmd_part "Li9mb29fYmlu">
+          ]
+        )
+      ]
+    ),
+    (Task:
+      name=<string:4:6 identifier "Yg==">,
+      declarations=[],
+      sections=[
+        (RawCommand:
+          parts=[
+            <string:5:12 cmd_part "Li9iYXJfYmlu">
+          ]
+        )
+      ]
+    ),
+    (Task:
+      name=<string:7:6 identifier "Yw==">,
+      declarations=[],
+      sections=[
+        (RawCommand:
+          parts=[
+            <string:8:12 cmd_part "Li9iYXpfYmlu">
+          ]
+        )
+      ]
+    ),
+    (Workflow:
+      name=<string:10:10 identifier "dw==">,
+      body=[]
+    )
+  ]
+)
+```
+
+Programmatically, if one wanted to traverse this AST to pull out data:
+
+```python
+import wdl.parser
+import wdl
+
+with open('example.wdl') as fp:
+    ast = wdl.parser.parse(fp.read()).ast()
+
+task_a = ast.attr('definitions')[0]
+task_b = ast.attr('definitions')[1]
+task_c = ast.attr('definitions')[2]
+
+for ast in task_a.attr('sections'):
+    if ast.name == 'RawCommand':
+        task_a_command = ast
+
+for ast in task_a_command.attr('parts'):
+    if isinstance(ast, wdl.parser.Terminal):
+        print('command string: ' + ast.source_string)
+    else:
+        print('command parameter: ' + ast.dumps())
+```
+
+#### wdl.parser.Ast
+
+The `Ast` class is a syntax tree with a name and children nodes.
+
+Attributes:
+
+* `name` is a string that refers to the type of AST, (e.g. `Workflow`, `Task`, `Document`, `RawCommand`)
+* `attributes` is a dictionary where the keys are the name of the attribute and the values can be one of three types: `Ast`, `AstList`, `Terminal`.
+
+Methods:
+
+* `def attr(self, name)`.  `ast.attr('name')` is the same as `ast.attributes['name']`.
+* `def dumps(self, indent=None, b64_source=True)` - returns a String representation of this AstList.  the `indent` parameter takes an integer for the indent level.  Omitting this value will cause there to be no new-lines in the resulting string.  `b64_source` will be passed to recursive invocations of `dumps`.
+
+#### wdl.parser.Terminal
+
+The `wdl.parser.Terminal` object represents a literal piece of the original source code.  This always shows up as leaf nodes on `Ast` objects
+
+Attributes:
+
+* `source_string` - String segment from the source code.
+* `line` - Line number where `source_string` was in source code.
+* `col` - Column number where `source_string` was in source code.
+* `resource` - Name of the location for the source code.  Usually a file system path or perhaps URI.
+* `id` - Numeric identifier, unique to the top level `Ast`.  Used mostly internally.
+* `str` - String identifier of this terminal.  Used mostly internally.
+
+Methods:
+
+* `def dumps(self, b64_source=True, **kwargs)` - return a String representation of this terminal.  `b64_source` means that the source code will be base64 encoded because sometimes the source contains newlines or special characters that make it difficult to read when a whole AST is string-ified.
+
+#### wdl.parser.AstList
+
+`class AstList(list)` represents a sequence of `Ast`, `AstList`, and `Terminal` objects
+
+Methods:
+
+* `def dumps(self, indent=None, b64_source=True)` - returns a String representation of this AstList.  the `indent` parameter takes an integer for the indent level.  Omitting this value will cause there to be no new-lines in the resulting string.  `b64_source` will be passed to recursive invocations of `dumps`.
+
+### Working with expressions
 
 Parsing a WDL file will result in unevaluated expressions.  For example:
 
@@ -168,7 +316,7 @@ print(wdl.parse_expr("var + var").eval(test_lookup))
 print(wdl.parse_expr("add_one(var + var)").eval(test_lookup, test_functions()))
 ```
 
-### Command Line Usage
+## Command Line Usage
 
 ```
 $ wdl --help
