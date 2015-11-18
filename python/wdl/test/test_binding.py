@@ -56,7 +56,13 @@ def test_task_inline():
     assert task.declarations[1].expression is None
     assert task.declarations[1].type == WdlStringType()
     assert task.declarations[1].type.wdl_string() == 'String'
-    task.command
+    assert task.command.wdl_string() == """python3 <<CODE
+with open('${path}') as fp:
+  for line in fp:
+    if line.startswith('zoologic'):
+      print(line.strip())
+CODE"""
+
     task.outputs
     task.runtime
     task.parameter_meta

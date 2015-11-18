@@ -12,7 +12,7 @@ setup(
   packages=['wdl'],
   install_requires=[
       "xtermcolor",
-      "nose"
+      "pytest"
   ],
   scripts={
       'scripts/wdl',

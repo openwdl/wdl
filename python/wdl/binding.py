@@ -59,23 +59,29 @@ class Command(object):
                 else:
                     cmd.append(wdl_value)
         return wdl.util.strip_leading_ws(''.join(cmd))
+    def wdl_string(self):
+        return wdl.util.strip_leading_ws(''.join([part.wdl_string() for part in self.parts]))
     def __str__(self):
-        return wdl.util.strip_leading_ws(''.join([str(part) for part in self.parts]))
+        return '[Command: {}]'.format(self.wdl_string().replace('\n', '\\n').replace('\r', '\\r'))
 
 class CommandPart: pass
 
 class CommandExpressionTag(CommandPart):
     def __init__(self, attributes, expression, ast):
         self.__dict__.update(locals())
-    def __str__(self):
+    def wdl_string(self):
         attr_string = ', '.join(self.attributes)
-        return '${' + '{}{}'.format(attr_string, self.expression) + '}'
+        return '${' + '{}{}'.format(attr_string, self.expression.wdl_string()) + '}'
+    def __str__(self):
+        return '[CommandExpressionTag: {}]'.format(self.wdl_string())
 
 class CommandString(CommandPart):
     def __init__(self, string, terminal):
         self.__dict__.update(locals())
-    def __str__(self):
+    def wdl_string(self):
         return self.string
+    def __str__(self):
+        return '[CommandString: {}]'.format(self.string)
 
 class WdlType: pass
 
