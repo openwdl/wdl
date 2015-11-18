@@ -80,11 +80,9 @@ CODE"""
     def lookup(name):
         if name == 'docker': return WdlString('foo/bar')
 
-    print( task.runtime['docker'] )
-    print( task.runtime['docker'].eval(lookup) )
     assert task.runtime['docker'].eval(lookup) == WdlString('foo/bar')
-    task.parameter_meta
-    task.meta
+    assert task.parameter_meta == {}
+    assert task.meta == {}
 
 def test_blah():
     task_task1 = wdl_document.task('task1')

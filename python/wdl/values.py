@@ -8,6 +8,7 @@ class WdlValue:
         return '[{}: {}]'.format(self.type, str(self.value))
     def as_string(self): return str(self.value)
     def __str__(self): return '[Wdl{}: {}]'.format(self.type.wdl_string(), self.as_string())
+    def __eq__(self, other): return self.__class__ == other.__class__ and self.value == other.value
 
 class WdlUndefined(WdlValue):
     def __init__(self): self.type = None

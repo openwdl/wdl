@@ -403,7 +403,7 @@ def interpolate(string, lookup, functions):
         value = expr.eval(lookup, functions)
         string = string.replace(expr_string, value.as_string())
     print('interpolate end', string)
-    return WdlString(string)
+    return string
 
 def eval(ast, lookup=lambda var: None, functions=None):
     if isinstance(ast, wdl.parser.Terminal):
