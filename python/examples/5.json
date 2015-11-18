@@ -1,6 +1,0 @@
-{
-  "sloc.files": ["README.md", "setup.py"],
-  "sloc.find_python_files.max_depth": 10,
-  "sloc.source_dir": "..",
-  "sloc.concat.outfile": "renamed"
-}

@@ -1,0 +1,251 @@
+(document:
+  (_gen0: ),
+  (_gen2:
+    (workflow_or_task:
+      (task:
+        <string:1:1 task "dGFzaw==">,
+        <string:1:6 identifier "Z3JlcF93b3Jkcw==">,
+        <string:1:17 lbrace "ew==">,
+        (_gen5:
+          (declaration:
+            (type_e:
+              <string:2:3 type "U3RyaW5n">
+            ),
+            (_gen17: ),
+            <string:2:10 identifier "c3RhcnQ=">,
+            (_gen18: )
+          ),
+          (_gen6:
+            (declaration:
+              (type_e:
+                <string:3:3 type "RmlsZQ==">
+              ),
+              (_gen17: ),
+              <string:3:8 identifier "aW5maWxl">,
+              (_gen18: )
+            ),
+            (_gen6: )
+          )
+        ),
+        (_gen7:
+          (sections:
+            (command:
+              <string:5:3 raw_command "Y29tbWFuZCA=">,
+              <string:5:11 raw_cmd_start "ew==">,
+              (_gen9:
+                (command_part:
+                  <string:5:12 cmd_part "CiAgICBncmVwICde">
+                ),
+                (_gen10:
+                  (command_part:
+                    (cmd_param:
+                      <string:6:12 cmd_param_start "JHs=">,
+                      (_gen11: ),
+                      (e:
+                        <string:6:14 identifier "c3RhcnQ=">
+                      ),
+                      <string:6:19 cmd_param_end "fQ==">
+                    )
+                  ),
+                  (_gen10:
+                    (command_part:
+                      <string:6:20 cmd_part "JyA=">
+                    ),
+                    (_gen10:
+                      (command_part:
+                        (cmd_param:
+                          <string:6:22 cmd_param_start "JHs=">,
+                          (_gen11: ),
+                          (e:
+                            <string:6:24 identifier "aW5maWxl">
+                          ),
+                          <string:6:30 cmd_param_end "fQ==">
+                        )
+                      ),
+                      (_gen10:
+                        (command_part:
+                          <string:6:31 cmd_part "CiAg">
+                        ),
+                        (_gen10: )
+                      )
+                    )
+                  )
+                )
+              ),
+              <string:7:3 raw_cmd_end "fQ==">
+            )
+          ),
+          (_gen8:
+            (sections:
+              (outputs:
+                <string:8:3 output "b3V0cHV0">,
+                <string:8:10 lbrace "ew==">,
+                (_gen13:
+                  (output_kv:
+                    (type_e:
+                      (type_e:
+                        <string:9:5 type "QXJyYXk=">
+                      ),
+                      <string:9:10 lsquare "Ww==">,
+                      (_gen30:
+                        (type_e:
+                          <string:9:11 type "U3RyaW5n">
+                        ),
+                        (_gen31: )
+                      ),
+                      <string:9:17 rsquare "XQ==">
+                    ),
+                    <string:9:19 identifier "d29yZHM=">,
+                    <string:9:25 equal "PQ==">,
+                    (e:
+                      (e:
+                        <string:9:27 identifier "cmVhZF9saW5lcw==">
+                      ),
+                      <string:9:37 lparen "KA==">,
+                      (_gen32:
+                        (e:
+                          (e:
+                            <string:9:38 identifier "c3Rkb3V0">
+                          ),
+                          <string:9:44 lparen "KA==">,
+                          (_gen32: ),
+                          <string:9:45 rparen "KQ==">
+                        ),
+                        (_gen33: )
+                      ),
+                      <string:9:46 rparen "KQ==">
+                    )
+                  ),
+                  (_gen14: )
+                ),
+                <string:10:3 rbrace "fQ==">
+              )
+            ),
+            (_gen8: )
+          )
+        ),
+        <string:11:1 rbrace "fQ==">
+      )
+    ),
+    (_gen3:
+      (workflow_or_task:
+        (workflow:
+          <string:12:1 workflow "d29ya2Zsb3c=">,
+          <string:12:10 identifier "d2Y=">,
+          <string:12:13 lbrace "ew==">,
+          (_gen19:
+            (wf_body_element:
+              (declaration:
+                (type_e:
+                  <string:13:3 type "RmlsZQ==">
+                ),
+                (_gen17: ),
+                <string:13:8 identifier "ZGljdGlvbmFyeQ==">,
+                (_gen18: )
+              )
+            ),
+            (_gen20:
+              (wf_body_element:
+                (call:
+                  <string:15:3 call "Y2FsbA==">,
+                  <string:15:8 fqn "Z3JlcF93b3Jkcw==">,
+                  (_gen21:
+                    (alias:
+                      <string:15:19 as "YXM=">,
+                      <string:15:22 identifier "Z3JlcF9weXRob25pY193b3Jkcw==">
+                    )
+                  ),
+                  (_gen22:
+                    (call_body:
+                      <string:15:42 lbrace "ew==">,
+                      (_gen5: ),
+                      (_gen23:
+                        (call_input:
+                          <string:16:5 input "aW5wdXQ=">,
+                          <string:16:10 colon "Og==">,
+                          (_gen25:
+                            (mapping:
+                              <string:16:12 identifier "c3RhcnQ=">,
+                              <string:16:17 equal "PQ==">,
+                              (e:
+                                <string:16:18 string "cHl0aG9uaWM=">
+                              )
+                            ),
+                            (_gen26:
+                              <string:16:28 comma "LA==">,
+                              (mapping:
+                                <string:16:30 identifier "aW5maWxl">,
+                                <string:16:36 equal "PQ==">,
+                                (e:
+                                  <string:16:37 identifier "ZGljdGlvbmFyeQ==">
+                                )
+                              ),
+                              (_gen26: )
+                            )
+                          )
+                        ),
+                        (_gen24: )
+                      ),
+                      <string:17:3 rbrace "fQ==">
+                    )
+                  )
+                )
+              ),
+              (_gen20:
+                (wf_body_element:
+                  (call:
+                    <string:18:3 call "Y2FsbA==">,
+                    <string:18:8 fqn "Z3JlcF93b3Jkcw==">,
+                    (_gen21:
+                      (alias:
+                        <string:18:19 as "YXM=">,
+                        <string:18:22 identifier "Z3JlcF93b3JrZl93b3Jkcw==">
+                      )
+                    ),
+                    (_gen22:
+                      (call_body:
+                        <string:18:39 lbrace "ew==">,
+                        (_gen5: ),
+                        (_gen23:
+                          (call_input:
+                            <string:19:5 input "aW5wdXQ=">,
+                            <string:19:10 colon "Og==">,
+                            (_gen25:
+                              (mapping:
+                                <string:19:12 identifier "c3RhcnQ=">,
+                                <string:19:17 equal "PQ==">,
+                                (e:
+                                  <string:19:18 string "d29ya2Y=">
+                                )
+                              ),
+                              (_gen26:
+                                <string:19:25 comma "LA==">,
+                                (mapping:
+                                  <string:19:27 identifier "aW5maWxl">,
+                                  <string:19:33 equal "PQ==">,
+                                  (e:
+                                    <string:19:34 identifier "ZGljdGlvbmFyeQ==">
+                                  )
+                                ),
+                                (_gen26: )
+                              )
+                            )
+                          ),
+                          (_gen24: )
+                        ),
+                        <string:20:3 rbrace "fQ==">
+                      )
+                    )
+                  )
+                ),
+                (_gen20: )
+              )
+            )
+          ),
+          <string:21:1 rbrace "fQ==">
+        )
+      ),
+      (_gen3: )
+    )
+  )
+)

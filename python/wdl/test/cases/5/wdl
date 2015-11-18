@@ -17,19 +17,19 @@ task find_files {
     find ${dir} ${'-maxdepth ' + max_depth} | grep '${pattern}'
   }
   output {
-    Array[File] files = tsv(stdout())
+    Array[File] files = read_lines(stdout())
   }
 }
 
 task concat {
   Array[File]+ files
-  File outfile
+  String outfile
 
   command {
     cat ${sep=" " files} > ${outfile}
   }
   output {
-    File concatenated = "${outfile}"
+    File concatenated = outfile
   }
 }
 
@@ -46,7 +46,7 @@ task bytecount {
 task linecount {
   Array[File]+ files
   command {
-    cat ${sep=" " files+} | wc -l
+    cat ${sep=" " files} | wc -l
   }
   output {
     Int lines = read_int(stdout())
@@ -57,7 +57,7 @@ workflow sloc {
   Array[File] files
   File source_dir
 
-  /* run 'ps', get the byte count of the output */
+  # Run 'ps', get the byte count of the output
   call ps
   call ps as ps_flags {
     input: flags="-ef"
@@ -69,10 +69,9 @@ workflow sloc {
     input: files=ps_flags.procs
   }
 
-  /* Test out default parameters.
-   * First 'concat' should output to file called "concatenated".
-   * Second 'concat' should output to a file called "redirected".
-   */
+  # Test out default parameters.
+  # First 'concat' should output to file called "concatenated".
+  # Second 'concat' should output to a file called "redirected".
   call concat {
     input: files=files
   }
@@ -80,9 +79,8 @@ workflow sloc {
     input:files=files, outfile="redirected"
   }
 
-  /* Find all Java and Scala files, count lines in each
-   * and then compute the total file size
-   */
+  # Find all Java and Scala files, count lines in each
+  # and then compute the total file size
   call find_files as find_python_files {
     input: dir=source_dir, pattern="\\.py$"
   }

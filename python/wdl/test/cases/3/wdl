@@ -6,7 +6,7 @@ task scatter_task {
     egrep ^.{${count}}$ ${in} || exit 0
   >>>
   output {
-    Array[String] words = tsv(stdout())
+    Array[String] words = read_lines(stdout())
   }
 }
 

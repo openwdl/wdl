@@ -1,5 +1,6 @@
 task inline {
   File path
+  String docker
   command<<<
     python3 <<CODE
     with open('${path}') as fp:
@@ -9,47 +10,50 @@ task inline {
     CODE
   >>>
   runtime {
-    docker: docker
+    docker: "${docker}"
   }
 }
 
 task task1 {
   File infile
+  String docker
   command {
     grep '^aberran' ${infile}
   }
   output {
-    Array[String] words_a = tsv("stdout")
-    Int blah = 1+1
+    Array[String] words_a = read_lines(stdout())
+    Int foo = 1+1
   }
   runtime {
-    docker: docker
+    docker: "${docker}"
   }
 }
 
 task task2 {
   File infile
+  String docker
   command {
     grep '^backbone' ${infile}
   }
   output {
-    Array[String] words_b = tsv("stdout")
+    Array[String] words_b = read_lines(stdout())
   }
   runtime {
-    docker: docker
+    docker: "${docker}"
   }
 }
 
 task task3 {
   File infile
+  String docker
   command {
     grep '^xyl' ${infile} || exit 0
   }
   output {
-    Array[String] words_x = tsv("stdout")
+    Array[String] words_x = read_lines(stdout())
   }
   runtime {
-    docker: docker
+    docker: "${docker}"
   }
 }
 
@@ -61,8 +65,6 @@ workflow simple {
   Boolean b = false
 
   call task1 {
-    Int x = (1 + 2) * (10 - 4) * 7
-    Int y = strlen("hello world") + 10 + x
     input: docker=docker, infile=dict_file
   }
   call task2 {

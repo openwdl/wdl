@@ -1,0 +1,187 @@
+(Document:
+  imports=[],
+  definitions=[
+    (Task:
+      name=<string:1:6 identifier "Z3JlcA==">,
+      declarations=[
+        (Declaration:
+          type=<string:2:3 type "U3RyaW5n">,
+          postfix=None,
+          name=<string:2:10 identifier "cGF0dGVybg==">,
+          expression=None
+        ),
+        (Declaration:
+          type=<string:3:3 type "U3RyaW5n">,
+          postfix=<string:3:9 qmark "Pw==">,
+          name=<string:3:11 identifier "ZmxhZ3M=">,
+          expression=None
+        ),
+        (Declaration:
+          type=<string:4:3 type "RmlsZQ==">,
+          postfix=None,
+          name=<string:4:8 identifier "ZmlsZV9uYW1l">,
+          expression=None
+        )
+      ],
+      sections=[
+        (RawCommand:
+          parts=[
+            <string:6:12 cmd_part "CiAgICBncmVwICc=">,
+            (CommandParameter:
+              attributes=[],
+              expr=<string:7:13 identifier "cGF0dGVybg==">
+            ),
+            <string:7:21 cmd_part "JyA=">,
+            (CommandParameter:
+              attributes=[],
+              expr=<string:7:25 identifier "ZmxhZ3M=">
+            ),
+            <string:7:31 cmd_part "IA==">,
+            (CommandParameter:
+              attributes=[],
+              expr=<string:7:34 identifier "ZmlsZV9uYW1l">
+            ),
+            <string:7:44 cmd_part "CiAg">
+          ]
+        ),
+        (Outputs:
+          attributes=[
+            (Output:
+              type=<string:10:5 type "RmlsZQ==">,
+              var=<string:10:10 identifier "b3V0">,
+              expression=(FunctionCall:
+                name=<string:10:16 identifier "c3Rkb3V0">,
+                params=[]
+              )
+            )
+          ]
+        ),
+        (Runtime:
+          map=[
+            (RuntimeAttribute:
+              key=<string:13:5 identifier "bWVtb3J5">,
+              value=<string:13:13 string "Mk1C">
+            ),
+            (RuntimeAttribute:
+              key=<string:14:5 identifier "Y29yZXM=">,
+              value=<string:14:12 integer "MQ==">
+            ),
+            (RuntimeAttribute:
+              key=<string:15:5 identifier "ZGlzaw==">,
+              value=<string:15:11 string "M01C">
+            )
+          ]
+        )
+      ]
+    ),
+    (Task:
+      name=<string:19:6 identifier "d2M=">,
+      declarations=[
+        (Declaration:
+          type=(Type:
+            name=<string:20:3 type "QXJyYXk=">,
+            subtype=[
+              <string:20:9 type "RmlsZQ==">
+            ]
+          ),
+          postfix=<string:20:14 plus "Kw==">,
+          name=<string:20:16 identifier "ZmlsZXM=">,
+          expression=None
+        )
+      ],
+      sections=[
+        (RawCommand:
+          parts=[
+            <string:21:12 cmd_part "CiAgICB3YyAtbCA=">,
+            (CommandParameter:
+              attributes=[
+                (CommandParameterAttr:
+                  key=<string:22:13 identifier "c2Vw">,
+                  value=<string:22:17 string "IA==">
+                )
+              ],
+              expr=<string:22:21 identifier "ZmlsZXM=">
+            ),
+            <string:22:27 cmd_part "IHwgdGFpbCAtMSB8IHRyIC1zICcgJyB8IGN1dCAtZCcgJyAtZiAyCiAg">
+          ]
+        ),
+        (Outputs:
+          attributes=[
+            (Output:
+              type=<string:25:5 type "SW50">,
+              var=<string:25:9 identifier "Y291bnQ=">,
+              expression=(FunctionCall:
+                name=<string:25:17 identifier "cmVhZF9pbnQ=">,
+                params=[
+                  (FunctionCall:
+                    name=<string:25:26 identifier "c3Rkb3V0">,
+                    params=[]
+                  )
+                ]
+              )
+            )
+          ]
+        )
+      ]
+    ),
+    (Workflow:
+      name=<string:29:10 identifier "c2NhdHRlcl9nYXRoZXJfZ3JlcF93Yw==">,
+      body=[
+        (Declaration:
+          type=(Type:
+            name=<string:30:3 type "QXJyYXk=">,
+            subtype=[
+              <string:30:9 type "RmlsZQ==">
+            ]
+          ),
+          postfix=None,
+          name=<string:30:15 identifier "aW5wdXRfZmlsZXM=">,
+          expression=None
+        ),
+        (Scatter:
+          item=<string:31:11 identifier "Zg==">,
+          collection=<string:31:16 identifier "aW5wdXRfZmlsZXM=">,
+          body=[
+            (Call:
+              task=<string:32:10 fqn "Z3JlcA==">,
+              alias=None,
+              body=(CallBody:
+                declarations=[],
+                io=[
+                  (Inputs:
+                    map=[
+                      (IOMapping:
+                        key=<string:33:14 identifier "ZmlsZV9uYW1l">,
+                        value=<string:33:26 identifier "Zg==">
+                      )
+                    ]
+                  )
+                ]
+              )
+            )
+          ]
+        ),
+        (Call:
+          task=<string:36:8 fqn "d2M=">,
+          alias=None,
+          body=(CallBody:
+            declarations=[],
+            io=[
+              (Inputs:
+                map=[
+                  (IOMapping:
+                    key=<string:37:12 identifier "ZmlsZXM=">,
+                    value=(MemberAccess:
+                      lhs=<string:37:20 identifier "Z3JlcA==">,
+                      rhs=<string:37:25 identifier "b3V0">
+                    )
+                  )
+                ]
+              )
+            ]
+          )
+        )
+      ]
+    )
+  ]
+)

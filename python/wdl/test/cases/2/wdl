@@ -6,7 +6,7 @@ task grep_words {
     grep '^${start}' ${infile}
   }
   output {
-    Array[String] words = read_lines("stdout")
+    Array[String] words = read_lines(stdout())
   }
 }
 workflow wf {

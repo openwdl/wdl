@@ -1,0 +1,192 @@
+(Document:
+  imports=[],
+  definitions=[
+    (Task:
+      name=<string:1:6 identifier "c2NhdHRlcl90YXNr">,
+      declarations=[
+        (Declaration:
+          type=<string:2:3 type "SW50">,
+          postfix=None,
+          name=<string:2:7 identifier "Y291bnQ=">,
+          expression=None
+        ),
+        (Declaration:
+          type=<string:3:3 type "RmlsZQ==">,
+          postfix=None,
+          name=<string:3:8 identifier "aW4=">,
+          expression=None
+        )
+      ],
+      sections=[
+        (RawCommand:
+          parts=[
+            <string:5:14 cmd_part "CiAgICBlZ3JlcCBeLns=">,
+            (CommandParameter:
+              attributes=[],
+              expr=<string:6:16 identifier "Y291bnQ=">
+            ),
+            <string:6:22 cmd_part "fSQg">,
+            (CommandParameter:
+              attributes=[],
+              expr=<string:6:27 identifier "aW4=">
+            ),
+            <string:6:30 cmd_part "IHx8IGV4aXQgMAogIA==">
+          ]
+        ),
+        (Outputs:
+          attributes=[
+            (Output:
+              type=(Type:
+                name=<string:9:5 type "QXJyYXk=">,
+                subtype=[
+                  <string:9:11 type "U3RyaW5n">
+                ]
+              ),
+              var=<string:9:19 identifier "d29yZHM=">,
+              expression=(FunctionCall:
+                name=<string:9:27 identifier "cmVhZF9saW5lcw==">,
+                params=[
+                  (FunctionCall:
+                    name=<string:9:38 identifier "c3Rkb3V0">,
+                    params=[]
+                  )
+                ]
+              )
+            )
+          ]
+        )
+      ]
+    ),
+    (Task:
+      name=<string:13:6 identifier "Z2F0aGVyX3Rhc2s=">,
+      declarations=[
+        (Declaration:
+          type=<string:14:3 type "SW50">,
+          postfix=None,
+          name=<string:14:7 identifier "Y291bnQ=">,
+          expression=None
+        ),
+        (Declaration:
+          type=(Type:
+            name=<string:15:3 type "QXJyYXk=">,
+            subtype=[
+              (Type:
+                name=<string:15:9 type "QXJyYXk=">,
+                subtype=[
+                  <string:15:15 type "U3RyaW5n">
+                ]
+              )
+            ]
+          ),
+          postfix=None,
+          name=<string:15:24 identifier "d29yZF9saXN0cw==">,
+          expression=None
+        )
+      ],
+      sections=[
+        (RawCommand:
+          parts=[
+            <string:17:12 cmd_part "CiAgICBweXRob24zIDw8Q09ERQogICAgaW1wb3J0IGpzb24KICAgIHdpdGggb3BlbignY291bnQnLCAndycpIGFzIGZwOgogICAgICBmcC53cml0ZShzdHIoaW50KA==">,
+            (CommandParameter:
+              attributes=[],
+              expr=<string:21:26 identifier "Y291bnQ=">
+            ),
+            <string:21:32 cmd_part "KSAtIDEpKQogICAgd2l0aCBvcGVuKCd3YycsICd3JykgYXMgZnA6CiAgICAgIGZwLndyaXRlKHN0cihzdW0oW2xlbih4KSBmb3IgeCBpbiBqc29uLmxvYWRzKG9wZW4oIg==">,
+            (CommandParameter:
+              attributes=[],
+              expr=<string:23:60 identifier "d29yZF9saXN0cw==">
+            ),
+            <string:23:71 cmd_part "IikucmVhZCgpKV0pKSkKICAgIENPREUKICA=">
+          ]
+        ),
+        (Outputs:
+          attributes=[
+            (Output:
+              type=<string:27:5 type "SW50">,
+              var=<string:27:9 identifier "Y291bnQ=">,
+              expression=(FunctionCall:
+                name=<string:27:17 identifier "cmVhZF9pbnQ=">,
+                params=[
+                  <string:27:26 string "Y291bnQ=">
+                ]
+              )
+            )
+          ]
+        )
+      ]
+    ),
+    (Workflow:
+      name=<string:31:10 identifier "d2Y=">,
+      body=[
+        (Declaration:
+          type=(Type:
+            name=<string:32:3 type "QXJyYXk=">,
+            subtype=[
+              <string:32:9 type "RmlsZQ==">
+            ]
+          ),
+          postfix=None,
+          name=<string:32:15 identifier "ZmlsZXM=">,
+          expression=None
+        ),
+        (Declaration:
+          type=<string:33:3 type "SW50">,
+          postfix=None,
+          name=<string:33:7 identifier "Y291bnQ=">,
+          expression=None
+        ),
+        (Scatter:
+          item=<string:35:11 identifier "ZmlsZW5hbWU=">,
+          collection=<string:35:23 identifier "ZmlsZXM=">,
+          body=[
+            (Call:
+              task=<string:36:10 fqn "c2NhdHRlcl90YXNr">,
+              alias=None,
+              body=(CallBody:
+                declarations=[],
+                io=[
+                  (Inputs:
+                    map=[
+                      (IOMapping:
+                        key=<string:37:14 identifier "aW4=">,
+                        value=<string:37:17 identifier "ZmlsZW5hbWU=">
+                      ),
+                      (IOMapping:
+                        key=<string:37:27 identifier "Y291bnQ=">,
+                        value=<string:37:33 identifier "Y291bnQ=">
+                      )
+                    ]
+                  )
+                ]
+              )
+            )
+          ]
+        ),
+        (Call:
+          task=<string:40:8 fqn "Z2F0aGVyX3Rhc2s=">,
+          alias=None,
+          body=(CallBody:
+            declarations=[],
+            io=[
+              (Inputs:
+                map=[
+                  (IOMapping:
+                    key=<string:41:12 identifier "Y291bnQ=">,
+                    value=<string:41:18 identifier "Y291bnQ=">
+                  ),
+                  (IOMapping:
+                    key=<string:41:25 identifier "d29yZF9saXN0cw==">,
+                    value=(MemberAccess:
+                      lhs=<string:41:36 identifier "c2NhdHRlcl90YXNr">,
+                      rhs=<string:41:49 identifier "d29yZHM=">
+                    )
+                  )
+                ]
+              )
+            ]
+          )
+        )
+      ]
+    )
+  ]
+)

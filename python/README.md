@@ -33,11 +33,11 @@ Or via pip:
 $ pip install wdl
 ```
 
-# Usage
+# Language Bindings
 
-## Python Module
+The main `wdl` package provides an interface to turn WDL source code into native Python objects.  This means that a `workflow {}` block in WDL would become a `Workflow` object in Python and a `task {}` block becomes a `Task` object.
 
-PyWDL can be used as a Python module by importing the `wdl` package and loading a string with `wdl.loads("wdl code")` or from a file-like object using `wdl.load(fp, resource_name)`.
+To parse WDL source code into a `WdlDocument` object, import the `wdl` package and load a WDL string with `wdl.loads("wdl code")` or WDL from a file-like object using `wdl.load(fp, resource_name)`.
 
 For example:
 

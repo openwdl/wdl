@@ -4,7 +4,7 @@ task wc {
     echo "${str}" | wc -c
   }
   output {
-    Int count = read_int("stdout") - 1
+    Int count = read_int(stdout()) - 1
   }
 }
 

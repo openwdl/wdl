@@ -8,12 +8,17 @@ def scope_hierarchy(scope):
     return [scope] + scope_hierarchy(scope.parent)
 
 class BindingException(Exception): pass
+class TaskNotFoundException(Exception): pass
 class WdlValueException(Exception): pass
 class EvalException(Exception): pass
 
 class WdlDocument(object):
     def __init__(self, source_location, source_wdl, tasks, workflows, ast):
         self.__dict__.update(locals())
+    def task(self, name):
+        for task in self.tasks:
+            if task.name == name: return task
+        raise TaskNotFoundException("Could not find task with name {}".format(name))
     def __str__(self):
         return '[WdlDocument tasks={} workflows={}]'.format(
             ','.join([t.name for t in self.tasks]),
@@ -25,35 +30,30 @@ class Expression(object):
         self.__dict__.update(locals())
     def eval(self, lookup=lambda var: None, functions=None):
         return eval(self.ast, lookup, functions)
-    def __str__(self):
+    def wdl_string(self):
         return expr_str(self.ast) if self.ast else str(None)
+    def __str__(self):
+        return '[Expression {}]'.format(self.wdl_string())
 
 class Task(object):
-    def __init__(self, name, command, outputs, runtime, parameter_meta, meta, ast):
+    def __init__(self, name, declarations, command, outputs, runtime, parameter_meta, meta, ast):
         self.__dict__.update(locals())
     def __getattr__(self, name):
         if name == 'inputs':
-            return [part for part in self.command.parts if isinstance(part, TaskVariable)]
+            return [decl for decl in self.declarations if decl.expression is not None]
     def __str__(self):
-        return '[Task name={} command={}]'.format(self.name, self.command)
+        return '[Task name={}]'.format(self.name)
 
-class CommandLine(object):
+class Command(object):
     def __init__(self, parts, ast):
         self.__dict__.update(locals())
-    def _stringify(self, wdl_value):
-      if isinstance(wdl_value, WdlFileValue) and wdl_value.value[0] != '/':
-          return os.path.abspath(wdl_value.value)
-      return str(wdl_value.value)
-
-    # TODO: honor lookup_function and wdl_functions
-    def instantiate(self, params, lookup_function=None, wdl_functions=None):
+    def instantiate(self, lookup_function=None, wdl_functions=None):
         cmd = []
         for part in self.parts:
-            if isinstance(part, CommandLineString):
+            if isinstance(part, CommandString):
                 cmd.append(part.string)
-            elif isinstance(part, TaskVariable):
-                def lookup(s): return params[s]
-                wdl_value = eval(part.expression, lookup, wdl_functions)
+            elif isinstance(part, CommandExpressionTag):
+                wdl_value = eval(part.expression, lookup_function, wdl_functions)
                 if 'sep' in part.attributes:
                     cmd.append(part.attributes['sep'].join([str(x) for x in wdl_value]))
                 else:
@@ -62,17 +62,16 @@ class CommandLine(object):
     def __str__(self):
         return wdl.util.strip_leading_ws(''.join([str(part) for part in self.parts]))
 
-class CommandLinePart: pass
+class CommandPart: pass
 
-# TODO: rename this
-class TaskVariable(CommandLinePart):
+class CommandExpressionTag(CommandPart):
     def __init__(self, attributes, expression, ast):
         self.__dict__.update(locals())
     def __str__(self):
         attr_string = ', '.join(self.attributes)
         return '${' + '{}{}'.format(attr_string, self.expression) + '}'
 
-class CommandLineString(CommandLinePart):
+class CommandString(CommandPart):
     def __init__(self, string, terminal):
         self.__dict__.update(locals())
     def __str__(self):
@@ -83,8 +82,7 @@ class WdlType: pass
 class WdlPrimitiveType(WdlType):
     def __init__(self): pass
     def is_primitive(self): return True
-    def is_tsv_serializable(self): return False
-    def is_json_serializable(self): return False
+    def __eq__(self, other): return isinstance(other, self.__class__)
     def __str__(self): return repr(self)
 
 class WdlCompoundType(WdlType):
@@ -92,39 +90,38 @@ class WdlCompoundType(WdlType):
     def __str__(self): return repr(self)
 
 class WdlBooleanType(WdlPrimitiveType):
-    def __repr__(self): return 'Boolean'
+    def wdl_string(self): return 'Boolean'
+    def __eq__(self, other): return isinstance(other, WdlBooleanType)
 
 class WdlIntegerType(WdlPrimitiveType):
-    def __repr__(self): return 'Int'
+    def wdl_string(self): return 'Int'
 
 class WdlFloatType(WdlPrimitiveType):
-    def __repr__(self): return 'Float'
+    def wdl_string(self): return 'Float'
 
 class WdlStringType(WdlPrimitiveType):
-    def __repr__(self): return 'String'
+    def wdl_string(self): return 'String'
 
 class WdlFileType(WdlPrimitiveType):
-    def __repr__(self): return 'File'
+    def wdl_string(self): return 'File'
 
 class WdlUriType(WdlPrimitiveType):
-    def __repr__(self): return 'Uri'
+    def wdl_string(self): return 'Uri'
 
 class WdlArrayType(WdlCompoundType):
     def __init__(self, subtype):
         self.subtype = subtype
-    def is_tsv_serializable(self):
-        return isinstance(self.subtype, WdlPrimitiveType)
-    def is_json_serializable(self):
-        return True
-    def __repr__(self): return 'Array[{0}]'.format(repr(self.subtype))
+    def __eq__(self, other):
+        return isinstance(other, WdlArrayType) and other.subtype == self.subtype
+    def wdl_string(self): return 'Array[{0}]'.format(self.subtype.wdl_string())
 
 class WdlMapType(WdlCompoundType):
     def __init__(self, key_type, value_type):
         self.__dict__.update(locals())
-    def __repr__(self): return 'Map[{0}, {1}]'.format(repr(self.key_type), repr(self.value_type))
+    def wdl_string(self): return 'Map[{0}, {1}]'.format(self.key_type.wdl_string(), self.value_type.wdl_string())
 
 class WdlObjectType(WdlCompoundType):
-    def __repr__(self): return 'Object'
+    def wdl_string(self): return 'Object'
 
 # Scope has: body, declarations, parent, prefix, name
 class Scope(object):
@@ -164,9 +161,9 @@ class Workflow(Scope):
         return get_r(self, fqn)
 
 class Call(Scope):
-    def __init__(self, task, alias, declarations, inputs, outputs, ast):
+    def __init__(self, task, alias, inputs, outputs, ast):
         self.__dict__.update(locals())
-        super(Call, self).__init__(alias if alias else task.name, declarations, [])
+        super(Call, self).__init__(alias if alias else task.name, [], [])
     def upstream(self):
         # TODO: this assumes MemberAccess always refers to other calls
         up = []
@@ -185,7 +182,9 @@ class Declaration:
     def __init__(self, name, type, expression, ast):
         self.__dict__.update(locals())
     def __str__(self):
-        return '{} {} = {}'.format(self.type, self.name, expr_str(self.expression))
+        return '[Declaration type={}, name={}, expr={}]'.format(self.type, self.name, expr_str(self.expression))
+    def wdl_string(self):
+        return '{} {}{}'.format(self.type.wdl_string(), self.name, ' = {}'.format(self.expression.wdl_string()) if self.expression else '')
 
 class WhileLoop(Scope):
     def __init__(self, expression, declarations, body, ast):
@@ -238,12 +237,13 @@ def parse_document(string, resource):
 
 def parse_task(ast):
     name = ast.attr('name').source_string
+    declarations = [parse_declaration(d) for d in ast.attr('declarations')]
     command_ast = wdl.find_asts(ast, 'RawCommand')
     command = parse_command(command_ast[0])
     outputs = [parse_output(output_ast) for output_ast in wdl.find_asts(ast, 'Output')]
     runtime_asts = wdl.find_asts(ast, 'Runtime')
     runtime = parse_runtime(runtime_asts[0]) if len(runtime_asts) else {}
-    return Task(name, command, outputs, runtime, {}, {}, ast)
+    return Task(name, declarations, command, outputs, runtime, {}, {}, ast)
 
 def parse_workflow(ast, tasks):
     body = []
@@ -269,7 +269,7 @@ def parse_declaration(ast):
         raise BindingException('Expecting a "Declaration" AST')
     type = parse_type(ast.attr('type'))
     name = ast.attr('name').source_string
-    expression = Expression(ast.attr('expression'))
+    expression = Expression(ast.attr('expression')) if ast.attr('expression') else None
     return Declaration(name, type, expression, ast)
 
 def parse_body_element(ast, tasks):
@@ -312,7 +312,6 @@ def parse_call(ast, tasks):
         raise BindingException('Expecting a "Call" AST')
     task_name = ast.attr('task').source_string
     alias = ast.attr('alias').source_string if ast.attr('alias') else None
-    declarations = [parse_declaration(decl_ast) for decl_ast in wdl.find_asts(ast, 'Declaration')]
 
     for task in tasks:
         if task.name == task_name:
@@ -335,19 +334,19 @@ def parse_call(ast, tasks):
     except IndexError:
         pass
 
-    return Call(task, alias, declarations, inputs, outputs, ast)
+    return Call(task, alias, inputs, outputs, ast)
 
-def parse_command_variable_attrs(ast):
+def parse_command_line_expr_attrs(ast):
     attrs = {}
     for x in ast:
         attrs[x.attr('key').source_string] = x.attr('value').source_string
     return attrs
 
-def parse_command_variable(ast):
+def parse_command_line_expr(ast):
     if not isinstance(ast, wdl.parser.Ast) or ast.name != 'CommandParameter':
         raise BindingException('Expecting a "CommandParameter" AST')
-    return TaskVariable(
-        parse_command_variable_attrs(ast.attr('attributes')),
+    return CommandExpressionTag(
+        parse_command_line_expr_attrs(ast.attr('attributes')),
         Expression(ast.attr('expr')),
         ast
     )
@@ -358,10 +357,10 @@ def parse_command(ast):
     parts = []
     for node in ast.attr('parts'):
         if isinstance(node, wdl.parser.Terminal):
-            parts.append(CommandLineString(node.source_string, node))
+            parts.append(CommandString(node.source_string, node))
         if isinstance(node, wdl.parser.Ast) and node.name == 'CommandParameter':
-            parts.append(parse_command_variable(node))
-    return CommandLine(parts, ast)
+            parts.append(parse_command_line_expr(node))
+    return Command(parts, ast)
 
 def parse_output(ast):
     if not isinstance(ast, wdl.parser.Ast) or ast.name != 'Output':
@@ -406,7 +405,6 @@ class WdlValue:
 
 class WdlUndefined(WdlValue):
     def __init__(self): self.type = None
-    def __repr__(self): return 'WdlUndefined'
     def __str__(self): return repr(self)
 
 class WdlStringValue(WdlValue):
