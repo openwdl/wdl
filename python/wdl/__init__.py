@@ -1,10 +1,10 @@
 import wdl.binding
 
 def load(fp, resource):
-    return wdl.binding.parse_document(fp.read(), resource)
+    return wdl.binding.parse_namespace(fp.read(), resource)
 
 def loads(s):
-    return wdl.binding.parse_document(s, "string")
+    return wdl.binding.parse_namespace(s, "string")
 
 def find_asts(ast_root, name):
     nodes = []

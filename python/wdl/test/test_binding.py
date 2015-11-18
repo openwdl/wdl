@@ -63,8 +63,26 @@ with open('${path}') as fp:
       print(line.strip())
 CODE"""
 
-    task.outputs
-    task.runtime
+    def lookup(name):
+        if name == 'path': return WdlString('/x/y/z.txt')
+
+    assert task.command.instantiate(lookup) == """python3 <<CODE
+with open('/x/y/z.txt') as fp:
+  for line in fp:
+    if line.startswith('zoologic'):
+      print(line.strip())
+CODE"""
+
+    assert task.outputs == []
+    assert task.runtime.keys() == ['docker']
+    assert task.runtime['docker'].wdl_string() == '"${docker}"'
+
+    def lookup(name):
+        if name == 'docker': return WdlString('foo/bar')
+
+    print( task.runtime['docker'] )
+    print( task.runtime['docker'].eval(lookup) )
+    assert task.runtime['docker'].eval(lookup) == WdlString('foo/bar')
     task.parameter_meta
     task.meta
 

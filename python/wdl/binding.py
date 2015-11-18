@@ -1,7 +1,10 @@
 import wdl.parser
 import wdl.util
+from wdl.types import *
+from wdl.values import *
 import os
 import json
+import re
 
 def scope_hierarchy(scope):
     if scope is None: return []
@@ -12,7 +15,7 @@ class TaskNotFoundException(Exception): pass
 class WdlValueException(Exception): pass
 class EvalException(Exception): pass
 
-class WdlDocument(object):
+class WdlNamespace(object):
     def __init__(self, source_location, source_wdl, tasks, workflows, ast):
         self.__dict__.update(locals())
     def task(self, name):
@@ -20,7 +23,7 @@ class WdlDocument(object):
             if task.name == name: return task
         raise TaskNotFoundException("Could not find task with name {}".format(name))
     def __str__(self):
-        return '[WdlDocument tasks={} workflows={}]'.format(
+        return '[WdlNamespace tasks={} workflows={}]'.format(
             ','.join([t.name for t in self.tasks]),
             ','.join([w.name for w in self.workflows])
         )
@@ -53,11 +56,14 @@ class Command(object):
             if isinstance(part, CommandString):
                 cmd.append(part.string)
             elif isinstance(part, CommandExpressionTag):
-                wdl_value = eval(part.expression, lookup_function, wdl_functions)
-                if 'sep' in part.attributes:
-                    cmd.append(part.attributes['sep'].join([str(x) for x in wdl_value]))
+                value = part.expression.eval(lookup_function, wdl_functions)
+                if isinstance(value, WdlValue) and isinstance(value.type, WdlPrimitiveType):
+                    value = value.as_string()
+                elif isinstance(value, WdlArray) and isinstance(value.subtype, WdlPrimitiveType) and 'sep' in part.attributes:
+                    value = parts.attributes['sep'].join(x.as_string() for x in value)
                 else:
-                    cmd.append(wdl_value)
+                    raise EvalException('Could not string-ify: {}'.format(value))
+                cmd.append(value)
         return wdl.util.strip_leading_ws(''.join(cmd))
     def wdl_string(self):
         return wdl.util.strip_leading_ws(''.join([part.wdl_string() for part in self.parts]))
@@ -82,52 +88,6 @@ class CommandString(CommandPart):
         return self.string
     def __str__(self):
         return '[CommandString: {}]'.format(self.string)
-
-class WdlType: pass
-
-class WdlPrimitiveType(WdlType):
-    def __init__(self): pass
-    def is_primitive(self): return True
-    def __eq__(self, other): return isinstance(other, self.__class__)
-    def __str__(self): return repr(self)
-
-class WdlCompoundType(WdlType):
-    def is_primitive(self): return False
-    def __str__(self): return repr(self)
-
-class WdlBooleanType(WdlPrimitiveType):
-    def wdl_string(self): return 'Boolean'
-    def __eq__(self, other): return isinstance(other, WdlBooleanType)
-
-class WdlIntegerType(WdlPrimitiveType):
-    def wdl_string(self): return 'Int'
-
-class WdlFloatType(WdlPrimitiveType):
-    def wdl_string(self): return 'Float'
-
-class WdlStringType(WdlPrimitiveType):
-    def wdl_string(self): return 'String'
-
-class WdlFileType(WdlPrimitiveType):
-    def wdl_string(self): return 'File'
-
-class WdlUriType(WdlPrimitiveType):
-    def wdl_string(self): return 'Uri'
-
-class WdlArrayType(WdlCompoundType):
-    def __init__(self, subtype):
-        self.subtype = subtype
-    def __eq__(self, other):
-        return isinstance(other, WdlArrayType) and other.subtype == self.subtype
-    def wdl_string(self): return 'Array[{0}]'.format(self.subtype.wdl_string())
-
-class WdlMapType(WdlCompoundType):
-    def __init__(self, key_type, value_type):
-        self.__dict__.update(locals())
-    def wdl_string(self): return 'Map[{0}, {1}]'.format(self.key_type.wdl_string(), self.value_type.wdl_string())
-
-class WdlObjectType(WdlCompoundType):
-    def wdl_string(self): return 'Object'
 
 # Scope has: body, declarations, parent, prefix, name
 class Scope(object):
@@ -184,7 +144,7 @@ class Call(Scope):
     def __self__(self):
         return '[Call alias={}]'.format(self.alias)
 
-class Declaration:
+class Declaration(object):
     def __init__(self, name, type, expression, ast):
         self.__dict__.update(locals())
     def __str__(self):
@@ -232,14 +192,14 @@ def assign_ids(ast_root, id=0):
 
 # Binding functions
 
-def parse_document(string, resource):
+def parse_namespace(string, resource):
     errors = wdl.parser.DefaultSyntaxErrorHandler()
     tokens = wdl.parser.lex(string, resource, errors)
     ast = wdl.parser.parse(tokens).ast()
     assign_ids(ast)
     tasks = [parse_task(task_ast) for task_ast in wdl.find_asts(ast, 'Task')]
     workflows = [parse_workflow(wf_ast, tasks) for wf_ast in wdl.find_asts(ast, 'Workflow')]
-    return WdlDocument(resource, string, tasks, workflows, ast)
+    return WdlNamespace(resource, string, tasks, workflows, ast)
 
 def parse_task(ast):
     name = ast.attr('name').source_string
@@ -402,170 +362,29 @@ def parse_type(ast):
     else:
         raise BindingException('Expecting an "Type" AST')
 
-class WdlValue:
-    def __init__(self, value):
-        self.value = value
-        self.check_compatible(value)
-    def __str__(self):
-        return '[{}: {}]'.format(self.type, str(self.value))
-
-class WdlUndefined(WdlValue):
-    def __init__(self): self.type = None
-    def __str__(self): return repr(self)
-
-class WdlStringValue(WdlValue):
-    type = WdlStringType()
-    def check_compatible(self, value):
-        if not isinstance(value, str):
-            raise WdlValueException("WdlStringValue must hold a python 'str'")
-    def add(self, wdl_value):
-        if isinstance(wdl_value.type, WdlPrimitiveType):
-            return WdlStringValue(self.value + str(wdl_value.value))
-        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
-
-class WdlIntegerValue(WdlValue):
-    type = WdlIntegerType()
-    def check_compatible(self, value):
-        if not isinstance(value, int):
-            raise WdlValueException("WdlIntegerValue must hold a python 'int'")
-    def add(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
-            return WdlIntegerValue(self.value + wdl_value.value)
-        if type(wdl_value.type) == WdlFloatType:
-            return WdlFloatValue(self.value + wdl_value.value)
-        if type(wdl_value.type) in [WdlStringType, WdlFileValue, WdlUriValue]:
-            return WdlStringValue(str(self.value) + str(wdl_value.value))
-        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
-    def subtract(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
-            return WdlIntegerValue(self.value - wdl_value.value)
-        if type(wdl_value.type) == WdlFloatType:
-            return WdlFloatValue(self.value - wdl_value.value)
-        raise EvalException("Cannot subtract: {} + {}".format(self.type, wdl_value.type))
-    def multiply(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
-            return WdlIntegerValue(self.value * wdl_value.value)
-        if type(wdl_value.type) == WdlFloatType:
-            return WdlFloatValue(self.value * wdl_value.value)
-        raise EvalException("Cannot multiply: {} + {}".format(self.type, wdl_value.type))
-    def divide(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType, WdlFloatType]:
-            return WdlFloatValue(self.value / wdl_value.value)
-        raise EvalException("Cannot divide: {} + {}".format(self.type, wdl_value.type))
-    def mod(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
-            return WdlIntegerValue(self.value % wdl_value.value)
-        if type(wdl_value.type) == WdlFloatType:
-            return WdlFloatValue(self.value % wdl_value.value)
-        raise EvalException("Cannot modulus divide: {} + {}".format(self.type, wdl_value.type))
-
-class WdlBooleanValue(WdlValue):
-    type = WdlBooleanType()
-    def check_compatible(self, value):
-        if not isinstance(value, bool):
-            raise WdlValueException("WdlBooleanValue must hold a python 'bool'")
-    def add(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
-            return WdlIntegerValue(self.value + wdl_value.value)
-        if type(wdl_value.type) in [WdlFloatType]:
-            return WdlFloatValue(str(self.value) + str(wdl_value.value))
-        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
-
-class WdlFloatValue(WdlValue):
-    type = WdlFloatType()
-    def check_compatible(self, value):
-        if not isinstance(value, float):
-            raise WdlValueException("WdlFloatValue must hold a python 'float'")
-    def add(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType, WdlFloatType]:
-            return WdlFloatValue(self.value + wdl_value.value)
-        if type(wdl_value.type) in [WdlStringType, WdlFileValue, WdlUriValue]:
-            return WdlStringValue(str(self.value) + str(wdl_value.value))
-        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
-
-class WdlFileValue(WdlValue):
-    type = WdlFileType()
-    def check_compatible(self, value):
-        pass # TODO: implement
-
-class WdlUriValue(WdlValue):
-    type = WdlUriType()
-    def check_compatible(self, value):
-        pass # TODO: implement
-
-class WdlArrayValue(WdlValue):
-    def __init__(self, subtype, value):
-        if not isinstance(value, list):
-            raise WdlValueException("WdlArrayValue must be a Python 'list'")
-        if not all(type(x.type) == type(subtype) for x in value):
-            raise WdlValueException("WdlArrayValue must contain elements of the same type: {}".format(value))
-        self.type = WdlArrayType(subtype)
-        self.subtype = subtype
-        self.value = value
-    def flatten(self):
-        flat = lambda l: [item for sublist in l for item in sublist.value]
-        if not isinstance(self.type.subtype, WdlArrayType):
-            raise WdlValueException("Cannot flatten {} (type {})".format(self.value, self.type))
-        return WdlArrayValue(self.subtype.subtype, flat(self.value))
-    def __str__(self):
-        return '[{}: {}]'.format(self.type, ', '.join([str(x) for x in self.value]))
-
-class WdlMapValue(WdlValue):
-    def __init__(self, value):
-        if not isinstance(value, dict):
-            raise WdlValueException("WdlMapValue must be a Python 'dict'")
-        if not all(type(x) == WdlPrimitiveType for x in value.keys()):
-            raise WdlValueException("WdlMapValue must contain WdlPrimitiveValues keys")
-        if not all(type(x) == WdlPrimitiveType for x in value.values()):
-            raise WdlValueException("WdlMapValue must contain WdlPrimitiveValues values")
-        if not all(type(x) == type(value[0]) for x in value.keys()):
-            raise WdlValueException("WdlMapValue must contain keys of the same type: {}".format(value))
-        if not all(type(x) == type(value[0]) for x in value.values()):
-            raise WdlValueException("WdlMapValue must contain values of the same type: {}".format(value))
-        (k, v) = list(value.items())[0]
-        self.type = WdlMapType(k.type, v.type)
-        self.value = value
-
-class WdlObject(WdlValue):
-    def __init__(self, dictionary):
-        for k, v in dictionary.items():
-            self.set(k, v)
-    def set(self, key, value):
-        self.__dict__[key] = value
-    def get(self, key):
-        return self.__dict__[key]
-    def __str__(self):
-        return '[WdlObject: {}]'.format(str(self.__dict__))
-
 def python_to_wdl_value(py_value, wdl_type):
     if isinstance(wdl_type, WdlStringType):
-        return WdlStringValue(py_value)
+        return WdlString(py_value)
     if isinstance(wdl_type, WdlIntegerType):
-        return WdlIntegerValue(py_value)
+        return WdlInteger(py_value)
     if isinstance(wdl_type, WdlFloatType):
-        return WdlFloatValue(py_value)
+        return WdlFloat(py_value)
     if isinstance(wdl_type, WdlBooleanType):
-        return WdlBooleanValue(py_value)
+        return WdlBoolean(py_value)
     if isinstance(wdl_type, WdlFileType):
-        return WdlFileValue(py_value)
+        return WdlFile(py_value)
     if isinstance(wdl_type, WdlUriType):
-        return WdlUriValue(py_value)
+        return WdlUri(py_value)
     if isinstance(wdl_type, WdlArrayType):
         if not isinstance(py_value, list):
             raise WdlValueException("{} must be constructed from Python list, got {}".format(wdl_type, py_value))
         members = [python_to_wdl_value(x, wdl_type.subtype) for x in py_value]
-        return WdlArrayValue(wdl_type.subtype, members)
+        return WdlArray(wdl_type.subtype, members)
     if isinstance(wdl_type, WdlMapType):
         if not isinstance(py_value, list):
             raise WdlValueException("{} must be constructed from Python dict, got {}".format(wdl_type, py_value))
         members = {python_to_wdl_value(k): python_to_wdl_value(v) for k,v in py_value.items()}
-        return WdlMapValue(members)
-
-def wdl_value_to_python(wdl_value):
-    if isinstance(wdl_value.type, WdlPrimitiveType):
-        return wdl_value.value
-    if isinstance(wdl_value.type, WdlArrayType):
-        return [wdl_value_to_python(x) for x in wdl_value.value]
+        return WdlMap(members)
 
 binary_operators = [
     'Add', 'Subtract', 'Multiply', 'Divide', 'Remainder', 'Equals',
@@ -577,17 +396,25 @@ unary_operators = [
     'LogicalNot', 'UnaryPlus', 'UnaryMinus'
 ]
 
+def interpolate(string, lookup, functions):
+    print('interpolate start', string)
+    for expr_string in re.findall(r'\$\{.*?\}', string):
+        expr = wdl.parse_expr(expr_string[2:-1])
+        value = expr.eval(lookup, functions)
+        string = string.replace(expr_string, value.as_string())
+    print('interpolate end', string)
+    return WdlString(string)
+
 def eval(ast, lookup=lambda var: None, functions=None):
-    if isinstance(ast, Expression): return eval(ast.ast, lookup, functions)
     if isinstance(ast, wdl.parser.Terminal):
         if ast.str == 'integer':
-            return WdlIntegerValue(int(ast.source_string))
+            return WdlInteger(int(ast.source_string))
         if ast.str == 'float':
-            return WdlFloatValue(float(ast.source_string))
+            return WdlFloat(float(ast.source_string))
         elif ast.str == 'string':
-            return WdlStringValue(ast.source_string)
+            return WdlString(interpolate(ast.source_string, lookup, functions))
         elif ast.str == 'boolean':
-            return WdlBooleanValue(True if ast.source_string == 'true' else False)
+            return WdlBoolean(True if ast.source_string == 'true' else False)
         elif ast.str == 'identifier':
             symbol = lookup(ast.source_string)
             if symbol is None:
@@ -600,10 +427,6 @@ def eval(ast, lookup=lambda var: None, functions=None):
 
             rhs = eval(ast.attr('rhs'), lookup, functions)
             if isinstance(rhs, WdlUndefined): return rhs
-
-            # TODO: do type checking to make sure running
-            # the specified operator on the operands is allowed
-            # for now, just assume it is
 
             if ast.name == 'Add': return lhs.add(rhs)
             if ast.name == 'Subtract': return lhs.subtract(rhs)
