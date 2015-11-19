@@ -15,6 +15,12 @@ class TaskNotFoundException(Exception): pass
 class WdlValueException(Exception): pass
 class EvalException(Exception): pass
 
+class FullyQualifiedName(object):
+    def __init__(self, fqn, namespace):
+        self.__dict__.update(locals())
+    def __str__(self):
+        return '[FullyQualifiedName: {}, {}]'.format(self.fqn, str(namespace))
+
 class WdlNamespace(object):
     def __init__(self, source_location, source_wdl, tasks, workflows, ast):
         self.__dict__.update(locals())
@@ -22,6 +28,16 @@ class WdlNamespace(object):
         for task in self.tasks:
             if task.name == name: return task
         raise TaskNotFoundException("Could not find task with name {}".format(name))
+    def resolve(self, fqn):
+        # TODO: finish
+        try:
+            (name, sub_fqn) = fqn.split('.', 1)
+        except ValueError:
+            (name, sub_fqn) = (fqn, '')
+
+        for task in tasks:
+            if task.name == name and sub_fqn == '': return FullyQualifiedName(fqn, task)
+            if workflow.name == name and sub_fqn == '': return FullyQualifiedName(fqn, workflow)
     def __str__(self):
         return '[WdlNamespace tasks={} workflows={}]'.format(
             ','.join([t.name for t in self.tasks]),
@@ -127,7 +143,7 @@ class Workflow(Scope):
         return get_r(self, fqn)
 
 class Call(Scope):
-    def __init__(self, task, alias, inputs, outputs, ast):
+    def __init__(self, task, alias, inputs, ast):
         self.__dict__.update(locals())
         super(Call, self).__init__(alias if alias else task.name, [], [])
     def upstream(self):
@@ -293,14 +309,7 @@ def parse_call(ast, tasks):
     except IndexError:
         pass
 
-    outputs = {}
-    try:
-        for mapping in wdl.find_asts(ast, 'Outputs')[0].attr('map'):
-            outputs[mapping.attr('key').source_string] = Expression(mapping.attr('value'))
-    except IndexError:
-        pass
-
-    return Call(task, alias, inputs, outputs, ast)
+    return Call(task, alias, inputs, ast)
 
 def parse_command_line_expr_attrs(ast):
     attrs = {}
@@ -333,7 +342,7 @@ def parse_output(ast):
         raise BindingException('Expecting an "Output" AST')
     type = parse_type(ast.attr('type'))
     var = ast.attr('var').source_string
-    expression = ast.attr('expression')
+    expression = Expression(ast.attr('expression'))
     return Declaration(var, type, expression, ast)
 
 def parse_type(ast):
