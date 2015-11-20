@@ -8,14 +8,13 @@ For Scala language bindings, use [Cromwell](http://github.com/broadinstitute/cro
 
 * [PyWDL](#pywdl)
 * [Installation](#installation)
-* [Usage](#usage)
-  * [Python Module](#python-module)
-    * [Abstract syntax trees (ASTs)](#abstract-syntax-trees-asts)
-      * [wdl.parser.Ast](#wdlparserast)
-      * [wdl.parser.Terminal](#wdlparserterminal)
-      * [wdl.parser.AstList](#wdlparserastlist)
-    * [Working with expressions](#working-with-expressions)
-  * [Command Line Usage](#command-line-usage)
+* [Language Bindings](#language-bindings)
+  * [Abstract syntax trees (ASTs)](#abstract-syntax-trees-asts)
+    * [wdl.parser.Ast](#wdlparserast)
+    * [wdl.parser.Terminal](#wdlparserterminal)
+    * [wdl.parser.AstList](#wdlparserastlist)
+  * [Working with expressions](#working-with-expressions)
+* [Command Line Usage](#command-line-usage)
 
 <!---toc end-->
 
@@ -43,6 +42,7 @@ For example:
 
 ```python
 import wdl
+import wdl.values
 
 wdl_code = """
 task my_task {
@@ -61,19 +61,19 @@ workflow my_wf {
 """
 
 # Use the language bindings to parse WDL into Python objects
-wdl_document = wdl.loads(wdl_code)
+wdl_namespace = wdl.loads(wdl_code)
 
-for workflow in wdl_document.workflows:
+for workflow in wdl_namespace.workflows:
     print('Workflow "{}":'.format(workflow.name))
     for call in workflow.calls():
         print('    Call: {} (task {})'.format(call.name, call.task.name))
 
-for task in wdl_document.tasks:
+for task in wdl_namespace.tasks:
     name = task.name
     abstract_command = task.command
-    instantated_command = task.command.instantiate(params={
-        'file': '/path/to/file.txt'
-    })
+    def lookup(name):
+        if name == 'file': return wdl.values.WdlFile('/path/to/file.txt')
+    instantated_command = task.command.instantiate(lookup)
     print('Task "{}":'.format(name))
     print('    Abstract Command: {}'.format(abstract_command))
     print('    Instantiated Command: {}'.format(instantated_command))
@@ -120,7 +120,7 @@ for workflow_ast in workflow_asts:
     print(workflow_ast.dumps(indent=2))
 ```
 
-### Abstract syntax trees (ASTs)
+## Abstract syntax trees (ASTs)
 
 An AST is the output of the parsing algorithm.  It is a tree structure in which the root node is always a `Document` AST
 
@@ -212,7 +212,7 @@ for ast in task_a_command.attr('parts'):
         print('command parameter: ' + ast.dumps())
 ```
 
-#### wdl.parser.Ast
+### wdl.parser.Ast
 
 The `Ast` class is a syntax tree with a name and children nodes.
 
@@ -226,7 +226,7 @@ Methods:
 * `def attr(self, name)`.  `ast.attr('name')` is the same as `ast.attributes['name']`.
 * `def dumps(self, indent=None, b64_source=True)` - returns a String representation of this AstList.  the `indent` parameter takes an integer for the indent level.  Omitting this value will cause there to be no new-lines in the resulting string.  `b64_source` will be passed to recursive invocations of `dumps`.
 
-#### wdl.parser.Terminal
+### wdl.parser.Terminal
 
 The `wdl.parser.Terminal` object represents a literal piece of the original source code.  This always shows up as leaf nodes on `Ast` objects
 
@@ -243,7 +243,7 @@ Methods:
 
 * `def dumps(self, b64_source=True, **kwargs)` - return a String representation of this terminal.  `b64_source` means that the source code will be base64 encoded because sometimes the source contains newlines or special characters that make it difficult to read when a whole AST is string-ified.
 
-#### wdl.parser.AstList
+### wdl.parser.AstList
 
 `class AstList(list)` represents a sequence of `Ast`, `AstList`, and `Terminal` objects
 
@@ -251,7 +251,7 @@ Methods:
 
 * `def dumps(self, indent=None, b64_source=True)` - returns a String representation of this AstList.  the `indent` parameter takes an integer for the indent level.  Omitting this value will cause there to be no new-lines in the resulting string.  `b64_source` will be passed to recursive invocations of `dumps`.
 
-### Working with expressions
+## Working with expressions
 
 Parsing a WDL file will result in unevaluated expressions.  For example:
 
@@ -288,35 +288,34 @@ Sometimes expressions contain references to variables or functions.  In order fo
 
 ```python
 import wdl
-from wdl.binding import WdlIntegerValue
+from wdl.values import WdlInteger, WdlUndefined
 
 def test_lookup(identifier):
     if identifier == 'var':
-        return WdlIntegerValue(4)
+        return WdlInteger(4)
     else:
         return WdlUndefined
 
 def test_functions():
     def add_one(parameters):
-        if len(parameters) != 1 or not parameters[0].__class__ in [WdlIntegerValue]:
-            raise EvalException("add_one(): expecting one Integer parameter")
-        return WdlIntegerValue(parameters[0].value + 1)
+        # assume at least one parameter exists, for simplicity
+        return WdlInteger(parameters[0].value + 1)
     def get_function(name):
         if name == 'add_one': return add_one
         else: raise EvalException("Function {} not defined".format(name))
     return get_function
 
-# WdlIntegerValue(12)
+# WdlInteger(12)
 print(wdl.parse_expr("var * 3").eval(test_lookup))
 
-# WdlIntegerValue(8)
+# WdlInteger(8)
 print(wdl.parse_expr("var + var").eval(test_lookup))
 
-# WdlIntegerValue(9)
+# WdlInteger(9)
 print(wdl.parse_expr("add_one(var + var)").eval(test_lookup, test_functions()))
 ```
 
-## Command Line Usage
+# Command Line Usage
 
 ```
 $ wdl --help

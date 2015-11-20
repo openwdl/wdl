@@ -1,5 +1,9 @@
 from wdl.types import *
 
+class EvalException(Exception): pass
+
+def assert_type(value, types): return value.type.__class__  in types
+
 class WdlValue:
     def __init__(self, value):
         self.value = value
@@ -30,33 +34,33 @@ class WdlInteger(WdlValue):
         if not isinstance(value, int):
             raise WdlValueException("WdlInteger must hold a python 'int'")
     def add(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
+        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType]):
             return WdlInteger(self.value + wdl_value.value)
-        if type(wdl_value.type) == WdlFloatType:
+        if assert_type(wdl_value, [WdlFloatType]):
             return WdlFloat(self.value + wdl_value.value)
-        if type(wdl_value.type) in [WdlStringType, WdlFile, WdlUri]:
+        if assert_type(wdl_value, [WdlStringType, WdlFile, WdlUri]):
             return WdlString(str(self.value) + str(wdl_value.value))
         raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
     def subtract(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
+        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType]):
             return WdlInteger(self.value - wdl_value.value)
-        if type(wdl_value.type) == WdlFloatType:
+        if assert_type(wdl_value, [WdlFloatType]):
             return WdlFloat(self.value - wdl_value.value)
         raise EvalException("Cannot subtract: {} + {}".format(self.type, wdl_value.type))
     def multiply(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
+        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType]):
             return WdlInteger(self.value * wdl_value.value)
-        if type(wdl_value.type) == WdlFloatType:
+        if assert_type(wdl_value, [WdlFloatType]):
             return WdlFloat(self.value * wdl_value.value)
         raise EvalException("Cannot multiply: {} + {}".format(self.type, wdl_value.type))
     def divide(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType, WdlFloatType]:
+        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType, WdlFloatType]):
             return WdlFloat(self.value / wdl_value.value)
         raise EvalException("Cannot divide: {} + {}".format(self.type, wdl_value.type))
     def mod(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
+        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType]):
             return WdlInteger(self.value % wdl_value.value)
-        if type(wdl_value.type) == WdlFloatType:
+        if assert_type(wdl_value, [WdlFloatType]):
             return WdlFloat(self.value % wdl_value.value)
         raise EvalException("Cannot modulus divide: {} + {}".format(self.type, wdl_value.type))
 
@@ -66,9 +70,9 @@ class WdlBoolean(WdlValue):
         if not isinstance(value, bool):
             raise WdlValueException("WdlBoolean must hold a python 'bool'")
     def add(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType]:
+        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType]):
             return WdlInteger(self.value + wdl_value.value)
-        if type(wdl_value.type) in [WdlFloatType]:
+        if assert_type(wdl_value, [WdlFloatType]):
             return WdlFloat(str(self.value) + str(wdl_value.value))
         raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
 
@@ -78,9 +82,9 @@ class WdlFloat(WdlValue):
         if not isinstance(value, float):
             raise WdlValueException("WdlFloat must hold a python 'float'")
     def add(self, wdl_value):
-        if type(wdl_value.type) in [WdlIntegerType, WdlBooleanType, WdlFloatType]:
+        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType, WdlFloatType]):
             return WdlFloat(self.value + wdl_value.value)
-        if type(wdl_value.type) in [WdlStringType, WdlFile, WdlUri]:
+        if assert_type(wdl_value, [WdlStringType, WdlFile, WdlUri]):
             return WdlString(str(self.value) + str(wdl_value.value))
         raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
 

@@ -1,10 +1,11 @@
-import wdl.binding
+from wdl.binding import parse_namespace, Expression
+import wdl.parser
 
 def load(fp, resource):
-    return wdl.binding.parse_namespace(fp.read(), resource)
+    return parse_namespace(fp.read(), resource)
 
 def loads(s):
-    return wdl.binding.parse_namespace(s, "string")
+    return parse_namespace(s, "string")
 
 def find_asts(ast_root, name):
     nodes = []
@@ -20,4 +21,4 @@ def find_asts(ast_root, name):
 
 def parse_expr(expr_string):
     ctx = wdl.parser.ParserContext(wdl.parser.lex(expr_string, 'string'), wdl.parser.DefaultSyntaxErrorHandler())
-    return wdl.binding.Expression(wdl.parser.parse_e(ctx).ast())
+    return Expression(wdl.parser.parse_e(ctx).ast())
