@@ -41,9 +41,9 @@ class WdlString(WdlValue):
     def check_compatible(self, value):
         if not isinstance(value, str):
             raise WdlValueException("WdlString must hold a python 'str'")
-    def add(self, wdl_value):
-        if isinstance(wdl_value.type, WdlPrimitiveType):
-            return WdlString(self.value + str(wdl_value.value))
+    def add(self, rhs):
+        if isinstance(rhs.type, WdlPrimitiveType):
+            return WdlString(self.value + str(rhs.value))
         super(WdlString, self).add(rhs)
     def equal(self, rhs):
         if assert_type(rhs, [WdlStringType]):
@@ -63,37 +63,37 @@ class WdlInteger(WdlValue):
     def check_compatible(self, value):
         if not isinstance(value, int):
             raise WdlValueException("WdlInteger must hold a python 'int'")
-    def add(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType]):
-            return WdlInteger(self.value + wdl_value.value)
-        if assert_type(wdl_value, [WdlFloatType]):
-            return WdlFloat(self.value + wdl_value.value)
-        if assert_type(wdl_value, [WdlStringType]):
-            return WdlString(str(self.value) + wdl_value.value)
-        super(WdlInteger, self).add(wdl_value)
-    def subtract(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType]):
-            return WdlInteger(self.value - wdl_value.value)
-        if assert_type(wdl_value, [WdlFloatType]):
-            return WdlFloat(self.value - wdl_value.value)
+    def add(self, rhs):
+        if assert_type(rhs, [WdlIntegerType]):
+            return WdlInteger(self.value + rhs.value)
+        if assert_type(rhs, [WdlFloatType]):
+            return WdlFloat(self.value + rhs.value)
+        if assert_type(rhs, [WdlStringType]):
+            return WdlString(str(self.value) + rhs.value)
+        super(WdlInteger, self).add(rhs)
+    def subtract(self, rhs):
+        if assert_type(rhs, [WdlIntegerType]):
+            return WdlInteger(self.value - rhs.value)
+        if assert_type(rhs, [WdlFloatType]):
+            return WdlFloat(self.value - rhs.value)
         super(WdlInteger, self).subtract(rhs)
-    def multiply(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType]):
-            return WdlInteger(self.value * wdl_value.value)
-        if assert_type(wdl_value, [WdlFloatType]):
-            return WdlFloat(self.value * wdl_value.value)
+    def multiply(self, rhs):
+        if assert_type(rhs, [WdlIntegerType]):
+            return WdlInteger(self.value * rhs.value)
+        if assert_type(rhs, [WdlFloatType]):
+            return WdlFloat(self.value * rhs.value)
         super(WdlInteger, self).multiply(rhs)
-    def divide(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType]):
-            return WdlInteger(self.value / wdl_value.value)
-        if assert_type(wdl_value, [WdlFloatType]):
-            return WdlFloat(self.value / wdl_value.value)
+    def divide(self, rhs):
+        if assert_type(rhs, [WdlIntegerType]):
+            return WdlInteger(self.value / rhs.value)
+        if assert_type(rhs, [WdlFloatType]):
+            return WdlFloat(self.value / rhs.value)
         super(WdlInteger, self).divide(rhs)
-    def mod(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType]):
-            return WdlInteger(self.value % wdl_value.value)
-        if assert_type(wdl_value, [WdlFloatType]):
-            return WdlFloat(self.value % wdl_value.value)
+    def mod(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlBooleanType]):
+            return WdlInteger(self.value % rhs.value)
+        if assert_type(rhs, [WdlFloatType]):
+            return WdlFloat(self.value % rhs.value)
         super(WdlInteger, self).mod(rhs)
     def equal(self, rhs):
         if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
@@ -117,12 +117,12 @@ class WdlBoolean(WdlValue):
     def check_compatible(self, value):
         if not isinstance(value, bool):
             raise WdlValueException("WdlBoolean must hold a python 'bool'")
-    def add(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType]):
-            return WdlInteger(self.value + wdl_value.value)
-        if assert_type(wdl_value, [WdlFloatType]):
-            return WdlFloat(str(self.value) + str(wdl_value.value))
-        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
+    def add(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlBooleanType]):
+            return WdlInteger(self.value + rhs.value)
+        if assert_type(rhs, [WdlFloatType]):
+            return WdlFloat(str(self.value) + str(rhs.value))
+        raise EvalException("Cannot add: {} + {}".format(self.type, rhs.type))
     def greater_than(self, rhs):
         if assert_type(rhs, [WdlBooleanType]):
             return WdlBoolean(self.value > rhs.value)
@@ -151,27 +151,27 @@ class WdlFloat(WdlValue):
     def check_compatible(self, value):
         if not isinstance(value, float):
             raise WdlValueException("WdlFloat must hold a python 'float'")
-    def add(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlFloatType]):
-            return WdlFloat(self.value + wdl_value.value)
-        if assert_type(wdl_value, [WdlStringType]):
-            return WdlString(str(self.value) + wdl_value.value)
-        super(WdlFloat, self).add(wdl_value)
-    def subtract(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlFloatType]):
-            return WdlFloat(self.value - wdl_value.value)
+    def add(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
+            return WdlFloat(self.value + rhs.value)
+        if assert_type(rhs, [WdlStringType]):
+            return WdlString(str(self.value) + rhs.value)
+        super(WdlFloat, self).add(rhs)
+    def subtract(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
+            return WdlFloat(self.value - rhs.value)
         super(WdlFloat, self).subtract(rhs)
-    def multiply(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlFloatType]):
-            return WdlFloat(self.value * wdl_value.value)
+    def multiply(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
+            return WdlFloat(self.value * rhs.value)
         super(WdlFloat, self).multiply(rhs)
-    def divide(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlFloatType]):
-            return WdlFloat(self.value / wdl_value.value)
+    def divide(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
+            return WdlFloat(self.value / rhs.value)
         super(WdlFloat, self).divide(rhs)
-    def mod(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlFloatType]):
-            return WdlFloat(self.value % wdl_value.value)
+    def mod(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
+            return WdlFloat(self.value % rhs.value)
         super(WdlFloat, self).mod(rhs)
     def equal(self, rhs):
         if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
