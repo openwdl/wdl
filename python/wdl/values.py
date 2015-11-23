@@ -4,7 +4,7 @@ class EvalException(Exception): pass
 
 def assert_type(value, types): return value.type.__class__  in types
 
-class WdlValue:
+class WdlValue(object):
     def __init__(self, value):
         self.value = value
         self.check_compatible(value)
@@ -12,7 +12,25 @@ class WdlValue:
         return '[{}: {}]'.format(self.type, str(self.value))
     def as_string(self): return str(self.value)
     def __str__(self): return '[Wdl{}: {}]'.format(self.type.wdl_string(), self.as_string())
-    def __eq__(self, other): return self.__class__ == other.__class__ and self.value == other.value
+    def __eq__(self, rhs): return self.__class__ == rhs.__class__ and self.value == rhs.value
+    def __invalid(self, symbol, rhs): raise EvalException('Cannot perform operation: {} {} {}'.format(self.type.wdl_string(), symbol, rhs.type.wdl_string()))
+    def __invalid_unary(self, symbol): raise EvalException('Cannot perform operation: {} {}'.format(symbol, self.type.wdl_string()))
+    def add(self, rhs): return self.__invalid('+', rhs)
+    def subtract(self, rhs): return self.__invalid('-', rhs)
+    def multiply(self, rhs): return self.__invalid('*', rhs)
+    def divide(self, rhs): return self.__invalid('/', rhs)
+    def mod(self, rhs): return self.__invalid('%', rhs)
+    def equal(self, rhs): return self.__invalid('==', rhs)
+    def not_equal(self, rhs): return self.equal(rhs).logical_not()
+    def greater_than(self, rhs): return self.__invalid('>', rhs)
+    def greater_than_or_equal(self, rhs): return self.greater_than(rhs).logical_or(self.equal(rhs))
+    def less_than(self, rhs): return self.__invalid('<', rhs)
+    def less_than_or_equal(self, rhs): return self.less_than(rhs).logical_or(self.equal(rhs))
+    def logical_or(self, rhs): return self.__invalid('||', rhs)
+    def logical_and(self, rhs): return self.__invalid('&&', rhs)
+    def logical_not(self): return self.__invalid_unary('!')
+    def unary_plus(self): return self.__invalid_unary('+')
+    def unary_negation(self): return self.__invalid_unary('-')
 
 class WdlUndefined(WdlValue):
     def __init__(self): self.type = None
@@ -26,7 +44,19 @@ class WdlString(WdlValue):
     def add(self, wdl_value):
         if isinstance(wdl_value.type, WdlPrimitiveType):
             return WdlString(self.value + str(wdl_value.value))
-        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
+        super(WdlString, self).add(rhs)
+    def equal(self, rhs):
+        if assert_type(rhs, [WdlStringType]):
+            return WdlBoolean(self.value == rhs.value)
+        super(WdlString, self).equal(rhs)
+    def greater_than(self, rhs):
+        if assert_type(rhs, [WdlStringType]):
+            return WdlBoolean(self.value > rhs.value)
+        super(WdlString, self).equal(rhs)
+    def less_than(self, rhs):
+        if assert_type(rhs, [WdlStringType]):
+            return WdlBoolean(self.value < rhs.value)
+        super(WdlString, self).equal(rhs)
 
 class WdlInteger(WdlValue):
     type = WdlIntegerType()
@@ -34,35 +64,53 @@ class WdlInteger(WdlValue):
         if not isinstance(value, int):
             raise WdlValueException("WdlInteger must hold a python 'int'")
     def add(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType]):
+        if assert_type(wdl_value, [WdlIntegerType]):
             return WdlInteger(self.value + wdl_value.value)
         if assert_type(wdl_value, [WdlFloatType]):
             return WdlFloat(self.value + wdl_value.value)
-        if assert_type(wdl_value, [WdlStringType, WdlFile, WdlUri]):
-            return WdlString(str(self.value) + str(wdl_value.value))
-        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
+        if assert_type(wdl_value, [WdlStringType]):
+            return WdlString(str(self.value) + wdl_value.value)
+        super(WdlInteger, self).add(wdl_value)
     def subtract(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType]):
+        if assert_type(wdl_value, [WdlIntegerType]):
             return WdlInteger(self.value - wdl_value.value)
         if assert_type(wdl_value, [WdlFloatType]):
             return WdlFloat(self.value - wdl_value.value)
-        raise EvalException("Cannot subtract: {} + {}".format(self.type, wdl_value.type))
+        super(WdlInteger, self).subtract(rhs)
     def multiply(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType]):
+        if assert_type(wdl_value, [WdlIntegerType]):
             return WdlInteger(self.value * wdl_value.value)
         if assert_type(wdl_value, [WdlFloatType]):
             return WdlFloat(self.value * wdl_value.value)
-        raise EvalException("Cannot multiply: {} + {}".format(self.type, wdl_value.type))
+        super(WdlInteger, self).multiply(rhs)
     def divide(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType, WdlFloatType]):
+        if assert_type(wdl_value, [WdlIntegerType]):
+            return WdlInteger(self.value / wdl_value.value)
+        if assert_type(wdl_value, [WdlFloatType]):
             return WdlFloat(self.value / wdl_value.value)
-        raise EvalException("Cannot divide: {} + {}".format(self.type, wdl_value.type))
+        super(WdlInteger, self).divide(rhs)
     def mod(self, wdl_value):
         if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType]):
             return WdlInteger(self.value % wdl_value.value)
         if assert_type(wdl_value, [WdlFloatType]):
             return WdlFloat(self.value % wdl_value.value)
-        raise EvalException("Cannot modulus divide: {} + {}".format(self.type, wdl_value.type))
+        super(WdlInteger, self).mod(rhs)
+    def equal(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
+            return WdlBoolean(self.value == rhs.value)
+        super(WdlInteger, self).equal(rhs)
+    def greater_than(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
+            return WdlBoolean(self.value > rhs.value)
+        super(WdlInteger, self).greater_than(rhs)
+    def less_than(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
+            return WdlBoolean(self.value < rhs.value)
+        super(WdlInteger, self).less_than(rhs)
+    def unary_negation(self):
+        return WdlInteger(-self.value)
+    def unary_plus(self):
+        return WdlInteger(+self.value)
 
 class WdlBoolean(WdlValue):
     type = WdlBooleanType()
@@ -75,6 +123,28 @@ class WdlBoolean(WdlValue):
         if assert_type(wdl_value, [WdlFloatType]):
             return WdlFloat(str(self.value) + str(wdl_value.value))
         raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
+    def greater_than(self, rhs):
+        if assert_type(rhs, [WdlBooleanType]):
+            return WdlBoolean(self.value > rhs.value)
+        super(WdlBoolean, self).greater_than(rhs)
+    def less_than(self, rhs):
+        if assert_type(rhs, [WdlBooleanType]):
+            return WdlBoolean(self.value < rhs.value)
+        super(WdlBoolean, self).less_than(rhs)
+    def equal(self, rhs):
+        if assert_type(rhs, [WdlBooleanType]):
+            return WdlBoolean(self.value == rhs.value)
+        super(WdlBoolean, self).equal(rhs)
+    def logical_or(self, rhs):
+        if assert_type(rhs, [WdlBooleanType]):
+            return WdlBoolean(self.value or rhs.value)
+        super(WdlBoolean, self).logical_or(rhs)
+    def logical_and(self, rhs):
+        if assert_type(rhs, [WdlBooleanType]):
+            return WdlBoolean(self.value and rhs.value)
+        super(WdlBoolean, self).logical_and(rhs)
+    def logical_not(self):
+        return WdlBoolean(not self.value)
 
 class WdlFloat(WdlValue):
     type = WdlFloatType()
@@ -82,11 +152,43 @@ class WdlFloat(WdlValue):
         if not isinstance(value, float):
             raise WdlValueException("WdlFloat must hold a python 'float'")
     def add(self, wdl_value):
-        if assert_type(wdl_value, [WdlIntegerType, WdlBooleanType, WdlFloatType]):
+        if assert_type(wdl_value, [WdlIntegerType, WdlFloatType]):
             return WdlFloat(self.value + wdl_value.value)
-        if assert_type(wdl_value, [WdlStringType, WdlFile, WdlUri]):
-            return WdlString(str(self.value) + str(wdl_value.value))
-        raise EvalException("Cannot add: {} + {}".format(self.type, wdl_value.type))
+        if assert_type(wdl_value, [WdlStringType]):
+            return WdlString(str(self.value) + wdl_value.value)
+        super(WdlFloat, self).add(wdl_value)
+    def subtract(self, wdl_value):
+        if assert_type(wdl_value, [WdlIntegerType, WdlFloatType]):
+            return WdlFloat(self.value - wdl_value.value)
+        super(WdlFloat, self).subtract(rhs)
+    def multiply(self, wdl_value):
+        if assert_type(wdl_value, [WdlIntegerType, WdlFloatType]):
+            return WdlFloat(self.value * wdl_value.value)
+        super(WdlFloat, self).multiply(rhs)
+    def divide(self, wdl_value):
+        if assert_type(wdl_value, [WdlIntegerType, WdlFloatType]):
+            return WdlFloat(self.value / wdl_value.value)
+        super(WdlFloat, self).divide(rhs)
+    def mod(self, wdl_value):
+        if assert_type(wdl_value, [WdlIntegerType, WdlFloatType]):
+            return WdlFloat(self.value % wdl_value.value)
+        super(WdlFloat, self).mod(rhs)
+    def equal(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
+            return WdlBoolean(self.value == rhs.value)
+        super(WdlFloat, self).greater_than(rhs)
+    def greater_than(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
+            return WdlBoolean(self.value > rhs.value)
+        super(WdlFloat, self).greater_than(rhs)
+    def less_than(self, rhs):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
+            return WdlBoolean(self.value < rhs.value)
+        super(WdlFloat, self).less_than(rhs)
+    def unary_negation(self):
+        return WdlFloat(-self.value)
+    def unary_plus(self):
+        return WdlFloat(+self.value)
 
 class WdlFile(WdlValue):
     type = WdlFileType()

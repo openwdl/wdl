@@ -418,20 +418,18 @@ def python_to_wdl_value(py_value, wdl_type):
 binary_operators = [
     'Add', 'Subtract', 'Multiply', 'Divide', 'Remainder', 'Equals',
     'NotEquals', 'LessThan', 'LessThanOrEqual', 'GreaterThan',
-    'GreaterThanOrEqual'
+    'GreaterThanOrEqual', 'LogicalAnd', 'LogicalOr'
 ]
 
 unary_operators = [
-    'LogicalNot', 'UnaryPlus', 'UnaryMinus'
+    'LogicalNot', 'UnaryPlus', 'UnaryNegation'
 ]
 
 def interpolate(string, lookup, functions):
-    print('interpolate start', string)
     for expr_string in re.findall(r'\$\{.*?\}', string):
         expr = wdl.parse_expr(expr_string[2:-1])
         value = expr.eval(lookup, functions)
         string = string.replace(expr_string, value.as_string())
-    print('interpolate end', string)
     return string
 
 def eval(ast, lookup=lambda var: None, functions=None):
@@ -462,19 +460,21 @@ def eval(ast, lookup=lambda var: None, functions=None):
             if ast.name == 'Multiply': return lhs.multiply(rhs)
             if ast.name == 'Divide': return lhs.divide(rhs)
             if ast.name == 'Remainder': return lhs.mod(rhs)
-            if ast.name == 'Equals': return lhs.is_equal(rhs)
-            if ast.name == 'NotEquals': return not lhs.is_equal(rhs)
+            if ast.name == 'Equals': return lhs.equal(rhs)
+            if ast.name == 'NotEquals': return lhs.not_equal(rhs)
             if ast.name == 'LessThan': return lhs.less_than(rhs)
-            if ast.name == 'LessThanOrEqual': return lhs.less_than(rhs) or lhs.is_equal(rhs)
+            if ast.name == 'LessThanOrEqual': return lhs.less_than_or_equal(rhs)
             if ast.name == 'GreaterThan': return lhs.greater_than(rhs)
-            if ast.name == 'GreaterThanOrEqual': return lhs.greater_than(rhs) or lhs.is_equal(rhs)
+            if ast.name == 'GreaterThanOrEqual': return lhs.greater_than_or_equal(rhs)
+            if ast.name == 'LogicalAnd': return lhs.logical_and(rhs)
+            if ast.name == 'LogicalOr': return lhs.logical_or(rhs)
         if ast.name in unary_operators:
             expr = eval(ast.attr('expression'), lookup, functions)
             if isinstance(expr, WdlUndefined): return expr
 
-            if ast.name == 'LogicalNot': return not expr
-            if ast.name == 'UnaryPlus': return +expr
-            if ast.name == 'UnaryMinus': return -expr
+            if ast.name == 'LogicalNot': return expr.logical_not()
+            if ast.name == 'UnaryPlus': return expr.unary_plus()
+            if ast.name == 'UnaryNegation': return expr.unary_negation()
         if ast.name == 'ObjectLiteral':
             obj = WdlObject()
             for member in ast.attr('map'):
@@ -537,7 +537,7 @@ def expr_str(ast):
             return '!{}'.format(expr_str(ast.attr('expression')))
         if ast.name == 'UnaryPlus':
             return '+{}'.format(expr_str(ast.attr('expression')))
-        if ast.name == 'UnaryMinus':
+        if ast.name == 'UnaryNegation':
             return '-{}'.format(expr_str(ast.attr('expression')))
         if ast.name == 'FunctionCall':
             return '{}({})'.format(expr_str(ast.attr('name')), ','.join([expr_str(param) for param in ast.attr('params')]))
