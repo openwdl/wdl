@@ -194,6 +194,18 @@ class Scatter(Scope):
                             type = type.subtype
                         return (var, type, count)
 
+class WorkflowOutputs(list):
+    def __init__(self, arg=[]):
+        super(WorkflowOutputs, self).__init__(arg)
+
+class WorkflowOutput:
+    def __init__(self, fqn, wildcard):
+        self.__dict__.update(locals())
+
+class WorkflowOutput:
+    def __init__(self, fqn, wildcard):
+        self.__dict__.update(locals())
+
 def assign_ids(ast_root, id=0):
     if isinstance(ast_root, wdl.parser.AstList):
         ast_root.id = id
@@ -263,6 +275,8 @@ def parse_body_element(ast, tasks):
         return parse_while_loop(ast, tasks)
     elif ast.name == 'Scatter':
         return parse_scatter(ast, tasks)
+    elif ast.name == 'WorkflowOutputs':
+        return parse_workflow_outputs(ast)
     else:
         raise BindingException("unknown ast: " + ast.name)
 
@@ -288,6 +302,12 @@ def parse_scatter(ast, tasks):
         else:
             body.append(parse_body_element(body_ast, tasks))
     return Scatter(item, collection, declarations, body, ast)
+
+def parse_workflow_outputs(ast):
+    return WorkflowOutputs([parse_workflow_output(x) for x in ast.attr('outputs')])
+
+def parse_workflow_output(ast):
+    return WorkflowOutput(ast.attr('fqn').source_string, ast.attr('wildcard').source_string if ast.attr('wildcard') else None)
 
 def parse_call(ast, tasks):
     if not isinstance(ast, wdl.parser.Ast) or ast.name != 'Call':
