@@ -12,7 +12,8 @@ class WdlValue(object):
         return '[{}: {}]'.format(self.type, str(self.value))
     def as_string(self): return str(self.value)
     def __str__(self): return '[Wdl{}: {}]'.format(self.type.wdl_string(), self.as_string())
-    def __eq__(self, rhs): return self.__class__ == rhs.__class__ and self.value == rhs.value
+    def __eq__(self, rhs): return (self.__class__, self.value) == (rhs.__class__, rhs.value)
+    def __hash__(self): return hash((self.__class__, self.value))
     def __invalid(self, symbol, rhs): raise EvalException('Cannot perform operation: {} {} {}'.format(self.type.wdl_string(), symbol, rhs.type.wdl_string()))
     def __invalid_unary(self, symbol): raise EvalException('Cannot perform operation: {} {}'.format(symbol, self.type.wdl_string()))
     def add(self, rhs): return self.__invalid('+', rhs)
@@ -39,10 +40,11 @@ class WdlUndefined(WdlValue):
 class WdlString(WdlValue):
     type = WdlStringType()
     def check_compatible(self, value):
+        if isinstance(value, unicode): value = value.encode('utf-8')
         if not isinstance(value, str):
-            raise WdlValueException("WdlString must hold a python 'str'")
+            raise EvalException("WdlString must hold a python 'str': {}".format(value.encode('utf-8')))
     def add(self, rhs):
-        if isinstance(rhs.type, WdlPrimitiveType):
+        if assert_type(rhs, [WdlIntegerType, WdlFloatType, WdlStringType, WdlFileType]):
             return WdlString(self.value + str(rhs.value))
         super(WdlString, self).add(rhs)
     def equal(self, rhs):
@@ -62,7 +64,7 @@ class WdlInteger(WdlValue):
     type = WdlIntegerType()
     def check_compatible(self, value):
         if not isinstance(value, int):
-            raise WdlValueException("WdlInteger must hold a python 'int'")
+            raise EvalException("WdlInteger must hold a python 'int'")
     def add(self, rhs):
         if assert_type(rhs, [WdlIntegerType]):
             return WdlInteger(self.value + rhs.value)
@@ -116,13 +118,7 @@ class WdlBoolean(WdlValue):
     type = WdlBooleanType()
     def check_compatible(self, value):
         if not isinstance(value, bool):
-            raise WdlValueException("WdlBoolean must hold a python 'bool'")
-    def add(self, rhs):
-        if assert_type(rhs, [WdlIntegerType, WdlBooleanType]):
-            return WdlInteger(self.value + rhs.value)
-        if assert_type(rhs, [WdlFloatType]):
-            return WdlFloat(str(self.value) + str(rhs.value))
-        raise EvalException("Cannot add: {} + {}".format(self.type, rhs.type))
+            raise EvalException("WdlBoolean must hold a python 'bool'")
     def greater_than(self, rhs):
         if assert_type(rhs, [WdlBooleanType]):
             return WdlBoolean(self.value > rhs.value)
@@ -150,7 +146,7 @@ class WdlFloat(WdlValue):
     type = WdlFloatType()
     def check_compatible(self, value):
         if not isinstance(value, float):
-            raise WdlValueException("WdlFloat must hold a python 'float'")
+            raise EvalException("WdlFloat must hold a python 'float'")
     def add(self, rhs):
         if assert_type(rhs, [WdlIntegerType, WdlFloatType]):
             return WdlFloat(self.value + rhs.value)
@@ -190,10 +186,28 @@ class WdlFloat(WdlValue):
     def unary_plus(self):
         return WdlFloat(+self.value)
 
-class WdlFile(WdlValue):
+class WdlFile(WdlString):
     type = WdlFileType()
     def check_compatible(self, value):
-        pass # TODO: implement
+        if isinstance(value, unicode): value = value.encode('utf-8')
+        if not isinstance(value, str):
+            raise EvalException("WdlFile must hold a python 'str': {}".format(value.encode('utf-8')))
+    def add(self, rhs):
+        if assert_type(rhs, [WdlFileType, WdlStringType]):
+            return WdlFile(self.value + str(rhs.value))
+        super(WdlFile, self).add(rhs)
+    def equal(self, rhs):
+        if assert_type(rhs, [WdlFileType, WdlStringType]):
+            return WdlBoolean(self.value == rhs.value)
+        super(WdlFile, self).equal(rhs)
+    def greater_than(self, rhs):
+        if assert_type(rhs, [WdlFileType]):
+            return WdlBoolean(self.value > rhs.value)
+        super(WdlFile, self).equal(rhs)
+    def less_than(self, rhs):
+        if assert_type(rhs, [WdlFileType]):
+            return WdlBoolean(self.value < rhs.value)
+        super(WdlFile, self).equal(rhs)
 
 class WdlUri(WdlValue):
     type = WdlUriType()
@@ -203,34 +217,31 @@ class WdlUri(WdlValue):
 class WdlArray(WdlValue):
     def __init__(self, subtype, value):
         if not isinstance(value, list):
-            raise WdlValueException("WdlArray must be a Python 'list'")
+            raise EvalException("WdlArray must be a Python 'list'")
         if not all(type(x.type) == type(subtype) for x in value):
-            raise WdlValueException("WdlArray must contain elements of the same type: {}".format(value))
+            raise EvalException("WdlArray must contain elements of the same type: {}".format(value))
         self.type = WdlArrayType(subtype)
         self.subtype = subtype
         self.value = value
-    def flatten(self):
-        flat = lambda l: [item for sublist in l for item in sublist.value]
-        if not isinstance(self.type.subtype, WdlArrayType):
-            raise WdlValueException("Cannot flatten {} (type {})".format(self.value, self.type))
-        return WdlArray(self.subtype.subtype, flat(self.value))
     def __str__(self):
         return '[{}: {}]'.format(self.type, ', '.join([str(x) for x in self.value]))
 
 class WdlMap(WdlValue):
-    def __init__(self, value):
+    def __init__(self, key_type, value_type, value):
         if not isinstance(value, dict):
-            raise WdlValueException("WdlMap must be a Python 'dict'")
-        if not all(type(x) == WdlPrimitiveType for x in value.keys()):
-            raise WdlValueException("WdlMap must contain WdlPrimitiveValues keys")
-        if not all(type(x) == WdlPrimitiveType for x in value.values()):
-            raise WdlValueException("WdlMap must contain WdlPrimitiveValues values")
-        if not all(type(x) == type(value[0]) for x in value.keys()):
-            raise WdlValueException("WdlMap must contain keys of the same type: {}".format(value))
-        if not all(type(x) == type(value[0]) for x in value.values()):
-            raise WdlValueException("WdlMap must contain values of the same type: {}".format(value))
+            raise EvalException("WdlMap must be a Python 'dict'")
+        if not isinstance(key_type, WdlPrimitiveType):
+            raise EvalException("WdlMap must contain WdlPrimitive keys")
+        if not isinstance(value_type, WdlPrimitiveType):
+            raise EvalException("WdlMap must contain WdlPrimitive values")
+        if not all(isinstance(k.type, key_type.__class__) for k in value.keys()):
+            raise EvalException("WdlMap must contain keys of the same type: {}".format(value))
+        if not all(isinstance(v.type, value_type.__class__) for v in value.values()):
+            raise EvalException("WdlMap must contain values of the same type: {}".format(value))
         (k, v) = list(value.items())[0]
-        self.type = WdlMapType(k.type, v.type)
+        self.type = WdlMapType(key_type, value_type)
+        self.key_type = key_type
+        self.value_type = value_type
         self.value = value
 
 class WdlObject(WdlValue):

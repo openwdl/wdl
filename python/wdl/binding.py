@@ -484,10 +484,17 @@ def eval(ast, lookup=lambda var: None, functions=None):
                     raise EvalException('Cannot evaluate expression')
                 obj.set(key, value)
             return obj
-        if ast.name == 'ArrayIndex':
-            array = ast.attr('lhs')
+        if ast.name == 'ArrayOrMapLookup':
+            array_or_map = eval(ast.attr('lhs'), lookup, functions)
             index = eval(ast.attr('rhs'), lookup, functions)
-            raise EvalException('ArrayIndex not implemented yet')
+
+	    if isinstance(array_or_map, WdlArray) and isinstance(index, WdlInteger):
+	    	return array_or_map.value[index.value]
+	    elif isinstance(array_or_map, WdlArray):
+	    	raise EvalException('Cannot index array {} with {}'.format(array_or_map, index))
+	    elif isinstance(array_or_map, WdlMap) and isinstance(index.type, WdlPrimitiveType):
+	    	return array_or_map.value[index]
+            raise EvalException('ArrayOrMapLookup not implemented yet')
         if ast.name == 'MemberAccess':
             object = eval(ast.attr('lhs'), lookup, functions)
             member = ast.attr('rhs')
