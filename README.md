@@ -3,7 +3,12 @@ Workflow Description Language (WDL)
 
 WDL is a workflow language meant to be read and written by humans.
 
-The Workflow Description Language project provides a [full language specification](SPEC.md) for WDL as well as Parsers in [Java](java) and [Python](python).
+The Workflow Description Language project provides a
+
+[Draft 1 Language Specification](https://github.com/broadinstitute/wdl/blob/master/SPEC.md) (closed)
+[Draft 2 Language Specification](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md) (open)
+
+for WDL as well as Parsers in [Java](java) and Python using [PyWDL](https://github.com/broadinstitute/pywdl).
 
 For an implementation of an engine that can run WDL, try [Cromwell](http://github.com/broadinstitute/cromwell)
 
