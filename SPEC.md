@@ -1160,11 +1160,11 @@ $workflow_output = 'output' '{' ($workflow_output_fqn (',' $workflow_output_fqn)
 $workflow_output_fqn = $fully_qualified_name '.*'?
 ```
 
-There MUST be at most one output per `workflow` definition.  This section describes fully-qualified names to `call`s that you want to expose as outputs to the workflow.
+Each `workflow` definition can specify an optional `output` section.  This section lists outputs from individual `call`s that you also want to expose as outputs to the `workflow`. Replacing individual output names with a `*` acts as a match-all wildcard. 
 
-If this section is omitted, then it considers all outputs from all tasks to be the workflow's outputs.
+If the `output {...}` section is omitted, then the workflow includes all outputs from all calls in its final output.
 
-The fully-qualified names specified in this section do not need to include the workflow name, as that would be redundant.
+The output names in this section must be qualified with the call which created them, as in the example below.
 
 ```
 task task1 {
@@ -1182,10 +1182,10 @@ task task2 {
 
 workflow wf {
   call task1
-  call task2
+  call task2 as altname
   output {
     task1.*,
-    task2.output
+    altname.output
   }
 }
 ```
