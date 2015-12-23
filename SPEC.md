@@ -291,7 +291,7 @@ workflow wf {
   call test as test2
   call other.foobar
   output {
-    test.results,
+    test.results
     foobar.results
   }
   scatter(x in arr) {
@@ -1156,7 +1156,7 @@ Conditionals only execute the body if the expression evaluates to true
 ### Outputs
 
 ```
-$workflow_output = 'output' '{' ($workflow_output_fqn (',' $workflow_output_fqn)* '}'
+$workflow_output = 'output' '{' ($workflow_output_fqn ($workflow_output_fqn)* '}'
 $workflow_output_fqn = $fully_qualified_name '.*'?
 ```
 
