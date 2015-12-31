@@ -805,9 +805,23 @@ output {
 
 If this is the case, then `sample_id` is considered an input to the task.
 
-> *Additional requirement*: Any variable in the filename string MUST be of type string.
+As with inputs, the outputs can reference previous outputs in the same block. The only requirement is that the output being referenced must be specified *before* the output which uses it.
 
-Finally, glob-style `*` may be used in the filename.  The glob may only match more than 1 file if the output is of type `array`
+```
+output {
+  String a = "a"
+  String ab = a + "b"
+}
+```
+
+
+Globs can be used to define outputs which contain many files.  The glob function generates an array of File outputs:
+
+```
+output {
+  Array[File] output_bams = glob("*.bam")
+}
+```
 
 ### String Interpolation
 
