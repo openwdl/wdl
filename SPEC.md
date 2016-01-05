@@ -67,18 +67,18 @@
   * [Specifying Workflow Inputs in JSON](#specifying-workflow-inputs-in-json)
 * [Type Coercion](#type-coercion)
 * [Standard Library](#standard-library)
-  * [mixed stdout()](#mixed-stdout)
-  * [mixed stderr()](#mixed-stderr)
-  * [Array\[String\] read_lines(String|File|Uri)](#arraystring-read_linesstringfileuri)
-  * [Array\[Array\[String\]\] read_tsv(String|File|Uri)](#arrayarraystring-read_tsvstringfileuri)
-  * [Map\[String, String\] read_map(String|File|Uri)](#mapstring-string-read_mapstringfileuri)
-  * [Object read_object(String|File|Uri)](#object-read_objectstringfileuri)
-  * [Array\[Object\] read_objects(String|File|Uri)](#arrayobject-read_objectsstringfileuri)
-  * [mixed read_json(String|File|Uri)](#mixed-read_jsonstringfileuri)
-  * [Int read_int(String|File|Uri)](#int-read_intstringfileuri)
-  * [String read_string(String|File|Uri)](#string-read_stringstringfileuri)
-  * [Float read_float(String|File|Uri)](#float-read_floatstringfileuri)
-  * [Boolean read_boolean(String|File|Uri)](#boolean-read_booleanstringfileuri)
+  * [File stdout()](#file-stdout)
+  * [File stderr()](#file-stderr)
+  * [Array\[String\] read_lines(String|File)](#arraystring-read_linesstringfile)
+  * [Array\[Array\[String\]\] read_tsv(String|File)](#arrayarraystring-read_tsvstringfile)
+  * [Map\[String, String\] read_map(String|File)](#mapstring-string-read_mapstringfile)
+  * [Object read_object(String|File)](#object-read_objectstringfile)
+  * [Array\[Object\] read_objects(String|File)](#arrayobject-read_objectsstringfile)
+  * [mixed read_json(String|File)](#mixed-read_jsonstringfile)
+  * [Int read_int(String|File)](#int-read_intstringfile)
+  * [String read_string(String|File)](#string-read_stringstringfile)
+  * [Float read_float(String|File)](#float-read_floatstringfile)
+  * [Boolean read_boolean(String|File)](#boolean-read_booleanstringfile)
   * [File write_lines(Array\[String\])](#file-write_linesarraystring)
   * [File write_tsv(Array\[Array\[String\]\])](#file-write_tsvarrayarraystring)
   * [File write_map(Map\[String, String\])](#file-write_mapmapstring-string)
@@ -226,7 +226,7 @@ All inputs and outputs must be typed.
 
 ```
 $type = ($primitive_type | $array_type | $map_type | $object_type) $type_postfix_quantifier?
-$primitive_type = ('Boolean' | 'Int' | 'Float' | 'Uri' | 'File' | 'String')
+$primitive_type = ('Boolean' | 'Int' | 'Float' | 'File' | 'String')
 $array_type = 'Array' '[' ($primitive_type | $object_type | $array_type) ']'
 $object_type = 'Object'
 $map_type = 'Map' '[' $primitive_type ',' ($primitive_type | $array_type | $map_type | $object_type) ']'
@@ -542,7 +542,7 @@ The syntax `x[y]` is for indexing maps and arrays.  If `x` is an array, then `y`
 
 ### Function Calls
 
-Function calls, in the form of `func(p1, p2, p3, ...)`, are either [standard library functions](#standard-library-functions) or engine-defined functions.
+Function calls, in the form of `func(p1, p2, p3, ...)`, are either [standard library functions](#standard-library) or engine-defined functions.
 
 In this current iteration of the spec, users cannot define their own functions.
 
@@ -847,20 +847,76 @@ Any `${identifier}` inside of a string literal must be replaced with the value o
 
 ```
 $runtime = 'runtime' $ws* '{' ($ws* $runtime_kv $ws*)* '}'
-$runtime_kv = $identifier $ws* '=' $ws* $string
+$runtime_kv = $identifier $ws* '=' $ws* $expression
 ```
 
-The runtime section defines key/value pairs for runtime information needed for this task.  Values are only interpreted by execution backends and will be stored as raw strings until that point. Individual backends will define which keys they will inspect so a key/value pair may or may not actually be honored depending on how the task is run.
+The runtime section defines key/value pairs for runtime information needed for this task.  Individual backends will define which keys they will inspect so a key/value pair may or may not actually be honored depending on how the task is run.
 
-While the key/value pairs are arbitrary, but a few of them have special meaning:
+Values can be any expression and it is up to the engine to reject keys and/or values that do not make sense in that context.  For example, consider the following WDL:
+
+```wdl
+task test {
+  command {
+    python script.py
+  }
+  runtime {
+    docker: ["ubuntu:latest", "broadinstitute/scala-baseimage"]
+  }
+}
+```
+
+The value for the `docker` runtime attribute in this case is an array of values.  The parser should accept this.  Some engines might interpret it as an "either this image or that image" or could reject it outright.
+
+Since values are expressions, they can also reference variables in the task:
+
+```wdl
+task test {
+  String ubuntu_version
+
+  command {
+    python script.py
+  }
+  runtime {
+    docker: "ubuntu:" + ubuntu_version
+  }
+}
+```
+
+Most key/value pairs are arbitrary.  However, the following keys have recommended conventions:
 
 #### docker
 
-Location of a Docker image for which this task ought to be run
+Location of a Docker image for which this task ought to be run.  This can have a format like `ubuntu:latest` or `broadinstitute/scala-baseimage` in which case it should be interpreted as an image on DockerHub (i.e. it is valid to use in a `docker pull` command).
+
+```wdl
+task docker_test {
+  String arg
+
+  command {
+    python process.py ${arg}
+  }
+  runtime {
+    docker: "ubuntu:latest"
+  }
+}
+```
 
 #### memory
 
 Memory requirements for this task.  This should be an integer value with suffixes like `B`, `KB`, `MB`, ... or binary suffixes `KiB`, `MiB`, ...
+
+```wdl
+task docker_test {
+  String arg
+
+  command {
+    python process.py ${arg}
+  }
+  runtime {
+    memory: "2GB"
+  }
+}
+```
 
 ### Parameter Metadata Section
 
@@ -940,8 +996,6 @@ task runtime_meta {
 
 #### Example 4: BWA mem
 
-This is an redesign of [BWA mem in CWL](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/bwa-mem-tool.cwl)
-
 ```wdl
 task bwa_mem_tool {
   Int threads
@@ -974,8 +1028,6 @@ The 'docker' portion of this task definition specifies which that this task must
 
 #### Example 5: Word Count
 
-Here's an example of how to rewrite [wc2-tool](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/wc2-tool.cwl) and [count-lines4-wf](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/count-lines4-wf.cwl) (also as a [generalized collection](https://gist.github.com/dshiga/3c3c54ee8468e23d0a5b)):
-
 ```wdl
 task wc2_tool {
   File file1
@@ -1004,9 +1056,7 @@ In this example, it's all pretty boilerplate, declarative code, except for some 
 
 #### Example 6: tmap
 
-Next, is an implementation of the [tmap-tool](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/tmap-tool.cwl) (and corresponding job, [tmap-job](https://github.com/common-workflow-language/common-workflow-language/blob/master/conformance/draft-2/tmap-job.json))
-
-This should produce a command line like this:
+This task should produce a command line like this:
 
 ```
 tmap mapall \
@@ -1612,32 +1662,45 @@ It's important to note that the type in JSON must be coercable to the WDL type. 
 
 # Type Coercion
 
-Within WDL files as well as converting from JSON types to WDL types, there are some situations where a WDL type can be constructed from a non-obvious type.  The table below shows how to construct each WDL type from other types:
+WDL values can be created from either JSON values or from native language values.  The below table references String-like, Integer-like, etc to refer to values in a particular programming language.  For example, "String-like" could mean a `java.io.String` in the Java context or a `str` in Python.  An "Array-like" could refer to a `Seq` in Scala or a `list` in Python.
 
-|WDL Type     |Can Accept    |Notes / Constraints                                   |
-|-------------|--------------|------------------------------------------------------|
-|`Integer`    |JSON Number   |Interpreted as the floor of the value for non-integers|
-|`Float`      |JSON Number   ||
-|             |`Integer`     ||
-|`File`       |JSON String   |Interpreted opaquely as file path|
-|             |`String`      |Interpreted opaquely as file path|
-|`String`     |JSON String   ||
-|`Array[T]`   |JSON Array    |Elements must be coercable to `T`|
-|`Map[K, V]`  |JSON Object   |keys and values must be coercable to `K` and `V`, respectively|
+|WDL Type |Can Accept   |Notes / Constraints|
+|---------|-------------|-------------------|
+|`String` |JSON String||
+|         |String-like||
+|         |`String`|Identity coercion|
+|         |`File`||
+|`File`   |JSON String|Interpreted as a file path|
+|         |String-like|Interpreted as file path|
+|         |`String`|Interpreted as file path|
+|         |`File`|Identity Coercion|
+|`Int`    |JSON Number|Use floor of the value for non-integers|
+|         |Integer-like||
+|         |`Int`|Identity coercion|
+|`Float`  |JSON Number||
+|         |Float-like||
+|         |`Float`|Identity coercion|
+|`Boolean`|JSON Boolean||
+|         |Boolean-like||
+|         |`Boolean`|Identity coercion|
+|`Array[T]`|JSON Array|Elements must be coercable to `T`|
+|          |Array-like|Elements must be coercable to `T`|
+|`Map[K, V]`|JSON Object|keys and values must be coercable to `K` and `V`, respectively|
+|           |Map-like|keys and values must be coercable to `K` and `V`, respectively|
 
 # Standard Library
 
-## mixed stdout()
+## File stdout()
 
-Returns either a `File` or `Uri` of the stdout that this task generated.
+Returns a `File` reference to the stdout that this task generated.
 
-## mixed stderr()
+## File stderr()
 
-Returns either a `File` or `Uri` of the stderr that this task generated.
+Returns a `File` reference to the stderr that this task generated.
 
-## Array[String] read_lines(String|File|Uri)
+## Array[String] read_lines(String|File)
 
-Given a file-like object (`String, `File`, or `Uri`) as a parameter, this will read each line as a string and return an `Array[String]` representation of the lines in the file.
+Given a file-like object (`String`, `File`) as a parameter, this will read each line as a string and return an `Array[String]` representation of the lines in the file.
 
 The order of the lines in the returned `Array[String]` must be the order in which the lines appear in the file-like object.
 
@@ -1656,9 +1719,9 @@ task do_stuff {
 }
 ```
 
-## Array[Array[String]] read_tsv(String|File|Uri)
+## Array[Array[String]] read_tsv(String|File)
 
-the `read_tsv()` function takes one parameter, which is a file-like object (`String`, `File`, or `Uri`) and returns an `Array[Array[String]]` representing the table from the TSV file.
+the `read_tsv()` function takes one parameter, which is a file-like object (`String`, `File`) and returns an `Array[Array[String]]` representing the table from the TSV file.
 
 If the parameter is a `String`, this is assumed to be a local file path relative to the current working directory of the task.
 
@@ -1678,9 +1741,9 @@ task do_stuff {
 
 Then when the task finishes, to fulfull the `outputs_table` variable, `./results/file_list.tsv` must be a valid TSV file or an error will be reported.
 
-## Map[String, String] read_map(String|File|Uri)
+## Map[String, String] read_map(String|File)
 
-Given a file-like object (`String, `File`, or `Uri`) as a parameter, this will read each line from a file and expect the line to have the format `col1\tcol2`.  In other words, the file-like object must be a two-column TSV file.
+Given a file-like object (`String`, `File`) as a parameter, this will read each line from a file and expect the line to have the format `col1\tcol2`.  In other words, the file-like object must be a two-column TSV file.
 
 This task would `grep` through a file and return all strings that matched the pattern:
 
@@ -1699,7 +1762,7 @@ task do_stuff {
 }
 ```
 
-## Object read_object(String|File|Uri)
+## Object read_object(String|File)
 
 Given a file-like object that contains a 2-row and n-column TSV file, this function will turn that into an Object.
 
@@ -1732,7 +1795,7 @@ Which would be turned into an `Object` in WDL that would look like this:
 |key_2    |"value_2"|
 |key_3    |"value_3"|
 
-## Array[Object] read_objects(String|File|Uri)
+## Array[Object] read_objects(String|File)
 
 Given a file-like object that contains a 2-row and n-column TSV file, this function will turn that into an Object.
 
@@ -1775,15 +1838,15 @@ Which would be turned into an `Array[Object]` in WDL that would look like this:
 |     |key_2    |"value_2"|
 |     |key_3    |"value_3"|
 
-## mixed read_json(String|File|Uri)
+## mixed read_json(String|File)
 
-the `read_json()` function takes one parameter, which is a file-like object (`String`, `File`, or `Uri`) and returns a data type which matches the data structure in the JSON file.  The mapping of JSON type to WDL type is:
+the `read_json()` function takes one parameter, which is a file-like object (`String`, `File`) and returns a data type which matches the data structure in the JSON file.  The mapping of JSON type to WDL type is:
 
 |JSON Type|WDL Type|
 |---------|--------|
 |object|`Map[String, ?]`|
 |array|`Array[?]`|
-|number|`Int` or fallback `Float`|
+|number|`Int` or `Float`|
 |string|`String`|
 |boolean|`Boolean`|
 |null|???|
@@ -1806,21 +1869,21 @@ task do_stuff {
 
 Then when the task finishes, to fulfull the `output_table` variable, `./results/file_list.json` must be a valid TSV file or an error will be reported.
 
-## Int read_int(String|File|Uri)
+## Int read_int(String|File)
 
 The `read_int()` function takes a file path which is expected to contain 1 line with 1 integer on it.  This function returns that integer.
 
-## String read_string(String|File|Uri)
+## String read_string(String|File)
 
 The `read_string()` function takes a file path which is expected to contain 1 line with 1 string on it.  This function returns that string.
 
 No trailing newline characters should be included
 
-## Float read_float(String|File|Uri)
+## Float read_float(String|File)
 
 The `read_float()` function takes a file path which is expected to contain 1 line with 1 floating point number on it.  This function returns that float.
 
-## Boolean read_boolean(String|File|Uri)
+## Boolean read_boolean(String|File)
 
 The `read_boolean()` function takes a file path which is expected to contain 1 line with 1 Boolean value (either "true" or "false" on it).  This function returns that Boolean value.
 
@@ -1987,7 +2050,7 @@ value_7\tvalue_8\tvalue_9
 
 ## File write_json(mixed)
 
-Given something with any type, this writes the JSON equivalent to a file.  See the table in the definition of [read_json()](#mixed-read_jsonstringfileuri)
+Given something with any type, this writes the JSON equivalent to a file.  See the table in the definition of [read_json()](#mixed-read_jsonstringfile)
 
 ```wdl
 task example {
@@ -2016,20 +2079,21 @@ And `/local/fs/tmp/map.json` would contain:
 
 # Data Types & Serialization
 
-Tasks and workflows are given values for their input parameters in order to run.  The type of each of those input parameters are declarations on the `task` or `workflow`.  Those input parameters can be any of the following types:
+Tasks and workflows are given values for their input parameters in order to run.  The type of each of those input parameters are declarations on the `task` or `workflow`.  Those input parameters can be any [valid type](#types):
 
-Primitives:
-* [String](#string)
-* [Int](#int-and-float)
-* [Float](#int-and-float)
-* [File](#file-and-uri)
-* [Uri](#file-and-uri)
-* [Boolean](#boolean)
+Primitive Types:
+
+* String
+* Int
+* Float
+* File
+* Boolean
 
 Compound Types:
-* [Array\[Type\]](#array) (e.g. `Array[Int]`, `Array[File]`)
-* [Map\[Type, Type\]](#map) (e.g. `Map[String, File]`)
-* [Object](#object)
+
+* Array[T] (e.g. `Array[String]`)
+* Map[K, V] (e.g. `Map[Int, Int]`)
+* Object
 
 When a WDL workflow engine instantiates a command specified in the `command` section of a `task`, it must serialize all `${...}` tags in the command into primitive types.
 
@@ -2059,7 +2123,7 @@ task test {
 }
 ```
 
-Here, the expression `read_lines(stdout())` says "take the output from stdout, break into lines, and return that result as an Array[String]".  See the definition of [read_lines](#arraystring-read_linesstringfileuri) and [stdout](#mixed-stdout) for more details.
+Here, the expression `read_lines(stdout())` says "take the output from stdout, break into lines, and return that result as an Array[String]".  See the definition of [read_lines](#arraystring-read_linesstringfile) and [stdout](#file-stdout) for more details.
 
 ## Serialization of Task Inputs
 
@@ -2074,10 +2138,9 @@ task output_example {
   String s
   Int i
   Float f
-  Uri u
 
   command {
-    python do_work.py ${s} ${i} ${f} ${u}
+    python do_work.py ${s} ${i} ${f}
   }
 }
 ```
@@ -2089,12 +2152,11 @@ If I provide values for the declarations in the task as:
 |s  |"str"|
 |i  |2    |
 |f  |1.3  |
-|u  |scheme://path|
 
 Then, the command would be instantiated as:
 
 ```
-python do_work.py str 2 1.3 scheme://path
+python do_work.py str 2 1.3
 ```
 
 ### Compound Types
