@@ -18,7 +18,7 @@ val DowngradedSprayV = "1.3.1"
 libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
   "io.spray" %% "spray-json" % DowngradedSprayV,
-  "org.scalaz" %% "scalaz-core" % "7.2.0",
+  "org.scalaz" %% "scalaz-core" % "7.1.3",
   "commons-codec" % "commons-codec" % "1.10",
   "commons-io" % "commons-io" % "2.4",
   "org.apache.commons" % "commons-lang3" % "3.4",
