@@ -11,15 +11,15 @@ import scala.language.postfixOps
 import scalaz.Scalaz._
 import scalaz._
 
-case class RuntimeAttributes(attrs: Map[String, String])
+case class RuntimeAttributes(attrs: Map[String, Seq[String]])
 
 object RuntimeAttributes {
   def apply(ast: Ast): RuntimeAttributes = {
     val asts = ast.findAsts(AstNodeName.Runtime)
     if (asts.size > 1) throw new UnsupportedOperationException("Only one runtime block may be defined per task")
     val astList = asts.headOption map { _.getAttribute("map").asInstanceOf[AstList] }
-    val attrMap = astList map processRuntimeAttributes getOrElse Map.empty[String, String]
-    attrMap.get("memory") foreach { validateMemory }
+    val attrMap = astList map processRuntimeAttributes getOrElse Map.empty[String, Seq[String]]
+    attrMap.get("memory") flatMap { _.headOption } foreach validateMemory 
 
     RuntimeAttributes(attrMap)
   }
@@ -52,11 +52,11 @@ object RuntimeAttributes {
     }
   }
 
-  private def processRuntimeAttributes(astList: AstList): Map[String, String] = {
+  private def processRuntimeAttributes(astList: AstList): Map[String, Seq[String]] = {
     astList.asScala.toVector map { a => processRuntimeAttribute(a.asInstanceOf[Ast]) } toMap
   }
 
-  private def processRuntimeAttribute(ast: Ast): (String, String) = {
+  private def processRuntimeAttribute(ast: Ast): (String, Seq[String]) = {
     val key = ast.getAttribute("key").sourceString
     val seq = Option(ast.getAttribute("value")) map { valAttr =>
       WdlExpression.evaluate(valAttr, NoLookup, NoFunctions) match {
@@ -69,7 +69,7 @@ object RuntimeAttributes {
           throw new IllegalArgumentException(s"value was null: $key}")
         case scala.util.Failure(f) => throw f
       }
-    } flatMap { _.headOption } getOrElse ""
+    } getOrElse Seq.empty
 
     (key, seq)
   }
