@@ -19,7 +19,7 @@ object RuntimeAttributes {
     if (asts.size > 1) throw new UnsupportedOperationException("Only one runtime block may be defined per task")
     val astList = asts.headOption map { _.getAttribute("map").asInstanceOf[AstList] }
     val attrMap = astList map processRuntimeAttributes getOrElse Map.empty[String, Seq[String]]
-    attrMap.get("memory") flatMap { _.headOption } foreach { validateMemory }
+    attrMap.get("memory") flatMap { _.headOption } foreach validateMemory 
 
     RuntimeAttributes(attrMap)
   }
