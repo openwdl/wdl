@@ -1,5 +1,4 @@
-Workflow Description Language (WDL)
-===================================
+# Workflow Description Language (WDL)
 
 WDL is a workflow language meant to be read and written by humans.
 
@@ -14,7 +13,8 @@ For an implementation of an engine that can run WDL, try [Cromwell](http://githu
 
 <!---toc start-->
 
-* [Overview](#Overview)
+* [Workflow Description Language (WDL)](#workflow-description-language-wdl)
+* [Overview](#overview)
 * [Getting Started with WDL](#getting-started-with-wdl)
   * [Hello World WDL](#hello-world-wdl)
   * [Modifying Task Outputs](#modifying-task-outputs)
@@ -24,7 +24,9 @@ For an implementation of an engine that can run WDL, try [Cromwell](http://githu
   * [Aliasing Calls](#aliasing-calls)
   * [Specifying Inputs and Using Declarations](#specifying-inputs-and-using-declarations)
   * [Using Files as Inputs](#using-files-as-inputs)
-  * [Scatter/Gather](#scattergather) 
+  * [Scatter/Gather](#scattergather)
+
+<!---toc end-->
 
 # Overview
 
@@ -32,7 +34,7 @@ The Workflow Description Language is a domain specific language for describing t
 
 An example WDL file that describes three tasks to run UNIX commands (in this case, `ps`, `grep`, and `wc`) and then link them together in a workflow would look like this:
 
-```
+```wdl
 task ps {
   command {
     ps
@@ -103,13 +105,13 @@ workflow wf {
 
 # Getting Started with WDL
 
-We'll use Cromwell to run these examples but you can use any WDL engine of your choice. If you don't already have a reference to the Cromwell JAR file, one can be [downloaded](https://github.com/broadinstitute/cromwell/releases) 
+We'll use Cromwell to run these examples but you can use any WDL engine of your choice. If you don't already have a reference to the Cromwell JAR file, one can be [downloaded](https://github.com/broadinstitute/cromwell/releases)
 
 ## Hello World WDL
 
 Create a WDL simple file and save it as `hello.wdl`, for example:
 
-```
+```wdl
 task hello {
   String name
 
@@ -162,7 +164,7 @@ Since the `hello` task returns a `File`, the result is a file that contains the 
 Currently the `hello` task returns a `File` with the greeting in it, but what if we wanted to return a `String` instead?
  This can be done by utilizing the `read_string()` function:
 
-```
+```wdl
 task hello {
   command {
     echo 'hello ${name}!'
@@ -193,7 +195,7 @@ $ java -jar cromwell.jar run hello.wdl hello.json
 
 So far we've only been dealing with the standard output of a command, but what if it writes a file to disk?  Consider this example:
 
-```
+```wdl
 task hello {
   command {
     echo 'hello ${name}!'
@@ -224,7 +226,7 @@ $ java -jar cromwell.jar run hello.wdl hello.json
 
 We can use the glob() function to read multiple files at once:
 
-```
+```wdl
 task globber {
   command <<<
     for i in `seq 1 5`
@@ -249,7 +251,7 @@ The `outFiles` output array will contain all files found by evaluating the speci
 
 Sometimes, an output file is named as a function of one of its inputs.
 
-```
+```wdl
 task hello {
   command {
     echo 'hello ${name}!' > ${name}.txt
@@ -270,7 +272,7 @@ Here the inputs and outputs are exactly the same as previous examples, however t
 
 Say we wanted to call the `hello` task twice.  Simply adding two `call hello` statements to the body of `workflow test` would result in non-unique fully-qualified names.  To resolve this issue, `call` statements can be aliased using an `as` clause:
 
-```
+```wdl
 task hello {
   command {
     echo 'hello ${name}!'
@@ -310,7 +312,7 @@ $ java -jar cromwell.jar run hello.wdl hello.json
 
 A `call` can have an optional section to define inputs.  As seen below, the key/value pairs represent the name of the input on the left-hand side and the expression for the input's value on the right-hand side:
 
-```
+```wdl
 task hello {
   String name
   String salutation
@@ -354,7 +356,7 @@ $ java -jar cromwell.jar run hello.wdl hello.json
 
 What if we wanted to parameterize the greeting and make it used for all invocations of task `hello`?  In this situation, a declaration can be used:
 
-```
+```wdl
 task hello {
   command {
     echo '${salutation}, ${name}!'
@@ -402,7 +404,7 @@ $ java -jar cromwell.jar run hello.wdl hello.json
 
 So far every example has used the default type of `String` for every input.  Passing files along to tasks is simply a matter of defining the input type as `File`:
 
-```
+```wdl
 task grep {
   File file
 
@@ -452,7 +454,7 @@ $ java -jar cromwell.jar run grep.wdl grep.json
 
 Scatter blocks can be used to run the same call multiple times but only varying a specific parameter on each invocation.  Consider the following example:
 
-```
+```wdl
 task prepare {
   command <<<
     python -c "print('one\ntwo\nthree\nfour')"
