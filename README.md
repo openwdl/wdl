@@ -166,6 +166,7 @@ Currently the `hello` task returns a `File` with the greeting in it, but what if
 
 ```wdl
 task hello {
+  String str
   command {
     echo 'hello ${name}!'
   }
@@ -198,10 +199,10 @@ So far we've only been dealing with the standard output of a command, but what i
 ```wdl
 task hello {
   command {
-    echo 'hello ${name}!'
+    echo 'hello ${name}!' > test.out
   }
   output {
-    String response = read_string(stdout())
+    String response = read_string("test.out")
   }
 }
 
@@ -253,6 +254,7 @@ Sometimes, an output file is named as a function of one of its inputs.
 
 ```wdl
 task hello {
+  String name
   command {
     echo 'hello ${name}!' > ${name}.txt
   }
@@ -274,6 +276,7 @@ Say we wanted to call the `hello` task twice.  Simply adding two `call hello` st
 
 ```wdl
 task hello {
+  String name
   command {
     echo 'hello ${name}!'
   }
@@ -358,6 +361,8 @@ What if we wanted to parameterize the greeting and make it used for all invocati
 
 ```wdl
 task hello {
+  String salutation
+  String name
   command {
     echo '${salutation}, ${name}!'
   }
