@@ -727,6 +727,17 @@ If either value is left out, then it's equivalent to specifying the empty string
 
 This specifies the default value if no other value is specified for this parameter.
 
+```
+task default_test {
+  String? s
+  command {
+    ./my_cmd ${default="foobar" s}
+  }
+}
+```
+
+This task takes an optional `String` parameter and if a value is not specified, then the value of `foobar` will be used instead.
+
 > *Additional Requirements*:
 >
 > 1.  The type of the expression must match the type of the parameter
@@ -903,10 +914,13 @@ task docker_test {
 
 #### memory
 
-Memory requirements for this task.  This should be an integer value with suffixes like `B`, `KB`, `MB`, ... or binary suffixes `KiB`, `MiB`, ...
+Memory requirements for this task.  Two kinds of values are supported for this attributes:
+
+* `Int` - Intepreted as bytes
+* `String` - This should be a decimal value with suffixes like `B`, `KB`, `MB` or binary suffixes `KiB`, `MiB`.  For example: `6.2 GB`, `5MB`, `2GiB`.
 
 ```wdl
-task docker_test {
+task memory_test {
   String arg
 
   command {
