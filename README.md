@@ -2,14 +2,15 @@
 
 WDL is a workflow language meant to be read and written by humans.
 
-The Workflow Description Language project provides a
-
 * [Draft 1 Language Specification](https://github.com/broadinstitute/wdl/blob/master/SPEC.md) (closed)
 * [Draft 2 Language Specification](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md) (open)
 
-for WDL as well as Parsers in [Java](java) and Python using [PyWDL](https://github.com/broadinstitute/pywdl).
+Library and engine support is provided by
 
-For an implementation of an engine that can run WDL, try [Cromwell](http://github.com/broadinstitute/cromwell)
+* [Java parser](java) which provides only a parser to convert a WDL string into an AST
+* [wdl4s](http://github.com/broadinstitute/wdl4s) provides Scala bindings for WDL and uses the above Java parser
+* [PyWDL](https://github.com/broadinstitute/pywdl) provides Python bindings for WDL
+* [Cromwell](http://github.com/broadinstitute/cromwell) is an engine for running WDL workflows.  This uses [wdl4s](http://github.com/broadinstitute/wdl4s)
 
 <!---toc start-->
 
