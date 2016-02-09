@@ -85,6 +85,7 @@
   * [File write_object(Object)](#file-write_objectobject)
   * [File write_objects(Array\[Object\])](#file-write_objectsarrayobject)
   * [File write_json(mixed)](#file-write_jsonmixed)
+  * [File size(File, \[String\])](#float-sizefile-string)
 * [Data Types & Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -2090,6 +2091,28 @@ And `/local/fs/tmp/map.json` would contain:
 }
 ```
 
+## Float size(File, [String])
+
+Given a `File` and a `String` (optional), returns the size of the file in Bytes or in the unit specified by the second argument.
+
+```wdl
+task example {
+  File input_file
+  
+  command {
+    echo "this file is 22 bytes" > created_file
+  }
+  
+  output {
+    Float input_file_size = size(input_file)
+    Float created_file_size = size("created_file") # 22.0
+    Float created_file_size_in_KB = size("created_file", "K") # 0.022
+  }
+}
+```
+
+Supported units are KiloByte ("K", "KB"), MegaByte ("M", "MB"), GigaByte ("G", "GB"), TeraByte ("T", "TB") as well as their [binary version](https://en.wikipedia.org/wiki/Binary_prefix) "Ki" ("KiB"), "Mi" ("MiB"), "Gi" ("GiB"), "Ti" ("TiB").
+Default unit is Bytes ("B").
 
 # Data Types & Serialization
 
