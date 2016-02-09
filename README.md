@@ -12,6 +12,8 @@ Library and engine support is provided by
 * [PyWDL](https://github.com/broadinstitute/pywdl) provides Python bindings for WDL
 * [Cromwell](http://github.com/broadinstitute/cromwell) is an engine for running WDL workflows.  This uses [wdl4s](http://github.com/broadinstitute/wdl4s)
 
+# Table of Contents
+
 <!---toc start-->
 
 * [Workflow Description Language (WDL)](#workflow-description-language-wdl)
