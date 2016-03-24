@@ -85,7 +85,8 @@
   * [File write_object(Object)](#file-write_objectobject)
   * [File write_objects(Array\[Object\])](#file-write_objectsarrayobject)
   * [File write_json(mixed)](#file-write_jsonmixed)
-  * [File size(File, \[String\])](#float-sizefile-string)
+  * [Float size(File, \[String\])](#float-sizefile-string)
+  * [String sub(String, String, String)](#string-substring-string-string)
 * [Data Types & Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -2113,6 +2114,42 @@ task example {
 
 Supported units are KiloByte ("K", "KB"), MegaByte ("M", "MB"), GigaByte ("G", "GB"), TeraByte ("T", "TB") as well as their [binary version](https://en.wikipedia.org/wiki/Binary_prefix) "Ki" ("KiB"), "Mi" ("MiB"), "Gi" ("GiB"), "Ti" ("TiB").
 Default unit is Bytes ("B").
+
+
+## String sub(String, String, String)
+
+Given 3 String parameters `input`, `pattern`, `replace`, this function will replace any occurrence matching `pattern` in `input` by `replace`.
+`pattern` is expected to be a [regular expression](https://en.wikipedia.org/wiki/Regular_expression). Details of regex evaluation will depend on the execution engine running the WDL.
+
+Example 1:
+
+```wdl
+  String chocolike = "I like chocolate when it's late"
+
+  String chocolove = sub(chocolike, "like", "love") # I love chocolate when it's late
+  String chocoearly = sub(chocolike, "late", "early") # I like chocoearly when it's early
+  String chocolate = sub(chocolike, "late$", "early") # I like chocolate when it's early
+}
+```
+
+The sub function will also accept `input` and `replace` parameters that can be coerced to a String (e.g. File). This can be useful to swap the extension of a filename for example
+
+Example 2:
+
+```wdl
+  task example {
+  File input_file = "my_input_file.bam"
+  String output_file_name = sub(input_file, "\\.bam$", ".index") # my_input_file.index
+  
+  command {
+    echo "I want an index instead" > ${output_file_name}
+  }
+  
+  output {
+    File outputFile = ${output_file_name}
+  }
+}
+```
 
 # Data Types & Serialization
 
