@@ -108,7 +108,11 @@ workflow wf {
 
 # Getting Started with WDL
 
-We'll use Cromwell to run these examples but you can use any WDL engine of your choice. If you don't already have a reference to the Cromwell JAR file, one can be [downloaded](https://github.com/broadinstitute/cromwell/releases)
+We'll use [Cromwell](https://github.com/broadinstitute/cromwell) and [wdltool](https://github.com/broadinstitute/wdltool) to run these examples but you can use any WDL engine of your choice.
+
+If you don't already have a reference to the Cromwell JAR file, one can be [downloaded](https://github.com/broadinstitute/cromwell/releases)
+
+If you don't already have a reference to the wdltool JAR file, one can be [downloaded](https://github.com/broadinstitute/wdltool/releases)
 
 ## Hello World WDL
 
@@ -119,7 +123,7 @@ task hello {
   String name
 
   command {
-    echo 'hello ${name}!'
+    echo 'Hello ${name}!'
   }
   output {
     File response = stdout()
@@ -134,7 +138,7 @@ workflow test {
 Generate a template `hello.json` file with the `inputs` subcommand:
 
 ```
-$ java -jar cromwell.jar inputs hello.wdl
+$ java -jar wdltool.jar inputs hello.wdl
 {
   "test.hello.name": "String"
 }
@@ -146,7 +150,7 @@ Modify this and save it to `hello.json`:
 
 ```
 {
-  "test.hello.name": "world"
+  "test.hello.name": "World"
 }
 ```
 
@@ -160,7 +164,12 @@ $ java -jar cromwell.jar run hello.wdl hello.json
 }
 ```
 
-Since the `hello` task returns a `File`, the result is a file that contains the string "hello world!" in it.
+Since the `hello` task returns a `File`, the result is a file that contains the string "Hello World!" in it.
+
+```
+$ cat /home/user/test/c1d15098-bb57-4a0e-bc52-3a8887f7b439/call-hello/stdout8818073565713629828.tmp
+hello world!
+```
 
 ## Modifying Task Outputs
 
@@ -169,9 +178,10 @@ Currently the `hello` task returns a `File` with the greeting in it, but what if
 
 ```wdl
 task hello {
-  String str
+  String name
+
   command {
-    echo 'hello ${name}!'
+    echo 'Hello ${name}!'
   }
   output {
     String response = read_string(stdout())
@@ -189,7 +199,7 @@ Now when this is run, we get the string output for `test.hello.response`:
 $ java -jar cromwell.jar run hello.wdl hello.json
 ... truncated ...
 {
-  "test.hello.response": "Hello world!"
+  "test.hello.response": "Hello World!"
 }
 ```
 
@@ -201,8 +211,10 @@ So far we've only been dealing with the standard output of a command, but what i
 
 ```wdl
 task hello {
+  String name
+
   command {
-    echo 'hello ${name}!' > test.out
+    echo 'Hello ${name}!' > test.out
   }
   output {
     String response = read_string("test.out")
@@ -220,7 +232,7 @@ Now when this is run, we get the string output for `test.hello.response`:
 $ java -jar cromwell.jar run hello.wdl hello.json
 ... truncated ...
 {
-  "test.hello.response": "Hello world!"
+  "test.hello.response": "Hello World!"
 }
 ```
 
@@ -249,7 +261,18 @@ workflow test {
 }
 ```
 
-The `outFiles` output array will contain all files found by evaluating the specified glob.
+Now when this is run, the `outFiles` output array will contain all files
+found by evaluating the specified glob.
+
+```
+$ java -jar cromwell.jar run globber.wdl -
+... truncated ...
+{
+  "test.globber.outFiles": ["/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-3/3.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-5/5.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-2/2.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-4/4.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-1/1.txt"]
+}
+```
+
+This workflow has no inputs, so a "-" was passed to Cromwell for the inputs file.
 
 ## Using String Interpolation
 
@@ -258,8 +281,9 @@ Sometimes, an output file is named as a function of one of its inputs.
 ```wdl
 task hello {
   String name
+
   command {
-    echo 'hello ${name}!' > ${name}.txt
+    echo 'Hello ${name}!' > ${name}.txt
   }
   output {
     String response = read_string("${name}.txt")
@@ -280,8 +304,9 @@ Say we wanted to call the `hello` task twice.  Simply adding two `call hello` st
 ```wdl
 task hello {
   String name
+
   command {
-    echo 'hello ${name}!'
+    echo 'Hello ${name}!'
   }
   output {
     String response = read_string(stdout())
@@ -294,12 +319,12 @@ workflow test {
 }
 ```
 
-Now, we need to specify a value for `test.hello2.name` in the hello.json file"
+Now, we need to specify a value for `test.hello2.name` in the hello.json file:
 
 ```
 {
-  "test.hello.name": "world",
-  "test.hello2.name": "boston"
+  "test.hello.name": "World",
+  "test.hello2.name": "Boston"
 }
 ```
 
@@ -309,8 +334,8 @@ Running this workflow now produces two outputs:
 $ java -jar cromwell.jar run hello.wdl hello.json
 ... truncated ...
 {
-  "test.hello.response": "Hello world!",
-  "test.hello2.response": "Hello boston!"
+  "test.hello.response": "Hello World!",
+  "test.hello2.response": "Hello Boston!"
 }
 ```
 
@@ -333,7 +358,7 @@ task hello {
 
 workflow test {
   call hello {
-    input: salutation="greetings"
+    input: salutation="Greetings"
   }
   call hello as hello2
 }
@@ -343,9 +368,9 @@ Now, the `hello.json` would require three inputs:
 
 ```
 {
-  "test.hello.name": "world",
-  "test.hello2.name": "boston",
-  "test.hello2.salutation": "hello"
+  "test.hello.name": "World",
+  "test.hello2.name": "Boston",
+  "test.hello2.salutation": "Hello"
 }
 ```
 
@@ -355,8 +380,8 @@ Running this workflow still gives us the two greetings we expect:
 $ java -jar cromwell.jar run hello.wdl hello.json
 ... truncated ...
 {
-  "test.hello.response": "greetings world!",
-  "test.hello2.response": "hello boston!"
+  "test.hello.response": "Greetings World!",
+  "test.hello2.response": "Hello Boston!"
 }
 ```
 
@@ -366,6 +391,7 @@ What if we wanted to parameterize the greeting and make it used for all invocati
 task hello {
   String salutation
   String name
+
   command {
     echo '${salutation}, ${name}!'
   }
@@ -391,9 +417,9 @@ The inputs required to run this would be:
 
 ```
 {
-  "test.hello.name": "world",
-  "test.hello2.name": "boston",
-  "test.greeting": "hello"
+  "test.hello.name": "World",
+  "test.hello2.name": "Boston",
+  "test.greeting": "Hello"
 }
 ```
 
@@ -403,8 +429,8 @@ And this would produce the following outputs when run
 $ java -jar cromwell.jar run hello.wdl hello.json
 ... truncated ...
 {
-  "test.hello.response": "hello, world!",
-  "test.hello2.response": "hello and nice to meet you, boston!"
+  "test.hello.response": "Hello, World!",
+  "test.hello2.response": "Hello and nice to meet you, Boston!"
 }
 ```
 
@@ -504,6 +530,8 @@ workflow example {
 This example calls the `analysis` task once for each element in the array that the `prepare` task outputs.  The resulting outputs of this workflow would be:
 
 ```
+$ java -jar cromwell.jar run scatter.wdl -
+... truncated ...
 {
   "example.analysis.out": ["_one_", "_two_", "_three_", "_four_"],
   "example.gather.str": "_one_ _two_ _three_ _four_",
