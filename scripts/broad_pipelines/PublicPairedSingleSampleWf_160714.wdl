@@ -15,14 +15,24 @@
 ## - Reference genome must be Hg38 with ALT contigs
 ##
 ## Runtime parameters are optimized for Broad's Google Cloud Platform implementation. 
-## For program versions, see docker containers.
+## For program versions, see docker containers. 
+##
+## LICENSING : 
+## This script is released under the WDL source code license (BSD-3) (see LICENSE in 
+## https://github.com/broadinstitute/wdl). Note however that the programs it calls may 
+## be subject to different licenses. Users are responsible for checking that they are
+## authorized to run all programs before running this script. Please see the docker 
+## page at https://hub.docker.com/r/broadinstitute/genomes-in-the-cloud/ for detailed
+## licensing information pertaining to the included programs.
 
 # TASK DEFINITIONS
 
 # Get version of BWA
 task GetBwaVersion {
   command {
-    /usr/gitc/bwa 2>&1 | grep -e '^Version' | sed 's/Version: //'
+    /usr/gitc/bwa 2>&1 | \
+    grep -e '^Version' | \
+    sed 's/Version: //'
   }
   runtime {
     docker: "broadinstitute/genomes-in-the-cloud:2.2.2-1466113830"
@@ -51,7 +61,6 @@ task SamToFastqAndBwaMem {
   File ref_bwt
   File ref_pac
   File ref_sa
-  
   Int disk_size
   Int preemptible_tries
 
@@ -68,9 +77,12 @@ task SamToFastqAndBwaMem {
         INTERLEAVE=true \
         CLIPPING_ATTRIBUTE=XT \
         CLIPPING_ACTION=2 \
-        NON_PF=true |
-      /usr/gitc/${bwa_commandline} /dev/stdin - |
-      samtools view -1 - > ${output_bam_basename}.bam
+        NON_PF=true | \
+      /usr/gitc/${bwa_commandline} /dev/stdin -  2> >(tee ${output_bam_basename}.bwa.stderr.log >&2) | \
+      samtools view -1 - > ${output_bam_basename}.bam && \
+      grep -m1 "read .* ALT contigs" ${output_bam_basename}.bwa.stderr.log | \
+      grep -v "read 0 ALT contigs"
+
     # else ref_alt is empty or could not be found
     else
       exit 1;
@@ -85,6 +97,7 @@ task SamToFastqAndBwaMem {
   }
   output {
     File output_bam = "${output_bam_basename}.bam"
+    File bwa_stderr_log = "${output_bam_basename}.bwa.stderr.log"
   }
 }
 
@@ -157,7 +170,8 @@ task SortAndFixTags {
     OUTPUT=/dev/stdout \
     SORT_ORDER="coordinate" \
     CREATE_INDEX=false \
-    CREATE_MD5_FILE=false | java -Xmx500m -jar /usr/gitc/picard.jar \
+    CREATE_MD5_FILE=false | \
+    java -Xmx500m -jar /usr/gitc/picard.jar \
     SetNmAndUqTags \
     INPUT=/dev/stdin \
     OUTPUT=${output_bam_basename}.bam \
@@ -257,7 +271,6 @@ task CreateSequenceGroupingTSV {
     Array[Array[String]] sequence_grouping = read_tsv(stdout())
   }
 }
-
 
 # Generate Base Quality Score Recalibration (BQSR) model
 task BaseRecalibrator {
@@ -413,6 +426,7 @@ task HaplotypeCaller {
   File ref_dict
   File ref_fasta
   File ref_fasta_index
+  Float? contamination
   Int disk_size
   Int preemptible_tries
 
@@ -429,7 +443,8 @@ task HaplotypeCaller {
       --max_alternate_alleles 3 \
       -variant_index_parameter 128000 \
       -variant_index_type LINEAR \
-      --read_filter OverclippedRead
+      -contamination ${default=0 contamination} \
+      --read_filter OverclippedRead 
   }
   runtime {
     docker: "broadinstitute/genomes-in-the-cloud:2.2.2-1466113830"
@@ -483,8 +498,10 @@ task ConvertToCram {
   # Note that we are not activating pre-emptible instances for this step yet,
   #  but we should if it ends up being fairly quick
   command <<<
-      samtools view -C -T ${ref_fasta} ${input_bam} > ${output_basename}.cram
-      samtools index ${output_basename}.cram
+      samtools view -C -T ${ref_fasta} ${input_bam} | \
+      tee ${output_basename}.cram | \
+      md5sum > ${output_basename}.cram.md5 && \
+      samtools index ${output_basename}.cram && \
       mv ${output_basename}.cram.crai ${output_basename}.crai
   >>>
   runtime {
@@ -496,18 +513,31 @@ task ConvertToCram {
   output {
     File output_cram = "${output_basename}.cram"
     File output_cram_index = "${output_basename}.crai"
+    File output_cram_md5 = "${output_basename}.cram.md5"
   }
 }
 
 # WORKFLOW DEFINITION
-
 workflow PairedEndSingleSampleWorkflow {
 
   String sample_name
   String final_gvcf_name
   Array[File] flowcell_unmapped_bams
   String unmapped_bam_suffix
+  
   Array[File] scattered_calling_intervals
+  File wgs_calling_interval_list
+  
+  File ref_fasta
+  File ref_fasta_index
+  File ref_dict
+  File ref_alt
+  File ref_bwt
+  File ref_sa
+  File ref_amb
+  File ref_ann
+  File ref_pac
+  
   File dbSNP_vcf
   File dbSNP_vcf_index
   File known_snps_sites_vcf
@@ -515,26 +545,11 @@ workflow PairedEndSingleSampleWorkflow {
   File known_indels_sites_vcf
   File known_indels_sites_vcf_index
   
-  File wgs_calling_interval_list
-  File wgs_coverage_interval_list
-
-  File ref_fasta
-  File ref_fasta_index
-  File ref_dict
-  File ref_alt
-
-  File ref_bwt
-  File ref_sa
-  File ref_amb
-  File ref_ann
-  File ref_pac
-
   Int flowcell_small_disk
   Int flowcell_medium_disk
   Int agg_small_disk
   Int agg_medium_disk
   Int agg_large_disk
-
   Int preemptible_tries
   Int agg_preemptible_tries
 
@@ -550,7 +565,7 @@ workflow PairedEndSingleSampleWorkflow {
   scatter (unmapped_bam in flowcell_unmapped_bams) {
   
     # Because of a wdl/cromwell bug this is not currently valid so we have to sub(sub()) in each task
-    # String base_name = sub(sub(unmapped_bam, "gs://.*/", ""), unmapped_bam_suffix + "$", "") 
+    # String base_name = sub(sub(unmapped_bam, "gs://.*/", ""), unmapped_bam_suffix + "$", "")
 
     String sub_strip_path = "gs://.*/"
     String sub_strip_unmapped = unmapped_bam_suffix + "$"
@@ -574,7 +589,7 @@ workflow PairedEndSingleSampleWorkflow {
         preemptible_tries = preemptible_tries
 
      }
-    
+
     # Merge original uBAM and BWA-aligned BAM 
     call MergeBamAlignment {
       input:
@@ -589,7 +604,7 @@ workflow PairedEndSingleSampleWorkflow {
         disk_size = flowcell_medium_disk,
         preemptible_tries = preemptible_tries
     }
-    
+
     # Sort and fix tags in the merged BAM
     call SortAndFixTags as SortAndFixReadGroupBam {
       input:
@@ -601,7 +616,9 @@ workflow PairedEndSingleSampleWorkflow {
       disk_size = flowcell_medium_disk,
       preemptible_tries = preemptible_tries
     }
- 
+    
+  }
+
   # Aggregate aligned+merged flowcell BAM files and mark duplicates
   call MarkDuplicates {
     input:
@@ -622,14 +639,14 @@ workflow PairedEndSingleSampleWorkflow {
       disk_size = agg_large_disk,
       preemptible_tries = 0
   }
-  
+
   # Create list of sequences for scatter-gather parallelization 
   call CreateSequenceGroupingTSV {
     input:
       ref_dict = ref_dict,
       preemptible_tries = preemptible_tries
   }
-    
+  
   # Perform Base Quality Score Recalibration (BQSR) on the sorted BAM in parallel
   scatter (subgroup in CreateSequenceGroupingTSV.sequence_grouping) {
     # Generate the recalibration model by interval
@@ -651,7 +668,6 @@ workflow PairedEndSingleSampleWorkflow {
         disk_size = agg_small_disk,
         preemptible_tries = agg_preemptible_tries
     }  
-    
     # Apply the recalibration model by interval
     call ApplyBQSR {
       input:
@@ -693,8 +709,8 @@ workflow PairedEndSingleSampleWorkflow {
       ref_fasta_index = ref_fasta_index,
       disk_size = agg_small_disk,
       preemptible_tries = agg_preemptible_tries
-  }    
-  
+  }
+    
   # Merge the recalibrated BAM files resulting from by-interval recalibration
   # TODO: when we have capability of adding elements to arrays, can just have one array 
   # as an input and add the output of the above task to the scattered printreads bams
@@ -715,11 +731,11 @@ workflow PairedEndSingleSampleWorkflow {
       ref_fasta_index = ref_fasta_index,
       output_basename = sample_name,
       disk_size = agg_medium_disk
-  }  
+  }
   
   # Call variants in parallel over WGS calling intervals
   scatter (subInterval in scattered_calling_intervals) {
-     
+  
     # Generate GVCF by interval
     call HaplotypeCaller {
       input:
@@ -733,7 +749,7 @@ workflow PairedEndSingleSampleWorkflow {
         disk_size = agg_small_disk,
         preemptible_tries = agg_preemptible_tries
      }
-  }  
+  }
   
   # Combine by-interval GVCFs into a single sample GVCF file
   call GatherVCFs {
@@ -744,12 +760,13 @@ workflow PairedEndSingleSampleWorkflow {
       disk_size = agg_small_disk,
       preemptible_tries = agg_preemptible_tries
   }
-  
-  # Outputs that will be retained when execution is complete
-  output {   
+
+  # Outputs that will be retained when execution is complete  
+  output {
     MarkDuplicates.duplicate_metrics
     GatherBqsrReports.*
     ConvertToCram.*
     GatherVCFs.*
-  }
+    }
+  
 }
