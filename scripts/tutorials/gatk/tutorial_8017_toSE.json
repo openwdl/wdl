@@ -1,0 +1,14 @@
+{
+  "Tutorial_8017_toSE.samtools": "/Applications/genomicstools/samtools/samtools-1.3.1/samtools",
+  "Tutorial_8017_toSE.final_vcf_name": "/Users/shlee/Desktop/tutorial_8017/multisample_toSE",
+  "Tutorial_8017_toSE.GATK": "/Applications/genomicstools/gatk/GenomeAnalysisTK-3.6/GenomeAnalysisTK.jar",
+  "Tutorial_8017_toSE.ref_index": "/Users/shlee/Documents/ref/hg38_mini/chr19_chr19_KI270866v1_alt.fasta.fai",
+  "Tutorial_8017_toSE.bam_directory_path": "/Users/shlee/Desktop/tutorial_8017/",
+  "Tutorial_8017_toSE.snaut_bam": [
+	["/Users/shlee/Desktop/tutorial_8017/altalt_snaut.bam", "/Users/shlee/Desktop/tutorial_8017/altalt_snaut.bai"],
+	["/Users/shlee/Desktop/tutorial_8017/paalt_snaut.bam", "/Users/shlee/Desktop/tutorial_8017/paalt_snaut.bai"],
+	["/Users/shlee/Desktop/tutorial_8017/papa_snaut.bam", "/Users/shlee/Desktop/tutorial_8017/papa_snaut.bai"]
+  ],
+  "Tutorial_8017_toSE.ref_dict": "/Users/shlee/Documents/ref/hg38_mini/chr19_chr19_KI270866v1_alt.dict",
+  "Tutorial_8017_toSE.ref_fasta": "/Users/shlee/Documents/ref/hg38_mini/chr19_chr19_KI270866v1_alt.fasta"
+}

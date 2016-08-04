@@ -1,0 +1,20 @@
+{
+  "Tutorial_8017_postalt.POSTALT": "/Applications/genomicstools/bwa/bwa-0.7.15/bwakit/bwa-postalt.js",
+  "Tutorial_8017_postalt.aligned_sam": [
+	"/Users/shlee/Desktop/tutorial_8017/altalt.sam",
+	"/Users/shlee/Desktop/tutorial_8017/paalt.sam",
+	"/Users/shlee/Desktop/tutorial_8017/papa.sam"
+  ],
+  "Tutorial_8017_postalt.final_vcf_name": "/Users/shlee/Desktop/tutorial_8017/multisample_postalt",
+  "Tutorial_8017_postalt.ref_alt": "/Users/shlee/Documents/ref/hg38_mini/chr19_chr19_KI270866v1_alt.fasta.alt",
+  "Tutorial_8017_postalt.ref_dict": "/Users/shlee/Documents/ref/hg38_mini/chr19_chr19_KI270866v1_alt.dict",
+  "Tutorial_8017_postalt.K8": "/Applications/genomicstools/k8-0.2.3/k8-darwin",
+  "Tutorial_8017_postalt.ref_fasta": "/Users/shlee/Documents/ref/hg38_mini/chr19_chr19_KI270866v1_alt.fasta",
+  "Tutorial_8017_postalt.PICARD": "/Applications/genomicstools/picard/picard-tools-2.5.0/picard.jar",
+  "Tutorial_8017_postalt.samtools": "/Applications/genomicstools/samtools/samtools-1.3.1/samtools",
+  "Tutorial_8017_postalt.ref_index": "/Users/shlee/Documents/ref/hg38_mini/chr19_chr19_KI270866v1_alt.fasta.fai",
+  "Tutorial_8017_postalt.sam_directory_path": "/Users/shlee/Desktop/tutorial_8017/",
+  "Tutorial_8017_postalt.GATK": "/Applications/genomicstools/gatk/GenomeAnalysisTK-3.6/GenomeAnalysisTK.jar",
+  "Tutorial_8017_postalt.min_unclipped_bases": "32",
+  "Tutorial_8017_postalt.unmap_contaminant_reads": "false"
+}
