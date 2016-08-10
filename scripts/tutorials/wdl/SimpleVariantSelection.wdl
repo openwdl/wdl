@@ -1,3 +1,7 @@
+# The tutorial to accompany this script can be found at:
+# https://software.broadinstitute.org/wdl/userguide/article?id=7221
+# You can follow along with the tutorial there for a complete explanation of how to write this script.
+
 workflow SimpleVariantSelection {
   File gatk
   File refFasta
