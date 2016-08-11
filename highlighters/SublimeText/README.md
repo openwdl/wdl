@@ -7,10 +7,10 @@ This set of instructions assumes SublimeText running on a Mac
 
 * Install SublimeText 2 or 3 (see http://www.sublimetext.com)
 * Install Package Control (see https://packagecontrol.io/installation)
-* Use Package Control to install `AAAPackageDev` (CMD+SHIFT+P | Package Control : Install Package)
+* Use Package Control to install `PackageDev` (CMD+SHIFT+P | Package Control : Install Package)
 * Open the `WDL.YAML-tmLanguage` file (File | Open...)
 * Open the Command Palette (CMD+SHIFT+P)
-* Select the "AAAPackageDev: Convert (YAML,JSON, Plist) to..." option
+* Select the "PackageDev: Convert (YAML,JSON, Plist) to..." option
 * This should write the `WDL.tmLanguage` file to the same directory as `WDL.YAML-tmLanguage`
 
 Installation (SublimeText)
