@@ -1,6 +1,3 @@
-#### Document is in `BETA`. It may be incomplete and/or inaccurate.
-
-----
 <img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/4b/1a77e7233c3f96dd41605eee2fa00a.png" align="right" height="270" style="margin:0px 0px 10px 5px"/> This document outlines the data transformation steps and describes some pertinent parameters of the **PairedEndSingleSampleWf** that uses GRCh38 as the reference genome. As the name implies, the workflow is specific to processing paired end reads for a single sample. The pipeline implements GATK Best Practices of around June 2016, for pre-processing human germline whole-genome sequencing (WGS) data. It begins with unaligned paired reads in BAM format and results in a sample-level SNP and INDEL variant callset in GVCF format.
 
 - The outline is specific to the public WDL script **PublicPairedSingleSampleWf_160720.wdl** with a July 20, 2016 date stamp found [here](https://github.com/broadinstitute/wdl/blob/develop/scripts/broad_pipelines).
