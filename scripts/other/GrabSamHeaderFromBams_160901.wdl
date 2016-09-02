@@ -18,7 +18,7 @@
 
 # TASK DEFINITIONS
 
-# Merge original input uBAM file with BWA-aligned BAM file
+# Extract the header from a BAM using samtools
 task GrabSAMHeader {
   File bam_file
   String output_basename
