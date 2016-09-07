@@ -1,0 +1,30 @@
+{
+  "uBamFromPairedFastQ.readgroup_list": [
+  	"NA12878_A", "NA12878_B", "NA12878_C"
+  ],
+  "uBamFromPairedFastQ.metadata": {
+    "NA12878_A": [
+      "NA12878", "Solexa-NA12878", "H06HDADXX130110.2.ATCACGAT", "2016-09-01T02:00:00+0200", "illumina", "BI"
+    ],
+  	"NA12878_B": [
+  		"NA12878", "Solexa-NA12878", "H06HDADXX130110.1.ATCACGAT", "2016-09-01T02:00:00+0200", "illumina", "BI"
+  	],
+  	"NA12878_C": [
+  		"NA12878", "Solexa-NA12878", "H06JUADXX130110.1.ATCACGAT", "2016-09-01T02:00:00+0200", "illumina", "BI"
+  	]
+  }, 		
+  "uBamFromPairedFastQ.fastq_pairs": {
+  	"NA12878_A": [
+  		"gs://dsde-comms-resources/fastq/H06HDADXX130110.1.ATCACGAT.20k_reads_1.fastq", 
+  		"gs://dsde-comms-resources/fastq/H06HDADXX130110.1.ATCACGAT.20k_reads_2.fastq"
+  	],
+  	"NA12878_B": [
+  		"gs://dsde-comms-resources/fastq/H06HDADXX130110.2.ATCACGAT.20k_reads_1.fastq", 
+  		"gs://dsde-comms-resources/fastq/H06HDADXX130110.2.ATCACGAT.20k_reads_2.fastq"
+  	], 
+  	"NA12878_C": [
+		"gs://dsde-comms-resources/fastq/H06JUADXX130110.1.ATCACGAT.20k_reads_1.fastq", 
+  		"gs://dsde-comms-resources/fastq/H06JUADXX130110.1.ATCACGAT.20k_reads_2.fastq"
+  	]
+  }
+}

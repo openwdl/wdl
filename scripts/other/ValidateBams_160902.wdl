@@ -1,10 +1,9 @@
 ## Copyright Broad Institute, 2016
 ## 
-## This WDL converts a list of BAMs to pairs of FASTQs
+## This WDL validates a list of BAMs in SUMMARY mode
 ##
 ## Requirements/expectations :
-## - List of valid BAM files
-## - Max one readgroup per BAM files. If there are more, the distinctions will be lost.
+## - List of BAM files to validate
 ##
 ## Runtime parameters are optimized for Broad's Google Cloud Platform implementation. 
 ## For program versions, see docker containers. 
@@ -19,38 +18,31 @@
 
 # TASK DEFINITIONS
 
-# Run SamToFASTQ to revert the bam
-task PairedFastQFromBam {
+# Extract the header from a BAM using samtools
+task ValidateBAM {
   File bam_file
-  String fastq_1
-  String fastq_2
-  String unpaired
+  String output_basename
 
   command {
     java -Xmx3000m -jar /usr/gitc/picard.jar \
-      SamToFastq \
+      ValidateSamFile \
       I=${bam_file} \
-      FASTQ=${fastq_1} \
-      SECOND_END_FASTQ=${fastq_2} \
-      UNPAIRED_FASTQ=${unpaired} \
-      INCLUDE_NON_PRIMARY_ALIGNMENTS=true \
-      INCLUDE_NON_PF_READS=true 
+      OUTPUT=${output_basename}.txt \
+      MODE=SUMMARY 
   }
   runtime {
     docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
-    memory: "3500 MB"
+    memory: "1 GB"
     cpu: "1"
     disks: "local-disk " + 200 + " HDD"
   }
   output {
-    File out_fastq_1 = "${fastq_1}"
-    File out_fastq_2 = "${fastq_2}"
-    File out_unpaired = "${unpaired}"
+    File output_bam = "${output_basename}.txt"
   }
 }
 
 # WORKFLOW DEFINITION
-workflow PairedFastQFromBams {
+workflow ValidateBAMs {
   Array[File] bam_list
 
   # Convert multiple pairs of input fastqs in parallel
@@ -58,21 +50,18 @@ workflow PairedFastQFromBams {
 
     String sub_strip_path = "gs://.*/"
     String sub_strip_suffix = ".bam$"
-    File output_basename = sub(sub(input_bam, sub_strip_path, ""), sub_strip_suffix, "")
 
     # Convert pair of FASTQs to uBAM
-    call PairedFastQFromBam {
+    call ValidateBAM {
       input:
         bam_file = input_bam,
-        fastq_1 = output_basename + "_1.fastq",
-        fastq_2 = output_basename + "_2.fastq",
-        unpaired = output_basename + "_up.fastq"
+        output_basename = sub(sub(input_bam, sub_strip_path, ""), sub_strip_suffix, "") + ".validation"
     }
   }
 
   # Outputs that will be retained when execution is complete
   output {
-    PairedFastQFromBam.*
+    ValidateBAM.*
   }
 }
 
