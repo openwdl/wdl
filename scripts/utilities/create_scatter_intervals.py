@@ -2,6 +2,10 @@
 
 ######################################################################################
 # This script creates interval subset lists from a master list for scattering N-ways #
+# 																					 #
+# Usage: 																			 #
+# python create_scatter_intervals.py \												 #
+# 	master.interval_list 50 4 wgs_intervals "WGS intervals scattered 50-ways"		 #
 ######################################################################################
 
 import os

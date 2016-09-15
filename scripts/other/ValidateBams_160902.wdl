@@ -22,6 +22,7 @@
 task ValidateBAM {
   File bam_file
   String output_basename
+  Int disk_size
 
   command {
     java -Xmx3000m -jar /usr/gitc/picard.jar \
@@ -34,7 +35,7 @@ task ValidateBAM {
     docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
     memory: "1 GB"
     cpu: "1"
-    disks: "local-disk " + 200 + " HDD"
+    disks: "local-disk " + disk_size + " HDD"
   }
   output {
     File output_bam = "${output_basename}.txt"
@@ -44,6 +45,7 @@ task ValidateBAM {
 # WORKFLOW DEFINITION
 workflow ValidateBAMs {
   Array[File] bam_list
+  Int disk_size
 
   # Convert multiple pairs of input fastqs in parallel
   scatter (input_bam in bam_list) {

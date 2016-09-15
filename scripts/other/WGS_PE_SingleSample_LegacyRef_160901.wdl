@@ -35,7 +35,7 @@ task GetBwaVersion {
     sed 's/Version: //'
   }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
     memory: "1 GB"
   }
   output {
@@ -74,9 +74,9 @@ task SamToFastqAndBwaMem {
     samtools view -1 - > ${output_bam_basename}.bam 
   >>>
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
-    memory: "14 GB"
-    cpu: "16"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
+    memory: "20 GB"
+    cpu: "32"
     disks: "local-disk " + disk_size + " HDD"
     preemptible: preemptible_tries
   }
@@ -127,7 +127,7 @@ task MergeBamAlignment {
       UNMAP_CONTAMINANT_READS=true
   }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
     memory: "3500 MB"
     cpu: "1"
     disks: "local-disk " + disk_size + " HDD"
@@ -165,7 +165,7 @@ task SortAndFixTags {
     REFERENCE_SEQUENCE=${ref_fasta}
   }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
     disks: "local-disk " + disk_size + " HDD"
     cpu: "1"
     memory: "5000 MB"
@@ -200,7 +200,7 @@ task MarkDuplicates {
       CREATE_MD5_FILE=true
   }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
     memory: "7 GB"
     disks: "local-disk " + disk_size + " HDD"
   }
@@ -285,7 +285,7 @@ task BaseRecalibrator {
       -L ${sep=" -L " sequence_group_interval}
   }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
     memory: "6 GB"
     disks: "local-disk " + disk_size + " HDD"
     preemptible: preemptible_tries
@@ -328,7 +328,7 @@ task ApplyBQSR {
       -L ${sep=" -L " sequence_group_interval}
   }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
     memory: "3500 MB"
     disks: "local-disk " + disk_size + " HDD"
     preemptible: preemptible_tries
@@ -355,7 +355,7 @@ task GatherBqsrReports {
       -O ${output_report_filename}
     }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
     memory: "3500 MB"
     disks: "local-disk " + disk_size + " HDD"
     preemptible: preemptible_tries
@@ -384,7 +384,7 @@ task GatherBamFiles {
 
     }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
     memory: "3 GB"
     disks: "local-disk " + disk_size + " HDD"
     preemptible: preemptible_tries
@@ -426,7 +426,7 @@ task HaplotypeCaller {
       --read_filter OverclippedRead 
   }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
     memory: "10 GB"
     cpu: "1"
     disks: "local-disk " + disk_size + " HDD"
@@ -459,7 +459,7 @@ task GatherVCFs {
     File output_vcf_index = "${output_vcf_name}.tbi"
   }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
     memory: "3 GB"
     disks: "local-disk " + disk_size + " HDD"
     preemptible: preemptible_tries
@@ -484,7 +484,7 @@ task ConvertToCram {
       mv ${output_basename}.cram.crai ${output_basename}.crai
   >>>
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
     memory: "3 GB"
     cpu: "1"
     disks: "local-disk " + disk_size + " HDD"
@@ -510,7 +510,6 @@ workflow WGS_PE_SingleSample_LR_Workflow {
   File ref_fasta
   File ref_fasta_index
   File ref_dict
-  File ref_alt
   File ref_bwt
   File ref_sa
   File ref_amb
@@ -530,7 +529,7 @@ workflow WGS_PE_SingleSample_LR_Workflow {
   Int preemptible_tries
   Int agg_preemptible_tries
 
-  String bwa_commandline="bwa mem -K 100000000 -p -v 3 -t 16 $bash_ref_fasta"
+  String bwa_commandline="bwa mem -K 100000000 -p -v 3 -t 32 $bash_ref_fasta"
 
   String recalibrated_bam_basename = sample_name + ".aligned.duplicates_marked.recalibrated"
 
@@ -556,7 +555,6 @@ workflow WGS_PE_SingleSample_LR_Workflow {
         ref_fasta = ref_fasta,
         ref_fasta_index = ref_fasta_index,
         ref_dict = ref_dict,
-        ref_alt = ref_alt,
         ref_bwt = ref_bwt,
         ref_amb = ref_amb,
         ref_ann = ref_ann,

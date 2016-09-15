@@ -47,8 +47,8 @@ task FastqToSam {
       SEQUENCING_CENTER=${sequencing_center} 
   }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
-    memory: "3500 MB"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
+    memory: "10 GB"
     cpu: "1"
     disks: "local-disk " + 400 + " HDD"
   }
