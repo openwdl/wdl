@@ -496,7 +496,9 @@ task ConvertToCram {
       samtools view -C -T ${ref_fasta} ${input_bam} | \
       tee ${output_basename}.cram | \
       md5sum > ${output_basename}.cram.md5 && \
-      samtools index ${output_basename}.cram && \
+      seq_cache_populate.pl -root ./ref/cache ${ref_fasta} && \
+      REF_PATH=: REF_CACHE=./ref/cache/%2s/%2s/%s \
+        samtools index ${output_basename}.cram &&
       mv ${output_basename}.cram.crai ${output_basename}.crai
   >>>
   runtime {
