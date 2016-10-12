@@ -117,7 +117,6 @@ task select {
 #for any part of the filterExpression (i.e. if a variant has a QD of 1.3, it would be 
 #filtered out). The variant calls remain in the file, but they are tagged as not passing.
 #GATK tools downstream in the pipeline will ignore filtered calls by default
-task hardFilterSNP
 task hardFilterSNP {
   File GATK
   File RefFasta
