@@ -87,6 +87,8 @@
   * [File write_json(mixed)](#file-write_jsonmixed)
   * [Float size(File, \[String\])](#float-sizefile-string)
   * [String sub(String, String, String)](#string-substring-string-string)
+  * [Array\[Int\] range(Int)](#arrayint-rangeint)
+  * [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
 * [Data Types & Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -2120,6 +2122,14 @@ Default unit is Bytes ("B").
 
 Given 3 String parameters `input`, `pattern`, `replace`, this function will replace any occurrence matching `pattern` in `input` by `replace`.
 `pattern` is expected to be a [regular expression](https://en.wikipedia.org/wiki/Regular_expression). Details of regex evaluation will depend on the execution engine running the WDL.
+
+## Array[Int] range(Int)
+
+Creates an array of integers of length equal to the range argument. For example `range(3)` provides the array: `(0, 1, 2)`.
+
+## Array[Array[X]] transpose(Array[Array[X]])
+
+Transposes a two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
 
 Example 1:
 
