@@ -238,7 +238,7 @@ $ java -jar cromwell.jar run hello.wdl hello.json
 }
 ```
 
-`read_string` is a function in the [standard library](https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#standard-library), which provides other useful functions for converting outputs to WDL data types.
+`read_string` is a function in the [standard library](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#standard-library), which provides other useful functions for converting outputs to WDL data types.
 
 ## Using Globs to Specify Output
 
