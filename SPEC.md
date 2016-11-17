@@ -1237,14 +1237,75 @@ Conditionals only execute the body if the expression evaluates to true
 
 ### Outputs
 
+Each `workflow` definition can specify an optional `output` section.  This section lists outputs from individual `call`s that you also want to expose as outputs to the `workflow` itself.
+If the `output {...}` section is omitted, then the workflow includes all outputs from all calls in its final output.
+Workflow outputs follow the same syntax rules as task outputs.
+They can reference call outputs, workflow inputs and previous workflow outputs.
+e.g:
+
+```
+task t {
+  command {
+    # do something
+  }
+  output {
+    String out = "out"
+  }
+}
+
+workflow w {
+  String w_input = "some input"
+  
+  call t
+  call t as u
+  
+  output {
+    String t_out = t.out
+    String u_out = u.out
+    String input_as_output = w_input
+    String previous_output = u_out
+  }
+}
+```
+
+Note that they can't reference task inputs. However this can be achieved by declaring the desired task input as an output of this task.
+Expressions are allowed.
+
+When declaring a workflow output that points to a call inside a scatter, the aggregated call is used.
+e.g:
+
+```
+task t {
+  command {
+    # do something
+  }
+  output {
+    String out = "out"
+  }
+}
+
+workflow w {
+  Array[Int] arr = [1, 2]
+  
+  scatter(i in arr) {
+    call t
+  }
+  
+  output {
+    Array[String] t_out = t.out
+  }
+}
+```
+
+`t_out` has an `Array[String]` result type, because `call t` is inside a scatter.
+
+*THE FOLLOWING SYNTAX IS DEPRECATED BUT IS STILL SUPPORTED TO MAINTAIN BACKWARD COMPATIBILITY*
 ```
 $workflow_output = 'output' '{' ($workflow_output_fqn ($workflow_output_fqn)* '}'
 $workflow_output_fqn = $fully_qualified_name '.*'?
 ```
 
-Each `workflow` definition can specify an optional `output` section.  This section lists outputs from individual `call`s that you also want to expose as outputs to the `workflow` itself. Replacing call output names with a `*` acts as a match-all wildcard. 
-
-If the `output {...}` section is omitted, then the workflow includes all outputs from all calls in its final output.
+Replacing call output names with a `*` acts as a match-all wildcard. 
 
 The output names in this section must be qualified with the call which created them, as in the example below.
 
@@ -1273,6 +1334,54 @@ workflow wf {
 ```
 
 In this example, the fully-qualified names that would be exposed as workflow outputs would be `wf.task1.results`, `wf.altname.value`.
+
+# Sub Workflows
+
+Workflows can also be called inside of workflows, like a regular call.
+
+`main.wdl`
+```
+import "sub_wdl.wdl" as sub
+
+workflow main_workflow {
+
+    call sub.wf_hello { input: wf_hello_input = "sub world" }
+    
+    output {
+        String main_output = wf_hello.salutation
+    }
+}
+```
+
+`sub_wdl.wdl`
+```
+task hello {
+  String addressee
+  command {
+    echo "Hello ${addressee}!"
+  }
+  runtime {
+      docker: "ubuntu:latest"
+  }
+  output {
+    String salutation = read_string(stdout())
+  }
+}
+
+workflow wf_hello {
+  String wf_hello_input
+  
+  call hello {input: addressee = wf_hello_input }
+  
+  output {
+    String salutation = hello.salutation
+  }
+}
+```
+
+Note that because a wdl file can only contain 1 workflow, sub workflows can only be used through imports.
+Otherwise, calling a workflow or a task is equivalent syntactically.
+Inputs are specified and outputs retrieved the same way as they are for task calls.
 
 # Namespaces
 
