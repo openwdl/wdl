@@ -49,6 +49,7 @@
       * [Example 6: tmap](#example-6-tmap)
   * [Workflow Definition](#workflow-definition)
     * [Call Statement](#call-statement)
+        * [Sub Workflows](#sub-workflows)
     * [Scatter](#scatter)
     * [Loops](#loops)
     * [Conditionals](#conditionals)
@@ -1192,6 +1193,54 @@ workflow wf {
 }
 ```
 
+#### Sub Workflows
+
+Workflows can also be called inside of workflows.
+
+`main.wdl`
+```
+import "sub_wdl.wdl" as sub
+
+workflow main_workflow {
+
+    call sub.wf_hello { input: wf_hello_input = "sub world" }
+    
+    output {
+        String main_output = wf_hello.salutation
+    }
+}
+```
+
+`sub_wdl.wdl`
+```
+task hello {
+  String addressee
+  command {
+    echo "Hello ${addressee}!"
+  }
+  runtime {
+      docker: "ubuntu:latest"
+  }
+  output {
+    String salutation = read_string(stdout())
+  }
+}
+
+workflow wf_hello {
+  String wf_hello_input
+  
+  call hello {input: addressee = wf_hello_input }
+  
+  output {
+    String salutation = hello.salutation
+  }
+}
+```
+
+Note that because a wdl file can only contain 1 workflow, sub workflows can only be used through imports.
+Otherwise, calling a workflow or a task is equivalent syntactically.
+Inputs are specified and outputs retrieved the same way as they are for task calls.
+
 ### Scatter
 
 ```
@@ -1268,7 +1317,7 @@ workflow w {
 }
 ```
 
-Note that they can't reference task inputs. However this can be achieved by declaring the desired task input as an output of this task.
+Note that they can't reference call inputs. However this can be achieved by declaring the desired call input as an output.
 Expressions are allowed.
 
 When declaring a workflow output that points to a call inside a scatter, the aggregated call is used.
@@ -1334,54 +1383,6 @@ workflow wf {
 ```
 
 In this example, the fully-qualified names that would be exposed as workflow outputs would be `wf.task1.results`, `wf.altname.value`.
-
-# Sub Workflows
-
-Workflows can also be called inside of workflows, like a regular call.
-
-`main.wdl`
-```
-import "sub_wdl.wdl" as sub
-
-workflow main_workflow {
-
-    call sub.wf_hello { input: wf_hello_input = "sub world" }
-    
-    output {
-        String main_output = wf_hello.salutation
-    }
-}
-```
-
-`sub_wdl.wdl`
-```
-task hello {
-  String addressee
-  command {
-    echo "Hello ${addressee}!"
-  }
-  runtime {
-      docker: "ubuntu:latest"
-  }
-  output {
-    String salutation = read_string(stdout())
-  }
-}
-
-workflow wf_hello {
-  String wf_hello_input
-  
-  call hello {input: addressee = wf_hello_input }
-  
-  output {
-    String salutation = hello.salutation
-  }
-}
-```
-
-Note that because a wdl file can only contain 1 workflow, sub workflows can only be used through imports.
-Otherwise, calling a workflow or a task is equivalent syntactically.
-Inputs are specified and outputs retrieved the same way as they are for task calls.
 
 # Namespaces
 
