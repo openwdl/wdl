@@ -53,6 +53,8 @@
     * [Scatter](#scatter)
     * [Loops](#loops)
     * [Conditionals](#conditionals)
+    * [Parameter Metadata](#parameter-metadata)
+    * [Metadata](#metadata)
     * [Outputs](#outputs)
 * [Namespaces](#namespaces)
 * [Scope](#scope)
@@ -1112,7 +1114,7 @@ For this particular case where the command line is *itself* a mini DSL, The best
 
 ```
 $workflow = 'workflow' $ws* '{' $ws* $workflow_element* $ws* '}'
-$workflow_element = $call | $loop | $conditional | $declaration | $scatter
+$workflow_element = $call | $loop | $conditional | $declaration | $scatter | $parameter_meta | $meta
 ```
 
 A workflow is defined as the keyword `workflow` and the body being in curly braces.
@@ -1283,6 +1285,26 @@ $conditional = 'if' '(' $expression ')' '{' $workflow_element* '}'
 ```
 
 Conditionals only execute the body if the expression evaluates to true
+
+### Parameter Metadata
+
+```
+$wf_parameter_meta = 'parameter_meta' $ws* '{' ($ws* $wf_parameter_meta_kv $ws*)* '}'
+$wf_parameter_meta_kv = $identifier $ws* '=' $ws* $string
+```
+
+This purely optional section contains key/value pairs where the keys are names of parameters and the values are string descriptions for those parameters.
+
+> *Additional requirement*: Any key in this section MUST correspond to a worflow input
+
+### Metadata
+
+```
+$wf_meta = 'meta' $ws* '{' ($ws* $wf_meta_kv $ws*)* '}'
+$wf_meta_kv = $identifier $ws* '=' $ws* $string
+```
+
+This purely optional section contains key/value pairs for any additional meta data that should be stored with the workflow.  For example, perhaps author or contact email.
 
 ### Outputs
 
