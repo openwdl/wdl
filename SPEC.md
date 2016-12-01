@@ -227,7 +227,7 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 * An escape sequence starting with `\\x`, followed by hexadecimal characters `0-9a-fA-F`.  This specifies a hexidecimal escape code.
 * An escape sequence starting with `\\u` or `\\U` followed by either 4 or 8 hexadecimal characters `0-9a-fA-F`.  This specifies a unicode code point
 
-### Types :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+### Types
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
@@ -259,6 +259,8 @@ For more details on the `$type_postfix_quantifier`, see the section on [Optional
 For more information on type and how they are used to construct commands and define outputs of tasks, see the [Data Types & Serialization](#data-types--serialization) section.
 
 ### Fully Qualified Names & Namespaced Identifiers
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 ```
 $fully_qualified_name = $identifier ('.' $identifier)*
@@ -340,6 +342,8 @@ workflow wf {
 Here, `ns.ns2.task` is a namespace identifier (see the [Call Statement](#call-statement) section for more details).  Namespace identifiers, like fully-qualified names are left-associative, which means `ns.ns2.task` is interpreted as `((ns.ns2).task)`, which means `ns.ns2` would have to resolve to a namespace so that `.task` could be applied.  If `ns2` was a task definition within `ns`, then this namespaced identifier would be invalid.
 
 ### Declarations
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 ```
 $declaration = $type $identifier ('=' $expression)?
@@ -500,6 +504,8 @@ Below are the valid results for operators on types.  Any combination not in the 
 
 ### Operator Precedence Table
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 | Precedence | Operator type         | Associativity | Example              |
 |------------|-----------------------|---------------|----------------------|
 | 12         | Grouping              | n/a           | (x)                  |
@@ -526,6 +532,8 @@ Below are the valid results for operators on types.  Any combination not in the 
 
 ### Member Access
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 The syntax `x.y` refers to member access.  `x` must be an object or task in a workflow.  A Task can be thought of as an object where the attributes are the outputs of the task.
 
 ```wdl
@@ -547,15 +555,21 @@ workflow wf {
 
 ### Map and Array Indexing
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 The syntax `x[y]` is for indexing maps and arrays.  If `x` is an array, then `y` must evaluate to an integer.  If `x` is a map, then `y` must evaluate to a key in that map.
 
 ### Function Calls
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Function calls, in the form of `func(p1, p2, p3, ...)`, are either [standard library functions](#standard-library) or engine-defined functions.
 
 In this current iteration of the spec, users cannot define their own functions.
 
 ### Array Literals
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Arrays values can be specified using Python-like syntax, as follows:
 
@@ -566,6 +580,8 @@ Array[Int] b = [0,1,2]
 
 ### Map Literals
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Maps values can be specified using a similar Python-like sytntax:
 
 ```
@@ -574,6 +590,8 @@ Map[String, Int] = {"a": 1, "b": 2}
 ```
 
 ## Document
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 ```
 $document = ($import | $task | $workflow)+
