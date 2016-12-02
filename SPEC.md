@@ -587,17 +587,18 @@ $import = 'import' $ws+ $string ($ws+ 'as' $ws+ $identifier)?
 
 The import statement specifies that `$string` which is to be interpted as a URI which points to a WDL file.  The engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code.
 
-If a namespace identifier (via the `as $identifer` syntax) is specified, then all the tasks and workflows imported will only be accessible through that [namespace](#namespaces).  If no namespace identifier is specified, then all tasks and workflows from the URI are imported into the current namespace.
+Every imported WDL file requires a namespace and it can be specified using an identifier (via the `as $identifer` syntax). If no namespace identifier is explicitly specified, then the default namespace is the filename of the imported WDL file. For all imported WDL files, the tasks and workflows imported from that file will only be accessible through that assigned [namespace](#namespaces)
 
 ```wdl
-import "http://example.com/lib/stdlib"
 import "http://example.com/lib/analysis_tasks" as analysis
+import "http://example.com/lib/stdlib"
+
 
 workflow wf {
   File bam_file
 
   # file_size is from "http://example.com/lib/stdlib"
-  call file_size {
+  call stdlib.file_size {
     input: file=bam_file
   }
   call analysis.my_analysis_task {
@@ -1386,7 +1387,7 @@ In this example, the fully-qualified names that would be exposed as workflow out
 
 # Namespaces
 
-Import statements can be used to pull in tasks/workflows from other locations as well as create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the current namespace.  For example:
+Import statements can be used to pull in tasks/workflows from other locations as well as create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the specified namespace.  For example:
 
 tasks.wdl
 ```
@@ -1400,29 +1401,29 @@ task y {
 
 workflow.wdl
 ```
-import "tasks.wdl"
+import "tasks.wdl" as pyTasks
 
 workflow wf {
-  call x
-  call y
+  call pyTasks.x
+  call pyTasks.y
 }
 ```
 
-Tasks `x` and `y` are in the same namespace as workflow `wf` is.  However, if workflow.wdl could put all of those tasks behind a namespace:
+Tasks `x` and `y` are inside the namespace `pyTasks`, and which is different from the 'wf' namespace belonging to the primary workflow.  However, if no namespace is specified for tasks.wdl:
 
 workflow.wdl
 ```
-import "tasks.wdl" as ns
+import "tasks.wdl"
 
 workflow wf {
-  call ns.x
-  call ns.y
+  call tasks.x
+  call tasks.y
 }
 ```
 
-Now everything inside of `tasks.wdl` must be accessed through the namespace `ns`.
+Now everything inside of `tasks.wdl` must be accessed through the default namespace `tasks`.
 
-Each namespace contains: namespaces, tasks, and workflows.  The names of these needs to be unique within that namespace.  For example, there cannot be a task named `foo` and also a namespace named `foo`.  Also there can't be a task and a workflow with the same names, or two workflows with the same name.
+Each namespace contains: namespaces, tasks, and workflows.  The names of these needs to be unique within that namespace.  For example, there cannot be a workflow named `foo` and also an imported namespace named `foo`.  Also there can't be a workflow and a task in that workflow with the same names, or import two workflows with the same namespace. However, you can import two workflows with different namespace names that share all the same tasks. For example, you can import namespace 'foo' and 'bar', both of which contain a task 'baz', and you can call 'foo.baz' and 'bar.baz' inside the same primary workflow.
 
 # Scope
 
