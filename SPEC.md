@@ -1297,6 +1297,15 @@ This purely optional section contains key/value pairs where the keys are names o
 
 > *Additional requirement*: Any key in this section MUST correspond to a worflow input
 
+As an example:
+```
+  parameter_meta {
+    memory_mb: "Amount of memory to allocate to the JVM"
+    param: "Some arbitrary parameter"
+    sample_id: "The ID of the sample in format foo_bar_baz"
+  }
+```
+
 ### Metadata
 
 ```
@@ -1305,6 +1314,14 @@ $wf_meta_kv = $identifier $ws* '=' $ws* $string
 ```
 
 This purely optional section contains key/value pairs for any additional meta data that should be stored with the workflow.  For example, perhaps author or contact email.
+
+As an example:
+```
+  meta {
+    author: "Joe Somebody"
+    email: "joe@company.org"
+  }
+```
 
 ### Outputs
 
