@@ -397,6 +397,8 @@ workflow wf {
 
 ### Expressions
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 ```
 $expression = '(' $expression ')'
 $expression = $expression '.' $expression
@@ -636,6 +638,8 @@ Engines should at the very least support the following protocols for import URIs
 
 ## Task Definition
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 A task is a declarative construct with a focus on constructing a command from a template.  The command specification is interpreted in an engine specific way, though a typical case is that a command is a UNIX command line which would be run in a Docker image.
 
 Tasks also define their outputs, which is essential for building dependencies between tasks.  Any other data specified in the task definition (e.g. runtime information and meta-data) is optional.
@@ -648,6 +652,8 @@ For example, `task name { ... }`.  Inside the curly braces defines the sections.
 
 ### Sections
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 The task has one or more sections:
 
 ```
@@ -658,6 +664,8 @@ $task_sections = ($command | $runtime | $task_output | $parameter_meta | $meta)+
 
 ### Command Section
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 ```
 $command = 'command' $ws* '{' (0xA | 0xD)* $command_part+ $ws+ '}'
 $command = 'command' $ws* '<<<' (0xA | 0xD)* $command_part+ $ws+ '>>>'
@@ -666,6 +674,8 @@ $command = 'command' $ws* '<<<' (0xA | 0xD)* $command_part+ $ws+ '>>>'
 A command is a *task section* that starts with the keyword 'command', and is enclosed in curly braces or `<<<` `>>>`.  The body of the command specifies the literal command line to run with placeholders (`$command_part_var`) for the parts of the command line that needs to be filled in.
 
 #### Command Parts
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 ```
 $command_part = $command_part_string | $command_part_var
@@ -719,6 +729,8 @@ The `$var_option` is a set of key-value pairs for any additional and less-used o
 
 ##### sep
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 'sep' is interpreted as the separator string used to join multiple parameters together.  `sep` is only valid if the expression evaluates to an `Array`.
 
 For example, if there were a declaration `Array[Int] ints = [1,2,3]`, the command `python script.py ${sep=',' numbers}` would yield the command line:
@@ -739,6 +751,8 @@ python script.py 1 2 3
 
 ##### true and false
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 'true' and 'false' are only used for type Boolean and they specify what the parameter returns when the Boolean is true or false, respectively.
 
 For example, `${true='--enable-foo', false='--disable-foo' Boolean yes_or_no}` would evaluate to either `--enable-foo` or `--disable-foo` based on the value of yes_or_no.
@@ -751,6 +765,8 @@ If either value is left out, then it's equivalent to specifying the empty string
 > 2.  `true` and `false` are only allowed if the type is `Boolean`
 
 ##### default
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 This specifies the default value if no other value is specified for this parameter.
 
@@ -771,6 +787,8 @@ This task takes an optional `String` parameter and if a value is not specified, 
 > 2.  If 'default' is specified, the `$type_postfix_quantifier` for the variable's type MUST be `?`
 
 #### Alternative heredoc syntax
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Sometimes a command is sufficiently long enough or might use `{` characters that using a different set of delimiters would make it more clear.  In this case, enclose the command in `<<<`...`>>>`, as follows:
 
@@ -793,6 +811,8 @@ Parsing of this command should be the same as the prior section describes.
 
 #### Stripping Leading Whitespace
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Any text inside of the `command` section, after instantiated, should have all *common leading whitespace* removed.  In the `task heredoc` example in the previous section, if the user specifies a value of `/path/to/file` as the value for `File in`, then the command should be:
 
 ```
@@ -809,6 +829,8 @@ The 2-spaces that were common to each line were removed.
 If the user mixes tabs and spaces, the behavior is undefined.  A warning is suggested, and perhaps a convention of 4 spaces per tab.  Other implementations might return an error in this case.
 
 ### Outputs Section
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 The outputs section defines which of the files and values should be exported after a successful run of this tool.
 
@@ -863,6 +885,8 @@ output {
 
 ### String Interpolation
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Within tasks, any string literal can use string interpolation to access the value of any of the task's inputs.  The most obvious example of this is being able to define an output file which is named as function of its input.  For example:
 
 ```wdl
@@ -882,6 +906,8 @@ task example {
 Any `${identifier}` inside of a string literal must be replaced with the value of the identifier.  If prefix were specified as `foobar`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
 
 ### Runtime Section
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 ```
 $runtime = 'runtime' $ws* '{' ($ws* $runtime_kv $ws*)* '}'
@@ -924,6 +950,8 @@ Most key/value pairs are arbitrary.  However, the following keys have recommende
 
 #### docker
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Location of a Docker image for which this task ought to be run.  This can have a format like `ubuntu:latest` or `broadinstitute/scala-baseimage` in which case it should be interpreted as an image on DockerHub (i.e. it is valid to use in a `docker pull` command).
 
 ```wdl
@@ -940,6 +968,8 @@ task docker_test {
 ```
 
 #### memory
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Memory requirements for this task.  Two kinds of values are supported for this attributes:
 
@@ -1132,6 +1162,8 @@ For this particular case where the command line is *itself* a mini DSL, The best
 
 ## Workflow Definition
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 ```
 $workflow = 'workflow' $ws* '{' $ws* $workflow_element* $ws* '}'
 $workflow_element = $call | $loop | $conditional | $declaration | $scatter
@@ -1154,6 +1186,8 @@ workflow wf {
 ```
 
 ### Call Statement
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 ```
 $call = 'call' $ws* $namespaced_identifier $ws+ ('as' $identifier)? $ws* $call_body?
@@ -1265,6 +1299,8 @@ Inputs are specified and outputs retrieved the same way as they are for task cal
 
 ### Scatter
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 ```
 $scatter = 'scatter' $ws* '(' $ws* $scatter_iteration_statment $ws*  ')' $ws* $scatter_body
 $scatter_iteration_statment = $identifier $ws* 'in' $ws* $expression
@@ -1307,6 +1343,8 @@ $conditional = 'if' '(' $expression ')' '{' $workflow_element* '}'
 Conditionals only execute the body if the expression evaluates to true
 
 ### Outputs
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Each `workflow` definition can specify an optional `output` section.  This section lists outputs from individual `call`s that you also want to expose as outputs to the `workflow` itself.
 If the `output {...}` section is omitted, then the workflow includes all outputs from all calls in its final output.
@@ -1448,6 +1486,8 @@ Each namespace contains: namespaces, tasks, and workflows.  The names of these n
 
 # Scope
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Scopes are defined as:
 
 * `workflow {...}` blocks
@@ -1483,6 +1523,8 @@ workflow wf {
 `my_task` will use `x=4` to set the value for `var` in its command line.  However, `my_task` also needs a value for `x` which is defined at the task level.  Since `my_task` has two inputs (`x` and `var`), and only one of those is set in the `call my_task` declaration, the value for `my_task.x` still needs to be provided by the user when the workflow is run.
 
 # Optional Parameters & Type Constraints
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 [Types](#types) can be optionally suffixed with a `?` or `+` in certain cases.
 
@@ -1548,6 +1590,8 @@ Then the command would be instantiated as:
 
 ## Prepending a String to an Optional Parameter
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Sometimes, optional parameters need a string prefix.  Consider this task:
 
 ```wdl
@@ -1578,6 +1622,8 @@ python script.py ${"--val=" + val}
 ```
 
 # Scatter / Gather
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 The `scatter` block is meant to parallelize a series of identical tasks but give them slightly different inputs.  The simplest example is:
 
@@ -1660,9 +1706,13 @@ In this example, `inc` and `inc2` are being called in serial where the output of
 
 # Variable Resolution
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Inside of [expressions](#expressions), variables are resolved differently depending on if the expression is in a `task` declaration or a `workflow` declaration
 
 ## Task-Level Resolution
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Inside a task, resolution is trivial: The variable referenced MUST be a [declaration](#declarations) of the task.  For example:
 
@@ -1678,6 +1728,8 @@ task my_task {
 Inside of this task, there exists only one expression: `write_lines(strings)`.  In here, when the expression evaluator tries to resolve `strings`, which must be a declaration of the task (in this case it is).
 
 ## Workflow-Level Resolution
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 In a workflow, resolution works by traversing the scope heirarchy starting from expression that references the variable.
 
@@ -1696,9 +1748,13 @@ In this example, there are two expressions: `s+"-suffix"` and `t+"-suffix"`.  `s
 
 # Computing Inputs
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Both tasks and workflows have a typed inputs that must be satisfied in order to run.  The following sections describe how to compute inputs for `task` and `workflow` declarations
 
 ## Task Inputs
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Tasks define all their outputs as declarations at the top of the task definition.
 
@@ -1717,6 +1773,8 @@ task test {
 In this example, `s`, `i`, and `f` are inputs to this task.  Even though the command line does not reference `${s}`.  Implementations of WDL engines may display a warning or report an error in this case, since `s` isn't used.
 
 ## Workflow Inputs
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Workflows have declarations, like tasks, but a workflow must also account for all calls to sub-tasks when determining inputs.
 
@@ -1796,6 +1854,8 @@ The inputs to `wf` would be:
 
 ## Specifying Workflow Inputs in JSON
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow.  Workflow inputs are specified in JSON or YAML format.  In JSON, the inputs to the workflow in the previous section can be:
 
 ```
@@ -1811,6 +1871,8 @@ Once workflow inputs are computed (see previous section), the value for each of 
 It's important to note that the type in JSON must be coercable to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "3"`, this coercion from string to integer is not valid and would result in a type error.  See the section on [Type Coercion](#type-coercion) for more details.
 
 # Type Coercion
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 WDL values can be created from either JSON values or from native language values.  The below table references String-like, Integer-like, etc to refer to values in a particular programming language.  For example, "String-like" could mean a `java.io.String` in the Java context or a `str` in Python.  An "Array-like" could refer to a `Seq` in Scala or a `list` in Python.
 
@@ -1842,13 +1904,19 @@ WDL values can be created from either JSON values or from native language values
 
 ## File stdout()
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Returns a `File` reference to the stdout that this task generated.
 
 ## File stderr()
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Returns a `File` reference to the stderr that this task generated.
 
 ## Array[String] read_lines(String|File)
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Given a file-like object (`String`, `File`) as a parameter, this will read each line as a string and return an `Array[String]` representation of the lines in the file.
 
@@ -1871,6 +1939,8 @@ task do_stuff {
 
 ## Array[Array[String]] read_tsv(String|File)
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 the `read_tsv()` function takes one parameter, which is a file-like object (`String`, `File`) and returns an `Array[Array[String]]` representing the table from the TSV file.
 
 If the parameter is a `String`, this is assumed to be a local file path relative to the current working directory of the task.
@@ -1892,6 +1962,8 @@ task do_stuff {
 Then when the task finishes, to fulfull the `outputs_table` variable, `./results/file_list.tsv` must be a valid TSV file or an error will be reported.
 
 ## Map[String, String] read_map(String|File)
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Given a file-like object (`String`, `File`) as a parameter, this will read each line from a file and expect the line to have the format `col1\tcol2`.  In other words, the file-like object must be a two-column TSV file.
 
@@ -2021,9 +2093,13 @@ Then when the task finishes, to fulfull the `output_table` variable, `./results/
 
 ## Int read_int(String|File)
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 The `read_int()` function takes a file path which is expected to contain 1 line with 1 integer on it.  This function returns that integer.
 
 ## String read_string(String|File)
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 The `read_string()` function takes a file path which is expected to contain 1 line with 1 string on it.  This function returns that string.
 
@@ -2031,13 +2107,19 @@ No trailing newline characters should be included
 
 ## Float read_float(String|File)
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 The `read_float()` function takes a file path which is expected to contain 1 line with 1 floating point number on it.  This function returns that float.
 
 ## Boolean read_boolean(String|File)
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 The `read_boolean()` function takes a file path which is expected to contain 1 line with 1 Boolean value (either "true" or "false" on it).  This function returns that Boolean value.
 
 ## File write_lines(Array[String])
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Given something that's compatible with `Array[String]`, this writes each element to it's own line on a file.  with newline `\n` characters as line separators.
 
@@ -2066,6 +2148,8 @@ third
 
 ## File write_tsv(Array[Array[String]])
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Given something that's compatible with `Array[Array[String]]`, this writes a TSV file of the data structure.
 
 ```wdl
@@ -2091,6 +2175,8 @@ un\tdeux\ttrois
 ```
 
 ## File write_map(Map[String, String])
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Given something that's compatible with `Map[String, String]`, this writes a TSV file of the data structure.
 
@@ -2252,14 +2338,20 @@ Default unit is Bytes ("B").
 
 ## String sub(String, String, String)
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Given 3 String parameters `input`, `pattern`, `replace`, this function will replace any occurrence matching `pattern` in `input` by `replace`.
 `pattern` is expected to be a [regular expression](https://en.wikipedia.org/wiki/Regular_expression). Details of regex evaluation will depend on the execution engine running the WDL.
 
 ## Array[Int] range(Int)
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Creates an array of integers of length equal to the range argument. For example `range(3)` provides the array: `(0, 1, 2)`.
 
 ## Array[Array[X]] transpose(Array[Array[X]])
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Transposes a two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
 
@@ -2294,6 +2386,8 @@ Example 2:
 ```
 
 # Data Types & Serialization
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Tasks and workflows are given values for their input parameters in order to run.  The type of each of those input parameters are declarations on the `task` or `workflow`.  Those input parameters can be any [valid type](#types):
 
@@ -2345,6 +2439,8 @@ Here, the expression `read_lines(stdout())` says "take the output from stdout, b
 
 ### Primitive Types
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Serializing primitive inputs into strings is intuitively easy because the value is just turned into a string and inserted into the command line.
 
 Consider this example:
@@ -2376,6 +2472,8 @@ python do_work.py str 2 1.3
 ```
 
 ### Compound Types
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Compound types, like `Array` and `Map` must be converted to a primitive type before it can be used in the command.  There are many ways to turn a compound types into primitive types, as laid out in following sections
 
