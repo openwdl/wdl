@@ -90,8 +90,8 @@
   * [String sub(String, String, String)](#string-substring-string-string)
   * [Array\[Int\] range(Int)](#arrayint-rangeint)
   * [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
-  * [Pair(X,Y) zip(X,Y) (#WdlPair-zip)
-  * [Pair(X,Y) cross(X,Y) (#WdlPair-cross)
+  * [Pair(X,Y) zip(X,Y)](#pairxy-zipxy)
+  * [Pair(X,Y) cross(X,Y)](#pairxy-crossxy)
 * [Data Types & Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -589,7 +589,8 @@ $import = 'import' $ws+ $string ($ws+ 'as' $ws+ $identifier)?
 
 The import statement specifies that `$string` which is to be interpted as a URI which points to a WDL file.  The engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code.
 
-Every imported WDL file requires a namespace and it can be specified using an identifier (via the `as $identifer` syntax). If no namespace identifier is explicitly specified, then the default namespace is the filename of the imported WDL file. For all imported WDL files, the tasks and workflows imported from that file will only be accessible through that assigned [namespace](#namespaces)
+Every imported WDL file requires a namespace which can be specified using an identifier (via the `as $identifier` syntax). If you do not explicitly specify a namespace identifier then the default namespace is the filename of the imported WDL, minus the .wdl extension.
+For all imported WDL files, the tasks and workflows imported from that file will only be accessible through that assigned [namespace](#namespaces)
 
 ```wdl
 import "http://example.com/lib/analysis_tasks" as analysis
@@ -1389,7 +1390,7 @@ In this example, the fully-qualified names that would be exposed as workflow out
 
 # Namespaces
 
-Import statements can be used to pull in tasks/workflows from other locations as well as create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the specified namespace.  For example:
+Import statements can be used to pull in tasks/workflows from other locations as well as to create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the specified namespace.  For example:
 
 tasks.wdl
 ```
@@ -1411,7 +1412,7 @@ workflow wf {
 }
 ```
 
-Tasks `x` and `y` are inside the namespace `pyTasks`, and which is different from the 'wf' namespace belonging to the primary workflow.  However, if no namespace is specified for tasks.wdl:
+Tasks `x` and `y` are inside the namespace `pyTasks`, which is different from the `wf` namespace belonging to the primary workflow.  However, if no namespace is specified for tasks.wdl:
 
 workflow.wdl
 ```
@@ -1425,7 +1426,8 @@ workflow wf {
 
 Now everything inside of `tasks.wdl` must be accessed through the default namespace `tasks`.
 
-Each namespace contains: namespaces, tasks, and workflows.  The names of these needs to be unique within that namespace.  For example, there cannot be a workflow named `foo` and also an imported namespace named `foo`.  Also there can't be a workflow and a task in that workflow with the same names, or import two workflows with the same namespace. However, you can import two workflows with different namespace names that share all the same tasks. For example, you can import namespace 'foo' and 'bar', both of which contain a task 'baz', and you can call 'foo.baz' and 'bar.baz' inside the same primary workflow.
+Each namespace may contain namespaces, tasks, and at most one workflow.  The names of the contained namespaces, tasks, and workflow need to be unique within that namespace. For example, one cannot import two workflows while they have the same namespace identifier. Additionally, a workflow and a namespace both named `foo` cannot exist inside a common namespace. Similarly there cannot be a task `foo` in a workflow also named `foo`.
+However, you can import two workflows with different namespace identifiers that have identically named tasks. For example, you can import namespaces 'foo' and 'bar', both of which contain a task 'baz', and you can call 'foo.baz' and 'bar.baz' from the same primary workflow.
 
 # Scope
 
@@ -2268,15 +2270,15 @@ Example 2:
 
 ## Array[Int] range(Int)
 
-Creates an array of integers of length equal to the range argument. For example `range(3)` provides the array: `(0, 1, 2)`.
+Given an integer argument, the `range` function creates an array of integers of length equal to the given argument. For example `range(3)` provides the array: `(0, 1, 2)`.
 
 ## Array[Array[X]] transpose(Array[Array[X]])
 
-Transposes a two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
+Given a two dimensional array argument, the `transpose` function transposes the two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
 
 ## Pair(X,Y) zip(X,Y)
 
-Zip takes the dot product of two WDL Object types (i.e Array[X], String, Int, Float) and turns them into a Pair object.
+Given any two Object types, the `zip` function returns the dot product of those Object types in the form of a Pair object.
 
 ```
 Pair[Int, String] p = (0, "z")
@@ -2289,7 +2291,7 @@ Array[Pair[Int, String]] zipped = zip(xs, ys)     # i.e.  zipped = [ (1, "a"), (
 
 ## Pair(X,Y) cross(X,Y)
 
-Cross takes the cross product of two WDL Object types (i.e Array[X], String, Int, Float) and turns them into a Pair object.
+Given any two Object types, the `cross` function returns the cross product of those Object types in the form of a Pair object.
 
 ```
 Pair[Int, String] p = (0, "z")
