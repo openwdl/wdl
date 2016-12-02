@@ -90,6 +90,8 @@
   * [String sub(String, String, String)](#string-substring-string-string)
   * [Array\[Int\] range(Int)](#arrayint-rangeint)
   * [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
+  * [Pair(X,Y) zip(X,Y) (#WdlPair-zip)
+  * [Pair(X,Y) cross(X,Y) (#WdlPair-cross)
 * [Data Types & Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -2234,14 +2236,6 @@ Default unit is Bytes ("B").
 Given 3 String parameters `input`, `pattern`, `replace`, this function will replace any occurrence matching `pattern` in `input` by `replace`.
 `pattern` is expected to be a [regular expression](https://en.wikipedia.org/wiki/Regular_expression). Details of regex evaluation will depend on the execution engine running the WDL.
 
-## Array[Int] range(Int)
-
-Creates an array of integers of length equal to the range argument. For example `range(3)` provides the array: `(0, 1, 2)`.
-
-## Array[Array[X]] transpose(Array[Array[X]])
-
-Transposes a two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
-
 Example 1:
 
 ```wdl
@@ -2261,16 +2255,51 @@ Example 2:
   task example {
   File input_file = "my_input_file.bam"
   String output_file_name = sub(input_file, "\\.bam$", ".index") # my_input_file.index
-  
+
   command {
     echo "I want an index instead" > ${output_file_name}
   }
-  
+
   output {
     File outputFile = ${output_file_name}
   }
 }
 ```
+
+## Array[Int] range(Int)
+
+Creates an array of integers of length equal to the range argument. For example `range(3)` provides the array: `(0, 1, 2)`.
+
+## Array[Array[X]] transpose(Array[Array[X]])
+
+Transposes a two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
+
+## Pair(X,Y) zip(X,Y)
+
+Zip takes the dot product of two WDL Object types (i.e Array[X], String, Int, Float) and turns them into a Pair object.
+
+```
+Pair[Int, String] p = (0, "z")
+Array[Int] xs = [ 1, 2, 3 ]
+Array[String] ys = [ "a", "b", "c" ]
+Array[String] zs = [ "d", "e" ]
+
+Array[Pair[Int, String]] zipped = zip(xs, ys)     # i.e.  zipped = [ (1, "a"), (2, "b"), (3, "c") ]
+```
+
+## Pair(X,Y) cross(X,Y)
+
+Cross takes the cross product of two WDL Object types (i.e Array[X], String, Int, Float) and turns them into a Pair object.
+
+```
+Pair[Int, String] p = (0, "z")
+Array[Int] xs = [ 1, 2, 3 ]
+Array[String] ys = [ "a", "b", "c" ]
+Array[String] zs = [ "d", "e" ]
+
+Array[Pair[Int, String]] crossed = crossProduct(xs, zs) # i.e. crossed = [ (1, "d"), (1, "e"), (2, "d"), (2, "e"), (3, "d"), (3, "e") ]
+```
+
 
 # Data Types & Serialization
 
