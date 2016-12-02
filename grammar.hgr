@@ -3,7 +3,7 @@ grammar {
     partials {
       r'[a-zA-Z]' -> _identifier_start
       r'[a-zA-Z0-9_]' -> _identifier_follow
-      r'(Array|Map|Object|Boolean|Int|Float|Uri|File|String)(?!{%_identifier_follow%})' -> _type
+      r'(Array|Map|Object|Pair|Boolean|Int|Float|Uri|File|String)(?!{%_identifier_follow%})' -> _type
       r'{%_identifier_start%}({%_identifier_follow%})*' -> _identifier
     }
 
@@ -79,6 +79,8 @@ grammar {
     r'[0-9]+' -> :integer
     mode<wf_output> {
       r'\s+' -> null
+      r'#.*' -> null
+      r'{%_type%}(?!{%_identifier_follow%})' -> :type %pop @wf_output_declaration
       r'\{' -> :lbrace
       r'\}' -> :rbrace %pop
       r',' -> :comma
@@ -88,6 +90,58 @@ grammar {
         python: r'{%_identifier%}(\.{%_identifier%})*'
         java: "{%_identifier%}(\\.{%_identifier%})*"
       } -> :fqn
+    }
+    mode<wf_output_declaration> {
+      r'\s+' -> null
+      r'#.*' -> null
+      r'\}' -> :rbrace %pop
+      r'\[' -> :lsquare
+      r'\]' -> :rsquare
+      r'=' -> :equal
+      r'\+' -> :plus
+      r'\*' -> :asterisk
+      r'[0-9]+' -> :integer
+      r'(true|false)(?!{%_identifier_follow%})' -> :boolean
+      r'{%_type%}(?!{%_identifier_follow%})' -> :type
+      r'{%_identifier%}' -> :identifier
+
+      # Expression tokens
+      r':' -> :colon
+      r',' -> :comma
+      r'\.' -> :dot
+      r'==' -> :double_equal
+      r'\|\|' -> :double_pipe
+      r'\&\&' -> :double_ampersand
+      r'!=' -> :not_equal
+      r'=' -> :equal
+      r'\.' -> :dot
+      r'\{' -> :lbrace
+      r'\(' -> :lparen
+      r'\)' -> :rparen
+      r'\[' -> :lsquare
+      r'\]' -> :rsquare
+      r'\+' -> :plus
+      r'\*' -> :asterisk
+      r'-' -> :dash
+      r'/' -> :slash
+      r'%' -> :percent
+      r'<=' -> :lteq
+      r'<' -> :lt
+      r'>=' -> :gteq
+      r'>' -> :gt
+      r'!' -> :not
+
+      # Literals
+      enum {
+        python: r'"([^\\\"\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"'
+        java: "\\\"(?>[^\\\\\\\"\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\\\""
+      } -> unescape(:string)
+      enum {
+        python: r'\'([^\\\'\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\''
+        java: "'(?>[^\\\\\\'\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'"
+      } -> unescape(:string)
+      r'-?[0-9]+\.[0-9]+' -> :float
+      r'[0-9]+' -> :integer
     }
     mode<task_fqn> {
       r'\s+' -> null
@@ -137,9 +191,9 @@ grammar {
       r'\+' -> :plus
       r'\*' -> :asterisk
       r'[0-9]+' -> :integer
+      r'{%_identifier%}(?=\s*=)' -> :cmd_attr_hint[] :identifier
       r'(true|false)(?!{%_identifier_follow%})' -> :boolean
       r'{%_type%}(?!{%_identifier_follow%})' -> :type
-      r'{%_identifier%}(?=\s*=)' -> :cmd_attr_hint[] :identifier
       r'{%_identifier%}' -> :identifier
 
       # Expression tokens
@@ -217,11 +271,11 @@ grammar {
         for regex, c in ctx.user_context['replacements'].items():
             source_string = regex.sub(chr(c), source_string)
 
-        source_string = source_string.replace("\\\\", "\\")
+        source_string = source_string.replace("\u005C\u005C", "\u005C")
 
         for regex, base in ctx.user_context['escapes'].items():
             for escape_sequence, number in regex.findall(source_string):
-                source_string = source_string.replace(escape_sequence, unichr(int(number, base)))
+                source_string = source_string.replace(escape_sequence, chr(int(number, base)))
         default_action(ctx, terminal, source_string[1:-1], line, col)
     PYTHON
 
@@ -254,8 +308,8 @@ grammar {
   }
   parser {
     # Document: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#document
-    $document = list($import) list($workflow_or_task) -> Document(imports=$0, definitions=$1)
-    $workflow_or_task = $workflow | $task
+    $document = list($import) list($workflow_or_task_or_decl) -> Namespace(imports=$0, body=$1)
+    $workflow_or_task_or_decl = $workflow | $task | $declaration
 
     # Import Statements: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#import-statements
     $import = :import :string optional($import_namespace) -> Import(uri=$1, namespace=$2)
@@ -269,7 +323,7 @@ grammar {
     $cmd_param = :cmd_param_start list($cmd_param_kv) $e :cmd_param_end -> CommandParameter(attributes=$1, expr=$2)
     $cmd_param_kv = :cmd_attr_hint :identifier :equal $e -> CommandParameterAttr(key=$1, value=$3)
     $outputs = :output :lbrace list($output_kv) :rbrace -> Outputs(attributes=$2)
-    $output_kv = $type_e :identifier :equal $e -> Output(type=$0, var=$1, expression=$3)
+    $output_kv = $type_e :identifier :equal $e -> Output(type=$0, name=$1, expression=$3)
     $runtime = :runtime $map -> Runtime(map=$1)
     $parameter_meta = :parameter_meta $map -> ParameterMeta(map=$1)
     $meta = :meta $map -> Meta(map=$1)
@@ -277,13 +331,14 @@ grammar {
     $kv = :identifier :colon $e -> RuntimeAttribute(key=$0, value=$2)
 
     # Declarations: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#declarations
-    $declaration = $type_e optional($postfix_quantifier) :identifier optional($setter) -> Declaration(type=$0, postfix=$1, name=$2, expression=$3)
+    $declaration = $type_e :identifier optional($setter) -> Declaration(type=$0, name=$1, expression=$2)
     $setter = :equal $e -> $1
-    $postfix_quantifier = :qmark | :plus
 
     # Types: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#types
     $type_e = parser<expression> {
       (*:left) $type_e = :type <=> :lsquare list($type_e, :comma) :rsquare -> Type(name=$0, subtype=$2)
+      (*:left) $type_e = :type <=> :qmark -> OptionalType(innerType=$0)
+      (*:left) $type_e = :type <=> :plus -> NonEmptyType(innerType=$0)
       $type_e = :type
     }
 
@@ -312,7 +367,7 @@ grammar {
       (*:left) $e = :object :lbrace list($object_kv, :comma) :rbrace -> ObjectLiteral(map=$2)
       (*:left) $e = :lsquare list($e, :comma) :rsquare -> ArrayLiteral(values=$1)
       (*:left) $e = :lbrace list($map_kv, :comma) :rbrace -> MapLiteral(map=$1)
-      (*:left) $e = :lparen $e :rparen -> $1
+      (*:left) $e = :lparen list($e, :comma) :rparen -> TupleLiteral(values=$1)
       $e = :string
       $e = :identifier
       $e = :boolean
@@ -323,16 +378,20 @@ grammar {
 
     # Workflows: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#workflow-definition
     $workflow = :workflow :identifier :lbrace list($wf_body_element) :rbrace -> Workflow(name=$1, body=$3)
-    $wf_body_element = $call | $declaration | $while_loop | $if_stmt | $scatter | $wf_outputs
+    $wf_body_element = $call | $declaration | $while_loop | $if_stmt | $scatter | $wf_outputs | $wf_parameter_meta | $wf_meta
     $call = :call :fqn optional($alias) optional($call_body) -> Call(task=$1, alias=$2, body=$3)
     $call_body = :lbrace list($declaration) list($call_input) :rbrace -> CallBody(declarations=$1, io=$2)
     $call_input = :input :colon list($mapping, :comma) -> Inputs(map=$2)
     $mapping = :identifier :equal $e -> IOMapping(key=$0, value=$2)
     $alias = :as :identifier -> $1
-    $wf_outputs = :output :lbrace list($wf_output, :comma) :rbrace -> WorkflowOutputs(outputs=$2)
-    $wf_output = :fqn optional($wf_output_wildcard) -> WorkflowOutput(fqn=$0, wildcard=$1)
+    $wf_outputs = :output :lbrace list($wf_output) :rbrace -> WorkflowOutputs(outputs=$2)
+    $wf_output = $wf_output_declaration_syntax | $wf_output_wildcard_syntax
+    $wf_output_declaration_syntax = $type_e :identifier :equal $e -> WorkflowOutputDeclaration(type=$0, name=$1, expression=$3)
+    # Keep for backward compatibility
+    $wf_output_wildcard_syntax = :fqn optional($wf_output_wildcard) -> WorkflowOutputWildcard(fqn=$0, wildcard=$1)
     $wf_output_wildcard = :dot :asterisk -> $1
-
+    $wf_parameter_meta = :parameter_meta $map -> ParameterMeta(map=$1)
+    $wf_meta = :meta $map -> Meta(map=$1)
     $while_loop = :while :lparen $e :rparen :lbrace list($wf_body_element) :rbrace -> WhileLoop(expression=$2, body=$5)
     $if_stmt = :if :lparen $e :rparen :lbrace list($wf_body_element) :rbrace -> If(expression=$2, body=$5)
 
