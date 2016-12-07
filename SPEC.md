@@ -92,6 +92,8 @@
   * [String sub(String, String, String)](#string-substring-string-string)
   * [Array\[Int\] range(Int)](#arrayint-rangeint)
   * [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
+  * [Pair(X,Y) zip(X,Y)](#pairxy-zipxy)
+  * [Pair(X,Y) cross(X,Y)](#pairxy-crossxy)
 * [Data Types & Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -589,17 +591,19 @@ $import = 'import' $ws+ $string ($ws+ 'as' $ws+ $identifier)?
 
 The import statement specifies that `$string` which is to be interpted as a URI which points to a WDL file.  The engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code.
 
-If a namespace identifier (via the `as $identifer` syntax) is specified, then all the tasks and workflows imported will only be accessible through that [namespace](#namespaces).  If no namespace identifier is specified, then all tasks and workflows from the URI are imported into the current namespace.
+Every imported WDL file requires a namespace which can be specified using an identifier (via the `as $identifier` syntax). If you do not explicitly specify a namespace identifier then the default namespace is the filename of the imported WDL, minus the .wdl extension.
+For all imported WDL files, the tasks and workflows imported from that file will only be accessible through that assigned [namespace](#namespaces).
 
 ```wdl
-import "http://example.com/lib/stdlib"
 import "http://example.com/lib/analysis_tasks" as analysis
+import "http://example.com/lib/stdlib"
+
 
 workflow wf {
   File bam_file
 
   # file_size is from "http://example.com/lib/stdlib"
-  call file_size {
+  call stdlib.file_size {
     input: file=bam_file
   }
   call analysis.my_analysis_task {
@@ -1425,7 +1429,7 @@ In this example, the fully-qualified names that would be exposed as workflow out
 
 # Namespaces
 
-Import statements can be used to pull in tasks/workflows from other locations as well as create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the current namespace.  For example:
+Import statements can be used to pull in tasks/workflows from other locations as well as to create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the specified namespace.  For example:
 
 tasks.wdl
 ```
@@ -1439,29 +1443,30 @@ task y {
 
 workflow.wdl
 ```
-import "tasks.wdl"
+import "tasks.wdl" as pyTasks
 
 workflow wf {
-  call x
-  call y
+  call pyTasks.x
+  call pyTasks.y
 }
 ```
 
-Tasks `x` and `y` are in the same namespace as workflow `wf` is.  However, if workflow.wdl could put all of those tasks behind a namespace:
+Tasks `x` and `y` are inside the namespace `pyTasks`, which is different from the `wf` namespace belonging to the primary workflow.  However, if no namespace is specified for tasks.wdl:
 
 workflow.wdl
 ```
-import "tasks.wdl" as ns
+import "tasks.wdl"
 
 workflow wf {
-  call ns.x
-  call ns.y
+  call tasks.x
+  call tasks.y
 }
 ```
 
-Now everything inside of `tasks.wdl` must be accessed through the namespace `ns`.
+Now everything inside of `tasks.wdl` must be accessed through the default namespace `tasks`.
 
-Each namespace contains: namespaces, tasks, and workflows.  The names of these needs to be unique within that namespace.  For example, there cannot be a task named `foo` and also a namespace named `foo`.  Also there can't be a task and a workflow with the same names, or two workflows with the same name.
+Each namespace may contain namespaces, tasks, and at most one workflow.  The names of the contained namespaces, tasks, and workflow need to be unique within that namespace. For example, one cannot import two workflows while they have the same namespace identifier. Additionally, a workflow and a namespace both named `foo` cannot exist inside a common namespace. Similarly there cannot be a task `foo` in a workflow also named `foo`.
+However, you can import two workflows with different namespace identifiers that have identically named tasks. For example, you can import namespaces `foo` and `bar`, both of which contain a task `baz`, and you can call `foo.baz` and `bar.baz` from the same primary workflow.
 
 # Scope
 
@@ -2272,14 +2277,6 @@ Default unit is Bytes ("B").
 Given 3 String parameters `input`, `pattern`, `replace`, this function will replace any occurrence matching `pattern` in `input` by `replace`.
 `pattern` is expected to be a [regular expression](https://en.wikipedia.org/wiki/Regular_expression). Details of regex evaluation will depend on the execution engine running the WDL.
 
-## Array[Int] range(Int)
-
-Creates an array of integers of length equal to the range argument. For example `range(3)` provides the array: `(0, 1, 2)`.
-
-## Array[Array[X]] transpose(Array[Array[X]])
-
-Transposes a two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
-
 Example 1:
 
 ```wdl
@@ -2299,16 +2296,51 @@ Example 2:
   task example {
   File input_file = "my_input_file.bam"
   String output_file_name = sub(input_file, "\\.bam$", ".index") # my_input_file.index
-  
+
   command {
     echo "I want an index instead" > ${output_file_name}
   }
-  
+
   output {
     File outputFile = ${output_file_name}
   }
 }
 ```
+
+## Array[Int] range(Int)
+
+Given an integer argument, the `range` function creates an array of integers of length equal to the given argument. For example `range(3)` provides the array: `(0, 1, 2)`.
+
+## Array[Array[X]] transpose(Array[Array[X]])
+
+Given a two dimensional array argument, the `transpose` function transposes the two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
+
+## Pair(X,Y) zip(X,Y)
+
+Given any two Object types, the `zip` function returns the dot product of those Object types in the form of a Pair object.
+
+```
+Pair[Int, String] p = (0, "z")
+Array[Int] xs = [ 1, 2, 3 ]
+Array[String] ys = [ "a", "b", "c" ]
+Array[String] zs = [ "d", "e" ]
+
+Array[Pair[Int, String]] zipped = zip(xs, ys)     # i.e.  zipped = [ (1, "a"), (2, "b"), (3, "c") ]
+```
+
+## Pair(X,Y) cross(X,Y)
+
+Given any two Object types, the `cross` function returns the cross product of those Object types in the form of a Pair object.
+
+```
+Pair[Int, String] p = (0, "z")
+Array[Int] xs = [ 1, 2, 3 ]
+Array[String] ys = [ "a", "b", "c" ]
+Array[String] zs = [ "d", "e" ]
+
+Array[Pair[Int, String]] crossed = crossProduct(xs, zs) # i.e. crossed = [ (1, "d"), (1, "e"), (2, "d"), (2, "e"), (3, "d"), (3, "e") ]
+```
+
 
 # Data Types & Serialization
 
