@@ -719,6 +719,8 @@ This command would be parsed as:
 
 #### Command Part Options
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 ```
 $var_option = $var_option_key $ws* '=' $ws* $var_option_value
 $var_option_key = 'sep' | 'true' | 'false' | 'quote' | 'default'
@@ -991,6 +993,8 @@ task memory_test {
 
 ### Parameter Metadata Section
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 ```
 $parameter_meta = 'parameter_meta' $ws* '{' ($ws* $parameter_meta_kv $ws*)* '}'
 $parameter_meta_kv = $identifier $ws* '=' $ws* $string
@@ -1001,6 +1005,8 @@ This purely optional section contains key/value pairs where the keys are names o
 > *Additional requirement*: Any key in this section MUST correspond to a parameter in the command line
 
 ### Metadata Section
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 ```
 $meta = 'meta' $ws* '{' ($ws* $meta_kv $ws*)* '}'
@@ -1251,6 +1257,8 @@ workflow wf {
 
 #### Sub Workflows
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Workflows can also be called inside of workflows.
 
 `main.wdl`
@@ -1445,6 +1453,8 @@ workflow wf {
 In this example, the fully-qualified names that would be exposed as workflow outputs would be `wf.task1.results`, `wf.altname.value`.
 
 # Namespaces
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Import statements can be used to pull in tasks/workflows from other locations as well as create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the current namespace.  For example:
 
@@ -2314,6 +2324,8 @@ And `/local/fs/tmp/map.json` would contain:
 
 ## Float size(File, [String])
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Given a `File` and a `String` (optional), returns the size of the file in Bytes or in the unit specified by the second argument.
 
 ```wdl
@@ -2479,12 +2491,16 @@ Compound types, like `Array` and `Map` must be converted to a primitive type bef
 
 #### Array serialization
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Arrays can be serialized in two ways:
 
 * **Array Expansion**: elements in the list are flattened to a string with a separator character.
 * **File Creation**: create a file with the elements of the array in it and passing that file as the parameter on the command line.
 
 ##### Array serialization by expansion
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 The array flattening approach can be done if a parameter is specified as `${sep=' ' my_param}`.  `my_param` must be declared as an `Array` of primitive types.  When the value of `my_param` is specified, then the values are joined together with the separator character (a space in this case).  For example:
 
@@ -2508,6 +2524,8 @@ If passed an array for the value of `bams`:
 Would produce the command `python script.py --bams=/path/to/1.bam,/path/to/2.bam,/path/to/1.bam`
 
 ##### Array serialization using write_lines()
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 An array may be turned into a file with each element in the array occupying a line in the file.
 
