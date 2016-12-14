@@ -1362,7 +1362,7 @@ Conditionals only execute the body if the expression evaluates to true
 
 ### Parameter Metadata
 
-:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 ```
 $wf_parameter_meta = 'parameter_meta' $ws* '{' ($ws* $wf_parameter_meta_kv $ws*)* '}'
@@ -1384,7 +1384,7 @@ As an example:
 
 ### Metadata
 
-:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 ```
 $wf_meta = 'meta' $ws* '{' ($ws* $wf_meta_kv $ws*)* '}'
