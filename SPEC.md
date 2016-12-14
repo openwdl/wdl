@@ -2040,6 +2040,8 @@ task do_stuff {
 
 ## Object read_object(String|File)
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Given a file-like object that contains a 2-row and n-column TSV file, this function will turn that into an Object.
 
 ```wdl
@@ -2072,6 +2074,8 @@ Which would be turned into an `Object` in WDL that would look like this:
 |key_3    |"value_3"|
 
 ## Array[Object] read_objects(String|File)
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Given a file-like object that contains a 2-row and n-column TSV file, this function will turn that into an Object.
 
@@ -2258,6 +2262,8 @@ key2\tvalue2
 
 ## File write_object(Object)
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Given any `Object`, this will write out a 2-row, n-column TSV file with the object's attributes and values.
 
 ```
@@ -2294,6 +2300,8 @@ value_1\tvalue_2\tvalue_3
 ```
 
 ## File write_objects(Array[Object])
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Given any `Array[Object]`, this will write out a 2+ row, n-column TSV file with each object's attributes and values.
 
@@ -2680,7 +2688,11 @@ Where `/jobs/564758/bams.json` would contain:
 
 Map types cannot be serialized on the command line directly and must be serialized through a file
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 ##### Map serialization using write_map()
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 The map type can be serialized as a two-column TSV file and the parameter on the command line is given the path to that file, using the `write_map()` function:
 
@@ -2754,9 +2766,13 @@ Where `/jobs/564757/sample_quality_scores.json` would contain:
 
 #### Object serialization
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 An object is a more general case of a map where the keys are strings and the values are of arbitrary types and treated as strings.  Objects can be serialized with either `write_object()` or `write_json()` functions:
 
 ##### Object serialization using write_object()
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 ```wdl
 task test {
@@ -2827,9 +2843,13 @@ Where `/jobs/564759/sample.json` would contain:
 ```
 #### Array[Object] serialization
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 `Array[Object]` must guarantee that all objects in the array have the same set of attributes.  These can be serialized with either `write_objects()` or `write_json()` functions, as described in following sections.
 
 ##### Array[Object] serialization using write_objects()
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 an `Array[Object]` can be serialized using `write_objects()` into a TSV file:
 
@@ -3004,12 +3024,16 @@ If the echo statement was instead `echo '{"foo": "bar"}'`, the engine MUST fail 
 
 #### Map deserialization
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Maps are deserialized from:
 
 * Files that contain a JSON Object as their top-level element.
 * Files that contain a two-column TSV file.
 
 ##### Map deserialization using read_map()
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 `read_map()` will return an `Map[String, String]` where the keys are the first column in the TSV input file and the corresponding values are the second column.
 
@@ -3052,9 +3076,13 @@ If the echo statement was instead `echo '["foo", "bar"]'`, the engine MUST fail 
 
 #### Object deserialization
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 Objects are deserialized from files that contain a two-row, n-column TSV file.  The first row are the object attribute names and the corresponding entries on the second row are the values.
 
 ##### Object deserialization using read_object()
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 `read_object()` will return an `Object` where the keys are the first row in the TSV input file and the corresponding values are the second row (corresponding column).
 
@@ -3076,11 +3104,15 @@ This would put an object containing three attributes (`key_0`, `key_1`, and `key
 
 #### Array[Object] deserialization
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 `Array[Object]` MUST assume that all objects in the array are homogeneous (they have the same attributes, but the attributes don't have to have the same values)
 
 An `Array[Object]` is deserialized from files that contains at least 2 rows and a uniform n-column TSV file.  The first row are the object attribute names and the corresponding entries on the subsequent rows are the values
 
 ##### Object deserialization using read_objects()
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 `read_object()` will return an `Object` where the keys are the first row in the TSV input file and the corresponding values are the second row (corresponding column).
 
