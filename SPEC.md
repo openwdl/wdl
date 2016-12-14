@@ -2508,8 +2508,8 @@ Primitive Types:
 
 Compound Types:
 
-* Array (e.g. `Array[String]`)
-* Map (e.g. `Map[Int, Int]`)
+* Array[T] /(e.g. `Array[String]`)
+* Map[K, V] /(e.g. `Map[Int, Int]`)
 * Object
 
 When a WDL workflow engine instantiates a command specified in the `command` section of a `task`, it must serialize all `${...}` tags in the command into primitive types.
