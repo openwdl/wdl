@@ -2419,18 +2419,6 @@ Default unit is Bytes ("B").
 Given 3 String parameters `input`, `pattern`, `replace`, this function will replace any occurrence matching `pattern` in `input` by `replace`.
 `pattern` is expected to be a [regular expression](https://en.wikipedia.org/wiki/Regular_expression). Details of regex evaluation will depend on the execution engine running the WDL.
 
-## Array[Int] range(Int)
-
-:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
-
-Creates an array of integers of length equal to the range argument. For example `range(3)` provides the array: `(0, 1, 2)`.
-
-## Array[Array[X]] transpose(Array[Array[X]])
-
-:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
-
-Transposes a two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
-
 Example 1:
 
 ```wdl
@@ -2463,19 +2451,19 @@ Example 2:
 
 ## Array[Int] range(Int)
 
-:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Given an integer argument, the `range` function creates an array of integers of length equal to the given argument. For example `range(3)` provides the array: `(0, 1, 2)`.
 
 ## Array[Array[X]] transpose(Array[Array[X]])
 
-:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Given a two dimensional array argument, the `transpose` function transposes the two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
 
 ## Pair(X,Y) zip(X,Y)
 
-:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Given any two Object types, the `zip` function returns the dot product of those Object types in the form of a Pair object.
 
@@ -2490,7 +2478,7 @@ Array[Pair[Int, String]] zipped = zip(xs, ys)     # i.e.  zipped = [ (1, "a"), (
 
 ## Pair(X,Y) cross(X,Y)
 
-:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Given any two Object types, the `cross` function returns the cross product of those Object types in the form of a Pair object.
 
@@ -2520,8 +2508,8 @@ Primitive Types:
 
 Compound Types:
 
-* Array[T] (e.g. `Array[String]`)
-* Map[K, V] (e.g. `Map[Int, Int]`)
+* Array (e.g. `Array[String]`)
+* Map (e.g. `Map[Int, Int]`)
 * Object
 
 When a WDL workflow engine instantiates a command specified in the `command` section of a `task`, it must serialize all `${...}` tags in the command into primitive types.
