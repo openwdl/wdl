@@ -2958,11 +2958,13 @@ Where `/jobs/564759/sample.json` would contain:
 
 ## De-serialization of Task Outputs
 
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
 A task's command can only output data as files.  Therefore, every de-serialization function in WDL takes a file input and returns a WDL type
 
 ### Primitive Types
 
-:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 De-serialization of primitive types is done through a `read_*` function.  For example, `read_int("file/path")` and `read_string("file/path")`.
 
@@ -2986,7 +2988,7 @@ Both files `file_with_int` and `file_with_uri` should contain one line with the 
 
 ### Compound Types
 
-:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Tasks can also output to a file or stdout/stderr an `Array`, `Map`, or `Object` data structure in a two major formats:
 
@@ -2995,7 +2997,7 @@ Tasks can also output to a file or stdout/stderr an `Array`, `Map`, or `Object` 
 
 #### Array deserialization
 
-:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 Maps are deserialized from:
 
@@ -3004,7 +3006,7 @@ Maps are deserialized from:
 
 ##### Array deserialization using read_lines()
 
-:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 `read_lines()` will return an `Array[String]` where each element in the array is a line in the file.
 
