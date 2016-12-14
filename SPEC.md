@@ -607,6 +607,8 @@ $document = ($import | $task | $workflow)+
 
 ## Import Statements
 
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+
 A WDL file may contain import statements to include WDL code from other sources
 
 ```
@@ -1340,7 +1342,7 @@ In this example, `task2` depends on `task1`.  Variable `i` has an implicit `inde
 
 ### Loops
 
-> **TODO**: This section is not complete
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
 
 ```
 $loop = 'while' '(' $expression ')' '{' $workflow_element* '}'
@@ -1350,6 +1352,8 @@ Loops are distinct from scatter clauses because the body of a while loop needs t
 
 ### Conditionals
 
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+
 ```
 $conditional = 'if' '(' $expression ')' '{' $workflow_element* '}'
 ```
@@ -1357,6 +1361,8 @@ $conditional = 'if' '(' $expression ')' '{' $workflow_element* '}'
 Conditionals only execute the body if the expression evaluates to true
 
 ### Parameter Metadata
+
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
 
 ```
 $wf_parameter_meta = 'parameter_meta' $ws* '{' ($ws* $wf_parameter_meta_kv $ws*)* '}'
@@ -1377,6 +1383,8 @@ As an example:
 ```
 
 ### Metadata
+
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
 
 ```
 $wf_meta = 'meta' $ws* '{' ($ws* $wf_meta_kv $ws*)* '}'
@@ -2120,6 +2128,8 @@ Which would be turned into an `Array[Object]` in WDL that would look like this:
 
 ## mixed read_json(String|File)
 
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+
 the `read_json()` function takes one parameter, which is a file-like object (`String`, `File`) and returns a data type which matches the data structure in the JSON file.  The mapping of JSON type to WDL type is:
 
 |JSON Type|WDL Type|
@@ -2348,6 +2358,8 @@ value_7\tvalue_8\tvalue_9
 
 ## File write_json(mixed)
 
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+
 Given something with any type, this writes the JSON equivalent to a file.  See the table in the definition of [read_json()](#mixed-read_jsonstringfile)
 
 ```wdl
@@ -2451,13 +2463,19 @@ Example 2:
 
 ## Array[Int] range(Int)
 
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+
 Given an integer argument, the `range` function creates an array of integers of length equal to the given argument. For example `range(3)` provides the array: `(0, 1, 2)`.
 
 ## Array[Array[X]] transpose(Array[Array[X]])
 
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+
 Given a two dimensional array argument, the `transpose` function transposes the two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
 
 ## Pair(X,Y) zip(X,Y)
+
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
 
 Given any two Object types, the `zip` function returns the dot product of those Object types in the form of a Pair object.
 
@@ -2471,6 +2489,8 @@ Array[Pair[Int, String]] zipped = zip(xs, ys)     # i.e.  zipped = [ (1, "a"), (
 ```
 
 ## Pair(X,Y) cross(X,Y)
+
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
 
 Given any two Object types, the `cross` function returns the cross product of those Object types in the form of a Pair object.
 
@@ -2649,6 +2669,8 @@ Where `/jobs/564758/bams` would contain:
 
 ##### Array serialization using write_json()
 
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+
 The array may be turned into a JSON document with the file path for the JSON file passed in as the parameter:
 
 ```wdl
@@ -2686,9 +2708,9 @@ Where `/jobs/564758/bams.json` would contain:
 
 #### Map serialization
 
-Map types cannot be serialized on the command line directly and must be serialized through a file
-
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
+Map types cannot be serialized on the command line directly and must be serialized through a file
 
 ##### Map serialization using write_map()
 
@@ -2728,6 +2750,8 @@ sample3\t75
 ```
 
 ##### Map serialization using write_json()
+
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
 
 The map type can also be serialized as a JSON file and the parameter on the command line is given the path to that file, using the `write_json()` function:
 
@@ -2806,6 +2830,8 @@ value1\tvalue2\tvalue3\tvalue4
 ```
 
 ##### Object serialization using write_json()
+
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
 
 ```wdl
 task test {
@@ -2891,6 +2917,8 @@ value5\tvalue6\tvalue7\tvalue8
 
 ##### Array[Object] serialization using write_json()
 
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+
 an `Array[Object]` can be serialized using `write_json()` into a JSON file:
 
 ```wdl
@@ -2946,6 +2974,8 @@ A task's command can only output data as files.  Therefore, every de-serializati
 
 ### Primitive Types
 
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+
 De-serialization of primitive types is done through a `read_*` function.  For example, `read_int("file/path")` and `read_string("file/path")`.
 
 For example, if I have a task that outputs a `String` and an `Int`:
@@ -2968,6 +2998,8 @@ Both files `file_with_int` and `file_with_uri` should contain one line with the 
 
 ### Compound Types
 
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+
 Tasks can also output to a file or stdout/stderr an `Array`, `Map`, or `Object` data structure in a two major formats:
 
 * JSON - because it fits naturally with the types within WDL
@@ -2975,12 +3007,16 @@ Tasks can also output to a file or stdout/stderr an `Array`, `Map`, or `Object` 
 
 #### Array deserialization
 
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
+
 Maps are deserialized from:
 
 * Files that contain a JSON Array as their top-level element.
 * Any file where it is desirable to interpret each line as an element of the `Array`.
 
 ##### Array deserialization using read_lines()
+
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
 
 `read_lines()` will return an `Array[String]` where each element in the array is a line in the file.
 
@@ -3004,6 +3040,8 @@ task test {
 `my_ints` would contain ten random integers ranging from 0 to 10.
 
 ##### Array deserialization using read_json()
+
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
 
 `read_json()` will return whatever data type resides in that JSON file
 
@@ -3056,6 +3094,8 @@ task test {
 This would put a map containing three keys (`key_0`, `key_1`, and `key_2`) and three respective values (`0`, `1`, and `2`) as the value of `my_ints`
 
 ##### Map deserialization using read_json()
+
+:pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
 
 `read_json()` will return whatever data type resides in that JSON file.  If that file contains a JSON object with homogeneous key/value pair types (e.g. `string -> int` pairs), then the `read_json()` function would return a `Map`.
 
