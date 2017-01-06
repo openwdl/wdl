@@ -94,6 +94,7 @@
   * [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
   * [Pair(X,Y) zip(X,Y)](#pairxy-zipxy)
   * [Pair(X,Y) cross(X,Y)](#pairxy-crossxy)
+  * [Integer length(Array\[X\])](#integer-lengtharrayx)
 * [Data Types & Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -2531,6 +2532,22 @@ Array[String] ys = [ "a", "b", "c" ]
 Array[String] zs = [ "d", "e" ]
 
 Array[Pair[Int, String]] crossed = crossProduct(xs, zs) # i.e. crossed = [ (1, "d"), (1, "e"), (2, "d"), (2, "e"), (3, "d"), (3, "e") ]
+```
+
+## Integer length(Array[X])
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
+Given an Array, the `length` function returns the number of elements in the Array as an Integer.
+
+```
+Array[Int] xs = [ 1, 2, 3 ]
+Array[String] ys = [ "a", "b", "c" ]
+Array[String] zs = [ ]
+
+Integer xlen = length(xs) # 3
+Integer ylen = length(ys) # 3
+Integer zlen = length(zs) # 0
 ```
 
 
