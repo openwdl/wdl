@@ -1,0 +1,59 @@
+Number of intervals: 626
+Longest interval was: 114748301
+Total length of covered territory: 2832598113
+Theoretical max subset length: 56651962
+Processing...
+	1. 	Batch of 10	| 29268124 	|close-out 	| 11 	| So far 29268124 	| Remains 2803329989
+	2. 	Batch of 1	| 73835823 	|godzilla 	| 11 	| So far 103103947 	| Remains 2729494166
+	3. 	Batch of 40	| 22774904 	|normal 	| 52 	| So far 125878851 	| Remains 2706719262
+	4. 	Batch of 2	| 56672574 	|normal 	| 54 	| So far 182551425 	| Remains 2650046688
+	5. 	Batch of 8	| 63461505 	|normal 	| 62 	| So far 246012930 	| Remains 2586585183
+	6. 	Batch of 20	| 69675187 	|normal 	| 82 	| So far 315688117 	| Remains 2516909996
+	7. 	Batch of 7	| 54110622 	|close-out 	| 89 	| So far 369798739 	| Remains 2462799374
+	8. 	Batch of 1	| 84213158 	|godzilla 	| 89 	| So far 454011897 	| Remains 2378586216
+	9. 	Batch of 8	| 18867510 	|normal 	| 98 	| So far 472879407 	| Remains 2359718706
+	10. 	Batch of 11	| 65958202 	|normal 	| 109 	| So far 538837609 	| Remains 2293760504
+	11. 	Batch of 1	| 14505967 	|close-out 	| 110 	| So far 553343576 	| Remains 2279254537
+	12. 	Batch of 1	| 100537106 	|godzilla 	| 110 	| So far 653880682 	| Remains 2178717431
+	13. 	Batch of 20	| 60255306 	|normal 	| 131 	| So far 714135988 	| Remains 2118462125
+	14. 	Batch of 1	| 15638045 	|close-out 	| 132 	| So far 729774033 	| Remains 2102824080
+	15. 	Batch of 1	| 114748301 	|godzilla 	| 132 	| So far 844522334 	| Remains 1988075779
+	16. 	Batch of 5	| 47153331 	|normal 	| 138 	| So far 891675665 	| Remains 1940922448
+	17. 	Batch of 1	| 42230486 	|normal 	| 139 	| So far 933906151 	| Remains 1898691962
+	18. 	Batch of 2	| 63402597 	|normal 	| 141 	| So far 997308748 	| Remains 1835289365
+	19. 	Batch of 29	| 58275902 	|normal 	| 170 	| So far 1055584650 	| Remains 1777013463
+	20. 	Batch of 26	| 59425399 	|close-out 	| 196 	| So far 1115010049 	| Remains 1717588064
+	21. 	Batch of 1	| 61728923 	|godzilla 	| 196 	| So far 1176738972 	| Remains 1655859141
+	22. 	Batch of 7	| 70811404 	|normal 	| 204 	| So far 1247550376 	| Remains 1585047737
+	23. 	Batch of 45	| 68890667 	|normal 	| 249 	| So far 1316441043 	| Remains 1516157070
+	24. 	Batch of 48	| 40724559 	|normal 	| 297 	| So far 1357165602 	| Remains 1475432511
+	25. 	Batch of 6	| 32653926 	|normal 	| 303 	| So far 1389819528 	| Remains 1442778585
+	26. 	Batch of 1	| 38440851 	|normal 	| 304 	| So far 1428260379 	| Remains 1404337734
+	27. 	Batch of 3	| 59487568 	|normal 	| 307 	| So far 1487747947 	| Remains 1344850166
+	28. 	Batch of 52	| 50107468 	|normal 	| 359 	| So far 1537855415 	| Remains 1294742698
+	29. 	Batch of 6	| 69877957 	|normal 	| 365 	| So far 1607733372 	| Remains 1224864741
+	30. 	Batch of 61	| 47109734 	|close-out 	| 426 	| So far 1654843106 	| Remains 1177755007
+	31. 	Batch of 1	| 74420626 	|godzilla 	| 426 	| So far 1729263732 	| Remains 1103334381
+	32. 	Batch of 7	| 60542497 	|normal 	| 434 	| So far 1789806229 	| Remains 1042791884
+	33. 	Batch of 4	| 41443375 	|normal 	| 438 	| So far 1831249604 	| Remains 1001348509
+	34. 	Batch of 3	| 45648805 	|normal 	| 441 	| So far 1876898409 	| Remains 955699704
+	35. 	Batch of 1	| 27616817 	|close-out 	| 442 	| So far 1904515226 	| Remains 928082887
+	36. 	Batch of 1	| 71516775 	|godzilla 	| 442 	| So far 1976032001 	| Remains 856566112
+	37. 	Batch of 6	| 68861229 	|normal 	| 449 	| So far 2044893230 	| Remains 787704883
+	38. 	Batch of 5	| 51020696 	|close-out 	| 454 	| So far 2095913926 	| Remains 736684187
+	39. 	Batch of 1	| 88349539 	|godzilla 	| 454 	| So far 2184263465 	| Remains 648334648
+	40. 	Batch of 8	| 64207842 	|normal 	| 463 	| So far 2248471307 	| Remains 584126806
+	41. 	Batch of 30	| 52347234 	|normal 	| 493 	| So far 2300818541 	| Remains 531779572
+	42. 	Batch of 33	| 65660090 	|normal 	| 526 	| So far 2366478631 	| Remains 466119482
+	43. 	Batch of 5	| 55653364 	|normal 	| 531 	| So far 2422131995 	| Remains 410466118
+	44. 	Batch of 3	| 69023350 	|normal 	| 534 	| So far 2491155345 	| Remains 341442768
+	45. 	Batch of 7	| 61512871 	|normal 	| 541 	| So far 2552668216 	| Remains 279929897
+	46. 	Batch of 55	| 60175036 	|normal 	| 596 	| So far 2612843252 	| Remains 219754861
+	47. 	Batch of 15	| 70402555 	|normal 	| 611 	| So far 2683245807 	| Remains 149352306
+	48. 	Batch of 7	| 56163767 	|normal 	| 618 	| So far 2739409574 	| Remains 93188539
+	49. 	Batch of 4	| 58181219 	|normal 	| 622 	| So far 2797590793 	| Remains 35007320
+	50. 	Batch of 5	| 35007320 	|finalize 	| 626 	| So far 2832598113 	| Remains 0
+Done.
+Grouped intervals into 50 batches.
+Wrote 50 interval files to "output_intervals/n_of_N/scattered.interval_list"
+Wrote a JSON stub to "scattered_intervals.json"
