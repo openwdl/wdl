@@ -1,0 +1,12 @@
+{
+  "ValidateBamsWf.bam_list": [ 
+  	"gs://genomics-public-data/test-data/dna/wgs/hiseq2500/NA12878/H06HDADXX130110.1.ATCACGAT.20k_reads.bam",
+  	"gs://genomics-public-data/test-data/dna/wgs/hiseq2500/NA12878/H06HDADXX130110.2.ATCACGAT.20k_reads.bam",
+  	"gs://genomics-public-data/test-data/dna/wgs/hiseq2500/NA12878/H06JUADXX130110.1.ATCACGAT.20k_reads.bam"
+  ],
+
+  "ValidateBamsWf.ValidateBAM.validation_mode": "SUMMARY",
+
+  "ValidateBamsWf.ValidateBAM.mem_size": "1 GB",
+  "ValidateBamsWf.ValidateBAM.disk_size": 200
+}
