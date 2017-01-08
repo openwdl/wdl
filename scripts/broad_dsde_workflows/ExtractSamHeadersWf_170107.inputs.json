@@ -1,0 +1,10 @@
+{
+  "ExtractSamHeadersWf.bam_list": [ 
+  	"gs://genomics-public-data/test-data/dna/wgs/hiseq2500/NA12878/H06HDADXX130110.1.ATCACGAT.20k_reads.bam",
+  	"gs://genomics-public-data/test-data/dna/wgs/hiseq2500/NA12878/H06HDADXX130110.2.ATCACGAT.20k_reads.bam",
+  	"gs://genomics-public-data/test-data/dna/wgs/hiseq2500/NA12878/H06JUADXX130110.1.ATCACGAT.20k_reads.bam"
+  ],
+
+  "ExtractSamHeadersWf.ExtractSAMHeader.mem_size": "1 GB",
+  "ExtractSamHeadersWf.ExtractSAMHeader.disk_size": 200
+}
