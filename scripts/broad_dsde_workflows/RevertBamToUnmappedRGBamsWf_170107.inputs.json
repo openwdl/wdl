@@ -1,0 +1,16 @@
+{
+
+  "RevertBamToUnmappedRGBamsWf.ref_fasta": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta",
+  "RevertBamToUnmappedRGBamsWf.ref_fasta_index": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.fai",
+  
+  "RevertBamToUnmappedRGBamsWf.input_bam": "gs://gatk-test-data/wgs_bam/NA12878_20k_b37/NA12878.bam",
+
+  "RevertBamToUnmappedRGBamsWf.output_dir": ".",
+
+  "RevertBamToUnmappedRGBamsWf.RevertBamToUnmappedRGBams.max_discard_pct": 0.01,
+
+  "RevertBamToUnmappedRGBamsWf.RevertBamToUnmappedRGBams.disk_size": 10,
+  "RevertBamToUnmappedRGBamsWf.RevertBamToUnmappedRGBams.mem_size": "1 GB",
+  "RevertBamToUnmappedRGBamsWf.SortBamByQueryname.disk_size": 10,
+  "RevertBamToUnmappedRGBamsWf.SortBamByQueryname.mem_size": "3500 MB"
+}
