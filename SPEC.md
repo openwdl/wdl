@@ -95,7 +95,7 @@
   * [Pair(X,Y) zip(X,Y)](#pairxy-zipxy)
   * [Pair(X,Y) cross(X,Y)](#pairxy-crossxy)
   * [Integer length(Array\[X\])](#integer-lengtharrayx)
-  * [Array\[String\] prefix(String, Array\[String\])](#arraystring-prefixstring-arraystring)
+  * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
 * [Data Types & Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -2549,17 +2549,21 @@ Array[String] zs = [ ]
 Integer xlen = length(xs) # 3
 Integer ylen = length(ys) # 3
 Integer zlen = length(zs) # 0
+```
 
-## Array[String] prefix(String, Array[String])
+## Array[String] prefix(String, Array[X])
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
-Given a String and an Array[String], the `prefix` function returns an array of strings comprised of each element of the 
-input array prefixed by the specified prefix string.  For example:
+Given a String and an Array[X] where X is a primitive type, the `prefix` function returns an array of strings comprised
+of each element of the input array prefixed by the specified prefix string.  For example:
 
 ```
 Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
 Array[String] env_param = prefix("-e ", env) # ["-e key1=value1", "-e key2=value2", "-e key3=value3"]
+
+Array[Integer] env2 = [1, 2, 3]
+Array[String] env2_param = prefix("-f ", env2) # ["-f 1", "-f 2", "-f 3"]
 ```
 
 
