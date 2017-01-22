@@ -1,0 +1,17 @@
+{
+  "HaplotypeCallerGvcfScatterWf.input_bam": "gs://gatk-test-data/wgs_bam/NA12878_20k_b37/NA12878.bam",
+  "HaplotypeCallerGvcfScatterWf.input_bam_index": "gs://gatk-test-data/wgs_bam/NA12878_20k_b37/NA12878.bai",
+
+  "HaplotypeCallerGvcfScatterWf.ref_dict": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.dict",
+  "HaplotypeCallerGvcfScatterWf.ref_fasta": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta",
+  "HaplotypeCallerGvcfScatterWf.ref_fasta_index": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.fai",
+
+  "HaplotypeCallerGvcfScatterWf.scattered_calling_intervals_list": "gs://gatk-test-data/intervals/b37_wgs_scattered_calling_intervals.txt",
+
+  "HaplotypeCallerGvcfScatterWf.HaplotypeCaller.interval_padding": 100,
+
+  "HaplotypeCallerGvcfScatterWf.HaplotypeCaller.disk_size": 100,
+  "HaplotypeCallerGvcfScatterWf.HaplotypeCaller.mem_size": "10 GB",
+  "HaplotypeCallerGvcfScatterWf.MergeVCFs.disk_size": 100,
+  "HaplotypeCallerGvcfScatterWf.MergeVCFs.mem_size": "3 GB"
+}
