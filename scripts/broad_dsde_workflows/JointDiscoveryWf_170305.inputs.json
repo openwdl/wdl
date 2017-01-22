@@ -1,0 +1,71 @@
+{
+  "JointDiscoveryWf.ref_dict": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.dict",
+  "JointDiscoveryWf.ref_fasta": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta",
+  "JointDiscoveryWf.ref_fasta_index": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.fai",
+
+  "JointDiscoveryWf.scattered_calling_intervals_list": "gs://gatk-test-data/intervals/b37_wgs_scattered_calling_intervals.txt",
+
+  "JointDiscoveryWf.cohort_vcf_name": "PlatinumTrio_b37",
+
+  "JointDiscoveryWf.input_gvcfs": [
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12877.g.vcf.gz",
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12878.g.vcf.gz",
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12882.g.vcf.gz"
+  ],
+
+  "JointDiscoveryWf.input_gvcf_indices": [
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12877.g.vcf.gz.tbi",
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12878.g.vcf.gz.tbi",
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12882.g.vcf.gz.tbi"
+  ],
+
+  "JointDiscoveryWf.resource_files": [ 
+    "gs://gatk-legacy-bundles/b37/hapmap_3.3.b37.vcf",
+    "gs://gatk-legacy-bundles/b37/1000G_omni2.5.b37.vcf",
+    "gs://gatk-legacy-bundles/b37/1000G_phase1.snps.high_confidence.b37.vcf",
+    "gs://gatk-legacy-bundles/b37/dbsnp_138.b37.vcf",
+    "gs://gatk-legacy-bundles/b37/Mills_and_1000G_gold_standard.indels.b37.vcf"
+  ],
+  "JointDiscoveryWf.resource_indices": [ 
+    "gs://gatk-legacy-bundles/b37/hapmap_3.3.b37.vcf.idx",
+    "gs://gatk-legacy-bundles/b37/1000G_omni2.5.b37.vcf.idx",
+    "gs://gatk-legacy-bundles/b37/1000G_phase1.snps.high_confidence.b37.vcf.idx",
+    "gs://gatk-legacy-bundles/b37/dbsnp_138.b37.vcf.idx",
+    "gs://gatk-legacy-bundles/b37/Mills_and_1000G_gold_standard.indels.b37.vcf.idx"
+  ],
+
+  "JointDiscoveryWf.SNP_resources": [ 
+    "hapmap,known=false,training=true,truth=true,prior=15.0 gatk-legacy-bundles/b37/hapmap_3.3.b37.vcf",
+    "omni,known=false,training=true,truth=true,prior=12.0 gatk-legacy-bundles/b37/1000G_omni2.5.b37.vcf",
+    "1000G,known=false,training=true,truth=false,prior=10.0 gatk-legacy-bundles/b37/1000G_phase1.snps.high_confidence.b37.vcf",
+    "dbsnp,known=true,training=false,truth=false,prior=2.0 gatk-legacy-bundles/b37/dbsnp_138.b37.vcf"
+  ],
+  "JointDiscoveryWf.INDEL_resources": [
+    "mills,known=false,training=true,truth=true,prior=12.0 gatk-legacy-bundles/b37/Mills_and_1000G_gold_standard.indels.b37.vcf",
+    "dbsnp,known=true,training=false,truth=false,prior=2.0 gatk-legacy-bundles/b37/dbsnp_138.b37.vcf"
+  ],
+
+  "JointDiscoveryWf.SNP_annotations": ["DP", "QD", "FS", "SOR", "MQ", "MQRankSum", "ReadPosRankSum"],
+  "JointDiscoveryWf.INDEL_annotations": ["QD", "FS", "SOR", "MQRankSum", "ReadPosRankSum"],
+
+  "JointDiscoveryWf.SNP_filter_level": 99.7,
+  "JointDiscoveryWf.INDEL_filter_level": 99.7,
+
+  "JointDiscoveryWf.SNP_tranches": [100.0, 99.99, 99.95, 99.9, 99.8, 99.7, 99.6, 99.5, 99.4, 99.3, 99.2, 99.1, 99.0, 98.0, 97.0, 96.0, 95.0, 90.0],
+  "JointDiscoveryWf.INDEL_tranches": [100.0, 99.99, 99.95, 99.9, 99.8, 99.7, 99.6, 99.5, 99.0, 98.0, 97.0, 96.0, 95.0, 94.0, 93.0, 92.0, 91.0, 90.0],
+
+  "JointDiscoveryWf.UnzipGVCF.disk_size": 100,
+  "JointDiscoveryWf.UnzipGVCF.mem_size": "10 GB",
+  "JointDiscoveryWf.GenotypeGVCFs.disk_size": 100,
+  "JointDiscoveryWf.GenotypeGVCFs.mem_size": "10 GB",
+  "JointDiscoveryWf.MergeVCFs.disk_size": 100,
+  "JointDiscoveryWf.MergeVCFs.mem_size": "10 GB",
+  "JointDiscoveryWf.BuildVQSRModelForSNPs.disk_size": 100,
+  "JointDiscoveryWf.BuildVQSRModelForSNPs.mem_size": "10 GB",
+  "JointDiscoveryWf.BuildVQSRModelForINDELs.disk_size": 100,
+  "JointDiscoveryWf.BuildVQSRModelForINDELs.mem_size": "10 GB",
+  "JointDiscoveryWf.ApplyRecalibrationFilterForSNPs.disk_size": 100,
+  "JointDiscoveryWf.ApplyRecalibrationFilterForSNPs.mem_size": "10 GB",
+  "JointDiscoveryWf.ApplyRecalibrationFilterForINDELs.disk_size": 100,
+  "JointDiscoveryWf.ApplyRecalibrationFilterForINDELs.mem_size": "10 GB"
+}
