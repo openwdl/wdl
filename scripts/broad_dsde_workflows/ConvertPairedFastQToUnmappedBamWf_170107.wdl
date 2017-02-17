@@ -91,7 +91,7 @@ workflow ConvertPairedFastQsToUnmappedBamWf {
 
   # Outputs that will be retained when execution is complete
   output {
-    Array[File] output_bams = PairedFastQsToUnmappedBAM.output_bam
+    PairedFastQsToUnmappedBAM.output_bam
   }
 }
 
