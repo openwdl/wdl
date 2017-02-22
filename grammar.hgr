@@ -41,11 +41,13 @@ grammar {
     enum {
       python: r'"([^\\\"\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"'
       java: "\\\"(?>[^\\\\\\\"\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\\\""
-    } -> unescape(:string)
+      javascript: "\\\"([^\\\\\\\"\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\\\\?\""
+    } -> wdl_unescape(:string)
     enum {
       python: r'\'([^\\\'\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\''
       java: "'(?>[^\\\\\\'\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'"
-    } -> unescape(:string)
+      javascript: "'([^\\\\\\'\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'"
+    } -> wdl_unescape(:string)
 
     r':' -> :colon
     r',' -> :comma
@@ -74,6 +76,7 @@ grammar {
     enum {
       python: r'\?'
       java: "\\?"
+      javascript: "\\?"
     } -> :qmark
     r'-?[0-9]+\.[0-9]+' -> :float
     r'[0-9]+' -> :integer
@@ -89,6 +92,7 @@ grammar {
       enum {
         python: r'{%_identifier%}(\.{%_identifier%})*'
         java: "{%_identifier%}(\\.{%_identifier%})*"
+        javascript: "{%_identifier%}(\\.{%_identifier%})*"
       } -> :fqn
     }
     mode<wf_output_declaration> {
@@ -139,11 +143,13 @@ grammar {
       enum {
         python: r'"([^\\\"\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"'
         java: "\\\"(?>[^\\\\\\\"\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\\\""
-      } -> unescape(:string)
+        javascript: "\\\"([^\\\\\\\"\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\\\\?\""
+      } -> wdl_unescape(:string)
       enum {
         python: r'\'([^\\\'\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\''
         java: "'(?>[^\\\\\\'\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'"
-      } -> unescape(:string)
+        javascript: "'([^\\\\\\'\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'"
+      } -> wdl_unescape(:string)
       r'-?[0-9]+\.[0-9]+' -> :float
       r'[0-9]+' -> :integer
     }
@@ -152,6 +158,7 @@ grammar {
       enum {
         python: r'{%_identifier%}(\.{%_identifier%})*'
         java: "{%_identifier%}(\\.{%_identifier%})*"
+        javascript: "{%_identifier%}(\\.{%_identifier%})*"
       } -> :fqn %pop
     }
     mode<scatter> {
@@ -172,7 +179,7 @@ grammar {
         python: r'(.*?)(?=\$\{|\})' (DOTALL)
         c: r'(.*?)(?=\$\{|\})' (PCRE_DOTALL)
         java: r'(.*?)(?=\$\{|\})' (DOTALL)
-        javascript: r'(.*?)(?=\$\{|\})' (m)
+        javascript: r'([\s\S]*?)(?=\$\{|\})' (m)
       } -> :cmd_part
     }
     mode<raw_command2> {
@@ -183,7 +190,7 @@ grammar {
         python: r'(.*?)(?=\$\{|>>>)' (DOTALL)
         c: r'(.*?)(?=\$\{|>>>)' (PCRE_DOTALL)
         java: r'(.*?)(?=\$\{|>>>)' (DOTALL)
-        javascript: r'(.*?)(?=\$\{|>>>)' (m)
+        javascript: r'([\s\S]*?)(?=\$\{|>>>)' (m)
       } -> :cmd_part
     }
     mode<cmd_param> {
@@ -230,11 +237,13 @@ grammar {
       enum {
         python: r'"([^\\\"\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"'
         java: "\\\"(?>[^\\\\\\\"\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\\\""
-      } -> unescape(:string)
+        javascript: "\\\"([^\\\\\\\"\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\\\\?\""
+      } -> wdl_unescape(:string)
       enum {
         python: r'\'([^\\\'\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\''
         java: "'(?>[^\\\\\\'\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'"
-      } -> unescape(:string)
+        javascript: "'([^\\\\\\'\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'"
+      } -> wdl_unescape(:string)
       r'-?[0-9]+\.[0-9]+' -> :float
       r'[0-9]+' -> :integer
     }
@@ -270,7 +279,7 @@ grammar {
         if ctx.user_context['context'] == 'workflow':
             ctx.stack.append('wf_output')
         default_action(ctx, terminal, source_string, line, col)
-    def unescape(ctx, terminal, source_string, line, col):
+    def wdl_unescape(ctx, terminal, source_string, line, col):
 
         for regex, c in ctx.user_context['replacements'].items():
             source_string = regex.sub(chr(c), source_string)
@@ -305,10 +314,57 @@ grammar {
         }
         default_action(ctx, terminal, source_string, line, col);
     }
-    public void unescape(LexerContext ctx, TerminalIdentifier terminal, String source_string, int line, int col) {
+    public void wdl_unescape(LexerContext ctx, TerminalIdentifier terminal, String source_string, int line, int col) {
         default_action(ctx, terminal, StringEscapeUtils.unescapeJava(source_string.substring(1, source_string.length() - 1)), line, col);
     }
     JAVA
+
+    code<javascript> << JAVASCRIPT
+        function init() {
+            return {wf_or_task: null};
+        }
+        function workflow(ctx, terminal, source_string, line, col) {
+            ctx.user_context.wf_or_task = "workflow";
+            default_action(ctx, terminal, source_string, line, col);
+        }
+        function task(ctx, terminal, source_string, line, col) {
+            ctx.user_context.wf_or_task = "task";
+            default_action(ctx, terminal, source_string, line, col);
+        }
+        function output(ctx, terminal, source_string, line, col) {
+            const user_ctx = ctx.user_context;
+            if (user_ctx.wf_or_task != null && user_ctx.wf_or_task === "workflow") {
+                ctx.mode_stack.push("wf_output");
+            }
+            default_action(ctx, terminal, source_string, line, col);
+        }
+        function wdl_unescape(ctx, terminal, source_string, line, col) {
+            var strip_slashes = function(str) {
+               return str
+                   .replace(/\\(.?)/g, function (s, n1) {
+                     var escapes = {
+                         '\\': '\\', 
+                         '0' : '\u0000', 
+                         ''  : '', 
+                         'n' : '\n',
+                         'r' : '\r',
+                         'b' : '\b',
+                         't' : '\t',
+                         'f' : '\f',
+                         'a' : '\a',
+                         'v' : '\v'};
+
+                     var symbol = escapes[n1];
+                     if (symbol !== undefined) {
+                         return symbol;
+                     }
+                     return n1;
+                   });
+            }
+            var repl_str = strip_slashes(source_string.substring(1, source_string.length - 1));
+            default_action(ctx, terminal, repl_str, line, col);
+        }
+        JAVASCRIPT
   }
   parser {
     # Document: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#document
