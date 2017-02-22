@@ -91,4 +91,3 @@ workflow sloc {
     input: files=find_python_files.files
   }
 }
-
