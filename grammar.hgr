@@ -202,9 +202,9 @@ grammar {
       r'\+' -> :plus
       r'\*' -> :asterisk
       r'[0-9]+' -> :integer
+      r'{%_identifier%}(?=\s*=)' -> :cmd_attr_hint[] :identifier
       r'(true|false)(?!{%_identifier_follow%})' -> :boolean
       r'{%_type%}(?!{%_identifier_follow%})' -> :type
-      r'{%_identifier%}(?=\s*=)' -> :cmd_attr_hint[] :identifier
       r'{%_identifier%}' -> :identifier
 
       # Expression tokens
@@ -384,7 +384,6 @@ grammar {
     $cmd_param_kv = :cmd_attr_hint :identifier :equal $e -> CommandParameterAttr(key=$1, value=$3)
     $outputs = :output :lbrace list($output_kv) :rbrace -> Outputs(attributes=$2)
     $output_kv = $type_e :identifier :equal $e -> Output(type=$0, name=$1, expression=$3)
-
     $runtime = :runtime $map -> Runtime(map=$1)
     $parameter_meta = :parameter_meta $map -> ParameterMeta(map=$1)
     $meta = :meta $map -> Meta(map=$1)
