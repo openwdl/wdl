@@ -25,7 +25,7 @@ To run a generation command make sure that
 To generate WDL parser run the following command:
 
 ```
-python hermes generate ../grammar.hgr --language=javascript --name=wdl --nodejs --header --directory .
+python hermes generate ../../grammar.hgr --language=javascript --name=wdl --nodejs --header --directory .
 ```
 
 `wdl_parser.js` will appear in a current folder
