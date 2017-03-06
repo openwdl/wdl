@@ -26,20 +26,46 @@
 
 # TASK DEFINITIONS
 
-# Revert a BAM to uBAMs, one per readgroup
-task RevertBamToUnmappedRGBams {
+# Split sample BAM into per-readgroup BAMs
+task SplitReadsByRG {
   File input_bam
-  String output_dir
-  Float? max_discard_pct
+  File input_bam_index
   Int disk_size
   String mem_size
 
   command {
-    java -Xmx1000m -jar /usr/gitc/picard.jar \
+    java -Xmx4000m -jar /usr/gitc/GATK4.jar \
+      SplitReads \
+      -I ${input_bam} \
+      -O . \
+      -RG 
+  }
+  runtime {
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.5-1486412288"
+    disks: "local-disk " + disk_size + " HDD"
+    memory: mem_size
+  }
+  output {
+    Array[File] readgroup_bams = glob("*.bam")
+  }
+}
+
+# Revert a BAM to uBAM
+task RevertBamToUnmapped {
+  File input_bam
+  String output_basename
+  Float? max_discard_pct
+  Int disk_size
+  String mem_size
+
+  String output_name = "${output_basename}.bam"
+
+  command {
+    java -Xmx4000m -jar /usr/gitc/picard.jar \
     RevertSam \
     INPUT=${input_bam} \
-    O=${output_dir} \
-    OUTPUT_BY_READGROUP=true \
+    O=${output_name} \
+    OUTPUT_BY_READGROUP=false \
     VALIDATION_STRINGENCY=LENIENT \
     SANITIZE=TRUE \
     MAX_DISCARD_FRACTION=${max_discard_pct} \
@@ -47,12 +73,12 @@ task RevertBamToUnmappedRGBams {
     SORT_ORDER=queryname 
   }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: "broadinstitute/genomes-in-the-cloud:2.2.5-1486412288"
     disks: "local-disk " + disk_size + " HDD"
     memory: mem_size
   }
   output {
-    Array[File] unmapped_bams = glob("*.bam")
+    File unmapped_bam = "${output_name}"
   }
 }
 
@@ -61,17 +87,28 @@ workflow RevertBamToUnmappedRGBamsWf {
   File input_bam
   File ref_fasta
   File ref_fasta_index
-  String output_dir
 
-  # Revert inputs to unmapped
-  call RevertBamToUnmappedRGBams {
-    input:
-      input_bam = input_bam,
-      output_dir = output_dir
+  # Split input BAM by readgroup
+  call SplitReadsByRG {
+    input: 
+      input_bam = input_bam
+  }
+
+  scatter (readgroup_bam in SplitReadsByRG.readgroup_bams) {
+
+    String sub_strip_path = "gs://.*/"
+    String sub_strip_suffix = ".bam$"
+
+    # Revert readgroup BAMs to unmapped
+    call RevertBamToUnmapped {
+      input:
+        input_bam = readgroup_bam,
+        output_basename = sub(sub(input_bam, sub_strip_path, ""), sub_strip_suffix, "") + ".unmapped"
+    }
   }
 
   # Outputs that will be retained when execution is complete
   output {
-    Array[File] unmapped_bams_output=RevertBamToUnmappedRGBams.unmapped_bams
+    Array[File] unmapped_bams_output=RevertBamToUnmapped.unmapped_bam
   }
 }
