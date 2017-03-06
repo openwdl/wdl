@@ -1,0 +1,28 @@
+{
+  "GenotypeGVCFsScatterWf.cohort_vcf_name": "PlatinumTrio_b37",
+
+  "GenotypeGVCFsScatterWf.input_gvcfs": [
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12877.g.vcf.gz",
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12878.g.vcf.gz",
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12882.g.vcf.gz"
+  ],
+
+  "GenotypeGVCFsScatterWf.input_gvcf_indices": [
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12877.g.vcf.gz.tbi",
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12878.g.vcf.gz.tbi",
+    "gs://gatk-test-data/wgs_gvcf/PlatinumTrio_b37/NA12882.g.vcf.gz.tbi"
+  ],
+
+  "GenotypeGVCFsScatterWf.ref_dict": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.dict",
+  "GenotypeGVCFsScatterWf.ref_fasta": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta",
+  "GenotypeGVCFsScatterWf.ref_fasta_index": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.fai",
+
+  "GenotypeGVCFsScatterWf.scattered_calling_intervals_list": "gs://gatk-test-data/intervals/b37_wgs_scattered_calling_intervals.txt",
+
+  "GenotypeGVCFsScatterWf.UnzipGVCF.disk_size": 100,
+  "GenotypeGVCFsScatterWf.UnzipGVCF.mem_size": "10 GB",
+  "GenotypeGVCFsScatterWf.GenotypeGVCFs.disk_size": 100,
+  "GenotypeGVCFsScatterWf.GenotypeGVCFs.mem_size": "10 GB",
+  "GenotypeGVCFsScatterWf.MergeVCFs.disk_size": 100,
+  "GenotypeGVCFsScatterWf.MergeVCFs.mem_size": "10 GB"
+}

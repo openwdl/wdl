@@ -1,0 +1,56 @@
+{
+  "VariantRecalibrationWf.ref_dict": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.dict",
+  "VariantRecalibrationWf.ref_fasta": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta",
+  "VariantRecalibrationWf.ref_fasta_index": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.fai",
+
+  "VariantRecalibrationWf.cohort_vcf_name": "PlatinumTrio_b37",
+
+  "VariantRecalibrationWf.input_vcf": "gs://gatk-test-data/wgs_vcf/PlatinumTrio_b37/PlatinumTrio_b37.vcf.gz",
+  "VariantRecalibrationWf.input_vcf_index": "gs://gatk-test-data/wgs_vcf/PlatinumTrio_b37/PlatinumTrio_b37.vcf.gz.tbi",
+
+  "VariantRecalibrationWf.calling_intervals_list": "gs://gatk-legacy-bundles/b37/wgs_calling_regions.v1.interval_list",
+
+  "VariantRecalibrationWf.resource_files": [ 
+    "gs://gatk-legacy-bundles/b37/hapmap_3.3.b37.vcf",
+    "gs://gatk-legacy-bundles/b37/1000G_omni2.5.b37.vcf",
+    "gs://gatk-legacy-bundles/b37/1000G_phase1.snps.high_confidence.b37.vcf",
+    "gs://gatk-legacy-bundles/b37/dbsnp_138.b37.vcf",
+    "gs://gatk-legacy-bundles/b37/Mills_and_1000G_gold_standard.indels.b37.vcf"
+  ],
+  "VariantRecalibrationWf.resource_indices": [ 
+    "gs://gatk-legacy-bundles/b37/hapmap_3.3.b37.vcf.idx",
+    "gs://gatk-legacy-bundles/b37/1000G_omni2.5.b37.vcf.idx",
+    "gs://gatk-legacy-bundles/b37/1000G_phase1.snps.high_confidence.b37.vcf.idx",
+    "gs://gatk-legacy-bundles/b37/dbsnp_138.b37.vcf.idx",
+    "gs://gatk-legacy-bundles/b37/Mills_and_1000G_gold_standard.indels.b37.vcf.idx"
+  ],
+
+  "VariantRecalibrationWf.SNP_resources": [ 
+    "hapmap,known=false,training=true,truth=true,prior=15.0 gatk-legacy-bundles/b37/hapmap_3.3.b37.vcf",
+    "omni,known=false,training=true,truth=true,prior=12.0 gatk-legacy-bundles/b37/1000G_omni2.5.b37.vcf",
+    "1000G,known=false,training=true,truth=false,prior=10.0 gatk-legacy-bundles/b37/1000G_phase1.snps.high_confidence.b37.vcf",
+    "dbsnp,known=true,training=false,truth=false,prior=2.0 gatk-legacy-bundles/b37/dbsnp_138.b37.vcf"
+  ],
+  "VariantRecalibrationWf.INDEL_resources": [
+    "mills,known=false,training=true,truth=true,prior=12.0 gatk-legacy-bundles/b37/Mills_and_1000G_gold_standard.indels.b37.vcf",
+    "dbsnp,known=true,training=false,truth=false,prior=2.0 gatk-legacy-bundles/b37/dbsnp_138.b37.vcf"
+  ],
+
+  "VariantRecalibrationWf.SNP_annotations": ["DP", "QD", "FS", "SOR", "MQ", "MQRankSum", "ReadPosRankSum"],
+  "VariantRecalibrationWf.INDEL_annotations": ["QD", "FS", "SOR", "MQRankSum", "ReadPosRankSum"],
+
+  "VariantRecalibrationWf.SNP_filter_level": 99.7,
+  "VariantRecalibrationWf.INDEL_filter_level": 99.7,
+
+  "VariantRecalibrationWf.SNP_tranches": [100.0, 99.99, 99.95, 99.9, 99.8, 99.7, 99.6, 99.5, 99.4, 99.3, 99.2, 99.1, 99.0, 98.0, 97.0, 96.0, 95.0, 90.0],
+  "VariantRecalibrationWf.INDEL_tranches": [100.0, 99.99, 99.95, 99.9, 99.8, 99.7, 99.6, 99.5, 99.0, 98.0, 97.0, 96.0, 95.0, 94.0, 93.0, 92.0, 91.0, 90.0],
+
+  "VariantRecalibrationWf.BuildVQSRModelForSNPs.disk_size": 100,
+  "VariantRecalibrationWf.BuildVQSRModelForSNPs.mem_size": "10 GB",
+  "VariantRecalibrationWf.BuildVQSRModelForINDELs.disk_size": 100,
+  "VariantRecalibrationWf.BuildVQSRModelForINDELs.mem_size": "10 GB",
+  "VariantRecalibrationWf.ApplyRecalibrationFilterForINDELs.disk_size": 100,
+  "VariantRecalibrationWf.ApplyRecalibrationFilterForINDELs.mem_size": "10 GB",
+  "VariantRecalibrationWf.ApplyRecalibrationFilterForSNPs.disk_size": 100,
+  "VariantRecalibrationWf.ApplyRecalibrationFilterForSNPs.mem_size": "10 GB"
+}
