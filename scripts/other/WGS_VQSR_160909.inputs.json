@@ -1,0 +1,47 @@
+{
+  "JustVQSR.ref_dict": "gs://dsde-comms-resources/legacy_bundles/b37/human_g1k_v37_decoy.dict",
+  "JustVQSR.ref_fasta": "gs://dsde-comms-resources/legacy_bundles/b37/human_g1k_v37_decoy.fasta",
+  "JustVQSR.ref_fasta_index": "gs://dsde-comms-resources/legacy_bundles/b37/human_g1k_v37_decoy.fasta.fai",
+
+  "JustVQSR.small_disk": 200,
+  "JustVQSR.preemptible_tries": 0,
+
+  "JustVQSR.cohort_vcf_name": "Test_trio",
+
+  "JustVQSR.input_vcf": "gs://dsde-comms-resources/joint_vcfs/Test_trio.vcf.gz",
+  "JustVQSR.input_vcf_index": "gs://dsde-comms-resources/joint_vcfs/Test_trio.vcf.gz.tbi",
+
+  "JustVQSR.SNP_annotations": ["DP", "QD", "FS", "SOR", "MQ", "MQRankSum", "ReadPosRankSum"],
+  "JustVQSR.INDEL_annotations": ["QD", "FS", "SOR", "MQRankSum", "ReadPosRankSum"],
+
+  "JustVQSR.SNP_tranches": [100.0, 99.99, 99.95, 99.9, 99.8, 99.7, 99.6, 99.5, 99.4, 99.3, 99.2, 99.1, 99.0, 98.0, 97.0, 96.0, 95.0, 90.0],
+  "JustVQSR.INDEL_tranches": [100.0, 99.99, 99.95, 99.9, 99.8, 99.7, 99.6, 99.5, 99.0, 98.0, 97.0, 96.0, 95.0, 94.0, 93.0, 92.0, 91.0, 90.0],
+
+  "JustVQSR.SNP_filter_level": 99.7,
+  "JustVQSR.INDEL_filter_level": 99.7,
+
+  "JustVQSR.SNP_resources": [ 
+    "hapmap,known=false,training=true,truth=true,prior=15.0 dsde-comms-resources/legacy_bundles/b37/hapmap_3.3.b37.vcf",
+    "omni,known=false,training=true,truth=true,prior=12.0 dsde-comms-resources/legacy_bundles/b37/1000G_omni2.5.b37.vcf",
+    "1000G,known=false,training=true,truth=false,prior=10.0 dsde-comms-resources/legacy_bundles/b37/1000G_phase1.snps.high_confidence.b37.vcf",
+    "dbsnp,known=true,training=false,truth=false,prior=2.0 dsde-comms-resources/legacy_bundles/b37/dbsnp_138.b37.vcf"
+  ],
+  "JustVQSR.INDEL_resources": [
+    "mills,known=false,training=true,truth=true,prior=12.0 dsde-comms-resources/legacy_bundles/b37/Mills_and_1000G_gold_standard.indels.b37.vcf",
+    "dbsnp,known=true,training=false,truth=false,prior=2.0 dsde-comms-resources/legacy_bundles/b37/dbsnp_138.b37.vcf"
+  ],
+  "JustVQSR.resource_files": [ 
+      "gs://dsde-comms-resources/legacy_bundles/b37/hapmap_3.3.b37.vcf",
+      "gs://dsde-comms-resources/legacy_bundles/b37/1000G_omni2.5.b37.vcf",
+      "gs://dsde-comms-resources/legacy_bundles/b37/1000G_phase1.snps.high_confidence.b37.vcf",
+      "gs://dsde-comms-resources/legacy_bundles/b37/dbsnp_138.b37.vcf",
+      "gs://dsde-comms-resources/legacy_bundles/b37/Mills_and_1000G_gold_standard.indels.b37.vcf"
+  ],
+  "JustVQSR.resource_indices": [
+      "gs://dsde-comms-resources/legacy_bundles/b37/hapmap_3.3.b37.vcf.idx",
+      "gs://dsde-comms-resources/legacy_bundles/b37/1000G_omni2.5.b37.vcf.idx",
+      "gs://dsde-comms-resources/legacy_bundles/b37/1000G_phase1.snps.high_confidence.b37.vcf.idx",
+      "gs://dsde-comms-resources/legacy_bundles/b37/dbsnp_138.b37.vcf.idx",
+      "gs://dsde-comms-resources/legacy_bundles/b37/Mills_and_1000G_gold_standard.indels.b37.vcf.idx"
+  ]
+}

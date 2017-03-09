@@ -1,0 +1,70 @@
+{
+  "JointAnalysis.ref_fasta": "gs://dsde-comms-resources/legacy_bundles/b37/human_g1k_v37_decoy.fasta",
+  "JointAnalysis.ref_dict": "gs://dsde-comms-resources/legacy_bundles/b37/human_g1k_v37_decoy.dict",
+  "JointAnalysis.ref_fasta_index": "gs://dsde-comms-resources/legacy_bundles/b37/human_g1k_v37_decoy.fasta.fai",
+ 
+  "JointAnalysis.cohort_vcf_name": "Platinum_NA12882_WGS",
+
+  "JointAnalysis.input_gvcfs": [
+    "gs://dsde-comms-resources/gvcfs_wgs/Platinum_b37/NA12882.g.vcf.gz"
+  ],
+  "JointAnalysis.input_gvcf_indices": [
+    "gs://dsde-comms-resources/gvcfs_wgs/Platinum_b37/NA12882.g.vcf.gz.tbi"
+  ],
+
+  "JointAnalysis.scattered_calling_intervals": [
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0001_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0002_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0003_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0004_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0005_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0006_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0007_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0008_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0009_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0010_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0011_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0012_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0013_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0014_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0015_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0016_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0017_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0018_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0019_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0020_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0021_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0022_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0023_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0024_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0025_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0026_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0027_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0028_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0029_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0030_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0031_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0032_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0033_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0034_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0035_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0036_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0037_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0038_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0039_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0040_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0041_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0042_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0043_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0044_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0045_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0046_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0047_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0048_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0049_of_50/scattered.interval_list",
+    "gs://dsde-comms-resources/legacy_bundles/b37/scattered_wgs_intervals_b37/temp_0050_of_50/scattered.interval_list"
+  ],
+
+  "JointAnalysis.preemptible_tries": 0,
+  "JointAnalysis.small_disk": 200
+}
