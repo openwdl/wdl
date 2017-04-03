@@ -25,6 +25,8 @@ grammar {
     r'output(?!{%_identifier_follow%})' -> output(:output)
     r'as(?!{%_identifier_follow%})' -> :as
     r'if(?!{%_identifier_follow%})' -> :if
+    r'then(?!{%_identifier_follow%})' -> :then
+    r'else(?!{%_identifier_follow%})' -> :else
     r'while(?!{%_identifier_follow%})' -> :while
     r'runtime(?!{%_identifier_follow%})' -> :runtime
     r'scatter(?!{%_identifier_follow%})' -> :scatter @scatter
@@ -101,19 +103,23 @@ grammar {
       r'\}' -> :rbrace %pop
       r'\[' -> :lsquare
       r'\]' -> :rsquare
-      r'=' -> :equal
       r'\+' -> :plus
       r'\*' -> :asterisk
       r'[0-9]+' -> :integer
       r'(true|false)(?!{%_identifier_follow%})' -> :boolean
+      r'if' -> :if
+      r'else' -> :else
+      r'then' -> :then
       r'{%_type%}(?!{%_identifier_follow%})' -> :type
       r'{%_identifier%}' -> :identifier
+
 
       # Expression tokens
       r':' -> :colon
       r',' -> :comma
       r'\.' -> :dot
       r'==' -> :double_equal
+      r'=' -> :equal
       r'\|\|' -> :double_pipe
       r'\&\&' -> :double_ampersand
       r'!=' -> :not_equal
@@ -163,12 +169,8 @@ grammar {
     }
     mode<scatter> {
       r'\s+' -> null
-      r'\)' -> :rparen %pop
       r'\(' -> :lparen
-      r'\.' -> :dot
-      r'\[' -> :lsquare
-      r'\]' -> :rsquare
-      r'in(?!{%_identifier_follow%})' -> :in
+      r'in(?!{%_identifier_follow%})' -> :in %pop
       r'{%_identifier%}' -> :identifier
     }
     mode<raw_command> {
@@ -202,6 +204,9 @@ grammar {
       r'\+' -> :plus
       r'\*' -> :asterisk
       r'[0-9]+' -> :integer
+      r'if' -> :if
+      r'else' -> :else
+      r'then' -> :then
       r'{%_identifier%}(?=\s*=)' -> :cmd_attr_hint[] :identifier
       r'(true|false)(?!{%_identifier_follow%})' -> :boolean
       r'{%_type%}(?!{%_identifier_follow%})' -> :type
@@ -428,6 +433,7 @@ grammar {
       (*:left) $e = :lsquare list($e, :comma) :rsquare -> ArrayLiteral(values=$1)
       (*:left) $e = :lbrace list($map_kv, :comma) :rbrace -> MapLiteral(map=$1)
       (*:left) $e = :lparen list($e, :comma) :rparen -> TupleLiteral(values=$1)
+      (*:left) $e = :if $e :then $e :else $e -> TernaryIf(cond=$1, iftrue=$3, iffalse=$5)
       $e = :string
       $e = :identifier
       $e = :boolean
