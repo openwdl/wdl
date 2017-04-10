@@ -21,6 +21,7 @@
     * [Function Calls](#function-calls)
     * [Array Literals](#array-literals)
     * [Map Literals](#map-literals)
+    * [Pair Literals](#pair-literals)
   * [Document](#document)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
@@ -92,10 +93,13 @@
   * [String sub(String, String, String)](#string-substring-string-string)
   * [Array\[Int\] range(Int)](#arrayint-rangeint)
   * [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
-  * [Pair(X,Y) zip(X,Y)](#pairxy-zipxy)
-  * [Pair(X,Y) cross(X,Y)](#pairxy-crossxy)
+  * [Array\[Pair(X,Y)\] zip(Array\[X\], Array\[Y\])](#arraypairxy-ziparrayx-arrayy)
+  * [Array\[Pair(X,Y)\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
   * [Integer length(Array\[X\])](#integer-lengtharrayx)
   * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
+  * [X select_first(Array\[X?\])](#x-select_firstarrayx)
+  * [Array\[X\] select_all(Array\[X?\])](#arrayx-select_allarrayx)
+  * [Boolean defined(X?)](#boolean-definedx)
 * [Data Types & Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -615,6 +619,16 @@ Maps values can be specified using a similar Python-like sytntax:
 ```
 Map[Int, Int] = {1: 10, 2: 11}
 Map[String, Int] = {"a": 1, "b": 2}
+```
+
+### Pair Literals
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
+Pair values can be specified using another Python-like syntax, as follows:
+
+```
+Pair[Int, String] twenty_threes = (23, "twenty-three")
 ```
 
 ## Document
@@ -2508,7 +2522,7 @@ Example 2:
   }
 
   output {
-    File outputFile = ${output_file_name}
+    File outputFile = output_file_name
   }
 }
 ```
@@ -2525,7 +2539,7 @@ Given an integer argument, the `range` function creates an array of integers of 
 
 Given a two dimensional array argument, the `transpose` function transposes the two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
 
-## Pair(X,Y) zip(X,Y)
+## Array[Pair[X,Y]] zip(Array[X], Array[Y])
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
@@ -2540,7 +2554,7 @@ Array[String] zs = [ "d", "e" ]
 Array[Pair[Int, String]] zipped = zip(xs, ys)     # i.e.  zipped = [ (1, "a"), (2, "b"), (3, "c") ]
 ```
 
-## Pair(X,Y) cross(X,Y)
+## Array[Pair[X,Y]] cross(Array[X], Array[Y])
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
@@ -2586,6 +2600,23 @@ Array[Integer] env2 = [1, 2, 3]
 Array[String] env2_param = prefix("-f ", env2) # ["-f 1", "-f 2", "-f 3"]
 ```
 
+## X select_first(Array[X?])
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
+Given an array of optional values, `select_first` will select the first defined value and return it. Note that this is a runtime check and requires that at least one defined value will exist: if no defined value is found when select_first is evaluated, the workflow will fail.
+
+## Array[X] select_all(Array[X?])
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
+Given an array of optional values, `select_all` will select only those elements which are defined.
+
+## Boolean defined(X?)
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
+This function will return `false` if the argument is an unset optional value. It will return `true` in all other cases.
 
 # Data Types & Serialization
 
@@ -2606,6 +2637,7 @@ Compound Types:
 * Array
 * Map
 * Object
+* Pair
 
 When a WDL workflow engine instantiates a command specified in the `command` section of a `task`, it must serialize all `${...}` tags in the command into primitive types.
 
