@@ -3,7 +3,7 @@
   "JointDiscoveryWf.ref_fasta": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta",
   "JointDiscoveryWf.ref_fasta_index": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.fai",
 
-  "JointDiscoveryWf.scattered_calling_intervals_list": "gs://gatk-test-data/intervals/b37_wgs_scattered_calling_intervals.txt",
+  "JointDiscoveryWf.scattered_calling_intervals_list": "gs://gatk-legacy-bundles/b37/wgs_scattered_calling_intervals.txt",
 
   "JointDiscoveryWf.cohort_vcf_name": "PlatinumTrio_b37",
 
