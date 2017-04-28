@@ -76,12 +76,12 @@ BWA_VER="0.7.13-r1126"
 Below we see that the workflow name is **PairedEndSingleSampleWorkflow**.
 
 [0.0]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/a6/a66257fe80281f12a2e9c6688bd60a.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/a6/a66257fe80281f12a2e9c6688bd60a.png" />
 
 After the workflow name, the WORKFLOW definition lists the variables that can stand in for files, parameters or even parts of commands within tasks, e.g. the command for BWA alignment (L549). The actual files are given in an accompanying [**JSON** file](https://github.com/broadinstitute/wdl/blob/develop/scripts/broad_pipelines/PublicPairedSingleSampleWf_160720.inputs.json).
 
 [0.1]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/fd/b611570a82f6c18397bc37d0c3471d.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/fd/b611570a82f6c18397bc37d0c3471d.png" />
 
 The WORKFLOW definition then outlines the tasks that it will perform. Because tasks may be listed in any order, it is the WORKFLOW definition that defines the order in which steps are run.
 
@@ -102,19 +102,19 @@ Let's break down the workflow into steps and examine their component commands.
 - 1.4: Calls task [SortAndFixTags](#SortAndFixTags) and uses [task aliasing](https://software.broadinstitute.org/wdl/userguide/plumbing#alias) to rename it **SortAndFixReadGroupBam**. The consequence of this is that the workflow can then differentiate outputs from those of [2.1]. This task coordinate sorts and indexes the alignments and fixes the `NM` and `UQ` tags whose calculations depend on coordinate sort order. This data transformation allows for validation with [ValidateSamFile](https://www.broadinstitute.org/gatk/guide/article?id=7571).
 
 [1.0]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/69/e7c6411cec65d5461afa2471cddbff.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/69/e7c6411cec65d5461afa2471cddbff.png" />
 
 [1.1]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/dc/94a73e970d3ffc874eeec647f66ee3.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/dc/94a73e970d3ffc874eeec647f66ee3.png" />
 
 [1.2]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/83/e617f3821dc523cd55a5caf01b92a8.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/83/e617f3821dc523cd55a5caf01b92a8.png" />
 
 [1.3]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/5d/dceade39ab22897b6710b925ad7d10.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/5d/dceade39ab22897b6710b925ad7d10.png" />
 
 [1.4]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/43/c814928512abc21d3cdc057e9bc6ba.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/43/c814928512abc21d3cdc057e9bc6ba.png" />
 
 ----
 <a name="2"></a>
@@ -124,10 +124,10 @@ Let's break down the workflow into steps and examine their component commands.
 - 2.1: Calls task [SortAndFixTags](#SortAndFixTags) and renames it as **SortAndFixSampleBam** to differentiate outputs from those of [1.4] that calls the same task. This task coordinate sorts and indexes the alignments and fixes the `NM` and `UQ` tags whose calculations depend on coordinate sort order. Resulting data go on to step [3].
 
 [2.0]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/7e/5d1fbef5141df46ca39bdd29ebb880.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/7e/5d1fbef5141df46ca39bdd29ebb880.png" />
 
 [2.1]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/72/e482e8034d00ff85c749c1b613e618.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/72/e482e8034d00ff85c749c1b613e618.png" />
 
 ----
 <a name="3"></a>
@@ -143,25 +143,25 @@ Let's break down the workflow into steps and examine their component commands.
 - 3.6: Calls task [ConvertToCram](#ConvertToCram) to compress the BAM further in to reference-dependent indexed CRAM format.
 
 [3.0]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/b4/5f1dfecbc87ebef57f3406b74ab332.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/b4/5f1dfecbc87ebef57f3406b74ab332.png" />
 
 [3.1]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/c4/916e31926d3162d4a945d71b7d04c0.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/c4/916e31926d3162d4a945d71b7d04c0.png" />
 
 [3.2]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/26/027f7112aedd910926daa1d1556ae9.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/26/027f7112aedd910926daa1d1556ae9.png" />
 
 [3.3]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/07/2f96879cde729c2dd6b2f5321a0751.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/07/2f96879cde729c2dd6b2f5321a0751.png" />
 
 [3.4]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/a2/5f93440e1c0c49b4afe05ec01e39c5.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/a2/5f93440e1c0c49b4afe05ec01e39c5.png" />
 
 [3.5]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/7e/e9aaeaa81ab24dbee1a793a1283d2b.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/7e/e9aaeaa81ab24dbee1a793a1283d2b.png" />
 
 [3.6]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/39/4a37ba84e9b9f56aeecd8f80b7cd9c.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/39/4a37ba84e9b9f56aeecd8f80b7cd9c.png" />
 
 ----
 <a name="4"></a>
@@ -179,16 +179,16 @@ Let's break down the workflow into steps and examine their component commands.
 - 4.3: Defines files that copy to an output directory if given an OPTIONS JSON file that defines the output directory. If you omit the OPTIONS JSON or omit defining the outputs directory in the OPTIONS JSON, then the workflow skips this step.
 
 [4.0]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/c0/cbee02e274d18689ce0d043678853d.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/c0/cbee02e274d18689ce0d043678853d.png" />
 
 [4.1]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/8e/ae4111cc2aae71883ff2f960542c00.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/8e/ae4111cc2aae71883ff2f960542c00.png" />
 
 [4.2]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/ad/8fa051d427ab3dd358380381626567.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/ad/8fa051d427ab3dd358380381626567.png" />
 
 [4.3]
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/97/b2d75f340bca3c7ca7a7e9bf9e436f.png" />
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/97/b2d75f340bca3c7ca7a7e9bf9e436f.png" />
 
 -------------------------
 <a name="tasksoverview"></a>
@@ -216,7 +216,7 @@ task GetBwaVersion {
 ````
 <a name="SamToFastqAndBwaMem"></a>
 ### SamToFastqAndBwaMem
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/ea/4f93dc6b258935c49b1aa0f8a27a01.jpg" height="120"align="left" border="27"/> The input to this task is an unaligned queryname-sorted BAM and the output is an aligned query-grouped BAM. This step pipes three processes: (i) conversion of BAM to FASTQ reads, (ii) [alternate-contig-aware alignment with BWA-MEM and (iii) conversion of SAM to BAM reads. BWA-MEM requires FASTQ reads as input and produces SAM format reads. This task maps the reads using the BWA command defined as a string variable and in this workflow this string is defined in [[0.1]](#0).
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/ea/4f93dc6b258935c49b1aa0f8a27a01.jpg" height="120"align="left" border="27"/> The input to this task is an unaligned queryname-sorted BAM and the output is an aligned query-grouped BAM. This step pipes three processes: (i) conversion of BAM to FASTQ reads, (ii) [alternate-contig-aware alignment with BWA-MEM and (iii) conversion of SAM to BAM reads. BWA-MEM requires FASTQ reads as input and produces SAM format reads. This task maps the reads using the BWA command defined as a string variable and in this workflow this string is defined in [[0.1]](#0).
 
 - _Dictionary_ [Article#7857](https://software.broadinstitute.org/gatk/documentation/article?id=7857) defines alternate contigs and other reference genome components.
 - [Step 3D of Tutorial#6483](https://software.broadinstitute.org/gatk/guide/article?id=6483#step3D) explains the concepts behind piping these processes.
@@ -389,7 +389,7 @@ task MarkDuplicates {
 ````
 <a name="SortAndFixTags"></a>
 ### SortAndFixTags
-<img src="http://cd8ba0b44a15c10065fd-24461f391e20b7336331d5789078af53.r23.cf1.rackcdn.com/gatk.vanillaforums.com/FileUpload/ea/4f93dc6b258935c49b1aa0f8a27a01.jpg" height="120"align="left" border="27"/> This task (i) sorts reads by coordinate and then (ii) corrects the NM tag values, adds UQ tags and indexes a BAM. The task pipes the two commands. First, SortSam sorts the records by genomic coordinate using the `SORT_ORDER="coordinate"` option. Second, SetNmAndUqTags calculates and fixes the UQ and NM tag values in the BAM. Because `CREATE_INDEX=true`, SetNmAndUqTags creates the `.bai` index. Again, we create an MD5 file with the `CREATE_MD5_FILE=true` option.
+<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/ea/4f93dc6b258935c49b1aa0f8a27a01.jpg" height="120"align="left" border="27"/> This task (i) sorts reads by coordinate and then (ii) corrects the NM tag values, adds UQ tags and indexes a BAM. The task pipes the two commands. First, SortSam sorts the records by genomic coordinate using the `SORT_ORDER="coordinate"` option. Second, SetNmAndUqTags calculates and fixes the UQ and NM tag values in the BAM. Because `CREATE_INDEX=true`, SetNmAndUqTags creates the `.bai` index. Again, we create an MD5 file with the `CREATE_MD5_FILE=true` option.
 
 As mentioned in the [MergeBamAlignment](#MergeBamAlignment) task, tag values dependent on coordinate-sorted records require correction in this separate task given this workflow maintains query-group ordering through the pre-processing steps.
 
