@@ -216,7 +216,7 @@ task GetBwaVersion {
 ````
 <a name="SamToFastqAndBwaMem"></a>
 ### SamToFastqAndBwaMem
-<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/ea/4f93dc6b258935c49b1aa0f8a27a01.jpg" height="120"align="left" border="27"/> The input to this task is an unaligned queryname-sorted BAM and the output is an aligned query-grouped BAM. This step pipes three processes: (i) conversion of BAM to FASTQ reads, (ii) [alternate-contig-aware alignment with BWA-MEM and (iii) conversion of SAM to BAM reads. BWA-MEM requires FASTQ reads as input and produces SAM format reads. This task maps the reads using the BWA command defined as a string variable and in this workflow this string is defined in [[0.1]](#0).
+The input to this task is an unaligned queryname-sorted BAM and the output is an aligned query-grouped BAM. This step pipes three processes: (i) conversion of BAM to FASTQ reads, (ii) [alternate-contig-aware alignment with BWA-MEM and (iii) conversion of SAM to BAM reads. BWA-MEM requires FASTQ reads as input and produces SAM format reads. This task maps the reads using the BWA command defined as a string variable and in this workflow this string is defined in [[0.1]](#0).
 
 - _Dictionary_ [Article#7857](https://software.broadinstitute.org/gatk/documentation/article?id=7857) defines alternate contigs and other reference genome components.
 - [Step 3D of Tutorial#6483](https://software.broadinstitute.org/gatk/guide/article?id=6483#step3D) explains the concepts behind piping these processes.
@@ -389,7 +389,7 @@ task MarkDuplicates {
 ````
 <a name="SortAndFixTags"></a>
 ### SortAndFixTags
-<img src="https://us.v-cdn.net/5019796/uploads/FileUpload/ea/4f93dc6b258935c49b1aa0f8a27a01.jpg" height="120"align="left" border="27"/> This task (i) sorts reads by coordinate and then (ii) corrects the NM tag values, adds UQ tags and indexes a BAM. The task pipes the two commands. First, SortSam sorts the records by genomic coordinate using the `SORT_ORDER="coordinate"` option. Second, SetNmAndUqTags calculates and fixes the UQ and NM tag values in the BAM. Because `CREATE_INDEX=true`, SetNmAndUqTags creates the `.bai` index. Again, we create an MD5 file with the `CREATE_MD5_FILE=true` option.
+This task (i) sorts reads by coordinate and then (ii) corrects the NM tag values, adds UQ tags and indexes a BAM. The task pipes the two commands. First, SortSam sorts the records by genomic coordinate using the `SORT_ORDER="coordinate"` option. Second, SetNmAndUqTags calculates and fixes the UQ and NM tag values in the BAM. Because `CREATE_INDEX=true`, SetNmAndUqTags creates the `.bai` index. Again, we create an MD5 file with the `CREATE_MD5_FILE=true` option.
 
 As mentioned in the [MergeBamAlignment](#MergeBamAlignment) task, tag values dependent on coordinate-sorted records require correction in this separate task given this workflow maintains query-group ordering through the pre-processing steps.
 
