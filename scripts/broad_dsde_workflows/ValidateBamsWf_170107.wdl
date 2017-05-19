@@ -74,7 +74,7 @@ workflow ValidateBamsWf {
 
   # Outputs that will be retained when execution is complete
   output {
-    Array[File] validation_reports = ValidateBAM.validation_report
+    ValidateBAM.validation_report
   }
 }
 

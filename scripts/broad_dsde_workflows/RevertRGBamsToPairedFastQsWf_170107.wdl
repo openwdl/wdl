@@ -75,7 +75,7 @@ workflow RevertRGBamsToPairedFastQsWf {
 
   # Outputs that will be retained when execution is complete
   output {
-    Array[Array[File]] output_fastqs_globs=RevertBAMToPairedFASTQ.output_fastqs
+    RevertBAMToPairedFASTQ.output_fastqs
   }
 }
 

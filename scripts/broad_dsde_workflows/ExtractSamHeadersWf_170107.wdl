@@ -78,7 +78,7 @@ workflow ExtractSamHeadersWf {
 
   # Outputs that will be retained when execution is complete
   output {
-    Array[File] output_headers = ExtractSAMHeader.output_header
+    ExtractSAMHeader.output_header
   }
 }
 

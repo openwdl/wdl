@@ -72,6 +72,6 @@ workflow RevertBamToUnmappedRGBamsWf {
 
   # Outputs that will be retained when execution is complete
   output {
-    Array[File] unmapped_bams_output=RevertBamToUnmappedRGBams.unmapped_bams
+    RevertBamToUnmappedRGBams.unmapped_bams
   }
 }
