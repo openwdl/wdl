@@ -100,6 +100,7 @@
   * [X select_first(Array\[X?\])](#x-select_firstarrayx)
   * [Array\[X\] select_all(Array\[X?\])](#arrayx-select_allarrayx)
   * [Boolean defined(X?)](#boolean-definedx)
+  * [String basename(String)](#string-basenamestring)
 * [Data Types & Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -2617,6 +2618,13 @@ Given an array of optional values, `select_all` will select only those elements 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 This function will return `false` if the argument is an unset optional value. It will return `true` in all other cases.
+
+## String basename(String)
+
+:pig2: [Supported in Cromwell 27](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
+- This function returns the basename of a file path passed to it: `basename("/path/to/file.txt")` returns `"file.txt"`.
+- Also supports an optional parameter, suffix to remove: `basename("/path/to/file.txt", ".txt")` returns `"file"`.
 
 # Data Types & Serialization
 
