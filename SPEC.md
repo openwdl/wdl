@@ -18,6 +18,7 @@
     * [Operator Precedence Table](#operator-precedence-table)
     * [Member Access](#member-access)
     * [Map and Array Indexing](#map-and-array-indexing)
+    * [Pair Indexing](#pair-indexing)
     * [Function Calls](#function-calls)
     * [Array Literals](#array-literals)
     * [Map Literals](#map-literals)
@@ -592,6 +593,12 @@ workflow wf {
 
 The syntax `x[y]` is for indexing maps and arrays.  If `x` is an array, then `y` must evaluate to an integer.  If `x` is a map, then `y` must evaluate to a key in that map.
 
+### Pair Indexing
+
+:pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
+Given a Pair `x`, the left and right elements of that type can be accessed using the syntax `x.left` and `x.right`. 
+
 ### Function Calls
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
@@ -626,10 +633,17 @@ Map[String, Int] = {"a": 1, "b": 2}
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
-Pair values can be specified using another Python-like syntax, as follows:
+Pair values can be specified inside of a WDL using another Python-like syntax, as follows:
 
 ```
 Pair[Int, String] twenty_threes = (23, "twenty-three")
+```
+
+Pair values can also be specified within the [workflow inputs JSON](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#specifying-workflow-inputs-in-json) with a `Left` and `Right` value specified using JSON style syntax. For example, given a workflow `wf_hello` and workflow-level variable `twenty_threes`, it could be declared in the workflow inputs JSON as follows:
+```
+{
+  "wf_hello.twenty_threes": { "Left": 23, "Right": "twenty-three" }
+}
 ```
 
 ## Document
