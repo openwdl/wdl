@@ -102,6 +102,7 @@
   * [Array\[X\] select_all(Array\[X?\])](#arrayx-select_allarrayx)
   * [Boolean defined(X?)](#boolean-definedx)
   * [String basename(String)](#string-basenamestring)
+  * [Int floor(Float), Int ceil(Float) and Int round(Float)](#int-floorfloat-int-ceilfloat-and-int-roundfloat)
 * [Data Types & Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -2639,6 +2640,15 @@ This function will return `false` if the argument is an unset optional value. It
 
 - This function returns the basename of a file path passed to it: `basename("/path/to/file.txt")` returns `"file.txt"`.
 - Also supports an optional parameter, suffix to remove: `basename("/path/to/file.txt", ".txt")` returns `"file"`.
+
+## Int floor(Float), Int ceil(Float) and Int round(Float)
+
+:pig2: [Supported in Cromwell 28](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
+
+- These functions convert a Float value into an Int by:
+  - floor: Round **down** to the next lower integer
+  - ceil: Round **up** to the next higher integer
+  - round: Round to the nearest integer based on standard rounding rules
 
 # Data Types & Serialization
 
