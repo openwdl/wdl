@@ -1912,7 +1912,7 @@ Both tasks and workflows have a typed inputs that must be satisfied in order to 
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
-Tasks define all their outputs as declarations at the top of the task definition.
+Tasks define all their inputs as declarations at the top of the task definition.
 
 ```wdl
 task test {
