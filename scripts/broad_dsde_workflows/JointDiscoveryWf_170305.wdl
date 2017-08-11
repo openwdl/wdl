@@ -41,6 +41,143 @@
 ## page at https://hub.docker.com/r/broadinstitute/genomes-in-the-cloud/ for detailed
 ## licensing information pertaining to the included programs.
 
+workflow JointDiscoveryWf {
+  	File ref_fasta
+  	File ref_fasta_index
+  	File ref_dict
+	Array[File] input_gvcfs
+	Array[File] input_gvcf_indices
+    Array[String] SNP_annotations
+    Array[String] INDEL_annotations
+    Array[Float] SNP_tranches
+    Array[Float] INDEL_tranches
+    Array[String] SNP_resources
+    Array[String] INDEL_resources
+    Array[File] resource_files
+    Array[File] resource_indices
+    Float SNP_filter_level
+    Float INDEL_filter_level
+    String cohort_vcf_name
+    File scattered_calling_intervals_list
+  
+    Array[File] scattered_calling_intervals = read_lines(scattered_calling_intervals_list)
+
+    # Unzip GVCFs in parallel
+	scatter (input_gvcf in input_gvcfs) {
+
+		# Unzip block-compressed VCFs with .gz extension because GenotypeGVCFs 
+        # currently does not handle compressed files.
+	    call UnzipGVCF {
+		    input:
+			    gzipped_gvcf = input_gvcf,
+			    unzipped_basename = "temp_unzipped"
+	    }
+	}
+
+	# Joint-call variants in parallel over WGS calling intervals
+  	scatter (subInterval in scattered_calling_intervals) {
+
+  		# Perform joint genotyping per interval
+		call GenotypeGVCFs {
+			input:
+			    gvcfs = UnzipGVCF.unzipped_gvcf,
+			    gvcf_indices = UnzipGVCF.gvcf_index,
+			    vcf_basename = cohort_vcf_name,
+			    ref_dict = ref_dict,
+			    ref_fasta = ref_fasta,
+			    ref_fasta_index = ref_fasta_index,
+			    interval_list = subInterval
+		}
+	}
+
+	# Merge per-interval VCFs into a single cohort VCF file
+    call MergeVCFs {
+	    input:
+		    input_vcfs = GenotypeGVCFs.genotyped_vcf,
+		    input_vcfs_indices = GenotypeGVCFs.genotyped_index,
+		    vcf_name = cohort_vcf_name + ".vcf.gz",
+		    vcf_index = cohort_vcf_name + ".vcf.gz.tbi"
+    }
+
+    # Build SNP model 
+    call BuildVQSRModel as BuildVQSRModelForSNPs {
+        input:
+            ref_dict = ref_dict,
+            ref_fasta = ref_fasta,
+            ref_fasta_index = ref_fasta_index,
+            cohort_vcf = MergeVCFs.output_vcf,
+            cohort_vcf_index = MergeVCFs.output_vcf_index,
+            interval_lists = scattered_calling_intervals,
+            output_basename = cohort_vcf_name,
+            annotations = SNP_annotations,
+            mode = "SNP",
+            tranches = SNP_tranches,
+            resources = SNP_resources,
+            resource_files = resource_files,
+            resource_indices = resource_indices
+    }
+
+    # Build INDEL model 
+    call BuildVQSRModel as BuildVQSRModelForINDELs {
+        input:
+            ref_dict = ref_dict,
+            ref_fasta = ref_fasta,
+            ref_fasta_index = ref_fasta_index,
+            cohort_vcf = MergeVCFs.output_vcf,
+            cohort_vcf_index = MergeVCFs.output_vcf_index,
+            interval_lists = scattered_calling_intervals,
+            output_basename = cohort_vcf_name,
+            annotations = INDEL_annotations,
+            mode = "INDEL",
+            tranches = INDEL_tranches,
+            resources = INDEL_resources,
+            resource_files = resource_files,
+            resource_indices = resource_indices
+    }
+
+    # Apply INDEL filter (first because INDEL model is usually done sooner)
+    call ApplyRecalibrationFilter as ApplyRecalibrationFilterForINDELs {
+        input:
+            ref_dict = ref_dict,
+            ref_fasta = ref_fasta,
+            ref_fasta_index = ref_fasta_index,
+            cohort_vcf = MergeVCFs.output_vcf,
+            cohort_vcf_index = MergeVCFs.output_vcf_index,
+            interval_lists = scattered_calling_intervals,
+            output_basename = cohort_vcf_name + ".recal.INDEL",
+            mode = "INDEL",
+            recal_file = BuildVQSRModelForINDELs.recal_file,
+            recal_file_index = BuildVQSRModelForINDELs.recal_file_index,
+            tranches_file = BuildVQSRModelForINDELs.tranches_file,
+            filter_level = INDEL_filter_level
+    }
+
+    # Apply SNP filter
+    call ApplyRecalibrationFilter as ApplyRecalibrationFilterForSNPs {
+        input:
+            ref_dict = ref_dict,
+            ref_fasta = ref_fasta,
+            ref_fasta_index = ref_fasta_index,
+            cohort_vcf = ApplyRecalibrationFilterForINDELs.recalibrated_vcf,
+            cohort_vcf_index = ApplyRecalibrationFilterForINDELs.recalibrated_vcf_index,
+            interval_lists = scattered_calling_intervals,
+            output_basename = cohort_vcf_name + ".recal.INDEL.SNP",
+            mode = "SNP",
+            recal_file = BuildVQSRModelForSNPs.recal_file,
+            recal_file_index = BuildVQSRModelForSNPs.recal_file_index,
+            tranches_file = BuildVQSRModelForSNPs.tranches_file,
+            filter_level = SNP_filter_level
+    }
+
+    # Outputs that will be retained when execution is complete
+    output {
+        File jointcalled_vcf = MergeVCFs.output_vcf
+        File jointcalled_vcf_index = MergeVCFs.output_vcf_index
+        File filtered_vcf = ApplyRecalibrationFilterForSNPs.recalibrated_vcf
+        File filtered_vcf_idx = ApplyRecalibrationFilterForSNPs.recalibrated_vcf_index
+    }
+}
+
 # TASK DEFINITIONS
 
 # Unzip GVCFs 
@@ -223,142 +360,5 @@ task ApplyRecalibrationFilter {
     output {
         File recalibrated_vcf = "${output_basename}.vcf.gz"
         File recalibrated_vcf_index = "${output_basename}.vcf.gz.tbi"
-    }
-}
-
-workflow JointDiscoveryWf {
-  	File ref_fasta
-  	File ref_fasta_index
-  	File ref_dict
-	Array[File] input_gvcfs
-	Array[File] input_gvcf_indices
-    Array[String] SNP_annotations
-    Array[String] INDEL_annotations
-    Array[Float] SNP_tranches
-    Array[Float] INDEL_tranches
-    Array[String] SNP_resources
-    Array[String] INDEL_resources
-    Array[File] resource_files
-    Array[File] resource_indices
-    Float SNP_filter_level
-    Float INDEL_filter_level
-    String cohort_vcf_name
-    File scattered_calling_intervals_list
-  
-    Array[File] scattered_calling_intervals = read_lines(scattered_calling_intervals_list)
-
-    # Unzip GVCFs in parallel
-	scatter (input_gvcf in input_gvcfs) {
-
-		# Unzip block-compressed VCFs with .gz extension because GenotypeGVCFs 
-        # currently does not handle compressed files.
-	    call UnzipGVCF {
-		    input:
-			    gzipped_gvcf = input_gvcf,
-			    unzipped_basename = "temp_unzipped"
-	    }
-	}
-
-	# Joint-call variants in parallel over WGS calling intervals
-  	scatter (subInterval in scattered_calling_intervals) {
-
-  		# Perform joint genotyping per interval
-		call GenotypeGVCFs {
-			input:
-			    gvcfs = UnzipGVCF.unzipped_gvcf,
-			    gvcf_indices = UnzipGVCF.gvcf_index,
-			    vcf_basename = cohort_vcf_name,
-			    ref_dict = ref_dict,
-			    ref_fasta = ref_fasta,
-			    ref_fasta_index = ref_fasta_index,
-			    interval_list = subInterval
-		}
-	}
-
-	# Merge per-interval VCFs into a single cohort VCF file
-    call MergeVCFs {
-	    input:
-		    input_vcfs = GenotypeGVCFs.genotyped_vcf,
-		    input_vcfs_indices = GenotypeGVCFs.genotyped_index,
-		    vcf_name = cohort_vcf_name + ".vcf.gz",
-		    vcf_index = cohort_vcf_name + ".vcf.gz.tbi"
-    }
-
-    # Build SNP model 
-    call BuildVQSRModel as BuildVQSRModelForSNPs {
-        input:
-            ref_dict = ref_dict,
-            ref_fasta = ref_fasta,
-            ref_fasta_index = ref_fasta_index,
-            cohort_vcf = MergeVCFs.output_vcf,
-            cohort_vcf_index = MergeVCFs.output_vcf_index,
-            interval_lists = scattered_calling_intervals,
-            output_basename = cohort_vcf_name,
-            annotations = SNP_annotations,
-            mode = "SNP",
-            tranches = SNP_tranches,
-            resources = SNP_resources,
-            resource_files = resource_files,
-            resource_indices = resource_indices
-    }
-
-    # Build INDEL model 
-    call BuildVQSRModel as BuildVQSRModelForINDELs {
-        input:
-            ref_dict = ref_dict,
-            ref_fasta = ref_fasta,
-            ref_fasta_index = ref_fasta_index,
-            cohort_vcf = MergeVCFs.output_vcf,
-            cohort_vcf_index = MergeVCFs.output_vcf_index,
-            interval_lists = scattered_calling_intervals,
-            output_basename = cohort_vcf_name,
-            annotations = INDEL_annotations,
-            mode = "INDEL",
-            tranches = INDEL_tranches,
-            resources = INDEL_resources,
-            resource_files = resource_files,
-            resource_indices = resource_indices
-    }
-
-    # Apply INDEL filter (first because INDEL model is usually done sooner)
-    call ApplyRecalibrationFilter as ApplyRecalibrationFilterForINDELs {
-        input:
-            ref_dict = ref_dict,
-            ref_fasta = ref_fasta,
-            ref_fasta_index = ref_fasta_index,
-            cohort_vcf = MergeVCFs.output_vcf,
-            cohort_vcf_index = MergeVCFs.output_vcf_index,
-            interval_lists = scattered_calling_intervals,
-            output_basename = cohort_vcf_name + ".recal.INDEL",
-            mode = "INDEL",
-            recal_file = BuildVQSRModelForINDELs.recal_file,
-            recal_file_index = BuildVQSRModelForINDELs.recal_file_index,
-            tranches_file = BuildVQSRModelForINDELs.tranches_file,
-            filter_level = INDEL_filter_level
-    }
-
-    # Apply SNP filter
-    call ApplyRecalibrationFilter as ApplyRecalibrationFilterForSNPs {
-        input:
-            ref_dict = ref_dict,
-            ref_fasta = ref_fasta,
-            ref_fasta_index = ref_fasta_index,
-            cohort_vcf = ApplyRecalibrationFilterForINDELs.recalibrated_vcf,
-            cohort_vcf_index = ApplyRecalibrationFilterForINDELs.recalibrated_vcf_index,
-            interval_lists = scattered_calling_intervals,
-            output_basename = cohort_vcf_name + ".recal.INDEL.SNP",
-            mode = "SNP",
-            recal_file = BuildVQSRModelForSNPs.recal_file,
-            recal_file_index = BuildVQSRModelForSNPs.recal_file_index,
-            tranches_file = BuildVQSRModelForSNPs.tranches_file,
-            filter_level = SNP_filter_level
-    }
-
-    # Outputs that will be retained when execution is complete
-    output {
-        File jointcalled_vcf = MergeVCFs.output_vcf
-        File jointcalled_vcf_index = MergeVCFs.output_vcf_index
-        File filtered_vcf = ApplyRecalibrationFilterForSNPs.recalibrated_vcf
-        File filtered_vcf_idx = ApplyRecalibrationFilterForSNPs.recalibrated_vcf_index
     }
 }
