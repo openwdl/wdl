@@ -24,6 +24,26 @@
 ## page at https://hub.docker.com/r/broadinstitute/genomes-in-the-cloud/ for detailed
 ## licensing information pertaining to the included programs.
 
+# WORKFLOW DEFINITION
+workflow RevertBamToUnmappedRGBamsWf {
+  File input_bam
+  File ref_fasta
+  File ref_fasta_index
+  String output_dir
+
+  # Revert inputs to unmapped
+  call RevertBamToUnmappedRGBams {
+    input:
+      input_bam = input_bam,
+      output_dir = output_dir
+  }
+
+  # Outputs that will be retained when execution is complete
+  output {
+    Array[File] unmapped_bams_output=RevertBamToUnmappedRGBams.unmapped_bams
+  }
+}
+
 # TASK DEFINITIONS
 
 # Revert a BAM to uBAMs, one per readgroup
@@ -53,25 +73,5 @@ task RevertBamToUnmappedRGBams {
   }
   output {
     Array[File] unmapped_bams = glob("*.bam")
-  }
-}
-
-# WORKFLOW DEFINITION
-workflow RevertBamToUnmappedRGBamsWf {
-  File input_bam
-  File ref_fasta
-  File ref_fasta_index
-  String output_dir
-
-  # Revert inputs to unmapped
-  call RevertBamToUnmappedRGBams {
-    input:
-      input_bam = input_bam,
-      output_dir = output_dir
-  }
-
-  # Outputs that will be retained when execution is complete
-  output {
-    Array[File] unmapped_bams_output=RevertBamToUnmappedRGBams.unmapped_bams
   }
 }
