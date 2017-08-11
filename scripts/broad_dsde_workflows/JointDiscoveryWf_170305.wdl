@@ -187,25 +187,24 @@ task UnzipGVCF {
     Int disk_size
     String mem_size
 
-    # HACK ALERT! Using .gvcf extension here to force IndexFeatureFile to make the right 
-    # kind of index, but afterward we need to change to .g.vcf which is the correct 
-    # for GVCFs.
-    command <<<
-	gunzip -c ${gzipped_gvcf} > ${unzipped_basename}.gvcf
-    java -Xmx2g -jar /usr/gitc/GATK4.jar IndexFeatureFile -F ${unzipped_basename}.gvcf
-    mv ${unzipped_basename}.gvcf ${unzipped_basename}.g.vcf
-    mv ${unzipped_basename}.gvcf.idx ${unzipped_basename}.g.vcf.idx
-    >>>
+    # ATTN Geraldine THIS NEEDS FINESSING.
+    # The previous hack was replaced and the variables replaced in a manner that likely produces odd extensions in the file.
+    # variable "unzipped_basename" no longer needed.
+    # The docker image is updated. -shlee
+   
+    command {
+    /gatk/gatk-launch IndexFeatureFile -F ${gzipped_gvcf}.g.vcf
+    }
 
 	runtime {
-	    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
+	    docker: "broadinstitute/gatk:4.beta.4"
 	    memory: mem_size 
 	    disks: "local-disk " + disk_size + " HDD"
 	}
 
     output {
-	    File unzipped_gvcf = "${unzipped_basename}.g.vcf"
-	    File gvcf_index = "${unzipped_basename}.g.vcf.idx"
+	    File unzipped_gvcf = "${gzipped_gvcf}.g.vcf"
+	    File gvcf_index = "${gzipped_gvcf}.g.vcf.idx"
     }
 }
 
