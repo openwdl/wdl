@@ -35,44 +35,19 @@
 ## page at https://hub.docker.com/r/broadinstitute/genomes-in-the-cloud/ for detailed
 ## licensing information pertaining to the included programs.
 
-# TASK DEFINITIONS
-
-# Extract the header from a SAM or BAM using samtools view
-task ExtractSAMHeader {
-  File bam_file
-  String output_name
-  Int disk_size
-  String mem_size
-
-  command {
-    samtools view -H ${bam_file} > ${output_name}
-  }
-  runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
-    memory: mem_size
-    cpu: "1"
-    disks: "local-disk " + disk_size + " HDD"
-  }
-  output {
-    File output_header = "${output_name}"
-  }
-}
-
 # WORKFLOW DEFINITION
-workflow ExtractSamHeadersWf {
+
+workflow ExtractSamHeaders {
   Array[File] bam_list
 
   # Process the input files in parallel
   scatter (input_bam in bam_list) {
 
-    String sub_strip_path = "gs://.*/"
-    String sub_strip_suffix = ".bam$"
-
     # Extract the header to a text file
     call ExtractSAMHeader {
       input:
         bam_file = input_bam,
-        output_name = sub(sub(input_bam, sub_strip_path, ""), sub_strip_suffix, "") + ".header.txt"
+        output_name = basename(input_bam, ".bam") + ".header.txt"
     }
   }
 
@@ -82,3 +57,26 @@ workflow ExtractSamHeadersWf {
   }
 }
 
+# TASK DEFINITIONS
+
+# Extract the header from a SAM or BAM using samtools view
+task ExtractSAMHeader {
+  File bam_file
+  String output_name
+  Int disk_size
+  String mem_size
+  String docker
+
+  command {
+    samtools view -H ${bam_file} > ${output_name}
+  }
+  runtime {
+    docker: docker
+    memory: mem_size
+    cpu: "1"
+    disks: "local-disk " + disk_size + " HDD"
+  }
+  output {
+    File output_header = "${output_name}"
+  }
+}

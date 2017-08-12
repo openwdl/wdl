@@ -24,49 +24,9 @@
 ## page at https://hub.docker.com/r/broadinstitute/genomes-in-the-cloud/ for detailed
 ## licensing information pertaining to the included programs.
 
-# TASK DEFINITIONS
-
-# Convert a pair of FASTQs to uBAM
-task PairedFastQsToUnmappedBAM {
-  File fastq_1
-  File fastq_2
-  String readgroup_name
-  String sample_name
-  String library_name
-  String platform_unit
-  String run_date
-  String platform_name
-  String sequencing_center
-  Int disk_size
-  String mem_size
-
-  command {
-    java -Xmx3000m -jar /usr/gitc/picard.jar \
-      FastqToSam \
-      FASTQ=${fastq_1} \
-      FASTQ2=${fastq_2} \
-      OUTPUT=${readgroup_name}.bam \
-      READ_GROUP_NAME=${readgroup_name} \
-      SAMPLE_NAME=${sample_name} \
-      LIBRARY_NAME=${library_name} \
-      PLATFORM_UNIT=${platform_unit} \
-      RUN_DATE=${run_date} \
-      PLATFORM=${platform_name} \
-      SEQUENCING_CENTER=${sequencing_center} 
-  }
-  runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
-    memory: mem_size
-    cpu: "1"
-    disks: "local-disk " + disk_size + " HDD"
-  }
-  output {
-    File output_bam = "${readgroup_name}.bam"
-  }
-}
-
 # WORKFLOW DEFINITION
-workflow ConvertPairedFastQsToUnmappedBamWf {
+
+workflow ConvertPairedFastQsToUnmappedBam {
   Array[String] readgroup_list
   Map[String, Array[File]] fastq_pairs
   Map[String, Array[String]] metadata
@@ -79,6 +39,7 @@ workflow ConvertPairedFastQsToUnmappedBamWf {
       input:
         fastq_1 = fastq_pairs[readgroup][0],
         fastq_2 = fastq_pairs[readgroup][1],
+        output_name = readgroup + ".bam",
         readgroup_name = readgroup,
         sample_name = metadata[readgroup][0],
         library_name = metadata[readgroup][1],
@@ -92,6 +53,50 @@ workflow ConvertPairedFastQsToUnmappedBamWf {
   # Outputs that will be retained when execution is complete
   output {
     Array[File] output_bams = PairedFastQsToUnmappedBAM.output_bam
+  }
+}
+
+# TASK DEFINITIONS
+
+# Convert a pair of FASTQs to uBAM
+task PairedFastQsToUnmappedBAM {
+  File fastq_1
+  File fastq_2
+  String output_name
+  String readgroup_name
+  String sample_name
+  String library_name
+  String platform_unit
+  String run_date
+  String platform_name
+  String sequencing_center
+  Int disk_size
+  String mem_size
+  String docker
+  String jar_path
+  String? java_opt
+
+  command {
+    java ${java_opt} -jar ${jar_path} FastqToSam \
+      FASTQ=${fastq_1} \
+      FASTQ2=${fastq_2} \
+      OUTPUT=${output_name} \
+      READ_GROUP_NAME=${readgroup_name} \
+      SAMPLE_NAME=${sample_name} \
+      LIBRARY_NAME=${library_name} \
+      PLATFORM_UNIT=${platform_unit} \
+      RUN_DATE=${run_date} \
+      PLATFORM=${platform_name} \
+      SEQUENCING_CENTER=${sequencing_center} 
+  }
+  runtime {
+    docker: docker
+    memory: mem_size
+    cpu: "1"
+    disks: "local-disk " + disk_size + " HDD"
+  }
+  output {
+    File output_bam = "${output_name}"
   }
 }
 

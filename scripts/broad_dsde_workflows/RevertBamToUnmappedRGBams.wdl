@@ -25,7 +25,8 @@
 ## licensing information pertaining to the included programs.
 
 # WORKFLOW DEFINITION
-workflow RevertBamToUnmappedRGBamsWf {
+
+workflow RevertBamToUnmappedReaGroupBams { ##### TODO: check why we're including the reference
   File input_bam
   File ref_fasta
   File ref_fasta_index
@@ -40,7 +41,7 @@ workflow RevertBamToUnmappedRGBamsWf {
 
   # Outputs that will be retained when execution is complete
   output {
-    Array[File] unmapped_bams_output=RevertBamToUnmappedRGBams.unmapped_bams
+    Array[File] unmapped_bams = RevertBamToUnmappedRGBams.unmapped_bams
   }
 }
 
@@ -53,21 +54,21 @@ task RevertBamToUnmappedRGBams {
   Float? max_discard_pct
   Int disk_size
   String mem_size
+  String docker
 
   command {
-    java -Xmx1000m -jar /usr/gitc/picard.jar \
-    RevertSam \
-    INPUT=${input_bam} \
-    O=${output_dir} \
-    OUTPUT_BY_READGROUP=true \
-    VALIDATION_STRINGENCY=LENIENT \
-    SANITIZE=TRUE \
-    MAX_DISCARD_FRACTION=${max_discard_pct} \
-    ATTRIBUTE_TO_CLEAR=FT \
-    SORT_ORDER=queryname 
+    java ${java_opt} -jar ${jar_path} RevertSam \
+      INPUT=${input_bam} \
+      O=${output_dir} \
+      OUTPUT_BY_READGROUP=true \
+      VALIDATION_STRINGENCY=LENIENT \
+      SANITIZE=TRUE \
+      MAX_DISCARD_FRACTION=${max_discard_pct} \
+      ATTRIBUTE_TO_CLEAR=FT \
+      SORT_ORDER=queryname 
   }
   runtime {
-    docker: "broadinstitute/genomes-in-the-cloud:2.2.3-1469027018"
+    docker: docker
     disks: "local-disk " + disk_size + " HDD"
     memory: mem_size
   }

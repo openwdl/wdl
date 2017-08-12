@@ -1,8 +1,7 @@
 ## Copyright Broad Institute, 2017
 ## 
-## This WDL implements the joint discovery and VQSR filtering portion of the GATK 
-## Best Practices (June 2016) for germline SNP and Indel discovery in human 
-## whole-genome sequencing (WGS) and exome sequencing data.
+## This WDL implements joint calling with GenotypeGVCFs (using GEnomicsDB) and 
+## variant filtering with VQSR. Works with GATK4 only.
 ##
 ## Requirements/expectations :
 ## - One or more GVCFs produced by HaplotypeCaller in GVCF mode 
@@ -41,7 +40,9 @@
 ## page at https://hub.docker.com/r/broadinstitute/genomes-in-the-cloud/ for detailed
 ## licensing information pertaining to the included programs.
 
-workflow JointDiscoveryWf {
+# WORKFLOW DEFINITION
+
+workflow JointDiscovery {
   	File ref_fasta
   	File ref_fasta_index
   	File ref_dict
@@ -57,46 +58,35 @@ workflow JointDiscoveryWf {
     Array[File] resource_indices
     Float SNP_filter_level
     Float INDEL_filter_level
-    String cohort_vcf_name
-    File scattered_calling_intervals_list
-  
-    Array[File] scattered_calling_intervals = read_lines(scattered_calling_intervals_list)
+    String cohort_name
+    File scatter_intervals_list
 
-    # Unzip GVCFs in parallel
-	scatter (input_gvcf in input_gvcfs) {
+    Array[String] scatter_intervals = read_lines(scatter_intervals_list)
 
-		# Unzip block-compressed VCFs with .gz extension because GenotypeGVCFs 
-        # currently does not handle compressed files.
-	    call UnzipGVCF {
-		    input:
-			    gzipped_gvcf = input_gvcf,
-			    unzipped_basename = "temp_unzipped"
-	    }
-	}
+    scatter (interval in scatter_intervals) {
 
-	# Joint-call variants in parallel over WGS calling intervals
-  	scatter (subInterval in scattered_calling_intervals) {
+        # Perform joint genotyping per interval
+        call CombineAndGenotypeGVCFs {
+            input:
+                gvcfs = input_gvcfs,
+                gvcf_indices = input_gvcf_indices,
+                vcf_basename = cohort_name,
+                output_vcf = cohort_name + ".vcf.gz",
+                output_vcf_index = cohort_name + ".vcf.gz.tbi",
+                ref_dict = ref_dict,
+                ref_fasta = ref_fasta,
+                ref_fasta_index = ref_fasta_index,
+                interval_list = interval
+        }
+    }
 
-  		# Perform joint genotyping per interval
-		call GenotypeGVCFs {
-			input:
-			    gvcfs = UnzipGVCF.unzipped_gvcf,
-			    gvcf_indices = UnzipGVCF.gvcf_index,
-			    vcf_basename = cohort_vcf_name,
-			    ref_dict = ref_dict,
-			    ref_fasta = ref_fasta,
-			    ref_fasta_index = ref_fasta_index,
-			    interval_list = subInterval
-		}
-	}
-
-	# Merge per-interval VCFs into a single cohort VCF file
-    call MergeVCFs {
-	    input:
-		    input_vcfs = GenotypeGVCFs.genotyped_vcf,
-		    input_vcfs_indices = GenotypeGVCFs.genotyped_index,
-		    vcf_name = cohort_vcf_name + ".vcf.gz",
-		    vcf_index = cohort_vcf_name + ".vcf.gz.tbi"
+    # Merge per-interval VCFs into a single cohort VCF file
+    call MergeIntervalVCFs {
+        input:
+            input_vcfs = GenotypeGVCFs.genotyped_vcf,
+            input_vcfs_indices = GenotypeGVCFs.genotyped_vcf_index,
+            output_vcf = cohort_name + ".vcf.gz",
+            output_vcf_index = cohort_name + ".vcf.gz.tbi"
     }
 
     # Build SNP model 
@@ -107,8 +97,8 @@ workflow JointDiscoveryWf {
             ref_fasta_index = ref_fasta_index,
             cohort_vcf = MergeVCFs.output_vcf,
             cohort_vcf_index = MergeVCFs.output_vcf_index,
-            interval_lists = scattered_calling_intervals,
-            output_basename = cohort_vcf_name,
+            interval_list = scatter_intervals_list,
+            output_basename = cohort_name,
             annotations = SNP_annotations,
             mode = "SNP",
             tranches = SNP_tranches,
@@ -125,8 +115,8 @@ workflow JointDiscoveryWf {
             ref_fasta_index = ref_fasta_index,
             cohort_vcf = MergeVCFs.output_vcf,
             cohort_vcf_index = MergeVCFs.output_vcf_index,
-            interval_lists = scattered_calling_intervals,
-            output_basename = cohort_vcf_name,
+            interval_list = scatter_intervals_list,
+            output_basename = cohort_name,
             annotations = INDEL_annotations,
             mode = "INDEL",
             tranches = INDEL_tranches,
@@ -143,8 +133,9 @@ workflow JointDiscoveryWf {
             ref_fasta_index = ref_fasta_index,
             cohort_vcf = MergeVCFs.output_vcf,
             cohort_vcf_index = MergeVCFs.output_vcf_index,
-            interval_lists = scattered_calling_intervals,
-            output_basename = cohort_vcf_name + ".recal.INDEL",
+            interval_list = scatter_intervals_list,
+            output_vcf = cohort_name + ".recal.INDEL.vcf.gz",
+            output_vcf_index = cohort_name + ".recal.INDEL.vcf.gz.tbi",
             mode = "INDEL",
             recal_file = BuildVQSRModelForINDELs.recal_file,
             recal_file_index = BuildVQSRModelForINDELs.recal_file_index,
@@ -160,8 +151,9 @@ workflow JointDiscoveryWf {
             ref_fasta_index = ref_fasta_index,
             cohort_vcf = ApplyRecalibrationFilterForINDELs.recalibrated_vcf,
             cohort_vcf_index = ApplyRecalibrationFilterForINDELs.recalibrated_vcf_index,
-            interval_lists = scattered_calling_intervals,
-            output_basename = cohort_vcf_name + ".recal.INDEL.SNP",
+            interval_list = scatter_intervals_list,
+            output_vcf = cohort_name + ".recal.INDEL.SNP.vcf.gz",
+            output_vcf_index = cohort_name + ".recal.INDEL.SNP.vcf.gz.tbi",
             mode = "SNP",
             recal_file = BuildVQSRModelForSNPs.recal_file,
             recal_file_index = BuildVQSRModelForSNPs.recal_file_index,
@@ -171,103 +163,95 @@ workflow JointDiscoveryWf {
 
     # Outputs that will be retained when execution is complete
     output {
-        File jointcalled_vcf = MergeVCFs.output_vcf
-        File jointcalled_vcf_index = MergeVCFs.output_vcf_index
+        File jointcalled_vcf = MergeVCFs.merged_vcf
+        File jointcalled_vcf_index = MergeVCFs.merged_vcf_index
         File filtered_vcf = ApplyRecalibrationFilterForSNPs.recalibrated_vcf
         File filtered_vcf_idx = ApplyRecalibrationFilterForSNPs.recalibrated_vcf_index
+        File snp_recal = BuildVQSRModelForSNPs.recal_file
+        File snp_recal_index = BuildVQSRModelForSNPs.recal_file_index
+        File indel_recal = BuildVQSRModelForINDELs.recal_file
+        File indel_recal_index = BuildVQSRModelForINDELs.recal_file_index
+        File snp_tranches = BuildVQSRModelForSNPs.tranches_file
+        File indel_tranches = BuildVQSRModelForINDELs.tranches_file
     }
 }
 
 # TASK DEFINITIONS
 
-# Unzip GVCFs 
-task UnzipGVCF {
-    File gzipped_gvcf
-    String unzipped_basename
-    Int disk_size
-    String mem_size
-
-    # ATTN Geraldine THIS NEEDS FINESSING.
-    # The previous hack was replaced and the variables replaced in a manner that likely produces odd extensions in the file.
-    # variable "unzipped_basename" no longer needed.
-    # The docker image is updated. -shlee
-   
-    command {
-    /gatk/gatk-launch IndexFeatureFile -F ${gzipped_gvcf}.g.vcf
-    }
-
-	runtime {
-	    docker: "broadinstitute/gatk:4.beta.4"
-	    memory: mem_size 
-	    disks: "local-disk " + disk_size + " HDD"
-	}
-
-    output {
-	    File unzipped_gvcf = "${gzipped_gvcf}.g.vcf"
-	    File gvcf_index = "${gzipped_gvcf}.g.vcf.idx"
-    }
-}
-
-# Perform joint-genotyping
-task GenotypeGVCFs { 
-	Array[File] gvcfs
-    Array[File] gvcf_indices
-    String vcf_basename
+# Combine input GVCFs into a GenomicsDB then perform joint-genotyping
+task CombineAndGenotypeGVCFs { 
     File ref_dict
     File ref_fasta
     File ref_fasta_index
-  	File interval_list
+    Array[File] gvcfs
+    Array[File] gvcf_indices
+    String genomics_db
+    String vcf_basename
+    String output_vcf 
+    String output_vcf_index 
+    File interval_list
     Int disk_size
     String mem_size
+    String docker
+    String jar_path
+    String? java_opt_import
+    String? java_opt_genotype
 
-	command {
-		java -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8000m \
-        	-jar /usr/gitc/GATK36.jar \
-        	-T GenotypeGVCFs \
-        	-R ${ref_fasta} \
-        	--variant ${sep=' --variant ' gvcfs} \
-        	-L ${interval_list} \
-        	-o ${vcf_basename}.vcf.gz 
-	}
+    # Here we are piping the commands because GenomicsDB is weirdly
+    # dependent on file location
+    command <<<
 
-	output {
-		File genotyped_vcf = "${vcf_basename}.vcf.gz"
-		File genotyped_index = "${vcf_basename}.vcf.gz.tbi"
-	}
+        java ${java_opt} -jar ${jar_path} ImportGenomicsDB \
+            -V ${sep=' -V ' gvcfs} \
+            -L ${interval_list} \
+            --genomicsDBWorkspace ${genomics_db} 
 
-	runtime {
-		docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
-		memory: mem_size
-    	cpu: "1"
-    	disks: "local-disk " + disk_size + " HDD"
-	}
-}
-
-# Combine multiple VCFs 
-task MergeVCFs {
-    Array [File] input_vcfs
-    Array [File] input_vcfs_indices
-    String vcf_name
-    String vcf_index
-    Int disk_size
-    String mem_size
-
-    command {
-	    java -Xmx2g -jar /usr/gitc/picard.jar \
-	    MergeVcfs \
-	    INPUT=${sep=' INPUT=' input_vcfs} \
-	    OUTPUT=${vcf_name}
-    }
-
-  	runtime {
-	    docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
-	    memory: mem_size
-	    disks: "local-disk " + disk_size + " HDD"
-	}
+        java ${java_opt} -jar ${jar_path} GenotypeGVCFs \
+            -R ${ref_fasta} \
+            -V gendb://${genomics_db} \
+            -G StandardAnnotation \
+            -newQual \
+            -O ${output_vcf}
+    >>>
 
     output {
-    	File output_vcf = "${vcf_name}"
-    	File output_vcf_index = "${vcf_index}"
+        File genotyped_vcf = output_vcf
+        File genotyped_vcf_index = output_vcf_index
+    }
+
+    runtime {
+        docker: docker
+        memory: mem_size
+        cpu: "1"
+        disks: "local-disk " + disk_size + " HDD"
+    }
+}
+
+# Combine multiple VCFs ### TODO: check whether we are still using Picard for this
+task MergeIntervalVCFs {
+    Array [File] input_vcfs
+    Array [File] input_vcfs_indices
+    String output_vcf
+    String output_vcf_index
+    Int disk_size
+    String mem_size
+    String docker
+
+    command {
+        java ${java_opt} -jar ${jar_path} MergeVcfs \
+        INPUT=${sep=' INPUT=' input_vcfs} \
+        OUTPUT=${output_vcf}
+    }
+
+    runtime {
+        docker: docker
+        memory: mem_size
+        disks: "local-disk " + disk_size + " HDD"
+    }
+
+    output {
+        File merged_vcf = "${output_vcf}"
+        File merged_vcf_index = "${output_vcf_index}"
     }
 }
 
@@ -279,7 +263,7 @@ task BuildVQSRModel {
     File cohort_vcf
     File cohort_vcf_index
     String output_basename
-    Array[File] interval_lists
+    File interval_list
     String mode
     Array[String] annotations
     Array[Float] tranches
@@ -288,34 +272,41 @@ task BuildVQSRModel {
     Array[File] resource_indices
     Int disk_size
     String mem_size
+    String docker
+    String jar_path
+    String? java_opt
+
+    String base_plus_mode = output_basename + "." + mode
+    String recal = base_plus_mode + ".recal"
+    String recal_index = recal_file + ".idx"
+    String tranches = base_plus_mode + ".tranches"
+    String rscript = base_plus_mode + ".plots.R"
 
     command {
-        java -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8000m \
-            -jar /usr/gitc/GATK36.jar \
-            -T VariantRecalibrator \
+        java ${java_opt} -jar ${jar_path} VariantRecalibrator \
             -R ${ref_fasta} \
             -input ${cohort_vcf} \
-            -L ${sep=' -L ' interval_lists} \
+            -L ${interval_list} \
             -resource:${sep=' -resource:' resources} \
             -an ${sep=' -an ' annotations} \
             -mode ${mode} \
             -tranche ${sep=' -tranche ' tranches} \
-            -recalFile ${output_basename}.${mode}.recal \
-            -tranchesFile ${output_basename}.${mode}.tranches \
-            -rscriptFile ${output_basename}.${mode}.plots.R
+            -recalFile ${recal} \
+            -tranchesFile ${tranches} \
+            -rscriptFile ${rscript}
     }
 
     runtime {
-        docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
+        docker: docker
         memory: mem_size
         disks: "local-disk " + disk_size + " HDD"
     }
 
     output {
-        File recal_file = "${output_basename}.${mode}.recal"
-        File recal_file_index = "${output_basename}.${mode}.recal.idx"
-        File tranches_file = "${output_basename}.${mode}.tranches"
-        File rscript_file = "${output_basename}.${mode}.plots.R"
+        File recal_file = recal
+        File recal_file_index = recal_index
+        File tranches_file = tranches
+        File rscript_file = rscript
     }
 }
 
@@ -328,36 +319,38 @@ task ApplyRecalibrationFilter {
     File cohort_vcf_index
     File recal_file
     File recal_file_index
-    Array[File] interval_lists
-    String output_basename
+    File interval_list
+    String output_vcf
+    String output_vcf_index
     String mode
     File tranches_file
     Float filter_level
     Int disk_size
     String mem_size
+    String docker
+    String jar_path
+    String? java_opt
 
     command {
-        java -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8000m \
-            -jar /usr/gitc/GATK36.jar \
-            -T ApplyRecalibration \
+        java ${java_opt} -jar ${jar_path} ApplyRecalibration \
             -R ${ref_fasta} \
             -input ${cohort_vcf} \
-            -L ${sep=' -L ' interval_lists} \
+            -L ${interval_list} \
             -mode ${mode} \
             --ts_filter_level ${filter_level} \
             -recalFile ${recal_file} \
             -tranchesFile ${tranches_file} \
-            -o ${output_basename}.vcf.gz
+            -o ${output_vcf}
     }
 
     runtime {
-        docker: "broadinstitute/genomes-in-the-cloud:2.2.4-1469632282"
+        docker: docker
         memory: mem_size
         disks: "local-disk " + disk_size + " HDD"
     }
 
     output {
-        File recalibrated_vcf = "${output_basename}.vcf.gz"
-        File recalibrated_vcf_index = "${output_basename}.vcf.gz.tbi"
+        File recalibrated_vcf = output_vcf
+        File recalibrated_vcf_index = output_vcf_index
     }
 }
