@@ -169,8 +169,8 @@ task BuildVQSRModel {
 
     String base_plus_mode = output_basename + "." + mode
     String recal = base_plus_mode + ".recal"
-    String recal_index = recal_file + ".idx"
-    String tranches = base_plus_mode + ".tranches"
+    String recal_index = recal + ".idx"
+    String tranches_filename = base_plus_mode + ".tranches"
     String rscript = base_plus_mode + ".plots.R"
 
     command {
@@ -183,7 +183,7 @@ task BuildVQSRModel {
             -mode ${mode} \
             -tranche ${sep=' -tranche ' tranches} \
             -recalFile ${recal} \
-            -tranchesFile ${tranches} \
+            -tranchesFile ${tranches_filename} \
             -rscriptFile ${rscript}
     }
 
@@ -196,7 +196,7 @@ task BuildVQSRModel {
     output {
         File recal_file = recal
         File recal_file_index = recal_index
-        File tranches_file = tranches
+        File tranches_file = tranches_filename
         File rscript_file = rscript
     }
 }
