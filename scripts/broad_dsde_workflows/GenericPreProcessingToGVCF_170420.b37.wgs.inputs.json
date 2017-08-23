@@ -1,0 +1,46 @@
+{
+  "##_COMMENT1": "SAMPLE NAME AND UNMAPPED BAMS",
+  "GenericPreProcessingToGVCFWorkflow.sample_name": "NA12878",
+  "GenericPreProcessingToGVCFWorkflow.base_file_name": "NA12878_20k.b37",
+  "GenericPreProcessingToGVCFWorkflow.flowcell_unmapped_bams": [
+    "gs://genomics-public-data/test-data/dna/wgs/hiseq2500/NA12878/H06HDADXX130110.1.ATCACGAT.20k_reads.bam",
+    "gs://genomics-public-data/test-data/dna/wgs/hiseq2500/NA12878/H06HDADXX130110.2.ATCACGAT.20k_reads.bam",
+    "gs://genomics-public-data/test-data/dna/wgs/hiseq2500/NA12878/H06JUADXX130110.1.ATCACGAT.20k_reads.bam"
+  ],
+  "GenericPreProcessingToGVCFWorkflow.final_gvcf_name": "NA12878_20k.b37.g.vcf.gz",
+  "GenericPreProcessingToGVCFWorkflow.unmapped_bam_suffix": ".bam",
+
+  "##_COMMENT2": "INTERVALS",  
+  "GenericPreProcessingToGVCFWorkflow.calling_interval_list": "gs://gatk-legacy-bundles/b37/wgs_calling_regions.v1.interval_list",
+  "GenericPreProcessingToGVCFWorkflow.scattered_calling_intervals_list": "gs://gatk-legacy-bundles/b37/wgs_scattered_calling_intervals.txt",
+  "GenericPreProcessingToGVCFWorkflow.HaplotypeCaller.interval_padding": 0,
+  
+  "##_COMMENT3": "REFERENCE FILES", 
+  "GenericPreProcessingToGVCFWorkflow.ref_dict": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.dict",
+  "GenericPreProcessingToGVCFWorkflow.ref_fasta": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta",
+  "GenericPreProcessingToGVCFWorkflow.ref_fasta_index": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.fai",
+  "GenericPreProcessingToGVCFWorkflow.ref_sa": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.sa",
+  "GenericPreProcessingToGVCFWorkflow.ref_amb": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.amb",
+  "GenericPreProcessingToGVCFWorkflow.ref_bwt": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.bwt",
+  "GenericPreProcessingToGVCFWorkflow.ref_ann": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.ann",
+  "GenericPreProcessingToGVCFWorkflow.ref_pac": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.pac",
+  
+  "##_COMMENT4": "KNOWN SITES RESOURCES", 
+  "GenericPreProcessingToGVCFWorkflow.dbSNP_vcf": "gs://gatk-legacy-bundles/b37/dbsnp_138.b37.vcf",
+  "GenericPreProcessingToGVCFWorkflow.dbSNP_vcf_index": "gs://gatk-legacy-bundles/b37/dbsnp_138.b37.vcf.idx",
+  "GenericPreProcessingToGVCFWorkflow.known_indels_sites_VCFs": [
+    "gs://gatk-legacy-bundles/b37/Mills_and_1000G_gold_standard.indels.b37.vcf"
+  ],
+  "GenericPreProcessingToGVCFWorkflow.known_indels_sites_indices": [
+    "gs://gatk-legacy-bundles/b37/Mills_and_1000G_gold_standard.indels.b37.vcf.idx"
+  ],
+
+  "##_COMMENT5": "DISK SIZES + PREEMPTIBLES",
+  "GenericPreProcessingToGVCFWorkflow.agg_small_disk": 200,
+  "GenericPreProcessingToGVCFWorkflow.agg_medium_disk": 300,
+  "GenericPreProcessingToGVCFWorkflow.agg_large_disk": 400,
+  "GenericPreProcessingToGVCFWorkflow.agg_preemptible_tries": 3,
+  "GenericPreProcessingToGVCFWorkflow.flowcell_small_disk": 100,
+  "GenericPreProcessingToGVCFWorkflow.flowcell_medium_disk": 200,
+  "GenericPreProcessingToGVCFWorkflow.preemptible_tries": 3
+}
