@@ -1,4 +1,4 @@
-# SYNTAX TEST "WDL.sublime-syntax"
+# SYNTAX TEST "Packages/WDL/WDL.sublime-syntax"
 task expression_locations {
   Int i
   Int j
