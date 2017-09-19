@@ -1,3 +1,24 @@
+### 2017-09-19
+
+Reorganized workflows into functional categories with explicit versioning using directories.
+
+- data-processing
+  - pre-processing-for-variant-discovery
+- format-conversion
+  - bam-to-unmapped-readgroup-bams
+  - paired-fastq-to-unmapped-bam
+  - readgroup-bams-to-paired-fastqs
+- quality-control
+  - validate-bams
+- germline-short-variant-discovery
+  - genotype-gvcfs
+  - haplotypecaller-gvcf-per-sample
+  - joint-discovery-end-to-end
+  - variant-recalibration
+- uncategorized
+  - extract-sam-headers
+
+
 ### 2017-08-23 
  
 - NEW: HaplotypeCallerGvcf_GATK3.wdl
