@@ -1,10 +1,10 @@
 This directory contains WDL scripts organized in the following alphabetically listed categories:
 
-####`broad_dsde_workflows/`
-Workflow scripts developed by the Data Sciences and Data Engineering (DSDE) group at the Broad Institute. These scripts cover a variety of use cases, typically complementary to the production workflows provided in `broad_pipelines`, e.g. for formatting inputs correctly for the production pipelines, or serving as alternatives for use with divergent datatypes or with legacy tools and resources. Although they are not blessed by the Broad production team, these workflows are officially supported on the WDL user forum. See the directory README for additional guidelines.
+####`broad_dsp_workflows/`
+Workflow scripts developed in the Data Sciences Platform (DSP) at the Broad Institute. These scripts cover a variety of use cases, typically complementary to the production workflows provided in `broad_pipelines`, e.g. providing conversion utilities for formatting inputs correctly to satisfy the requirements of the production pipelines, or serving as alternatives for use with divergent datatypes or with legacy tools and resources. Although they are not blessed by the Broad production team, these workflows are officially supported on the WDL user forum. See the directory README for additional guidelines.
 
 ####`broad_pipelines/`
-Workflow scripts used in Broad Genomic Services production pipelines at the Broad Institute. These are intended to serve as reference implementations of the GATK Best Practices workflows and may require specific resources for execution. See the directory README for more information on each script. 
+Workflow scripts used in Broad Genomic Services production pipelines at the Broad Institute. These are intended to serve as reference implementations of the GATK Best Practices workflows and may require specific resources for execution. See the accompanying documentation (`.md files`) for more information on each script. 
 
 ####`tutorials/`
 Workflow scripts used in
