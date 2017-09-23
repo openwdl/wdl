@@ -1,0 +1,24 @@
+{
+  "BamToUnmappedRGBamsWf.input_bam": "gs://gatk-test-data/wgs_bam/NA12878_20k_b37/NA12878.bam",
+  "BamToUnmappedRGBamsWf.RevertBamToUnmappedRGBams.output_dir": ".",
+
+  "BamToUnmappedRGBamsWf.ref_fasta": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta",
+  "BamToUnmappedRGBamsWf.ref_fasta_index": "gs://gatk-legacy-bundles/b37/human_g1k_v37_decoy.fasta.fai",
+
+  "BamToUnmappedRGBamsWf.picard_path": "/usr/gitc/",
+  "BamToUnmappedRGBamsWf.picard_docker": "broadinstitute/genomes-in-the-cloud:2.3.1-1504795437",
+
+  "BamToUnmappedRGBamsWf.preemptible_tries": 3,
+
+  "BamToUnmappedRGBamsWf.RevertBamToUnmappedRGBams.java_opt": "-Xmx1000m",
+  "BamToUnmappedRGBamsWf.RevertBamToUnmappedRGBams.mem_size": "1200 MB",
+  "BamToUnmappedRGBamsWf.RevertBamToUnmappedRGBams.disk_size": 10,
+
+  "BamToUnmappedRGBamsWf.SortBamByQueryname.java_opt": "-Xmx3000m",
+  "BamToUnmappedRGBamsWf.SortBamByQueryname.mem_size": "3500 MB",
+  "BamToUnmappedRGBamsWf.SortBamByQueryname.disk_size": 10,
+
+  "BamToUnmappedRGBamsWf.ValidateSamFile.java_opt": "-Xmx3000m",
+  "BamToUnmappedRGBamsWf.ValidateSamFile.mem_size": "3500 MB",
+  "BamToUnmappedRGBamsWf.ValidateSamFile.disk_size": 10
+}
