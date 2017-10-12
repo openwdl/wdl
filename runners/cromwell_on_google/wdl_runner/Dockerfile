@@ -50,10 +50,10 @@ RUN mkdir /cromwell
 RUN cd /cromwell && \
     curl -L -O https://github.com/broadinstitute/cromwell/releases/download/29/cromwell-29.jar
 RUN ln /cromwell/cromwell-29.jar /cromwell/cromwell.jar
-COPY jes_template.conf /cromwell/
+COPY cromwell.conf /cromwell/
 
 # Set up the runtime environment
 ENV CROMWELL /cromwell/cromwell.jar
-ENV CROMWELL_CONF /cromwell/jes_template.conf
+ENV CROMWELL_CONF /cromwell/cromwell.conf
 
 WORKDIR /wdl_runner
