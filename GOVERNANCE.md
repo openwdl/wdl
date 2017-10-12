@@ -10,7 +10,7 @@ Table of Contents
 Governance
 ----------
 
-WDL has a community-driven development process where most decisions are made through consensus, under the stewardship of a 'core team'. The core team is responsible for steering the design and development process, overseeing the introduction of new features, setting priorities and release schedule, and ultimately making decisions for the rare instances where there is no community consensus . 
+WDL has a community-driven development process where most decisions are made through consensus, under the stewardship of a 'core team'. The core team is responsible for steering the design and development process, overseeing the introduction of new features, setting priorities and release schedule, and ultimately making decisions for the rare instances where there is no community consensus. 
 
 Current core team members are:
 
@@ -18,8 +18,8 @@ Current core team members are:
 |:-------------------|:-------------|:------------------
 | Brad Chapman       | Harvard School of Public Health | [chapmanb](https://github.com/chapmanb) |
 | Jeff Gentry        | Broad Institute                 | [geoffjentry](https://github.com/geoffjentry) |
-| Mike Lin           | DNANexus                        | [mlin](https://github.com/mlin) |
-| Patrick Magee      | DNAStack                        | [patmagee](https://github.com/patmagee) |
+| Mike Lin           | DNAnexus                        | [mlin](https://github.com/mlin) |
+| Patrick Magee      | DNAstack                        | [patmagee](https://github.com/patmagee) |
 | Brian O'Connor     | University of California, Santa Cruz | [briandoconnor](https://github.com/briandoconnor) |
 | Abirami Prabhakaran| Intel | [aprabhak2](https://github.com/aprabhak2) |
 | Geraldine Van der Auwera | Broad Institute | [vdauwera](https://github.com/vdauwera) |
@@ -37,7 +37,7 @@ Generally members are only removed at their own request are due to very long ter
 RFC Process
 -----------
 
-Most technical decisions are decided through the RFC process. Small changes, such as minor grammatical edits to the specification, do not need to need to follow the RFC process. However, if one intends to make a substantive change to the WDL specification , the following process should be adhered to:
+Most technical decisions are decided through the "RFC" ([Request for Comments](https://en.wikipedia.org/wiki/Request_for_Comments)) process. Small changes, such as minor grammatical edits to the specification, do not need to need to follow the RFC process. However, if one intends to make a substantive change to the WDL specification , the following process should be adhered to:
 
  1. Ideally have an informal discussion of the topic on the [mailing list](https://groups.google.com/forum/#!forum/openwdl) and/or the [gitter channel](https://gitter.im/openwdl/wdl) in order to gauge basic viability. As a rule of thumb, receiving encouraging feedback from long-standing community members is a good indication that the RFC is worth pursuing.
  2. Write up a formal proposal, including requested syntax changes, as a [Github issue](https://github.com/openwdl/wdl/issues).
