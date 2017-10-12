@@ -1,6 +1,6 @@
 # Workflow Description Language
 
-**WARNING:** If you're looking to edit this file, there is almost no chance that this is what you intend. This file has [been moved](https://github.com/openwdl/wdl/blob/master/versions/draft-2/SPEC.md) but a copy has been left here so as to not break direct links to the page on GitHub which doesn't not properly handle symlinks.
+**WARNING:** If you're looking to edit this file, there is almost no chance that this is what you intend. This file has [been moved](https://github.com/openwdl/wdl/blob/master/versions/draft-2/SPEC.md) but a copy has been left here so as to not break direct links to the page on GitHub which does not properly handle symlinks.
 
 ## Table Of Contents
 
