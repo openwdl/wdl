@@ -4,8 +4,9 @@ WDL is a workflow language meant to be read and written by humans. Broader docum
 by the [WDL website](https://software.broadinstitute.org/wdl/). Any questions or issues can be discussed at
 our [support forum](http://gatkforums.broadinstitute.org/wdl).
 
-* [Draft 1 Language Specification](https://github.com/openwdl/wdl/blob/master/SPEC.md) (closed)
-* [Draft 2 Language Specification](https://github.com/openwdl/wdl/blob/develop/SPEC.md) (open)
+* [Draft 1 Language Specification](https://github.com/openwdl/wdl/blob/master/versions/draft-1/SPEC.md) (closed)
+* [Draft 2 Language Specification](https://github.com/openwdl/wdl/blob/master/versions/draft-2/SPEC.md) (closed)
+* [Draft 3 Language Specification](https://github.com/openwdl/wdl/blob/master/versions/draft-3/SPEC.md) (open)
 
 Library and engine support is provided by
 
@@ -205,7 +206,7 @@ $ java -jar cromwell.jar run hello.wdl hello.json
 }
 ```
 
-`read_string` is a function in the [standard library](https://github.com/openwdl/wdl/blob/develop/SPEC.md#standard-library), which provides other useful functions for converting outputs to WDL data types.
+`read_string` is a function in the [standard library](https://github.com/openwdl/wdl/blob/master/versions/draft-3/SPEC.md#standard-library), which provides other useful functions for converting outputs to WDL data types.
 
 ## Referencing Files on Disk
 
@@ -238,7 +239,7 @@ $ java -jar cromwell.jar run hello.wdl hello.json
 }
 ```
 
-`read_string` is a function in the [standard library](https://github.com/openwdl/wdl/blob/develop/SPEC.md#standard-library), which provides other useful functions for converting outputs to WDL data types.
+`read_string` is a function in the [standard library](https://github.com/openwdl/wdl/blob/master/versions/draft-3/SPEC.md#standard-library), which provides other useful functions for converting outputs to WDL data types.
 
 ## Using Globs to Specify Output
 
