@@ -148,7 +148,7 @@ The output will be an operation ID for the Pipeline.
 ## (3) Monitor the pipeline operation
 
 This github repo includes a shell script,
-[./monitoring_tools/monitor_wdl_pipelines.sh](./monitoring_tools/monitor_wdl_pipelines.sh),
+[../monitoring_tools/monitor_wdl_pipeline.sh](../monitoring_tools/monitor_wdl_pipeline.sh),
 for monitoring the status of a pipeline launched using ``wdl_pipeline.yaml``.
 
 ```
