@@ -2093,6 +2093,8 @@ task do_stuff {
 }
 ```
 
+An implementation of the `read_lines()` function must read at least 128k of data from the file but may read more. Users attempting to read more than this can run into portability issues across implementations. 
+
 ## Array[Array[String]] read_tsv(String|File)
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
@@ -2117,6 +2119,9 @@ task do_stuff {
 
 Then when the task finishes, to fulfull the `outputs_table` variable, `./results/file_list.tsv` must be a valid TSV file or an error will be reported.
 
+An implementation of the `read_tsv()` function must read at least 1M of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+
+
 ## Map[String, String] read_map(String|File)
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
@@ -2139,6 +2144,8 @@ task do_stuff {
   }
 }
 ```
+
+An implementation of the `read_map()` function must read at least 1M of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
 
 ## Object read_object(String|File)
 
@@ -2174,6 +2181,8 @@ Which would be turned into an `Object` in WDL that would look like this:
 |key_1    |"value_1"|
 |key_2    |"value_2"|
 |key_3    |"value_3"|
+
+An implementation of the `read_object()` function must read at least 1M of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
 
 ## Array[Object] read_objects(String|File)
 
@@ -2220,6 +2229,8 @@ Which would be turned into an `Array[Object]` in WDL that would look like this:
 |     |key_2    |"value_2"|
 |     |key_3    |"value_3"|
 
+An implementation of the `read_objects()` function must read at least 1M of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+
 ## mixed read_json(String|File)
 
 :pig2: Coming soon in [Cromwell](https://github.com/broadinstitute/cromwell)
@@ -2253,11 +2264,15 @@ task do_stuff {
 
 Then when the task finishes, to fulfull the `output_table` variable, `./results/file_list.json` must be a valid TSV file or an error will be reported.
 
+An implementation of the `read_json()` function must read at least 128k of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+
 ## Int read_int(String|File)
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 The `read_int()` function takes a file path which is expected to contain 1 line with 1 integer on it.  This function returns that integer.
+
+An implementation of the `read_int()` function must read at least 19 characters of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
 
 ## String read_string(String|File)
 
@@ -2267,17 +2282,23 @@ The `read_string()` function takes a file path which is expected to contain 1 li
 
 No trailing newline characters should be included
 
+An implementation of the `read_string()` function must read at least 128k of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+
 ## Float read_float(String|File)
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 The `read_float()` function takes a file path which is expected to contain 1 line with 1 floating point number on it.  This function returns that float.
 
+An implementation of the `read_float()` function must read at least 50 characters of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+
 ## Boolean read_boolean(String|File)
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
 The `read_boolean()` function takes a file path which is expected to contain 1 line with 1 Boolean value (either "true" or "false" on it).  This function returns that Boolean value.
+
+An implementation of the `read_bool()` function must read at least 5 characters of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
 
 ## File write_lines(Array[String])
 
