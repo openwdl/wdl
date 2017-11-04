@@ -533,7 +533,7 @@ String greeting = "good " + if morning then "morning" else "afternoon"
 Int array_length = length(array)
 runtime {
   memory: if array_length > 100 then "16GB" else "8GB"
-} 
+}
 ```
 
 
@@ -598,7 +598,7 @@ The syntax `x[y]` is for indexing maps and arrays.  If `x` is an array, then `y`
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
-Given a Pair `x`, the left and right elements of that type can be accessed using the syntax `x.left` and `x.right`. 
+Given a Pair `x`, the left and right elements of that type can be accessed using the syntax `x.left` and `x.right`.
 
 ### Function Calls
 
@@ -1328,7 +1328,7 @@ import "sub_wdl.wdl" as sub
 workflow main_workflow {
 
     call sub.wf_hello { input: wf_hello_input = "sub world" }
-    
+
     output {
         String main_output = wf_hello.salutation
     }
@@ -1352,9 +1352,9 @@ task hello {
 
 workflow wf_hello {
   String wf_hello_input
-  
+
   call hello {input: addressee = wf_hello_input }
-  
+
   output {
     String salutation = hello.salutation
   }
@@ -1424,7 +1424,7 @@ workflow foo {
     call y
     Int y_out = y.out
   }
-  
+
   # Outside the if block, we have to handle this output as optional:
   Int? y_out_maybe = y.out
 
@@ -1517,10 +1517,10 @@ task t {
 
 workflow w {
   String w_input = "some input"
-  
+
   call t
   call t as u
-  
+
   output {
     String t_out = t.out
     String u_out = u.out
@@ -1548,11 +1548,11 @@ task t {
 
 workflow w {
   Array[Int] arr = [1, 2]
-  
+
   scatter(i in arr) {
     call t
   }
-  
+
   output {
     Array[String] t_out = t.out
   }
@@ -1567,7 +1567,7 @@ $workflow_output = 'output' '{' ($workflow_output_fqn ($workflow_output_fqn)* '}
 $workflow_output_fqn = $fully_qualified_name '.*'?
 ```
 
-Replacing call output names with a `*` acts as a match-all wildcard. 
+Replacing call output names with a `*` acts as a match-all wildcard.
 
 The output names in this section must be qualified with the call which created them, as in the example below.
 
@@ -2489,11 +2489,11 @@ Given a `File` and a `String` (optional), returns the size of the file in Bytes 
 ```wdl
 task example {
   File input_file
-  
+
   command {
     echo "this file is 22 bytes" > created_file
   }
-  
+
   output {
     Float input_file_size = size(input_file)
     Float created_file_size = size("created_file") # 22.0
@@ -2599,6 +2599,20 @@ Array[String] zs = [ ]
 Integer xlen = length(xs) # 3
 Integer ylen = length(ys) # 3
 Integer zlen = length(zs) # 0
+```
+
+## Array[X] flatten(Array[Array[X]])
+
+Given an array of arrays, the `flatten` function concatentes all the
+arrays (in the same order) to give the result. For example:
+
+```
+Array[Array[Integer]] ai2D = [[1, 2, 3], [11], [21,22]]
+Array[Integer] ai = flatten(ai2D)   # [1, 2, 3, 11, 21, 22]
+
+
+Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
+Array[Integer] af = flatten(af2D)   # ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
 ```
 
 ## Array[String] prefix(String, Array[X])
