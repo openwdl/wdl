@@ -2604,7 +2604,7 @@ Integer zlen = length(zs) # 0
 ## Array[X] flatten(Array[Array[X]])
 
 Given an array of arrays, the `flatten` function concatentes all the
-arrays (in the same order) to give the result. For example:
+member arrays in the order to appearance to give the result. For example:
 
 ```
 Array[Array[Integer]] ai2D = [[1, 2, 3], [11], [21,22]]
