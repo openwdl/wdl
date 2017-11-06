@@ -2618,7 +2618,7 @@ Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
 Array[File] af = flatten(af2D)   # ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
 
 Array[Array[Pair[Float,String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
-Array[Pair[Float,String]] ap = [(0.1, "mouse"), (3, "cat"), (15, "dog")]
+Array[Pair[Float,String]] ap = flatten(aap2D) # [(0.1, "mouse"), (3, "cat"), (15, "dog")]
 ```
 
 ## Array[String] prefix(String, Array[X])
