@@ -1392,7 +1392,7 @@ workflow foo {
   Int? x_out_maybe = x_out # Even though it's within two 'if's, we don't need Int??
 
   # Call 'y' which takes an Int input:
-  call y { input: int_input = select_first(x_out_maybe, 5) } # The select_first produces an Int, not an Int?
+  call y { input: int_input = select_first([x_out_maybe, 5]) } # The select_first produces an Int, not an Int?
 }
 ```
 
