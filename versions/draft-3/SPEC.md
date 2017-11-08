@@ -2093,7 +2093,7 @@ task do_stuff {
 }
 ```
 
-An implementation of the `read_lines()` function must read at least 128k of data from the file but may read more. Users attempting to read more than this can run into portability issues across implementations. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
 ## Array[Array[String]] read_tsv(String|File)
 
@@ -2119,8 +2119,7 @@ task do_stuff {
 
 Then when the task finishes, to fulfull the `outputs_table` variable, `./results/file_list.tsv` must be a valid TSV file or an error will be reported.
 
-An implementation of the `read_tsv()` function must read at least 1M of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
-
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
 ## Map[String, String] read_map(String|File)
 
@@ -2145,7 +2144,7 @@ task do_stuff {
 }
 ```
 
-An implementation of the `read_map()` function must read at least 1M of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
 ## Object read_object(String|File)
 
@@ -2182,7 +2181,7 @@ Which would be turned into an `Object` in WDL that would look like this:
 |key_2    |"value_2"|
 |key_3    |"value_3"|
 
-An implementation of the `read_object()` function must read at least 1M of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
 ## Array[Object] read_objects(String|File)
 
@@ -2229,7 +2228,7 @@ Which would be turned into an `Array[Object]` in WDL that would look like this:
 |     |key_2    |"value_2"|
 |     |key_3    |"value_3"|
 
-An implementation of the `read_objects()` function must read at least 1M of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
 ## mixed read_json(String|File)
 
@@ -2264,7 +2263,7 @@ task do_stuff {
 
 Then when the task finishes, to fulfull the `output_table` variable, `./results/file_list.json` must be a valid TSV file or an error will be reported.
 
-An implementation of the `read_json()` function must read at least 128k of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
 ## Int read_int(String|File)
 
@@ -2272,7 +2271,7 @@ An implementation of the `read_json()` function must read at least 128k of data 
 
 The `read_int()` function takes a file path which is expected to contain 1 line with 1 integer on it.  This function returns that integer.
 
-An implementation of the `read_int()` function must read at least 19 characters of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
 ## String read_string(String|File)
 
@@ -2282,7 +2281,7 @@ The `read_string()` function takes a file path which is expected to contain 1 li
 
 No trailing newline characters should be included
 
-An implementation of the `read_string()` function must read at least 128k of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
 ## Float read_float(String|File)
 
@@ -2290,7 +2289,7 @@ An implementation of the `read_string()` function must read at least 128k of dat
 
 The `read_float()` function takes a file path which is expected to contain 1 line with 1 floating point number on it.  This function returns that float.
 
-An implementation of the `read_float()` function must read at least 50 characters of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
 ## Boolean read_boolean(String|File)
 
@@ -2298,7 +2297,7 @@ An implementation of the `read_float()` function must read at least 50 character
 
 The `read_boolean()` function takes a file path which is expected to contain 1 line with 1 Boolean value (either "true" or "false" on it).  This function returns that Boolean value.
 
-An implementation of the `read_bool()` function must read at least 5 characters of data from the file but may read more. Users attempting to read more than this run into portability issues across implementations. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
 ## File write_lines(Array[String])
 
