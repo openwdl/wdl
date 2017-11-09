@@ -2093,7 +2093,7 @@ task do_stuff {
 }
 ```
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Array[Array[String]] read_tsv(String|File)
 
@@ -2119,7 +2119,7 @@ task do_stuff {
 
 Then when the task finishes, to fulfull the `outputs_table` variable, `./results/file_list.tsv` must be a valid TSV file or an error will be reported.
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Map[String, String] read_map(String|File)
 
@@ -2144,7 +2144,7 @@ task do_stuff {
 }
 ```
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Object read_object(String|File)
 
@@ -2181,7 +2181,7 @@ Which would be turned into an `Object` in WDL that would look like this:
 |key_2    |"value_2"|
 |key_3    |"value_3"|
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Array[Object] read_objects(String|File)
 
@@ -2228,7 +2228,7 @@ Which would be turned into an `Array[Object]` in WDL that would look like this:
 |     |key_2    |"value_2"|
 |     |key_3    |"value_3"|
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## mixed read_json(String|File)
 
@@ -2263,7 +2263,7 @@ task do_stuff {
 
 Then when the task finishes, to fulfull the `output_table` variable, `./results/file_list.json` must be a valid TSV file or an error will be reported.
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Int read_int(String|File)
 
@@ -2281,7 +2281,7 @@ The `read_string()` function takes a file path which is expected to contain 1 li
 
 No trailing newline characters should be included
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Float read_float(String|File)
 
@@ -2297,7 +2297,7 @@ If the entire contents of the file can not be read for any reason, the calling t
 
 The `read_boolean()` function takes a file path which is expected to contain 1 line with 1 Boolean value (either "true" or "false" on it).  This function returns that Boolean value.
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## File write_lines(Array[String])
 
