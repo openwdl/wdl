@@ -2608,7 +2608,9 @@ Integer zlen = length(zs) # 0
 
 Given an array of arrays, the `flatten` function concatenates all the
 member arrays in the order to appearance to give the result. It does not
-deduplicate the elements. For example:
+deduplicate the elements. Arrays nested more deeply than 2 must be
+flattened twice (or more) to get down to an unnested `Array[X]`.
+For example:
 
 ```
 Array[Array[Integer]] ai2D = [[1, 2, 3], [1], [21, 22]]
@@ -2620,6 +2622,8 @@ Array[File] af = flatten(af2D)   # ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
 Array[Array[Pair[Float,String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
 Array[Pair[Float,String]] ap = flatten(aap2D) # [(0.1, "mouse"), (3, "cat"), (15, "dog")]
 ```
+
+The last example (`aap2D`) is useful because `Map[X, Y]` can be coerced to `Array[Pair[X, Y]]`.
 
 ## Array[String] prefix(String, Array[X])
 
