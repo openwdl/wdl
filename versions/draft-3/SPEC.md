@@ -1515,6 +1515,104 @@ workflow wf {
 
 In this example, the fully-qualified names that would be exposed as workflow outputs would be `wf.task1.results`, `wf.altname.value`.
 
+# Structs
+A struct is a C-like construct which enables the user to create new compound types that consist of previously existing types. Structs
+can then be used within a `Task` or `Workflow` definition as a declaration in place of any other normal types. The struct takes the place of the
+`Object` type in many circumstances and enables proper typing of its members.
+
+
+## Defining a Struct
+Structs are defined using the `struct` keyword and have a single section consiting of typed declarationns. They are evaluated first prior
+to workflows and tasks.
+```
+struct name { ... }
+```
+
+## Defining Declarations
+The only contents of struct are a set of declarations. Declarations can be any primitive or compound type, as well as other structs, and are defined
+the same way as they are in any other section. The one caveat to this is that declartions within a struct do not allow an expression statement after
+the initial member declaration.
+
+for example the following is a valid struct definition
+``` 
+struct name {
+    String myString
+    Int myInt
+}
+```
+Whereas the following is invalid
+
+```
+struct invalid {
+    String myString = "Cannot do this"
+    Int myInt
+}
+```
+
+You can also use compound types within a struct to easily encapsulate them within a single object. For example
+```
+struct name {
+    Array[Array[File]] myFiles
+    Map[String,Pair[String,File]] myComplexType
+    String cohortName
+}
+```
+## Optional and non Empty Values
+Struct declarations can be optional or non-empty (if they are an array type). 
+
+```
+struct name {
+    Arrray[File]+ myFiles
+    Boolean? myBoolean
+}
+```
+
+## Using a Struct
+When using a struct in the declaration section of either a `workflow` or a `task` or `output` section you define them in the same way you would define any other type.
+
+For example, if I have a struct like the following:
+```
+struct MyStruct {
+    String myName
+    Int myAge
+}
+```
+
+then usage of the struct in a workflow would look like the following:
+
+```wdl
+
+task myTask {
+    MyStruct a
+    command {
+        echo "hello my name is ${a.myName} and I am ${a.myAge} years old"
+    }
+}
+
+workflow myWorkflow {
+    MyStruct a
+    call myTask {
+        input:
+            a = a
+    }
+
+}
+```
+
+## Member Access
+In order to access members within a struct, use object notation; ie `myStruct.myName`. If the uderlying member is a complex type which supports member access,
+you can access its elements in the way defined by that specific type.
+
+for example if we have a struct like the following:
+```
+struct myStruct {
+    Array[File] myFiles
+    Map[String,String] myMap
+}
+```
+
+Accessing the nth element of myFiles would look like: `myStruct.myFiles[n]`, while indexing an element in myMap would look like `myStruct.myMap["entry"]`
+
 # Namespaces
 
 Import statements can be used to pull in tasks/workflows from other locations as well as to create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the specified namespace.  For example:
