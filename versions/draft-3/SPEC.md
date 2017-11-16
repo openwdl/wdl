@@ -58,6 +58,13 @@
     * [Parameter Metadata](#parameter-metadata)
     * [Metadata](#metadata)
     * [Outputs](#outputs)
+  * [Struct Definition](#struct-definition)
+    * [Declarations](#struct-declarations)
+      * [Optional and non Empty Struct Values](#optional-and-non-empty-struct-values)
+    * [Using a Struct](#using-a-struct)
+      * [Struct Assignment From Object Literal](#struct-assignment-from-object-literal)
+      * [Struct Member Access](#struct-member-access)
+      * [Importing Structs](#importing-structs)
 * [Namespaces](#namespaces)
 * [Scope](#scope)
 * [Optional Parameters & Type Constraints](#optional-parameters--type-constraints)
@@ -1515,26 +1522,24 @@ workflow wf {
 
 In this example, the fully-qualified names that would be exposed as workflow outputs would be `wf.task1.results`, `wf.altname.value`.
 
-# Structs
+## Struct Definition
 A struct is a C-like construct which enables the user to create new compound types that consist of previously existing types. Structs
 can then be used within a `Task` or `Workflow` definition as a declaration in place of any other normal types. The struct takes the place of the
 `Object` type in many circumstances and enables proper typing of its members.
 
-
-## Defining a Struct
 Structs are defined using the `struct` keyword and have a single section consiting of typed declarationns. They are evaluated first prior
 to workflows and tasks.
-```
+```wdl
 struct name { ... }
 ```
 
-## Defining Declarations
+### Struct Declarations
 The only contents of struct are a set of declarations. Declarations can be any primitive or compound type, as well as other structs, and are defined
-the same way as they are in any other section. The one caveat to this is that declartions within a struct do not allow an expression statement after
+the same way as they are in any other section. The one caveat to this is that declarations within a struct do not allow an expression statement after
 the initial member declaration.
 
 for example the following is a valid struct definition
-``` 
+```wdl
 struct name {
     String myString
     Int myInt
@@ -1542,7 +1547,7 @@ struct name {
 ```
 Whereas the following is invalid
 
-```
+```wdl
 struct invalid {
     String myString = "Cannot do this"
     Int myInt
@@ -1550,28 +1555,28 @@ struct invalid {
 ```
 
 You can also use compound types within a struct to easily encapsulate them within a single object. For example
-```
+```wdl
 struct name {
     Array[Array[File]] myFiles
     Map[String,Pair[String,File]] myComplexType
     String cohortName
 }
 ```
-## Optional and non Empty Values
+#### Optional and non Empty Struct Values
 Struct declarations can be optional or non-empty (if they are an array type). 
 
-```
+```wdl
 struct name {
     Arrray[File]+ myFiles
     Boolean? myBoolean
 }
 ```
 
-## Using a Struct
+### Using a Struct
 When using a struct in the declaration section of either a `workflow` or a `task` or `output` section you define them in the same way you would define any other type.
 
 For example, if I have a struct like the following:
-```
+```wdl
 struct MyStruct {
     String myName
     Int myAge
@@ -1599,19 +1604,47 @@ workflow myWorkflow {
 }
 ```
 
-## Member Access
+#### Struct Assignment from Object Literal
+Structs can be assigned using an object literal. When Writing the object, all entries must conform or be coercible into the underlying type they are being assigned to
+
+```wdl
+
+MyStruct a = {"myName": "John","myAge": 30}
+
+```
+
+
+### Struct Member Access
 In order to access members within a struct, use object notation; ie `myStruct.myName`. If the uderlying member is a complex type which supports member access,
 you can access its elements in the way defined by that specific type.
 
 for example if we have a struct like the following:
-```
+```wdl
 struct myStruct {
     Array[File] myFiles
     Map[String,String] myMap
 }
 ```
+ssing the nth element of myFiles would look like: `myStruct.myFiles[n]`, while indexing an element in myMap would look like `myStruct.myMap["entry"]`
 
-Accessing the nth element of myFiles would look like: `myStruct.myFiles[n]`, while indexing an element in myMap would look like `myStruct.myMap["entry"]`
+### Importing Structs
+A `struct` can be defined and imported from another WDL and follows similar rules to other imported objects
+
+```wdl
+import structs.wdl as helpers
+
+task a {
+    helpers.MyStruct p
+    
+    command {
+        echo ${ p.name }
+    }
+}
+
+```
+
+
+Acce
 
 # Namespaces
 
