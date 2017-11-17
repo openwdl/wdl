@@ -1523,12 +1523,16 @@ workflow wf {
 In this example, the fully-qualified names that would be exposed as workflow outputs would be `wf.task1.results`, `wf.altname.value`.
 
 ## Struct Definition
-A struct is a C-like construct which enables the user to create new compound types that consist of previously existing types. Structs
+A struct is a C-like construct which enables the user to create new compound types that consisting of previously existing types. Structs
 can then be used within a `Task` or `Workflow` definition as a declaration in place of any other normal types. The struct takes the place of the
 `Object` type in many circumstances and enables proper typing of its members.
 
-Structs are defined using the `struct` keyword and have a single section consiting of typed declarationns. They are evaluated first prior
-to workflows and tasks.
+Structs are declared separately from any other constructs, and cannot be declared within any `workflow` or `task` definition. They belong to the namespace of the WDL 
+file which they are written in and are therefore accessible globally within that WDL. Additionally, all structs must be evaluated prior to their use within a `task`, 
+`workflow` or another `struct`.
+
+Structs may be defined using the `struct` keyword and have a single section consisting of typed declarations. 
+
 ```wdl
 struct name { ... }
 ```
@@ -1540,7 +1544,7 @@ the initial member declaration.
 
 for example the following is a valid struct definition
 ```wdl
-struct name {
+struct Name {
     String myString
     Int myInt
 }
@@ -1548,15 +1552,15 @@ struct name {
 Whereas the following is invalid
 
 ```wdl
-struct invalid {
+struct Invalid {
     String myString = "Cannot do this"
     Int myInt
 }
 ```
 
-You can also use compound types within a struct to easily encapsulate them within a single object. For example
+Compound types can also be used within a struct to easily encapsulate them within a single object. For example
 ```wdl
-struct name {
+struct Name {
     Array[Array[File]] myFiles
     Map[String,Pair[String,File]] myComplexType
     String cohortName
@@ -1566,8 +1570,8 @@ struct name {
 Struct declarations can be optional or non-empty (if they are an array type). 
 
 ```wdl
-struct name {
-    Arrray[File]+ myFiles
+struct Name {
+    Array[File]+ myFiles
     Boolean? myBoolean
 }
 ```
@@ -1577,9 +1581,9 @@ When using a struct in the declaration section of either a `workflow` or a `task
 
 For example, if I have a struct like the following:
 ```wdl
-struct MyStruct {
-    String myName
-    Int myAge
+struct Person {
+    String name
+    Int age
 }
 ```
 
@@ -1587,20 +1591,19 @@ then usage of the struct in a workflow would look like the following:
 
 ```wdl
 
-task myTask {
-    MyStruct a
+task task_a {
+    Person a
     command {
-        echo "hello my name is ${a.myName} and I am ${a.myAge} years old"
+        echo "hello my name is ${a.name} and I am ${a.age} years old"
     }
 }
 
 workflow myWorkflow {
-    MyStruct a
-    call myTask {
+    Person a
+    call task_a {
         input:
             a = a
     }
-
 }
 ```
 
@@ -1609,23 +1612,48 @@ Structs can be assigned using an object literal. When Writing the object, all en
 
 ```wdl
 
-MyStruct a = {"myName": "John","myAge": 30}
+Person a = {"name": "John","age": 30}
 
 ```
 
 
 ### Struct Member Access
-In order to access members within a struct, use object notation; ie `myStruct.myName`. If the uderlying member is a complex type which supports member access,
+In order to access members within a struct, use object notation; ie `myStruct.myName`. If the underlying member is a complex type which supports member access,
 you can access its elements in the way defined by that specific type.
 
-for example if we have a struct like the following:
+For example, if we have defined a struct like the following:
 ```wdl
-struct myStruct {
-    Array[File] myFiles
-    Map[String,String] myMap
+struct Experiment {
+    Array[File] experimentFiles
+    Map[String,String] experimentData
+}
+
+```
+**Example 1:**
+Accessing the nth element of experimentFiles and any element in experimentData would look like: 
+```wdl
+workflow workflow_a {
+    Experiment myExperiment
+    File firstFile = myExperiment.experimentFiles[0]
+    String experimentName = myExperiment.experimentData["name"]
+        
+    
 }
 ```
-ssing the nth element of myFiles would look like: `myStruct.myFiles[n]`, while indexing an element in myMap would look like `myStruct.myMap["entry"]`
+
+**Example 2:**
+If the struct itself is a member of an Array or another type, yo
+
+```wdl
+workflow workflow_a {
+    Array[Experiment] myExperiments
+    
+    File firstFileFromFirstExperiment = myExperiments[0].experimentFiles[0]
+    File eperimentNameFromFirstExperiment = bams[0].experimentData["name"]
+    ....
+}
+    
+```
 
 ### Importing Structs
 A `struct` can be defined and imported from another WDL and follows similar rules to other imported objects
@@ -1643,8 +1671,6 @@ task a {
 
 ```
 
-
-Acce
 
 # Namespaces
 
