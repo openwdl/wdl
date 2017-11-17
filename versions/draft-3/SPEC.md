@@ -250,10 +250,10 @@ String s = "hello, world"  # A string value
 File f = "/path/to/file"   # A file
 ```
 
-In addition, the following compound types can be constructed, parameterized by other types (in the examples below `X` and `Y` represent any valid type, even nested compound types):
+In addition, the following compound types can be constructed, parameterized by other types. In the examples below `P` represents any of the primitive types above, and `X` and `Y` represent any valid type (even nested compound types):
 ```wdl
 Array[X] xs = [x1, x2, x3]                    # An array of Xs
-Map[X,Y] x_to_y = { x1: y1, x2: y2, x3: y3 }  # A map from Xs to Ys
+Map[P,Y] p_to_y = { x1: y1, x2: y2, x3: y3 }  # A map from Ps to Ys
 Pair[X,Y] x_and_y = (x, y)                    # A pair of one X and one Y
 Object o = { "field1": f1, "field2": f2 }     # Object keys are always `String`s
 ```
