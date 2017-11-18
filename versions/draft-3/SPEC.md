@@ -673,6 +673,7 @@ Engines should at the very least support the following protocols for import URIs
 * `file://`
 * no protocol (which should be interpreted as `file://`
 
+
 ## Task Definition
 
 A task is a declarative construct with a focus on constructing a command from a template.  The command specification is interpreted in an engine specific way, though a typical case is that a command is a UNIX command line which would be run in a Docker image.
@@ -1540,7 +1541,7 @@ struct name { ... }
 ### Struct Declarations
 The only contents of struct are a set of declarations. Declarations can be any primitive or compound type, as well as other structs, and are defined
 the same way as they are in any other section. The one caveat to this is that declarations within a struct do not allow an expression statement after
-the initial member declaration.
+the initial member declaration. Once defined all structs are added to a global namespace accessible from any other construct within the WDL.
 
 for example the following is a valid struct definition
 ```wdl
@@ -1656,20 +1657,29 @@ workflow workflow_a {
 ```
 
 ### Importing Structs
-A `struct` can be defined and imported from another WDL and follows similar rules to other imported objects
+Any `struct` defined within an imported WDL will be added to a global namespace and will not be a part of the imported wdl's namespace. If two structs
+are named the same it will be necessary to resolve the conflicting names. To do this, one or more structs may be imported under an
+alias defined within the import statement.
+
+For example, if your current WDL defines a struct named `Experiment` and the imported WDL also defines another struct named `Experiment` you can
+alias them as follows:
 
 ```wdl
-import structs.wdl as helpers
-
-task a {
-    helpers.MyStruct p
-    
-    command {
-        echo ${ p.name }
-    }
-}
-
+import http://example.com/example.wdl as ex alias Experiment as OtherExperiment
 ```
+
+In order to resolve multiple structs, simply add additional alias statements.
+```wdl
+import http://example.com/another_exampl.wdl as ex2 alia Parent as Parent2 alias Child as Child2 alias GrandChild as GrandChild2
+```
+
+Its important to note, that when importing from file 2, all structs from file 2's global namespace will be imported. This Includes structs from
+another imported WDL within file 2, even if they are aliased. If a strut is aliased in file 2, it will be imported into file 1 under its
+aliased name.
+
+
+
+* Note: Alias can be used even when no conflicts are encountered to uniquely identify any struct
 
 
 # Namespaces
