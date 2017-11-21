@@ -1557,37 +1557,44 @@ The rational for this is that a user may want to provide the following input fil
 
 ### Call Statement
 
-```
-$call = 'call' $ws* $namespaced_identifier $ws+ ('as' $identifier)? $ws* $call_body?
-$call_body = '{' $ws* $inputs? $ws* '}'
-$inputs = 'input' $ws* ':' $ws* $variable_mappings
-$variable_mappings = $variable_mapping_kv (',' $variable_mapping_kv)*
-$variable_mapping_kv = $identifier $ws* '=' $ws* $expression
-```
+A workflow calls other tasks/workflows via the `call` keyword.  A `call` is followed by the name of the task or subworkflow to run.  Most commonly that's simply the name of a task (see examples below), but it can also use `.` as a namespace resolver.
 
-A workflow may call other tasks/workflows via the `call` keyword.  The `$namespaced_identifier` is the reference to which task to run.  Most commonly, it's simply the name of a task (see examples below), but it can also use `.` as a namespace resolver.
-
-See the section on [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details about how the `$namespaced_identifier` ought to be interpreted
+See the section on [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details about how the identifier ought to be interpreted
 
 All `call` statements must be uniquely identifiable.  By default, the call's unique identifier is the task name (e.g. `call foo` would be referenced by name `foo`).  However, if one were to `call foo` twice in a workflow, each subsequent `call` statement will need to alias itself to a unique name using the `as` clause: `call foo as bar`.
 
-A `call` statement may reference a workflow too (e.g. `call other_workflow`).  In this case, the `$inputs` section specifies a subset of the workflow's inputs and must specify fully qualified names.
+A `call` statement may reference a workflow too (e.g. `call other_workflow`).  In this case, the inputs section specifies the workflow's inputs by name.
+
+Calls can be run as soon as their inputs are available. If `call x`'s inputs are based on `call y`'s outputs, this means that `call x` can be run as soon as `call y` has completed. 
+
+To add a dependency from x to y that isn't based on outputs, you can use the `after` keyword, such as `call x after y after z`. But note that this is only required if `x` doesn't already depend on an output from `y`.
+
+Here are some examples:
 
 ```wdl
 import "lib.wdl" as lib
 workflow wf {
+  # Calls my_task:
   call my_task
+
+  # Calls it another time straight away. 
+  # We need to give this one an alias to avoid name-collision
   call my_task as my_task_alias
-  call my_task as my_task_alias2 {
+
+  # Call it a third time
+  # This time, wait until the first my_task has completed before running it.
+  call my_task as my_task_alias2 after my_task {
     input: threshold=2
   }
+
+  # Call a task imported from lib:
   call lib.other_task
 }
 ```
 
-The `$call_body` is optional and is meant to specify how to satisfy a subset of the the task or workflow's input parameters as well as a way to map tasks outputs to variables defined in the [visible scopes](#scope).
+The call inputs block (eg `{ input: x=a, y=b, z=c } `) is optional and specifies how to satisfy a subset of the the task or workflow's input parameters.
 
-A `$variable_mapping` in the `$inputs` section maps parameters in the task to expressions.  These expressions usually reference outputs of other tasks, but they can be arbitrary expressions.
+Each variable mapping in the call inputs block maps input parameters in the task to expressions from the workflow.  These expressions usually reference outputs of other tasks, but they can be arbitrary expressions.
 
 As an example, here is a workflow in which the second task requires an output from the first task:
 
