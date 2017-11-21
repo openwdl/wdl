@@ -70,6 +70,10 @@
   * [Task Inputs](#task-inputs)
   * [Workflow Inputs](#workflow-inputs)
   * [Specifying Workflow Inputs in JSON](#specifying-workflow-inputs-in-json)
+  * [Optional Inputs](#optional-inputs)
+  * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
+    * [Optional Inputs with Defaults](#optional-inputs-with-defaults)
+  * [Call Input Blocks](#call-input-blocks)
 * [Type Coercion](#type-coercion)
 * [Standard Library](#standard-library)
   * [File stdout()](#file-stdout)
@@ -1924,6 +1928,132 @@ Once workflow inputs are computed (see previous section), the value for each of 
 ```
 
 It's important to note that the type in JSON must be coercable to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "3"`, this coercion from string to integer is not valid and would result in a type error.  See the section on [Type Coercion](#type-coercion) for more details.
+
+## Optional Inputs
+
+An optional input is specified like this:
+```wdl
+workflow foo {
+  Int? x
+  File? y
+  ...
+}
+```
+In these situations, a value may or may not be provided for this input. Eg the following would all be valid input files for the above workflow:
+- No inputs:
+```json
+{ }
+```
+- Only x:
+```json
+{
+  "x": 100
+}
+```
+- Only y:
+```json
+{
+  "y": "/path/to/file"
+}
+```
+- x and y:
+```json
+{
+  "x": 1000,
+  "y": "/path/to/file"
+}
+```
+
+## Declared Inputs: Defaults and Overrides
+
+Tasks and workflows can have default values built-in via expressions, like this:
+```wdl
+workflow foo {
+  Int x = 5
+  ...
+}
+```
+
+```wdl
+task foo {
+  Int x = 5
+  ...
+}
+```
+
+In this case, `x` should be considered an optional input to the task or workflow, but unlike optional inputs without defaults, the type can be `Int` rather than `Int?`. If an input is provided, that value should be used. If no input value for x is provided then the default expression is evaluated and used.
+
+One restriction on this applies: a default value may depend only on static expressions. If a declaration depends on previously computed values then it is considered an intermediate expression and not a workflow or task input. In the workflow below `x` is an optional input to the workflow and `y` is an intermediate declaration that cannot be overridden by inputs. The reasoning for this is that it is an intrinsic part of the workflow's control flow and changing it via an input is inherently dangerous to the correct working of the workflow.
+```wdl
+workflow foo {
+  Int x = 10
+  call my_task as t1 { input: int_in = x }
+  Int y = my_task.out
+  call my_task as t2 { input: int_in = y }
+}
+```
+Note that it is still possible to override intermediate expressions via optional inputs if that's important to the workflow author. A modified version of the above workflow demonstrates this:
+```wdl
+workflow foo {
+  Int? y_override
+  Int x = 10
+  call my_task as t1 { input: int_in = x }
+
+  # If the y_override is provided, use it, otherwise default to my_task.out:
+  Int y = select_first([y_override, my_task.out])
+  call my_task as t2 { input: int_in = y }
+}
+```
+
+### Optional inputs with defaults
+It's possible to provide a default to an optional input type:
+```wdl
+String? s = "hello"
+```
+Note that if you do this then you can still only use this value in calls or expressions that can handle optional inputs. Here's an example:
+```wdl
+workflow foo {
+  String? str = "hello"
+  call valid { input: s_maybe = str }
+
+  # This would cause a validation error. Cannot use String? for a String input:
+  call invalid { input: s_definitely = str }
+}
+
+task valid {
+  String? s_maybe
+  command {
+    echo ${default="goodbye" s_maybe}
+  }
+  output { String out = read_string(stdout()) }
+}
+
+task invalid {
+  String s_definitely
+}
+```
+
+The rational for this is that a user may want to provide the following input file to alter how `valid` is called. This would invalidate the call to `invalid` even though it might have been fine if we used the default value given to `str` of `"hello"`:
+```json
+{
+  "str": null
+}
+```
+
+## Call Input Blocks
+
+As mentioned above, call inputs can be provided via call inputs (`call my_task { input: x = 5 }`), or else they become workflow inputs (`"my_workflow.my_task.x": 5`). In situations where both are supplied (ie the workflow specifies a call input, and the user tries to supply the same input via an input file), the workflow submission should be rejected because the user has supplied an unexpected input. 
+
+The reasoning for this is the same as above: that the input value it is an intrinsic part of the workflow's control flow and changing it via an input is inherently dangerous to the correct working of the workflow. 
+
+However, just like above, it's always possible to allow call-input overrides from user inputs:
+```wdl
+workflow foo {
+  Int x = ... # could depend on multiple task and workflow steps to compute
+  Int? x_override
+  call my_task { input: int_in = select_first([x_override, x]) }
+}
+```
 
 # Type Coercion
 
