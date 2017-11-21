@@ -2010,7 +2010,7 @@ It's possible to provide a default to an optional input type:
 ```wdl
 String? s = "hello"
 ```
-Since the expression is static, this is interpreted a `String?` value that is set by default, but can be overridden in the inputs file, just like above. Note that if you give a value an optional type like this then you can only use this value in calls or expressions that can handle optional inputs. Here's an example:
+Since the expression is static, this is interpreted as a `String?` value that is set by default, but can be overridden in the inputs file, just like above. Note that if you give a value an optional type like this then you can only use this value in calls or expressions that can handle optional inputs. Here's an example:
 ```wdl
 workflow foo {
   String? s = "hello"
