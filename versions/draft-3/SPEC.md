@@ -2010,22 +2010,19 @@ It's possible to provide a default to an optional input type:
 ```wdl
 String? s = "hello"
 ```
-Note that if you do this then you can still only use this value in calls or expressions that can handle optional inputs. Here's an example:
+Since the expression is static, this is interpreted a `String?` value that is set by default, but can be overridden in the inputs file, just like above. Note that if you give a value an optional type like this then you can only use this value in calls or expressions that can handle optional inputs. Here's an example:
 ```wdl
 workflow foo {
-  String? str = "hello"
-  call valid { input: s_maybe = str }
+  String? s = "hello"
+  call valid { input: s_maybe = s }
 
   # This would cause a validation error. Cannot use String? for a String input:
-  call invalid { input: s_definitely = str }
+  call invalid { input: s_definitely = s }
 }
 
 task valid {
   String? s_maybe
-  command {
-    echo ${default="goodbye" s_maybe}
-  }
-  output { String out = read_string(stdout()) }
+  ...
 }
 
 task invalid {
@@ -2033,10 +2030,10 @@ task invalid {
 }
 ```
 
-The rational for this is that a user may want to provide the following input file to alter how `valid` is called. This would invalidate the call to `invalid` even though it might have been fine if we used the default value given to `str` of `"hello"`:
+The rational for this is that a user may want to provide the following input file to alter how `valid` is called, and such an input would invalidate the call to `invalid` since it is unable to accept optional values:
 ```json
 {
-  "str": null
+  "foo.s": null
 }
 ```
 
