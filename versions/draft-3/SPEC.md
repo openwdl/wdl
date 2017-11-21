@@ -1983,7 +1983,7 @@ task foo {
 
 In this case, `x` should be considered an optional input to the task or workflow, but unlike optional inputs without defaults, the type can be `Int` rather than `Int?`. If an input is provided, that value should be used. If no input value for x is provided then the default expression is evaluated and used.
 
-One restriction on this applies: a default value may depend only on static expressions. If a declaration depends on previously computed values then it is considered an intermediate expression and not a workflow or task input. In the workflow below `x` is an optional input to the workflow and `y` is an intermediate declaration that cannot be overridden by inputs. The reasoning for this is that it is an intrinsic part of the workflow's control flow and changing it via an input is inherently dangerous to the correct working of the workflow.
+One restriction on this applies: to be considered an optional input, the default value must be a static expression. If the expression depends on previously computed values then the declaration is considered an intermediate value and not a workflow or task input. In the workflow below `x` is an optional input to the workflow and `y` is an intermediate declaration that cannot be overridden by inputs. The reasoning for this is that it is an intrinsic part of the workflow's control flow and changing it via an input is inherently dangerous to the correct working of the workflow.
 ```wdl
 workflow foo {
   Int x = 10
