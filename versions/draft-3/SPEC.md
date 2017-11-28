@@ -1668,15 +1668,17 @@ alias them as follows:
 import http://example.com/example.wdl as ex alias Experiment as OtherExperiment
 ```
 
-In order to resolve multiple structs, simply add additional alias statements.
+In order to resolve multiple structs, simply add additional alias statements. 
 ```wdl
-import http://example.com/another_exampl.wdl as ex2 alia Parent as Parent2 alias Child as Child2 alias GrandChild as GrandChild2
+import http://example.com/another_exampl.wdl as ex2 
+    alias Parent as Parent2 
+    alias Child as Child2 
+    alias GrandChild as GrandChild2
 ```
 
 Its important to note, that when importing from file 2, all structs from file 2's global namespace will be imported. This Includes structs from
-another imported WDL within file 2, even if they are aliased. If a strut is aliased in file 2, it will be imported into file 1 under its
+another imported WDL within file 2, even if they are aliased. If a struct is aliased in file 2, it will be imported into file 1 under its
 aliased name.
-
 
 
 * Note: Alias can be used even when no conflicts are encountered to uniquely identify any struct
