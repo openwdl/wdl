@@ -1337,7 +1337,7 @@ $conditional = 'if' '(' $expression ')' '{' $workflow_element* '}'
 Conditionals only execute the body if the expression evaluates to true.
 
 * When a call's output is referenced outside the same containing `if` it will need to be handled as an optional type. E.g.
-```
+```wdl
 workflow foo {
   # Call 'x', producing a Boolean output:
   call x
@@ -1357,7 +1357,7 @@ workflow foo {
 }
 ```
 * Optional types can be coalesced by using the `select_all` and `select_first` array functions:
-```
+```wdl
 workflow foo {
   Array[Int] scatter_range = [1, 2, 3, 4, 5]
   scatter (i in scatter_range) {
@@ -1375,6 +1375,24 @@ workflow foo {
 
   # Or we can select the first valid element:
   Int x_out_first = select_first(x_out_maybes)
+}
+```
+* When conditional blocks are nested, referenced outputs are only ever single-level conditionals (i.e. we never produce `Int??` or deeper):
+```wdl
+workflow foo {
+  Boolean b
+  Boolean c
+
+  if(b) {
+    if(c) {
+      call x
+      Int x_out = x.out
+    }
+  }
+  Int? x_out_maybe = x_out # Even though it's within two 'if's, we don't need Int??
+
+  # Call 'y' which takes an Int input:
+  call y { input: int_input = select_first([x_out_maybe, 5]) } # The select_first produces an Int, not an Int?
 }
 ```
 
