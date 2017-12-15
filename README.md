@@ -10,7 +10,7 @@ our [support forum](http://gatkforums.broadinstitute.org/wdl).
 
 Library and engine support is provided by
 
-* [Java parser](java) which provides only a parser to convert a WDL string into an AST
+* [Java parser](parsers/java) which provides only a parser to convert a WDL string into an AST
 * [wdl4s](http://github.com/broadinstitute/wdl4s) provides Scala bindings for WDL and uses the above Java parser
 * [PyWDL](https://github.com/broadinstitute/pywdl) provides Python bindings for WDL
 * [Cromwell](http://github.com/broadinstitute/cromwell) is an engine for running WDL workflows.  This uses [wdl4s](http://github.com/broadinstitute/wdl4s)
