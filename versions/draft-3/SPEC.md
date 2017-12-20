@@ -53,7 +53,6 @@
     * [Call Statement](#call-statement)
         * [Sub Workflows](#sub-workflows)
     * [Scatter](#scatter)
-    * [Loops](#loops)
     * [Conditionals](#conditionals)
     * [Parameter Metadata](#parameter-metadata)
     * [Metadata](#metadata)
@@ -1326,14 +1325,6 @@ scatter(i in integers) {
 ```
 
 In this example, `task2` depends on `task1`.  Variable `i` has an implicit `index` attribute to make sure we can access the right output from `task1`.  Since both task1 and task2 run N times where N is the length of the array `integers`, any scalar outputs of these tasks is now an array.
-
-### Loops
-
-```
-$loop = 'while' '(' $expression ')' '{' $workflow_element* '}'
-```
-
-Loops are distinct from scatter clauses because the body of a while loop needs to be executed to completion before another iteration is considered for iteration.  The `$expression` condition is evaluated only when the iteration count is zero or if all `$workflow_element`s in the body have completed successfully for the current iteration.
 
 ### Conditionals
 
