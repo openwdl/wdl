@@ -1442,14 +1442,14 @@ As an example:
 
 ### Outputs
 
-Each `workflow` definition can specify an optional `output` section.  This section lists outputs from individual `call`s that you also want to expose as outputs to the `workflow` itself.
-If the `output {...}` section is omitted, then the workflow includes all outputs from all calls in its final output.
-Workflow outputs follow the same syntax rules as task outputs.
-They can reference call outputs, workflow inputs and previous workflow outputs.
+Each `workflow` definition can specify an `output` section.  This section lists outputs as `Type name = expression`, just like task outputs.
+
+Workflow outputs also follow the same syntax rules as task outputs. They are expressions which can reference all call outputs, workflow inputs, intermediate values and previous workflow outputs.
 e.g:
 
 ```
 task t {
+  Int i
   command {
     # do something
   }
@@ -1473,10 +1473,9 @@ workflow w {
 }
 ```
 
-Note that they can't reference call inputs. However this can be achieved by declaring the desired call input as an output.
-Expressions are allowed.
+Note that they can't reference call inputs (eg we cannot use `Int i = t.i` as a workflow output). However this can be achieved by also declaring the desired call input as an output of the call.
 
-When declaring a workflow output that points to a call inside a scatter, the aggregated call is used.
+When declaring a workflow output that points to a call inside a scatter, the aggregated call is used, just like any expression that references it from outside the scatter.
 e.g:
 
 ```
@@ -1502,43 +1501,16 @@ workflow w {
 }
 ```
 
-`t_out` has an `Array[String]` result type, because `call t` is inside a scatter.
+In this example `t_out` has an `Array[String]` result type, because `call t` is inside a scatter.
 
-*THE FOLLOWING SYNTAX IS DEPRECATED BUT IS STILL SUPPORTED TO MAINTAIN BACKWARD COMPATIBILITY*
-```
-$workflow_output = 'output' '{' ($workflow_output_fqn ($workflow_output_fqn)* '}'
-$workflow_output_fqn = $fully_qualified_name '.*'?
-```
+#### Omitting Workflow Outputs
 
-Replacing call output names with a `*` acts as a match-all wildcard. 
+If the `output {...}` section is omitted from a top-level workfow then the workflow engine should include all outputs from all calls in its final output.
 
-The output names in this section must be qualified with the call which created them, as in the example below.
-
-```
-task task1 {
-  command { ./script }
-  output { File results = stdout() }
-}
-
-task task2 {
-  command { ./script2 }
-  output {
-    File results = stdout()
-    String value = read_string("some_file")
-  }
-}
-
-workflow wf {
-  call task1
-  call task2 as altname
-  output {
-    task1.*
-    altname.value
-  }
-}
-```
-
-In this example, the fully-qualified names that would be exposed as workflow outputs would be `wf.task1.results`, `wf.altname.value`.
+However, if a workflow is intended to be called as a subworkflow, it is required that outputs are named and specified using expressions in the outputs block, just like task outputs. The rationale here is:
+- To present the same interface when calling subworkflows as when calling tasks.
+- To make it easy for callers of subworkflows to find out exactly what outputs the call is creating.
+- In case of nested subworkflows, to give the outputs at the top level a simple fixed name rather than a long qualified name like `a.b.c.d.out` (which is liable to change if the underlying implementation of `c` changes, for example).
 
 # Namespaces
 
