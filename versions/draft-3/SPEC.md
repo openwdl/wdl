@@ -916,8 +916,6 @@ output {
 }
 ```
 
-Note that when a directory is output, the contents are considered part of the output but the path is not. 
-
 ### String Interpolation
 
 Within tasks, any string literal can use string interpolation to access the value of any of the task's inputs.  The most obvious example of this is being able to define an output file which is named as function of its input.  For example:
