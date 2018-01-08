@@ -706,7 +706,7 @@ task t {
 - When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted into the command string.
 
 ##### Special Case: Versioning Filesystems
-If two or more files in a versioning filesystem might have the same name and come from the same directory, the following special procedure can be used to avoid collision:
+Two or more files versions of a file in a versioning filesystem might have the same name and come from the same directory. In that case the following special procedure must be used to avoid collision:
   - The first file is always placed as normal according to the usual rules.
   - Subsequent files that would otherwise overwrite this file are instead placed in a subdirectory named for the version.
 
