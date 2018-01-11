@@ -274,6 +274,11 @@ For more details on the `$type_postfix_quantifier`, see the section on [Optional
 
 For more information on type and how they are used to construct commands and define outputs of tasks, see the [Data Types & Serialization](#data-types--serialization) section.
 
+#### Custom  Types
+
+WDL provides the ability to define custom compound types called `Structs`. `Structs` are defined directly in the WDL and are usable like any other type. 
+For more information on their usage, see the section on [Structs](#struct-definition)
+
 ### Fully Qualified Names & Namespaced Identifiers
 
 ```
@@ -3081,6 +3086,7 @@ Where `/jobs/564759/sample.json` would contain:
   }
 ]
 ```
+
 
 ## De-serialization of Task Outputs
 
