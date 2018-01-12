@@ -248,6 +248,8 @@ Float f = 27.3             # A floating point number
 Boolean b = true           # A boolean true/false
 String s = "hello, world"  # A string value
 File f = "path/to/file"    # A file
+SFile u1 = "gs://bucket/file" # URI for Google cloud storage file
+SFile u2 = "/path/to/file"    # URI for local file
 ```
 
 In addition, the following compound types can be constructed, parameterized by other types. In the examples below `P` represents any of the primitive types above, and `X` and `Y` represent any valid type (even nested compound types):
@@ -509,6 +511,12 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`String`|`>=`|`String`|`Boolean`||
 |`String`|`<`|`String`|`Boolean`||
 |`String`|`<=`|`String`|`Boolean`||
+|`SFile`|`+`|`SFile`|`SFile`|Append SFile paths|
+|`SFile`|`==`|`SFile`|`Boolean`||
+|`SFile`|`!=`|`SFile`|`Boolean`||
+|`SFile`|`+`|`String`|`SFile`||
+|`SFile`|`==`|`String`|`Boolean`||
+|`SFile`|`!=`|`String`|`Boolean`||
 ||`-`|`Float`|`Float`||
 ||`+`|`Float`|`Float`||
 ||`-`|`Int`|`Int`||
@@ -1935,10 +1943,12 @@ WDL values can be created from either JSON values or from native language values
 |         |String-like||
 |         |`String`|Identity coercion|
 |         |`File`||
+|         |`SFile`||
 |`File`   |JSON String|Interpreted as a file path|
 |         |String-like|Interpreted as file path|
 |         |`String`|Interpreted as file path|
 |         |`File`|Identity Coercion|
+|         |`SFile`|Interpreted as file path|
 |`Int`    |JSON Number|Use floor of the value for non-integers|
 |         |Integer-like||
 |         |`Int`|Identity coercion|
@@ -1948,6 +1958,11 @@ WDL values can be created from either JSON values or from native language values
 |`Boolean`|JSON Boolean||
 |         |Boolean-like||
 |         |`Boolean`|Identity coercion|
+|`SFile`    |JSON String|Interpreted as a SFile|
+|         |String-like|Interpreted as a SFile|
+|         |`String`|Interpreted as a SFile|
+|         |`File`|Interpreted as a SFile|
+|         |`SFile`|Identity Coercion|
 |`Array[T]`|JSON Array|Elements must be coercable to `T`|
 |          |Array-like|Elements must be coercable to `T`|
 |`Map[K, V]`|JSON Object|keys and values must be coercable to `K` and `V`, respectively|
@@ -2152,7 +2167,7 @@ The `read_int()` function takes a file path which is expected to contain 1 line 
 
 If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
-## String read_string(String|File)
+## String read_string(String|File|SFile)
 
 The `read_string()` function takes a file path which is expected to contain 1 line with 1 string on it.  This function returns that string.
 
@@ -2361,9 +2376,9 @@ And `/local/fs/tmp/map.json` would contain:
 }
 ```
 
-## Float size(File, [String])
+## Float size(File|SFile, [String])
 
-Given a `File` and a `String` (optional), returns the size of the file in Bytes or in the unit specified by the second argument.
+Given a `File` (or `SFile`) and a `String` (optional), returns the size of the file in Bytes or in the unit specified by the second argument.
 
 ```wdl
 task example {
@@ -2516,6 +2531,7 @@ Primitive Types:
 * Float
 * File
 * Boolean
+* SFile
 
 Compound Types:
 
