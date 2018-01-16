@@ -891,13 +891,15 @@ output {
 ```
 
 
-Globs can be used to define outputs which contain many files.  The glob function generates an array of File outputs:
+Globs can be used to define outputs which might contain zero, one, or many files. The glob function therefore returns an array of File outputs:
 
 ```
 output {
   Array[File] output_bams = glob("*.bam")
 }
 ```
+
+The array of `File`s returned matches the bash evaluation of the glob from the execution directory the context of the bash version installed in the docker image running the task. In other words, it contains the files which would be matched by running `ls <glob>` from the task's execution directory.
 
 ### String Interpolation
 
