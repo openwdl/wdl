@@ -22,6 +22,7 @@
     * [Function Calls](#function-calls)
     * [Array Literals](#array-literals)
     * [Map Literals](#map-literals)
+    * [Object Literals](#object-literals)
     * [Pair Literals](#pair-literals)
   * [Document](#document)
   * [Import Statements](#import-statements)
@@ -611,6 +612,43 @@ Maps values can be specified using a similar Python-like sytntax:
 Map[Int, Int] = {1: 10, 2: 11}
 Map[String, Int] = {"a": 1, "b": 2}
 ```
+
+### Object Literals
+
+Object literals are specified similarly to maps, but require an `object` keyword:
+
+```
+Object f = object { 
+  a: 10,
+  b: 11
+}
+```
+
+The object keyword allows the field keys to be specified as identifiers, rather than string literals (eg `a:` rather than `"a":`).
+
+#### Object Coercion from Map
+
+Objects can be coerced from map literals, but beware the following behavioral difference:
+```
+String a = "beware"
+String b = "key"
+String c = "lookup"
+
+# What are the keys to this object?
+Object map_coercion = { 
+  a: 10,
+  b: 11,
+  c: 12
+}
+
+# What are the keys to this object?
+Object object_syntax = object { 
+  a: 10,
+  b: 11,
+  c: 12
+}
+```
+If an `Object` is specified using the object-style `Object map_syntax = object { a: ...` syntax then the keys would are `a`, `b` and `c`. If the `Object` is specified using the map-style `Object map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String beware =`.
 
 ### Pair Literals
 
