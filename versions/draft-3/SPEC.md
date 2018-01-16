@@ -615,7 +615,7 @@ Map[String, Int] = {"a": 1, "b": 2}
 
 ### Object Literals
 
-Object literals are specified similarly to maps, but require an `object` keyword:
+Object literals are specified similarly to maps, but require an `object` keyword immediately before the `{`:
 
 ```wdl
 Object f = object { 
@@ -624,7 +624,7 @@ Object f = object {
 }
 ```
 
-The object keyword allows the field keys to be specified as identifiers, rather than string literals (eg `a:` rather than `"a":`).
+The `object` keyword allows the field keys to be specified as identifiers, rather than `String` literals (eg `a:` rather than `"a":`).
 
 #### Object Coercion from Map
 
@@ -635,20 +635,21 @@ String b = "key"
 String c = "lookup"
 
 # What are the keys to this object?
-Object map_coercion = { 
+Object object_syntax = object { 
   a: 10,
   b: 11,
   c: 12
 }
 
 # What are the keys to this object?
-Object object_syntax = object { 
+Object map_coercion = { 
   a: 10,
   b: 11,
   c: 12
 }
 ```
-If an `Object` is specified using the object-style `Object map_syntax = object { a: ...` syntax then the keys would are `a`, `b` and `c`. If the `Object` is specified using the map-style `Object map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String beware =`.
+- If an `Object` is specified using the object-style `Object map_syntax = object { a: ...` syntax then the keys would are `a`, `b` and `c`.
+- If an `Object` is specified using the map-style `Object map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
 
 ### Pair Literals
 
