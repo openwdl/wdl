@@ -648,7 +648,7 @@ Object map_coercion = {
   c: 12
 }
 ```
-- If an `Object` is specified using the object-style `Object map_syntax = object { a: ...` syntax then the keys would are `a`, `b` and `c`.
+- If an `Object` is specified using the object-style `Object map_syntax = object { a: ...` syntax then the keys will be `"a"`, `"b"` and `"c"`.
 - If an `Object` is specified using the map-style `Object map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
 
 ### Pair Literals
