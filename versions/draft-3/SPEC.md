@@ -617,7 +617,7 @@ Map[String, Int] = {"a": 1, "b": 2}
 
 Object literals are specified similarly to maps, but require an `object` keyword:
 
-```
+```wdl
 Object f = object { 
   a: 10,
   b: 11
@@ -629,7 +629,7 @@ The object keyword allows the field keys to be specified as identifiers, rather 
 #### Object Coercion from Map
 
 Objects can be coerced from map literals, but beware the following behavioral difference:
-```
+```wdl
 String a = "beware"
 String b = "key"
 String c = "lookup"
