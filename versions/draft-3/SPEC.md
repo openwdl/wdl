@@ -249,7 +249,8 @@ Boolean b = true           # A boolean true/false
 String s = "hello, world"  # A string value
 File f = "path/to/file"    # A file
 SFile u1 = "gs://bucket/file" # URI for Google cloud storage file
-SFile u2 = "/path/to/file"    # URI for local file
+SFile u2 = "path/to/file"    # URI for local file
+SFile u3 = "file:///path/to/file"    # URI for local file 
 ```
 
 In addition, the following compound types can be constructed, parameterized by other types. In the examples below `P` represents any of the primitive types above, and `X` and `Y` represent any valid type (even nested compound types):
@@ -705,6 +706,7 @@ task t {
 ```
 
 #### Input Localization
+##### File localization
 `File` inputs must be treated specially since they require localization to within the execution directory:
 - Files are localized into the execution directory prior to the task execution commencing. 
 - When localizing a `File`, the engine may choose to place the file wherever it likes so long as it accords to these rules:
@@ -712,6 +714,11 @@ task t {
   - Two input files with the same name must be located separately, to avoid name collision.
   - Two input files which originated in the same storage directory must also be localized into the same directory for task execution (see the special case handling for Versioning Filesystems below).
 - When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted into the command string.
+
+##### SFile localization
+`SFile` inputs also follow specific localization rules:
+- If the URI in the SFile is a file mounted on the filesystem (e.g. `file:///home/foo/test.txt` or `/home/foo/test.txt`), then SFiles are localized exactly the same as Files.  See [localization of files](file-localization) above.
+- If the URI points to an object storage URI (e.g. `gs://my-bucket/test.txt` for Google Cloud Storage), SFiles are not localized.
 
 ##### Special Case: Versioning Filesystems
 Two or more versions of a file in a versioning filesystem might have the same name and come from the same directory. In that case the following special procedure must be used to avoid collision:
