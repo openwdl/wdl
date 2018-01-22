@@ -724,26 +724,15 @@ $task_sections = ($command | $runtime | $task_output | $parameter_meta | $meta)+
 
 ### Command Section
 
-```
-$command = 'command' $ws* '{' (0xA | 0xD)* $command_part+ $ws+ '}'
-$command = 'command' $ws* '<<<' (0xA | 0xD)* $command_part+ $ws+ '>>>'
-```
-
-A command is a *task section* that starts with the keyword 'command', and is enclosed in curly braces or `<<<` `>>>`.  The body of the command specifies the literal command line to run with placeholders (`$command_part_var`) for the parts of the command line that needs to be filled in.
+A command is a *task section* that starts with the keyword 'command', and is enclosed in curly braces `{` `}` or triple-angle brackets `<<<` `>>>`.  The body of the command specifies the literal command line to run with placeholders denoted by `${...}` for the parts of the command line that needs to be filled in.
 
 #### Command Parts
 
-```
-$command_part = $command_part_string | $command_part_var
-$command_part_string = ^'${'+
-$command_part_var = '${' $var_option* $expression '}'
-```
+The parser should read characters from the command line until it reaches a `${` character sequence.  This is interpreted as a literal string regardless of its content (ie ignore usual WDL parsing within the `command` block).
 
-The parser should read characters from the command line until it reaches a `${` character sequence.  This is interpreted as a literal string (`$command_part_string`).
+The parser should interpret any variable enclosed in `${`...`}` as an expression which must be filled in using variables available in the task's context.
 
-The parser should interpret any variable enclosed in `${`...`}` as a `$command_part_var`.
-
-The `$expression` usually references declarations at the task level.  For example:
+For example the expression might reference declarations at the task level, like this:
 
 ```wdl
 task test {
@@ -754,9 +743,9 @@ task test {
 }
 ```
 
-In this case `flags` within the `${`...`}` is an expression.  The `$expression` can also be more complex, like a function call: `write_lines(some_array_value)`
+In this case `flags` within the `${...}` is an expression.  The expression can also be more complex, like a function call: `write_lines(some_array_value)`
 
-> **NOTE**: the `$expression` in this context can only evaluate to a primitive type (e.g. not `Array`, `Map`, or `Object`).  The only exception to this rule is when `sep` is specified as one of the `$var_option` fields
+> **NOTE**: the expression in this context must be interpolated as a string in the command. This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Object`). To place an array into the command block a separater character must be specified using `sep` (eg `${sep=", " int_array}`).
 
 As another example, consider how the parser would parse the following command:
 
@@ -766,12 +755,43 @@ grep '${start}...${end}' ${input}
 
 This command would be parsed as:
 
-* `grep '` - command_part_string
-* `${start}` - command_part_var
-* `...` - command_part_string
-* `${end}` - command_part_var
-* `' ` - command_part_string
-* `${input}` - command_part_var
+* `grep '` - literal string
+* `${start}` - lookup expression to the variable `start`
+* `...` - literal string
+* `${end}` - lookup expression to the variable `end`
+* `' ` - literal string
+* `${input}` - lookup expression to the variable `input`
+
+#### Bash Escapes 
+
+Since it is often required to use the same interpolation syntax `${...}` natively within bash scripts, the escape character `\` forces the next character to be interpreted as a character and not considered part of an interpolation sequence. For example consider the difference between this:
+```wdl
+task foo {
+  String hi
+  command {
+    echo ${hi}
+  }
+}
+```
+
+And the escaped version:
+```wdl
+task foo {
+  command {
+    EXPORT hi=hello
+    echo \${hi\}
+  }
+}
+```
+
+Notice that the closing `}` must also be escaped to avoid the character closing the command block. An alternative to this second escape would be to use the `<<<`...`>>>` syntax:
+```wdl
+task foo {
+  command <<<
+    EXPORT hi=hello
+    echo \${hi}
+  >>>
+}
 
 #### Command Part Options
 
