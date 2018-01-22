@@ -793,6 +793,7 @@ task foo {
     echo \${hi}
   >>>
 }
+```
 
 #### Command Part Options
 
