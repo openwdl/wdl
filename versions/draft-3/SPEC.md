@@ -24,6 +24,7 @@
     * [Map Literals](#map-literals)
     * [Pair Literals](#pair-literals)
   * [Document](#document)
+  * [Versioning](#versioning)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
     * [Input Declarations](#input-declarations)
@@ -644,7 +645,7 @@ For portability purposes it is critical that WDL documents be versioned so an en
 version draft-3
 ```
 
-All WDL documents must have exactly one `version` statement. Any WDL document which does not have a `version` field may be treated as `draft-2`, however an implementation may choose to also support non-backwards incompatible changes which have made subsequent to `draft-2`.  
+All WDL documents must have exactly one `version` statement. Any WDL document which does not have a `version` field must be treated as `draft-2`.  
 
 ## Import Statements
 
