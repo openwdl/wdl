@@ -636,6 +636,16 @@ $document = ($import | $task | $workflow)+
 
 `$document` is the root of the parse tree and it consists of one or more import statement, task, or workflow definition
 
+## Versioning
+
+For portability purposes it is critical that WDL documents be versioned so an engine knows how to process it. A WDL document is versioned with a `version` statement, for eample
+
+```wdl
+version draft-3
+```
+
+All WDL documents must have exactly one `version` statement. Any WDL document which does not have a `version` field may be treated as `draft-2`, however an implementation may choose to also support non-backwards incompatible changes which have made subsequent to `draft-2`.  
+
 ## Import Statements
 
 A WDL file may contain import statements to include WDL code from other sources
