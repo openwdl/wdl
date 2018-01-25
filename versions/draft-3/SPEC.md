@@ -679,24 +679,37 @@ Engines should at the very least support the following protocols for import URIs
 
 ## Task Definition
 
-A task is a declarative construct with a focus on constructing a command from a template.  The command specification is interpreted in an engine specific way, though a typical case is that a command is a UNIX command line which would be run in a Docker image.
+A task is a declarative construct with a focus on constructing a command from a template.  The command specification is interpreted in an engine and backend agnostic way. The command is a UNIX bash command line which will be run (ideally in a Docker image).
 
-Tasks also define their outputs, which is essential for building dependencies between tasks.  Any other data specified in the task definition (e.g. runtime information and meta-data) is optional.
+Tasks explicitly define their inputs and outputs which is essential for building dependencies between tasks. 
 
-```
-$task = 'task' $ws+ $identifier $ws* '{' $ws* $declaration* $task_sections $ws* '}'
-```
+To declare a task, use `task name { ... }`.  Inside the curly braces are the following sections:
 
-For example, `task name { ... }`.  Inside the curly braces defines the sections.
+### Task Sections
 
-### Input Declarations
+The task may have the following component sections:
+
+- An `input` section (required if the task will have inputs)
+- Non-input declarations (as many as needed, optional)
+- A `command` section (required)
+- A `runtime` section (optional)
+- An `output` section (required if the task will have outputs)
+- A `meta` section (optional)
+- A `parameter_meta` section (optional)
+
+### Inputs
+
+#### Input Declaration
 
 Tasks declare inputs within the task block. For example:
 ```wdl
 task t {
-  Int i
-  File f
-  [...]
+  input {
+    Int i
+    File f
+  }
+  
+  # [... other task sections]
 }
 ```
 
@@ -716,51 +729,47 @@ Two or more versions of a file in a versioning filesystem might have the same na
 
 For example imagine two versions of file `fs://path/to/A.txt` are being localized (labelled version `1.0` and `1.1`). The first might be localized as `/execution_dir/path/to/A.txt`. The second must then be placed in `/execution_dir/path/to/1.1/A.txt`
 
-### Sections
+### Non-Input Declarations
 
-The task has one or more sections:
+A task can have declarations which are intended as intermediate values rather than inputs. These declarations can be based on input values and can be used within the command section. 
 
+For example, this task takes a single `inputs` `Object` but writes it to a JSON file which can then be used by the command:
+
+```wdl
+task t {
+  input {
+    Object inputs
+  }
+  File objects_json = write_json(inputs)
+  
+  # [... other task sections]
+}
 ```
-$task_sections = ($command | $runtime | $task_output | $parameter_meta | $meta)+
-```
-
-> *Additional requirement*: Exactly one `$command` section needs to be defined, preferably as the first section.
 
 ### Command Section
 
-```
-$command = 'command' $ws* '{' (0xA | 0xD)* $command_part+ $ws+ '}'
-$command = 'command' $ws* '<<<' (0xA | 0xD)* $command_part+ $ws+ '>>>'
-```
-
-A command is a *task section* that starts with the keyword 'command', and is enclosed in curly braces or `<<<` `>>>`.  The body of the command specifies the literal command line to run with placeholders (`$command_part_var`) for the parts of the command line that needs to be filled in.
+A command is a *task section* that starts with the keyword 'command', and is enclosed in either curly braces `{ ... }` or triple angle braces `<<< ... >>>`.  The body of the command specifies a bash command line to run with placeholders for the parts of the command line that need to be filled in.
 
 #### Command Parts
 
-```
-$command_part = $command_part_string | $command_part_var
-$command_part_string = ^'${'+
-$command_part_var = '${' $var_option* $expression '}'
-```
+WDL considers everything within the command section as a literal string with the exception of interpolated command sections denoted by `${...}`. The content enclosed in `${...}` within the command section provides an expression to evaluate, with the result included in-place in the command string.
 
-The parser should read characters from the command line until it reaches a `${` character sequence.  This is interpreted as a literal string (`$command_part_string`).
-
-The parser should interpret any variable enclosed in `${`...`}` as a `$command_part_var`.
-
-The `$expression` usually references declarations at the task level.  For example:
+The expression is able to reference inputs or declarations at the task level. For example:
 
 ```wdl
 task test {
-  String flags
+  input {
+    String flags
+  }
   command {
     ps ${flags}
   }
 }
 ```
 
-In this case `flags` within the `${`...`}` is an expression.  The `$expression` can also be more complex, like a function call: `write_lines(some_array_value)`
+In this case `flags` within the `${`...`}` is a simple variable lookup expression to the `flags` input. The expression can be more complex, for example including an inline function call: `write_lines(some_array_value)`.
 
-> **NOTE**: the `$expression` in this context can only evaluate to a primitive type (e.g. not `Array`, `Map`, or `Object`).  The only exception to this rule is when `sep` is specified as one of the `$var_option` fields
+> **NOTE**: the expression in this context can only evaluate to a primitive type (e.g. not `Array`, `Map`, or `Object`).  The only exception to this rule is when `sep` is specified as one of the `$var_option` fields
 
 As another example, consider how the parser would parse the following command:
 
@@ -826,7 +835,9 @@ This specifies the default value if no other value is specified for this paramet
 
 ```
 task default_test {
-  String? s
+  input {
+    String? s
+  }
   command {
     ./my_cmd ${default="foobar" s}
   }
@@ -846,7 +857,9 @@ Sometimes a command is sufficiently long enough or might use `{` characters that
 
 ```wdl
 task heredoc {
-  File in
+  input {
+    File in
+  }
 
   command<<<
   python <<CODE
@@ -926,8 +939,10 @@ Within tasks, any string literal can use string interpolation to access the valu
 
 ```wdl
 task example {
-  String prefix
-  File bam
+  input {
+    String prefix
+    File bam
+  }
   command {
     python analysis.py --prefix=${prefix} ${bam}
   }
@@ -968,8 +983,9 @@ Since values are expressions, they can also reference variables in the task:
 
 ```wdl
 task test {
-  String ubuntu_version
-
+  input {
+    String ubuntu_version
+  }
   command {
     python script.py
   }
@@ -987,8 +1003,9 @@ Location of a Docker image for which this task ought to be run.  This can have a
 
 ```wdl
 task docker_test {
-  String arg
-
+  input {
+    String arg
+  }
   command {
     python process.py ${arg}
   }
@@ -1007,7 +1024,9 @@ Memory requirements for this task.  Two kinds of values are supported for this a
 
 ```wdl
 task memory_test {
-  String arg
+  input {
+    String arg
+  }
 
   command {
     python process.py ${arg}
@@ -1052,9 +1071,10 @@ task hello_world {
 
 ```wdl
 task one_and_one {
-  String pattern
-  File infile
-
+  input {
+    String pattern
+    File infile
+  }
   command {
     grep ${pattern} ${infile}
   }
@@ -1068,11 +1088,12 @@ task one_and_one {
 
 ```wdl
 task runtime_meta {
-  String memory_mb
-  String sample_id
-  String param
-  String sample_id
-
+  input {
+    String memory_mb
+    String sample_id
+    String param
+    String sample_id
+  }
   command {
     java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
   }
@@ -1098,12 +1119,13 @@ task runtime_meta {
 
 ```wdl
 task bwa_mem_tool {
-  Int threads
-  Int min_seed_length
-  Int min_std_max_min
-  File reference
-  File reads
-
+  input {
+    Int threads
+    Int min_seed_length
+    Int min_std_max_min
+    File reference
+    File reads
+  }
   command {
     bwa mem -t ${threads} \
             -k ${min_seed_length} \
@@ -1130,7 +1152,9 @@ The 'docker' portion of this task definition specifies which that this task must
 
 ```wdl
 task wc2_tool {
-  File file1
+  input {
+    File file1
+  }
   command {
     wc ${file1}
   }
@@ -1140,7 +1164,9 @@ task wc2_tool {
 }
 
 workflow count_lines4_wf {
-  Array[File] files
+  input {
+    Array[File] files
+  }
   scatter(f in files) {
     call wc2_tool {
       input: file1=f
@@ -1170,9 +1196,10 @@ Task definition would look like this:
 
 ```wdl
 task tmap_tool {
-  Array[String] stages
-  File reads
-
+  input {
+    Array[String] stages
+    File reads
+  }
   command {
     tmap mapall ${sep=' ' stages} < ${reads} > output.sam
   }
@@ -1191,24 +1218,173 @@ For this particular case where the command line is *itself* a mini DSL, The best
 
 ## Workflow Definition
 
-```
-$workflow = 'workflow' $ws* '{' $ws* $workflow_element* $ws* '}'
-$workflow_element = $call | $loop | $conditional | $declaration | $scatter | $parameter_meta | $meta
-```
-
-A workflow is defined as the keyword `workflow` and the body being in curly braces.
+A workflow is declared using the keyword `workflow` followed by the workflow name and the workflow body in curly braces.
 
 An example of a workflow that runs one task (not defined here) would be:
 
 ```wdl
 workflow wf {
-  Array[File] files
-  Int threshold
-  Map[String, String] my_map
-
-  call analysis_job {
-    input: search_paths=files, threshold=threshold, gender_lookup=my_map
+  input {
+    Array[File] files
+    Int threshold
+    Map[String, String] my_map
   }
+  call analysis_job {
+    input: search_paths = files, threshold = threshold, gender_lookup = my_map
+  }
+}
+```
+
+### Workflow Elements
+
+A workflow may have the following elements:
+
+* An `input` section (required if the workflow is to have inputs)
+* Intermediate declarations (as many as needed, optional)
+* Calls to tasks or subworkflows (as many as needed, optional)
+* Scatter blocks (as many as needed, optional)
+* If blocks (as many as needed, optional)
+* An `output` section (required if the workflow is to have outputs)
+* A `meta` section (optional)
+* A `parameter_meta` section (optional)
+
+### Inputs
+
+As with tasks, a workflow must declare its inputs in an `input` section, like this:
+```wdl
+workflow w {
+  input {
+    Int i
+    String s
+  }
+}
+```
+
+#### Optional Inputs
+
+An optional input is specified like this:
+
+```wdl
+workflow foo {
+  input {
+    Int? x
+    File? y
+  }
+  # ... remaining workflow content
+}
+```
+
+In these situations, a value may or may not be provided for this input. The following would all be valid input files for the above workflow:
+- No inputs:
+
+```json
+{ }
+```
+- Only x:
+```json
+{
+  "x": 100
+}
+```
+- Only y:
+```json
+{
+  "x": null,
+  "y": "/path/to/file"
+}
+```
+- x and y:
+```json
+{
+  "x": 1000,
+  "y": "/path/to/file"
+}
+```
+
+#### Declared Inputs: Defaults and Overrides
+
+Tasks and workflows can have default values built-in via expressions, like this:
+```wdl
+workflow foo {
+  input {
+    Int x = 5
+  }
+  ...
+}
+```
+
+```wdl
+task foo {
+  input {
+    Int x = 5
+  }
+  ...
+}
+```
+
+In this case, `x` should be considered an optional input to the task or workflow, but unlike optional inputs without defaults, the type can be `Int` rather than `Int?`. If an input is provided, that value should be used. If no input value for x is provided then the default expression is evaluated and used.
+
+Note that to be considered an optional input, the default value must be provided within the `input` section. If the declaration is in the main body of the workflow it is considered an intermediate value and is not overridable. For example below, the `Int x` is an input whereas `Int y` is not. 
+```wdl
+workflow foo {
+  input {
+    Int x = 10
+  }
+  call my_task as t1 { input: int_in = x }
+  Int y = my_task.out
+  call my_task as t2 { input: int_in = y }
+}
+```
+
+Note that it is still possible to override intermediate expressions via optional inputs if that's important to the workflow author. A modified version of the above workflow demonstrates this:
+```wdl
+workflow foo {
+  input {
+    Int x = 10
+    Int y = my_task.out
+  }
+
+  call my_task as t1 { input: int_in = x }
+  call my_task as t2 { input: int_in = y }
+}
+```
+Note that the control flow of the workflow changes depending on whether the value `Int y` is provided:
+
+* If an input value is provided for `y` then it receives that value immediately and `t2` may start running as soon as the workflow starts.
+* In no input value is provided for `y` then it will need to wait for `t1` to complete before it is assigned.
+
+
+##### Optional inputs with defaults
+It *is* possible to provide a default to an optional input type:
+```wdl
+input {
+  String? s = "hello"
+}
+```
+Since the expression is static, this is interpreted as a `String?` value that is set by default, but can be overridden in the inputs file, just like above. Note that if you give a value an optional type like this then you can only use this value in calls or expressions that can handle optional inputs. Here's an example:
+```wdl
+workflow foo {
+  String? s = "hello"
+  call valid { input: s_maybe = s }
+
+  # This would cause a validation error. Cannot use String? for a String input:
+  call invalid { input: s_definitely = s }
+}
+
+task valid {
+  String? s_maybe
+  ...
+}
+
+task invalid {
+  String s_definitely
+}
+```
+
+The rational for this is that a user may want to provide the following input file to alter how `valid` is called, and such an input would invalidate the call to `invalid` since it is unable to accept optional values:
+```json
+{
+  "foo.s": null
 }
 ```
 
@@ -1258,7 +1434,9 @@ task task1 {
   }
 }
 task task2 {
-  File foobar
+  input {
+    File foobar
+  }
   command {
     python do_stuff2.py ${foobar}
   }
@@ -1271,6 +1449,26 @@ workflow wf {
   call task2 {
     input: foobar=task1.results
   }
+}
+```
+
+#### Call Input Blocks
+
+As mentioned above, call inputs should be provided via call inputs (`call my_task { input: x = 5 }`), or else they will become workflow inputs (`"my_workflow.my_task.x": 5`) and prevent the workflow from being composed as a subworkflow.
+In situations where both are supplied (ie the workflow specifies a call input, and the user tries to supply the same input via an input file), the workflow submission should be rejected because the user has supplied an unexpected input. 
+
+The reasoning for this is that the input value is an intrinsic part of the workflow's control flow and that changing it via an input is inherently dangerous to the correct working of the workflow. 
+
+As always, if the author chooses to allow it, values provided as inputs can be overridden if they're declared in the `input` block:
+```wdl
+workflow foo {
+  input {
+    # This input `my_task_int_in` is usually based on a task output, unless it's overridden in the input set:
+    Int my_task_int_in = some_preliminary_task.int_out
+  }
+  
+  call some_preliminary_task
+  call my_task { input: my_task_int_in = x) }
 }
 ```
 
@@ -1295,7 +1493,9 @@ workflow main_workflow {
 `sub_wdl.wdl`
 ```
 task hello {
-  String addressee
+  input {
+    String addressee
+  }
   command {
     echo "Hello ${addressee}!"
   }
@@ -1308,8 +1508,9 @@ task hello {
 }
 
 workflow wf_hello {
-  String wf_hello_input
-  
+  input {
+    String wf_hello_input
+  }
   call hello {input: addressee = wf_hello_input }
   
   output {
@@ -1356,6 +1557,7 @@ $conditional = 'if' '(' $expression ')' '{' $workflow_element* '}'
 Conditionals only execute the body if the expression evaluates to true.
 
 * When a call's output is referenced outside the same containing `if` it will need to be handled as an optional type. E.g.
+
 ```wdl
 workflow foo {
   # Call 'x', producing a Boolean output:
@@ -1375,7 +1577,9 @@ workflow foo {
   call z { input: optional_int = y_out_maybe }
 }
 ```
+
 * Optional types can be coalesced by using the `select_all` and `select_first` array functions:
+
 ```wdl
 workflow foo {
   Array[Int] scatter_range = [1, 2, 3, 4, 5]
@@ -1399,9 +1603,10 @@ workflow foo {
 * When conditional blocks are nested, referenced outputs are only ever single-level conditionals (i.e. we never produce `Int??` or deeper):
 ```wdl
 workflow foo {
-  Boolean b
-  Boolean c
-
+  input {
+    Boolean b
+    Boolean c
+  }
   if(b) {
     if(c) {
       call x
@@ -1461,7 +1666,9 @@ e.g:
 
 ```
 task t {
-  Int i
+  input {
+    Int i
+  }
   command {
     # do something
   }
@@ -1471,8 +1678,9 @@ task t {
 }
 
 workflow w {
-  String w_input = "some input"
-  
+  input {
+    String w_input = "some input"
+  }
   call t
   call t as u
   
@@ -1501,8 +1709,9 @@ task t {
 }
 
 workflow w {
-  Array[Int] arr = [1, 2]
-  
+  input {
+    Array[Int] arr = [1, 2]
+  }
   scatter(i in arr) {
     call t
   }
@@ -1577,18 +1786,22 @@ Scopes are defined as:
 
 Inside of any scope, variables may be [declared](#declarations).  The variables declared in that scope are visible to any sub-scope, recursively.  For example:
 
-```
+```wdl
 task my_task {
-  Int x
-  File f
+  input {
+    Int x
+    File f
+  }
   command {
     my_cmd --integer=${var} ${f}
   }
 }
 
 workflow wf {
-  Array[File] files
-  Int x = 2
+  input {
+    Array[File] files
+    Int x = 2
+  }
   scatter(file in files) {
     Int x = 3
     call my_task {
@@ -1608,13 +1821,14 @@ workflow wf {
 * `?` means that the parameter is optional.  A user does not need to specify a value for the parameter in order to satisfy all the inputs to the workflow.
 * `+` applies only to `Array` types and it represents a constraint that the `Array` value must containe one-or-more elements.
 
-```
+```wdl
 task test {
-  Array[File]  a
-  Array[File]+ b
-  Array[File]? c
-  #File+ d <-- can't do this, + only applies to Arrays
-
+  input {
+    Array[File]  a
+    Array[File]+ b
+    Array[File]? c
+    #File+ d <-- can't do this, + only applies to Arrays
+  }
   command {
     /bin/mycmd ${sep=" " a}
     /bin/mycmd ${sep="," b}
@@ -1671,7 +1885,9 @@ Sometimes, optional parameters need a string prefix.  Consider this task:
 
 ```wdl
 task test {
-  String? val
+  input {
+    String? val
+  }
   command {
     python script.py --val=${val}
   }
@@ -1702,7 +1918,9 @@ The `scatter` block is meant to parallelize a series of identical tasks but give
 
 ```wdl
 task inc {
-  Int i
+  input {
+    Int i
+  }
 
   command <<<
   python -c "print(${i} + 1)"
@@ -1728,7 +1946,9 @@ Any task that's downstream from the call to `inc` and outside the scatter block 
 
 ```wdl
 task inc {
-  Int i
+  input {
+    Int i
+  }
 
   command <<<
   python -c "print(${i} + 1)"
@@ -1740,12 +1960,12 @@ task inc {
 }
 
 task sum {
-  Array[Int] ints
-
+  input {
+    Array[Int] ints
+  }
   command <<<
   python -c "print(${sep="+" ints})"
   >>>
-
   output {
     Int sum = read_int(stdout())
   }
@@ -1766,7 +1986,9 @@ However, from inside the scope of the scatter block, the output of `call inc` is
 
 ```wdl
 workflow wf {
-  Array[Int] integers = [1,2,3,4,5]
+  input {
+    Array[Int] integers = [1,2,3,4,5]
+  }
   scatter(i in integers) {
     call inc {input: i=i}
     call inc as inc2 {input: i=inc.incremented}
@@ -1775,7 +1997,7 @@ workflow wf {
 }
 ```
 
-In this example, `inc` and `inc2` are being called in serial where the output of one is fed to another.  inc2 would output the array `[3,4,5,6,7]`
+In this example, `inc` and `inc2` are being called in serial where the output of one is fed to another. inc2 would output the array `[3,4,5,6,7]`
 
 # Variable Resolution
 
@@ -1787,7 +2009,9 @@ Inside a task, resolution is trivial: The variable referenced MUST be a [declara
 
 ```wdl
 task my_task {
-  Array[String] strings
+  input {
+    Array[String] strings
+  }
   command {
     python analyze.py --strings-file=${write_lines(strings)}
   }
@@ -1802,8 +2026,10 @@ In a workflow, resolution works by traversing the scope heirarchy starting from 
 
 ```wdl
 workflow wf {
-  String s = "wf_s"
-  String t = "t"
+  input {
+    String s = "wf_s"
+    String t = "t"
+  }
   call my_task {
     String s = "my_task_s"
     input: in0 = s+"-suffix", in1 = t+"-suffix"
@@ -1815,42 +2041,44 @@ In this example, there are two expressions: `s+"-suffix"` and `t+"-suffix"`.  `s
 
 # Computing Inputs
 
-Both tasks and workflows have a typed inputs that must be satisfied in order to run.  The following sections describe how to compute inputs for `task` and `workflow` declarations
+Both tasks and workflows have a typed inputs that must be satisfied in order to run.  The following sections describe how to compute inputs for `task` and `workflow` declarations.
 
 ## Task Inputs
 
-Tasks define all their inputs as declarations at the top of the task definition.
+Tasks define all their inputs as declarations within the `input` section. Any non-input declarations are not inputs to the task and therefore cannot be overridden.
 
 ```wdl
 task test {
-  String s
-  Int i
-  Float f
-
+  input {
+    Int i
+    Float f
+  }
+  String s = "${i}"
+  
   command {
-    ./script.sh -i ${i} -f ${f}
+    ./script.sh -i ${s} -f ${f}
   }
 }
 ```
 
-In this example, `s`, `i`, and `f` are inputs to this task.  Even though the command line does not reference `${s}`.  Implementations of WDL engines may display a warning or report an error in this case, since `s` isn't used.
+In this example, `i`, and `f` are inputs to this task even though `i` is not directly used in the command section. In comparison, `s` is an input even though the command line references it.
 
 ## Workflow Inputs
 
-Workflows have declarations, like tasks, but a workflow must also account for all calls to sub-tasks when determining inputs.
+Workflows have inputs, just like tasks. Inputs to the workflow are provided as a key/value map where the key is of the form `workflow_name.input_name`.
 
-Workflows also return their inputs as fully qualified names.  Tasks only return the names of the variables as inputs (as they're guaranteed to be unique within a task).  However, since workflows can call the same task twice, names might collide.  The general algorithm for computing inputs going something like this:
+* If a workflow is to be used as a sub-workflow it must ensure that all of the inputs to its calls are satisfied.
+* If a workflow will only ever be submitted as a top-level workflow, it may optionally leave its tasks' inputs unsatisfied. This then forces the engine to additionally supply those inputs at run time. In this case, the inputs' names must be qualified in the inputs as `workflow_name.task_name.input_name`.
 
-* Take all inputs to all `call` statements in the workflow
-* Subtract out all inputs that are satisfied through the `input: ` section
-* Add in all declarations which don't have a static value defined
 
 Consider the following workflow:
 
 ```wdl
 task t1 {
-  String s
-  Int x
+  input {
+    String s
+    Int x
+  }
 
   command {
     ./script --action=${s} -x${x}
@@ -1861,9 +2089,11 @@ task t1 {
 }
 
 task t2 {
-  String s
-  Int t
-  Int x
+  input {
+    String s
+    Int t
+    Int x
+  }
 
   command {
     ./script2 --action=${s} -x${x} --other=${t}
@@ -1874,8 +2104,10 @@ task t2 {
 }
 
 task t3 {
-  Int y
-  File ref_file # Do nothing with this
+  input {
+    Int y
+    File ref_file # Do nothing with this
+  }
 
   command {
     python -c "print(${y} + 1)"
@@ -1886,16 +2118,17 @@ task t3 {
 }
 
 workflow wf {
-  Int int_val
-  Int int_val2 = 10
-  Array[Int] my_ints
-  File ref_file
-
+  input {
+    Int int_val
+    Int int_val2 = 10
+    Array[Int] my_ints
+    File ref_file
+  }
   call t1 {
-    input: x=int_val
+    input: x = int_val
   }
   call t2 {
-    input: x=int_val, t=t1.count
+    input: x = int_val, t=t1.count
   }
   scatter(i in my_ints) {
     call t3 {
@@ -1913,9 +2146,13 @@ The inputs to `wf` would be:
 * `wf.my_ints` as an `Array[Int]`
 * `wf.ref_file` as a `File`
 
+Note that because some call inputs are left unsatisfied, this workflow could not be used as a sub-workflow. To fix that, additional workflow inputs could be added to pass-through `t1.s` and `t2.s`.
+
 ## Specifying Workflow Inputs in JSON
 
-Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow.  Workflow inputs are specified in JSON or YAML format.  In JSON, the inputs to the workflow in the previous section can be:
+Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow.  Workflow inputs are specified as key/value pairs. The mapping from JSON or YAML values to WDL values is codified in the [serialization of task inputs](#serialization-of-task-inputs) section. 
+
+In JSON, the inputs to the workflow in the previous section might be:
 
 ```
 {
@@ -1927,130 +2164,7 @@ Once workflow inputs are computed (see previous section), the value for each of 
 }
 ```
 
-It's important to note that the type in JSON must be coercable to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "3"`, this coercion from string to integer is not valid and would result in a type error.  See the section on [Type Coercion](#type-coercion) for more details.
-
-## Optional Inputs
-
-An optional input is specified like this:
-```wdl
-workflow foo {
-  Int? x
-  File? y
-  ...
-}
-```
-In these situations, a value may or may not be provided for this input. Eg the following would all be valid input files for the above workflow:
-- No inputs:
-```json
-{ }
-```
-- Only x:
-```json
-{
-  "x": 100
-}
-```
-- Only y:
-```json
-{
-  "y": "/path/to/file"
-}
-```
-- x and y:
-```json
-{
-  "x": 1000,
-  "y": "/path/to/file"
-}
-```
-
-## Declared Inputs: Defaults and Overrides
-
-Tasks and workflows can have default values built-in via expressions, like this:
-```wdl
-workflow foo {
-  Int x = 5
-  ...
-}
-```
-
-```wdl
-task foo {
-  Int x = 5
-  ...
-}
-```
-
-In this case, `x` should be considered an optional input to the task or workflow, but unlike optional inputs without defaults, the type can be `Int` rather than `Int?`. If an input is provided, that value should be used. If no input value for x is provided then the default expression is evaluated and used.
-
-One restriction on this applies: to be considered an optional input, the default value must be a static expression. If the expression depends on previously computed values then the declaration is considered an intermediate value and not a workflow or task input. In the workflow below `x` is an optional input to the workflow and `y` is an intermediate declaration that cannot be overridden by inputs. The reasoning for this is that it is an intrinsic part of the workflow's control flow and changing it via an input is inherently dangerous to the correct working of the workflow.
-```wdl
-workflow foo {
-  Int x = 10
-  call my_task as t1 { input: int_in = x }
-  Int y = my_task.out
-  call my_task as t2 { input: int_in = y }
-}
-```
-Note that it is still possible to override intermediate expressions via optional inputs if that's important to the workflow author. A modified version of the above workflow demonstrates this:
-```wdl
-workflow foo {
-  Int? y_override
-  Int x = 10
-  call my_task as t1 { input: int_in = x }
-
-  # If the y_override is provided, use it, otherwise default to my_task.out:
-  Int y = select_first([y_override, my_task.out])
-  call my_task as t2 { input: int_in = y }
-}
-```
-
-### Optional inputs with defaults
-It's possible to provide a default to an optional input type:
-```wdl
-String? s = "hello"
-```
-Since the expression is static, this is interpreted as a `String?` value that is set by default, but can be overridden in the inputs file, just like above. Note that if you give a value an optional type like this then you can only use this value in calls or expressions that can handle optional inputs. Here's an example:
-```wdl
-workflow foo {
-  String? s = "hello"
-  call valid { input: s_maybe = s }
-
-  # This would cause a validation error. Cannot use String? for a String input:
-  call invalid { input: s_definitely = s }
-}
-
-task valid {
-  String? s_maybe
-  ...
-}
-
-task invalid {
-  String s_definitely
-}
-```
-
-The rational for this is that a user may want to provide the following input file to alter how `valid` is called, and such an input would invalidate the call to `invalid` since it is unable to accept optional values:
-```json
-{
-  "foo.s": null
-}
-```
-
-## Call Input Blocks
-
-As mentioned above, call inputs can be provided via call inputs (`call my_task { input: x = 5 }`), or else they become workflow inputs (`"my_workflow.my_task.x": 5`). In situations where both are supplied (ie the workflow specifies a call input, and the user tries to supply the same input via an input file), the workflow submission should be rejected because the user has supplied an unexpected input. 
-
-The reasoning for this is the same as above: that the input value it is an intrinsic part of the workflow's control flow and changing it via an input is inherently dangerous to the correct working of the workflow. 
-
-However, just like above, it's always possible to allow call-input overrides from user inputs:
-```wdl
-workflow foo {
-  Int x = ... # could depend on multiple task and workflow steps to compute
-  Int? x_override
-  call my_task { input: int_in = select_first([x_override, x]) }
-}
-```
+It's important to note that the type in JSON must be coercable to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "three"`, this coercion from string to integer is not valid and would result in a coercion error.  See the section on [Type Coercion](#type-coercion) for more details.
 
 # Type Coercion
 
