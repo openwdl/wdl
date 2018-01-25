@@ -154,8 +154,10 @@ WDL is meant to be a *human readable and writable* way to express tasks and work
 
 ```wdl
 task hello {
-  String pattern
-  File in
+  input {
+    String pattern
+    File in
+  }
 
   command {
     egrep '${pattern}' '${in}'
@@ -203,7 +205,9 @@ A simple workflow that runs this task in parallel would look like this:
 
 ```wdl
 workflow example {
-  Array[File] files
+  input {
+    Array[File] files
+  }
   scatter(path in files) {
     call hello {input: in=path}
   }
@@ -298,7 +302,9 @@ A fully qualified name is the unique identifier of any particular `call` or call
 other.wdl
 ```wdl
 task foobar {
-  File in
+  input {
+    File in
+  }
   command {
     sh setup.sh ${in}
   }
@@ -390,7 +396,9 @@ A declaration may also refer to elements that are outputs of tasks.  For example
 
 ```wdl
 task test {
-  String var
+  input {
+    String var
+  }
   command {
     ./script ${var}
   }
@@ -400,7 +408,9 @@ task test {
 }
 
 task test2 {
-  Array[String] array
+  input {
+    Array[String] array
+  }
   command {
     ./script ${write_lines(array)}
   }
@@ -578,9 +588,10 @@ The syntax `x.y` refers to member access.  `x` must be an object or task in a wo
 
 ```wdl
 workflow wf {
-  Object obj
-  Object foo
-
+  input {
+    Object obj
+    Object foo
+  }
   # This would cause a syntax error,
   # because foo is defined twice in the same namespace.
   call foo {
@@ -667,8 +678,9 @@ import "http://example.com/lib/stdlib"
 
 
 workflow wf {
-  File bam_file
-
+  input {
+    File bam_file
+  }
   # file_size is from "http://example.com/lib/stdlib"
   call stdlib.file_size {
     input: file=bam_file
@@ -1372,20 +1384,27 @@ input {
 Since the expression is static, this is interpreted as a `String?` value that is set by default, but can be overridden in the inputs file, just like above. Note that if you give a value an optional type like this then you can only use this value in calls or expressions that can handle optional inputs. Here's an example:
 ```wdl
 workflow foo {
-  String? s = "hello"
+  input {
+    String? s = "hello"
+  }
+  
   call valid { input: s_maybe = s }
-
+  
   # This would cause a validation error. Cannot use String? for a String input:
   call invalid { input: s_definitely = s }
 }
 
 task valid {
-  String? s_maybe
+  input {
+    String? s_maybe
+  }
   ...
 }
 
 task invalid {
-  String s_definitely
+  input {
+    String s_definitely
+  }
 }
 ```
 
@@ -1590,7 +1609,9 @@ workflow foo {
 
 ```wdl
 workflow foo {
-  Array[Int] scatter_range = [1, 2, 3, 4, 5]
+  input {
+    Array[Int] scatter_range = [1, 2, 3, 4, 5]
+  }
   scatter (i in scatter_range) {
     call x { input: i = i }
     if (x.validOutput) {
@@ -2222,8 +2243,10 @@ This task would `grep` through a file and return all strings that matched the pa
 
 ```wdl
 task do_stuff {
-  String pattern
-  File file
+  input {
+    String pattern
+    File file
+  }
   command {
     grep '${pattern}' ${file}
   }
@@ -2245,7 +2268,9 @@ For example, if I write a task that outputs a file to `./results/file_list.tsv`,
 
 ```wdl
 task do_stuff {
-  File file
+  input {
+    File file
+  }
   command {
     python do_stuff.py ${file}
   }
@@ -2269,8 +2294,10 @@ The following task would write a two-column TSV to standard out and that would b
 
 ```wdl
 task do_stuff {
-  String flags
-  File file
+  input {
+    String flags
+    File file
+  }
   command {
     ./script --flags=${flags} ${file}
   }
@@ -2381,7 +2408,9 @@ For example, if I write a task that outputs a file to `./results/file_list.json`
 
 ```wdl
 task do_stuff {
-  File file
+  input {
+    File file
+  }
   command {
     python do_stuff.py ${file}
   }
@@ -2543,7 +2572,9 @@ Given any `Array[Object]`, this will write out a 2+ row, n-column TSV file with 
 
 ```wdl
 task test {
-  Array[Object] in
+  input {
+    Array[Object] in
+  }
   command <<<
     /bin/do_work --obj=${write_objects(in)}
   >>>
@@ -2588,7 +2619,9 @@ Given something with any type, this writes the JSON equivalent to a file.  See t
 
 ```wdl
 task example {
-  Map[String, String] map = {"key1": "value1", "key2": "value2"}
+  input {
+    Map[String, String] map = {"key1": "value1", "key2": "value2"}
+  }
   command {
     ./script --map=${write_json(map)}
   }
@@ -2603,7 +2636,7 @@ If this task were run, the command might look like:
 
 And `/local/fs/tmp/map.json` would contain:
 
-```
+```json
 {
   "key1": "value1"
   "key2": "value2"
@@ -2616,8 +2649,9 @@ Given a `File` and a `String` (optional), returns the size of the file in Bytes 
 
 ```wdl
 task example {
-  File input_file
-  
+  input {
+    File input_file
+  }
   command {
     echo "this file is 22 bytes" > created_file
   }
@@ -2655,10 +2689,11 @@ The sub function will also accept `input` and `replace` parameters that can be c
 Example 2:
 
 ```wdl
-  task example {
-  File input_file = "my_input_file.bam"
-  String output_file_name = sub(input_file, "\\.bam$", ".index") # my_input_file.index
-
+task example {
+  input {
+    File input_file = "my_input_file.bam"
+    String output_file_name = sub(input_file, "\\.bam$", ".index") # my_input_file.index
+  }
   command {
     echo "I want an index instead" > ${output_file_name}
   }
@@ -2791,7 +2826,9 @@ When a task finishes, the `output` section defines how to convert the files and 
 
 ```wdl
 task test {
-  Array[File] files
+  input {
+    Array[File] files
+  }
   command {
     Rscript analysis.R --files=${sep=',' files}
   }
@@ -2813,9 +2850,11 @@ Consider this example:
 
 ```wdl
 task output_example {
-  String s
-  Int i
-  Float f
+  input {
+    String s
+    Int i
+    Float f
+  }
 
   command {
     python do_work.py ${s} ${i} ${f}
@@ -2854,7 +2893,9 @@ The array flattening approach can be done if a parameter is specified as `${sep=
 
 ```wdl
 task test {
-  Array[File] bams
+  input {
+    Array[File] bams
+  }
   command {
     python script.py --bams=${sep=',' bams}
   }
@@ -2877,7 +2918,9 @@ An array may be turned into a file with each element in the array occupying a li
 
 ```wdl
 task test {
-  Array[File] bams
+  input {
+    Array[File] bams
+  }
   command {
     sh script.sh ${write_lines(bams)}
   }
@@ -2912,7 +2955,9 @@ The array may be turned into a JSON document with the file path for the JSON fil
 
 ```wdl
 task test {
-  Array[File] bams
+  input {
+    Array[File] bams
+  }
   command {
     sh script.sh ${write_json(bams)}
   }
@@ -2953,7 +2998,9 @@ The map type can be serialized as a two-column TSV file and the parameter on the
 
 ```wdl
 task test {
-  Map[String, Float] sample_quality_scores
+  input {
+    Map[String, Float] sample_quality_scores
+  }
   command {
     sh script.sh ${write_map(sample_quality_scores)}
   }
@@ -2988,7 +3035,9 @@ The map type can also be serialized as a JSON file and the parameter on the comm
 
 ```wdl
 task test {
-  Map[String, Float] sample_quality_scores
+  input {
+    Map[String, Float] sample_quality_scores
+  }
   command {
     sh script.sh ${write_json(sample_quality_scores)}
   }
@@ -3027,7 +3076,9 @@ An object is a more general case of a map where the keys are strings and the val
 
 ```wdl
 task test {
-  Object sample
+  input {
+    Object sample
+  }
   command {
     perl script.pl ${write_object(sample)}
   }
@@ -3060,7 +3111,9 @@ value1\tvalue2\tvalue3\tvalue4
 
 ```wdl
 task test {
-  Object sample
+  input {
+    Object sample
+  }
   command {
     perl script.pl ${write_json(sample)}
   }
@@ -3102,7 +3155,9 @@ an `Array[Object]` can be serialized using `write_objects()` into a TSV file:
 
 ```wdl
 task test {
-  Array[Object] sample
+  input {
+    Array[Object] sample
+  }
   command {
     perl script.pl ${write_objects(sample)}
   }
@@ -3142,7 +3197,9 @@ an `Array[Object]` can be serialized using `write_json()` into a JSON file:
 
 ```wdl
 task test {
-  Array[Object] sample
+  input {
+    Array[Object] sample
+  }
   command {
     perl script.pl ${write_json(sample)}
   }
@@ -3199,8 +3256,10 @@ For example, if I have a task that outputs a `String` and an `Int`:
 
 ```wdl
 task output_example {
-  String param1
-  String param2
+  input {
+    String param1
+    String param2
+  }
   command {
     python do_work.py ${param1} ${param2} --out1=int_file --out2=str_file
   }
