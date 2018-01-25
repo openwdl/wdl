@@ -75,8 +75,8 @@
   * [Task-Level Resolution](#task-level-resolution)
   * [Workflow-Level Resolution](#workflow-level-resolution)
 * [Computing Inputs](#computing-inputs)
-  * [Task Inputs](#task-inputs)
-  * [Workflow Inputs](#workflow-inputs)
+  * [Computing Task Inputs](#task-inputs)
+  * [Computing Workflow Inputs](#workflow-inputs)
   * [Specifying Workflow Inputs in JSON](#specifying-workflow-inputs-in-json)
   * [Optional Inputs](#optional-inputs)
   * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
@@ -1280,6 +1280,8 @@ workflow w {
 }
 ```
 
+
+
 #### Optional Inputs
 
 An optional input is specified like this:
@@ -2072,7 +2074,7 @@ In this example, there are two expressions: `s+"-suffix"` and `t+"-suffix"`.  `s
 
 Both tasks and workflows have a typed inputs that must be satisfied in order to run.  The following sections describe how to compute inputs for `task` and `workflow` declarations.
 
-## Task Inputs
+## Computing Task Inputs
 
 Tasks define all their inputs as declarations within the `input` section. Any non-input declarations are not inputs to the task and therefore cannot be overridden.
 
@@ -2092,13 +2094,14 @@ task test {
 
 In this example, `i`, and `f` are inputs to this task even though `i` is not directly used in the command section. In comparison, `s` is an input even though the command line references it.
 
-## Workflow Inputs
+## Computing Workflow Inputs
 
-Workflows have inputs, just like tasks. Inputs to the workflow are provided as a key/value map where the key is of the form `workflow_name.input_name`.
+Workflows have inputs that must be satisfied to run them, just like tasks. Inputs to the workflow are provided as a key/value map where the key is of the form `workflow_name.input_name`.
 
 * If a workflow is to be used as a sub-workflow it must ensure that all of the inputs to its calls are satisfied.
 * If a workflow will only ever be submitted as a top-level workflow, it may optionally leave its tasks' inputs unsatisfied. This then forces the engine to additionally supply those inputs at run time. In this case, the inputs' names must be qualified in the inputs as `workflow_name.task_name.input_name`.
 
+Anything declaration that appears outside the `input` section is considered an intermediate value and **not** a workflow input. Any declaration can always be moved inside the `input` block to make it overrideable.
 
 Consider the following workflow:
 
@@ -2153,6 +2156,9 @@ workflow wf {
     Array[Int] my_ints
     File ref_file
   }
+  
+  String not_an_input = "hello"  
+  
   call t1 {
     input: x = int_val
   }
