@@ -639,7 +639,7 @@ $document = ($import | $task | $workflow)+
 
 ## Versioning
 
-For portability purposes it is critical that WDL documents be versioned so an engine knows how to process it. A WDL document is versioned with a `version` statement, for eample
+For portability purposes it is critical that WDL documents be versioned so an engine knows how to process it. From `draft-3` forward, all WDL documents are versioned with a `version` statement, for example
 
 ```wdl
 version draft-3
