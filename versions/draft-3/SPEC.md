@@ -26,8 +26,10 @@
   * [Document](#document)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
-    * [Input Declarations](#input-declarations)
-    * [Sections](#sections)
+    * [Task Sections](#task-sections)
+    * [Task Inputs](#task-inputs)
+      * [Task Input Declaration](#task-input-declaration)
+      * [Task Input Localization](#task-input-localization)
     * [Command Section](#command-section)
       * [Command Parts](#command-parts)
       * [Command Part Options](#command-part-options)
@@ -51,8 +53,14 @@
       * [Example 5: Word Count](#example-5-word-count)
       * [Example 6: tmap](#example-6-tmap)
   * [Workflow Definition](#workflow-definition)
+    * [Workflow Elements](#workflow-elements)
+    * [Workflow Inputs](#workflow-inputs)
+      * [Optional Inputs](#optional-inputs)
+      * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
+        * [Optional inputs with defaults](#optional-inputs-with-defaults)
     * [Call Statement](#call-statement)
-        * [Sub Workflows](#sub-workflows)
+      * [Call Input Blocks](#call-input-blocks)
+      * [Sub Workflows](#sub-workflows)
     * [Scatter](#scatter)
     * [Conditionals](#conditionals)
     * [Parameter Metadata](#parameter-metadata)
@@ -697,9 +705,9 @@ The task may have the following component sections:
 - A `meta` section (optional)
 - A `parameter_meta` section (optional)
 
-### Inputs
+### Task Inputs
 
-#### Input Declaration
+#### Task Input Declaration
 
 Tasks declare inputs within the task block. For example:
 ```wdl
@@ -713,7 +721,7 @@ task t {
 }
 ```
 
-#### Input Localization
+#### Task Input Localization
 `File` inputs must be treated specially since they require localization to within the execution directory:
 - Files are localized into the execution directory prior to the task execution commencing. 
 - When localizing a `File`, the engine may choose to place the file wherever it likes so long as it accords to these rules:
@@ -1248,7 +1256,7 @@ A workflow may have the following elements:
 * A `meta` section (optional)
 * A `parameter_meta` section (optional)
 
-### Inputs
+### Workflow Inputs
 
 As with tasks, a workflow must declare its inputs in an `input` section, like this:
 ```wdl
