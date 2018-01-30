@@ -899,7 +899,7 @@ output {
 }
 ```
 
-The array of `File`s returned matches the bash evaluation of the glob string relative to the task's execution directory. It's evaluated in the context of the bash shell installed in the docker image running the task. In other words, it contains the files which would be matched by running `ls <glob>` in bash from the task's execution directory.
+The array of `File`s returned matches the bash evaluation of the glob string relative to the task's execution directory and in the same order. It's evaluated in the context of the bash shell installed in the docker image running the task. In other words, it contains the same files in the same order as would be matched by running `ls <glob>` in bash from the task's execution directory.
 
 ### String Interpolation
 
