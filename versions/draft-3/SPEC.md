@@ -775,13 +775,13 @@ This command would be parsed as:
 
 #### Command Part Options
 
-```
-$var_option = $var_option_key $ws* '=' $ws* $var_option_value
-$var_option_key = 'sep' | 'true' | 'false' | 'quote' | 'default'
-$var_option_value = $expression
-```
+Command part options are `option="value"` pairs that precede the expression in an expression command part and customize the interpolation of the WDL value into the command string being built. The following options are available:
 
-The `$var_option` is a set of key-value pairs for any additional and less-used options that need to be set on a parameter.
+* `sep` - eg `${sep=", " array_value}`
+* `true` and `false` - eg `${true="--yes" false="--no" boolean_value}`
+* `default` - eg `${default="foo" optional_value}`
+
+Additional explanation for these command part options follows:
 
 ##### sep
 
