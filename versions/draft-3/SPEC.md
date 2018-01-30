@@ -645,7 +645,7 @@ For portability purposes it is critical that WDL documents be versioned so an en
 version draft-3
 ```
 
-Any WDL files which does not have a `version` field must be treated as `draft-2`.  All WDL files used by a workflow must have the same version.  
+Any WDL files which do not have a `version` field must be treated as `draft-2`.  All WDL files used by a workflow must have the same version.  
 
 ## Import Statements
 
