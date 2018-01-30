@@ -639,13 +639,13 @@ $document = ($import | $task | $workflow)+
 
 ## Versioning
 
-For portability purposes it is critical that WDL documents be versioned so an engine knows how to process it. From `draft-3` forward, all WDL documents must have one and only one `version` statement, for example
+For portability purposes it is critical that WDL documents be versioned so an engine knows how to process it. From `draft-3` forward, the first line of all WDL documents must be a `version` statement, for example
 
 ```wdl
 version draft-3
 ```
 
-The `version` statement must be the first line of a WDL document. Any WDL document which does not have a `version` field must be treated as `draft-2`.  
+Any WDL document which does not have a `version` field must be treated as `draft-2`.  
 
 ## Import Statements
 
