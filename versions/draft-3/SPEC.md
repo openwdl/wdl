@@ -904,7 +904,7 @@ output {
 
 The array of `File`s returned is the set of files found by the bash expansion of the glob string relative to the task's execution directory and in the same order. It's evaluated in the context of the bash shell installed in the docker image running the task. 
 
-In other words, you might think of `glob()` as finding all of the files (but not the directories) in the same order as would be matched by running `ls <glob>` in bash from the task's execution directory.
+In other words, you might think of `glob()` as finding all of the files (but not the directories) in the same order as would be matched by running `echo <glob>` in bash from the task's execution directory.
 
 Note that this usually will not include files in nested directories. For example say you have an output `Array[File] txts = glob(*.txt)` and the end result of running your command has produced a directory structure like this:
 ```
@@ -915,7 +915,7 @@ execution_directory
 │   ├── c.txt
 ├── z.txt
 ```
-Then running `ls *.txt` in the execution directory would match `a.txt`, `b.txt` and `z.txt` in that order. So the result of the WDL glob would be `["a.txt", "b.txt", "z.txt"]`. 
+Then running `echo *.txt` in the execution directory would match `a.txt`, `b.txt` and `z.txt` in that order. So the result of the WDL glob would be `["a.txt", "b.txt", "z.txt"]`.
 
 ##### Task portability and non-standard BaSH
 
