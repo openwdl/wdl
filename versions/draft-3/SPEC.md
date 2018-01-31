@@ -143,10 +143,10 @@ WDL is meant to be a *human readable and writable* way to express tasks and work
 ```wdl
 task hello {
   String pattern
-  File in
+  File in_file
 
   command {
-    egrep '${pattern}' '${in}'
+    egrep '${pattern}' '${in_file}'
   }
 
   runtime {
@@ -193,7 +193,7 @@ A simple workflow that runs this task in parallel would look like this:
 workflow example {
   Array[File] files
   scatter(path in files) {
-    call hello {input: in=path}
+    call hello {input: in_file=path}
   }
 }
 ```
@@ -248,9 +248,9 @@ Float f = 27.3             # A floating point number
 Boolean b = true           # A boolean true/false
 String s = "hello, world"  # A string value
 File f = "path/to/file"    # A file
-SFile u1 = "gs://bucket/file" # URI for Google cloud storage file
-SFile u2 = "path/to/file"    # URI for local file
-SFile u3 = "file:///path/to/file"    # URI for local file 
+FileURI u1 = "gs://bucket/file" # URI for Google cloud storage file
+FileURI u2 = "path/to/file"    # URI for local file
+FileURI u3 = "file:///path/to/file"    # URI for local file 
 ```
 
 In addition, the following compound types can be constructed, parameterized by other types. In the examples below `P` represents any of the primitive types above, and `X` and `Y` represent any valid type (even nested compound types):
@@ -277,6 +277,12 @@ For more details on the postfix quantifiers, see the section on [Optional Parame
 
 For more information on type and how they are used to construct commands and define outputs of tasks, see the [Data Types & Serialization](#data-types--serialization) section.
 
+#### Explanation of FileURI
+
+The FileURI represents a File that could be either a local file or a file in an object store.  
+
+Sometimes users do not wish to localize an input file, unless it is on a local filesystem (e.g. the code being run in the task can read an object store directly).  This functionality cannot be replicated with `File` and `String` without changing the WDL itself to accommodate the differing reading paradigms.  The `FileURI` can be used by WDL authors to enable direct reading from object stores when their task supports it.  
+
 ### Fully Qualified Names & Namespaced Identifiers
 
 ```
@@ -289,9 +295,9 @@ A fully qualified name is the unique identifier of any particular `call` or call
 other.wdl
 ```wdl
 task foobar {
-  File in
+  File in_file
   command {
-    sh setup.sh ${in}
+    sh setup.sh ${in_file}
   }
   output {
     File results = stdout()
@@ -512,12 +518,12 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`String`|`>=`|`String`|`Boolean`||
 |`String`|`<`|`String`|`Boolean`||
 |`String`|`<=`|`String`|`Boolean`||
-|`SFile`|`+`|`SFile`|`SFile`|Append SFile paths|
-|`SFile`|`==`|`SFile`|`Boolean`||
-|`SFile`|`!=`|`SFile`|`Boolean`||
-|`SFile`|`+`|`String`|`SFile`||
-|`SFile`|`==`|`String`|`Boolean`||
-|`SFile`|`!=`|`String`|`Boolean`||
+|`FileURI`|`+`|`FileURI`|`FileURI`|Append FileURI paths|
+|`FileURI`|`==`|`FileURI`|`Boolean`||
+|`FileURI`|`!=`|`FileURI`|`Boolean`||
+|`FileURI`|`+`|`String`|`FileURI`||
+|`FileURI`|`==`|`String`|`Boolean`||
+|`FileURI`|`!=`|`String`|`Boolean`||
 ||`-`|`Float`|`Float`||
 ||`+`|`Float`|`Float`||
 ||`-`|`Int`|`Int`||
@@ -715,10 +721,10 @@ task t {
   - Two input files which originated in the same storage directory must also be localized into the same directory for task execution (see the special case handling for Versioning Filesystems below).
 - When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted into the command string.
 
-##### SFile localization
-`SFile` inputs also follow specific localization rules:
-- If the URI in the SFile is a file mounted on the filesystem (e.g. `file:///home/foo/test.txt` or `/home/foo/test.txt`), then SFiles are localized exactly the same as Files.  See [localization of files](file-localization) above.
-- If the URI points to an object storage URI (e.g. `gs://my-bucket/test.txt` for Google Cloud Storage), SFiles are not localized.
+##### FileURI localization
+`FileURI` inputs also follow specific localization rules:
+- If the URI in the FileURI is a file mounted on the filesystem (e.g. `file:///home/foo/test.txt` or `/home/foo/test.txt`), then the File referenced at must be made accessible to the job at execution time by the engine.
+- If the URI points to an object storage URI (e.g. `gs://my-bucket/test.txt` for Google Cloud Storage) then FileURIs are essentially treated as Strings as far as localization.
 
 ##### Special Case: Versioning Filesystems
 Two or more versions of a file in a versioning filesystem might have the same name and come from the same directory. In that case the following special procedure must be used to avoid collision:
@@ -857,11 +863,11 @@ Sometimes a command is sufficiently long enough or might use `{` characters that
 
 ```wdl
 task heredoc {
-  File in
+  File in_file
 
   command<<<
   python <<CODE
-    with open("${in}") as fp:
+    with open("${in_file}") as fp:
       for line in fp:
         if not line.startswith('#'):
           print(line.strip())
@@ -1950,12 +1956,12 @@ WDL values can be created from either JSON values or from native language values
 |         |String-like||
 |         |`String`|Identity coercion|
 |         |`File`||
-|         |`SFile`||
+|         |`FileURI`||
 |`File`   |JSON String|Interpreted as a file path|
 |         |String-like|Interpreted as file path|
 |         |`String`|Interpreted as file path|
 |         |`File`|Identity Coercion|
-|         |`SFile`|Interpreted as file path|
+|         |`FileURI`|Interpreted as file path|
 |`Int`    |JSON Number|Use floor of the value for non-integers|
 |         |Integer-like||
 |         |`Int`|Identity coercion|
@@ -1965,11 +1971,11 @@ WDL values can be created from either JSON values or from native language values
 |`Boolean`|JSON Boolean||
 |         |Boolean-like||
 |         |`Boolean`|Identity coercion|
-|`SFile`    |JSON String|Interpreted as a SFile|
-|         |String-like|Interpreted as a SFile|
-|         |`String`|Interpreted as a SFile|
-|         |`File`|Interpreted as a SFile|
-|         |`SFile`|Identity Coercion|
+|`FileURI`    |JSON String|Interpreted as a FileURI|
+|         |String-like|Interpreted as a FileURI|
+|         |`String`|Interpreted as a FileURI|
+|         |`File`|Interpreted as a FileURI|
+|         |`FileURI`|Identity Coercion|
 |`Array[T]`|JSON Array|Elements must be coercable to `T`|
 |          |Array-like|Elements must be coercable to `T`|
 |`Map[K, V]`|JSON Object|keys and values must be coercable to `K` and `V`, respectively|
@@ -2174,7 +2180,7 @@ The `read_int()` function takes a file path which is expected to contain 1 line 
 
 If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
-## String read_string(String|File|SFile)
+## String read_string(String|File|FileURI)
 
 The `read_string()` function takes a file path which is expected to contain 1 line with 1 string on it.  This function returns that string.
 
@@ -2316,9 +2322,9 @@ Given any `Array[Object]`, this will write out a 2+ row, n-column TSV file with 
 
 ```wdl
 task test {
-  Array[Object] in
+  Array[Object] in_objs
   command <<<
-    /bin/do_work --obj=${write_objects(in)}
+    /bin/do_work --obj=${write_objects(in_objs)}
   >>>
   output {
     File results = stdout()
@@ -2383,9 +2389,9 @@ And `/local/fs/tmp/map.json` would contain:
 }
 ```
 
-## Float size(File|SFile, [String])
+## Float size(File|FileURI, [String])
 
-Given a `File` (or `SFile`) and a `String` (optional), returns the size of the file in Bytes or in the unit specified by the second argument.
+Given a `File` (or `FileURI`) and a `String` (optional), returns the size of the file in Bytes or in the unit specified by the second argument.
 
 ```wdl
 task example {
@@ -2538,7 +2544,7 @@ Primitive Types:
 * Float
 * File
 * Boolean
-* SFile
+* FileURI
 
 Compound Types:
 
