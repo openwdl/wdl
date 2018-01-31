@@ -906,7 +906,7 @@ The array of `File`s returned is the set of files found by the bash expansion of
 
 In other words, you might think of `glob()` as finding all of the files (but not the directories) in the same order as would be matched by running `echo <glob>` in bash from the task's execution directory.
 
-Note that this usually will not include files in nested directories. For example say you have an output `Array[File] a_files = glob(a*)` and the end result of running your command has produced a directory structure like this:
+Note that this usually will not include files in nested directories. For example say you have an output `Array[File] a_files = glob("a*")` and the end result of running your command has produced a directory structure like this:
 ```
 execution_directory
 ├── a1.txt
