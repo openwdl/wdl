@@ -1,0 +1,111 @@
+(Namespace:
+  imports=[],
+  body=[
+    (Task:
+      name=<{0}:1:6 identifier "Z3JlcF93b3Jkcw==">,
+      declarations=[
+        (Declaration:
+          type=<{0}:2:3 type "U3RyaW5n">,
+          name=<{0}:2:10 identifier "c3RhcnQ=">,
+          expression=None
+        ),
+        (Declaration:
+          type=<{0}:3:3 type "RmlsZQ==">,
+          name=<{0}:3:8 identifier "aW5maWxl">,
+          expression=None
+        )
+      ],
+      sections=[
+        (RawCommand:
+          parts=[
+            <{0}:5:12 cmd_part "CiAgICBncmVwICde">,
+            (CommandParameter:
+              attributes=[],
+              expr=<{0}:6:14 identifier "c3RhcnQ=">
+            ),
+            <{0}:6:20 cmd_part "JyA=">,
+            (CommandParameter:
+              attributes=[],
+              expr=<{0}:6:24 identifier "aW5maWxl">
+            ),
+            <{0}:6:31 cmd_part "CiAg">
+          ]
+        ),
+        (Outputs:
+          attributes=[
+            (Output:
+              type=(Type:
+                name=<{0}:9:5 type "QXJyYXk=">,
+                subtype=[
+                  <{0}:9:11 type "U3RyaW5n">
+                ]
+              ),
+              name=<{0}:9:19 identifier "d29yZHM=">,
+              expression=(FunctionCall:
+                name=<{0}:9:27 identifier "cmVhZF9saW5lcw==">,
+                params=[
+                  (FunctionCall:
+                    name=<{0}:9:38 identifier "c3Rkb3V0">,
+                    params=[]
+                  )
+                ]
+              )
+            )
+          ]
+        )
+      ]
+    ),
+    (Workflow:
+      name=<{0}:12:10 identifier "d2Y=">,
+      body=[
+        (Declaration:
+          type=<{0}:13:3 type "RmlsZQ==">,
+          name=<{0}:13:8 identifier "ZGljdGlvbmFyeQ==">,
+          expression=None
+        ),
+        (Call:
+          task=<{0}:15:8 fqn "Z3JlcF93b3Jkcw==">,
+          alias=<{0}:15:22 identifier "Z3JlcF9weXRob25pY193b3Jkcw==">,
+          body=(CallBody:
+            declarations=[],
+            io=[
+              (Inputs:
+                map=[
+                  (IOMapping:
+                    key=<{0}:16:12 identifier "c3RhcnQ=">,
+                    value=<{0}:16:18 string "cHl0aG9uaWM=">
+                  ),
+                  (IOMapping:
+                    key=<{0}:16:30 identifier "aW5maWxl">,
+                    value=<{0}:16:37 identifier "ZGljdGlvbmFyeQ==">
+                  )
+                ]
+              )
+            ]
+          )
+        ),
+        (Call:
+          task=<{0}:18:8 fqn "Z3JlcF93b3Jkcw==">,
+          alias=<{0}:18:22 identifier "Z3JlcF93b3JrZl93b3Jkcw==">,
+          body=(CallBody:
+            declarations=[],
+            io=[
+              (Inputs:
+                map=[
+                  (IOMapping:
+                    key=<{0}:19:12 identifier "c3RhcnQ=">,
+                    value=<{0}:19:18 string "d29ya2Y=">
+                  ),
+                  (IOMapping:
+                    key=<{0}:19:27 identifier "aW5maWxl">,
+                    value=<{0}:19:34 identifier "ZGljdGlvbmFyeQ==">
+                  )
+                ]
+              )
+            ]
+          )
+        )
+      ]
+    )
+  ]
+)
