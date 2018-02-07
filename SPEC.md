@@ -1329,7 +1329,9 @@ import "sub_wdl.wdl" as sub
 
 workflow main_workflow {
 
-    call sub.wf_hello { input: wf_hello_input = "sub world" }
+    String sub_wf_hello_input
+
+    call sub.wf_hello as sub_wf {}
     
     output {
         String main_output = wf_hello.salutation
@@ -1340,9 +1342,10 @@ workflow main_workflow {
 `sub_wdl.wdl`
 ```
 task hello {
+  String greeting
   String addressee
   command {
-    echo "Hello ${addressee}!"
+    echo "${greeting} ${addressee}!"
   }
   runtime {
       docker: "ubuntu:latest"
@@ -1365,7 +1368,15 @@ workflow wf_hello {
 
 Note that because a wdl file can only contain 1 workflow, sub workflows can only be used through imports.
 Otherwise, calling a workflow or a task is equivalent syntactically.
-Inputs are specified and outputs retrieved the same way as they are for task calls.
+Inputs are specified and outputs retrieved the same way as they are for task calls. In addition, inputs can be provided directly to sub workflow calls. For example:
+
+Inputs JSON for `main.wdl`
+```
+{
+  "main_workflow.sub_wf.hello.greeting": "Hello",
+  "main_workflow.sub_wf.wf_hello_input": "world"
+}
+```
 
 ### Scatter
 
