@@ -40,6 +40,7 @@
     * [String Interpolation](#string-interpolation)
     * [Runtime Section](#runtime-section)
       * [docker](#docker)
+    * [Hints Section](#hints-section)
       * [memory](#memory)
     * [Parameter Metadata Section](#parameter-metadata-section)
     * [Metadata Section](#metadata-section)
@@ -938,44 +939,44 @@ Any `${identifier}` inside of a string literal must be replaced with the value o
 
 ### Runtime Section
 
-```
-$runtime = 'runtime' $ws* '{' ($ws* $runtime_kv $ws*)* '}'
-$runtime_kv = $identifier $ws* '=' $ws* $expression
-```
-
-The runtime section defines key/value pairs for runtime information needed for this task.  Individual backends will define which keys they will inspect so a key/value pair may or may not actually be honored depending on how the task is run.
-
-Values can be any expression and it is up to the engine to reject keys and/or values that do not make sense in that context.  For example, consider the following WDL:
-
+The runtime section allows authors to supply values for a known set of runtime information fields which customize the execution of the task in ways which can meaningfully affect the output. The `runtime` section sits alongside `inputs`, the `command` section and the `output` section in a task definition, for example:
 ```wdl
-task test {
+task t {
   command {
-    python script.py
+    [...]
   }
   runtime {
-    docker: ["ubuntu:latest", "broadinstitute/scala-baseimage"]
+    docker: "ubuntu:latest"
+  }
+  output {
+    [...]
   }
 }
 ```
 
-The value for the `docker` runtime attribute in this case is an array of values.  The parser should accept this.  Some engines might interpret it as an "either this image or that image" or could reject it outright.
-
-Since values are expressions, they can also reference variables in the task:
+Attribute values can be any expression so long as they match the expected type for the runtime attribute.
 
 ```wdl
 task test {
-  String ubuntu_version
-
+  String ubuntu = "ubuntu"
+  String latest = "latest"
   command {
     python script.py
   }
   runtime {
-    docker: "ubuntu:" + ubuntu_version
+    docker: ubuntu + ":" + latest
   }
 }
 ```
 
-Most key/value pairs are arbitrary.  However, the following keys have recommended conventions:
+The following set of keys are supported in the `runtime` section for WDL draft 3:
+
+|Key|Type|Default|Description|
+|---|---|---|---|
+|`continue_on_return_code`|`Boolean` or `Integer` or `Array[Integer]`   |0   |If the task exits with a return code specified here, it is considered successful. `true` means that the task always succeeds as long as its command runs to completion. `false` is equivalent to `0` |
+|`fail_on_stderr`|`Boolean`|`false`|If true, the task fails if any content is written to `stderr` by the command. |
+|`docker`|`String?`|`None`|If specified, the `docker` image which this task must be run on. If empty, the task is run without any portable container. To make a WDL fully portable, docker images should be specified using fixed tags or docker hashes.|
+
 
 #### docker
 
@@ -993,6 +994,40 @@ task docker_test {
   }
 }
 ```
+
+### Hints Section
+
+Hints are specified in a `hints` section using the same key/value format as the `runtime` section:
+
+```wdl
+task test {
+  command {
+    python script.py
+  }
+  runtime {
+    docker: "ubuntu:latest"
+  }
+  hints {
+    memory: "256MB"
+  }
+}
+```
+
+
+Hints allow a WDL author to provide recommendations to the engine when running a task. 
+
+* Unlike `runtime` these fields are not specified to indicate *what* a workflow does, but rather to provide hints to the engine about *how* to run a workflow.
+* Also unlike `runtime`, the `hints` section allows arbitrary keys and values beyond the set defined below to allow platform specific collaboration between WDL author and platform.
+* The only requirement on new `hints` from the spec is that no engine may implement a `hint` which materially affects the outcome of the task. These should instead be handled as spec changes for additions to the `runtime` section.
+* It is intended that over time the number of fields that an author places in the `hints` section decreases as workflow-submission APIs mature to define the same set of options in a more appropriate abstraction layer.
+
+The following `hints` are reserved by the WDL spec and have a known format. An engine is free to ignore them, but must not override them with an alternative format and implementation. Because hints do not materially affect workflow outcomes, they have no fixed default values. An engine is free to implement whatever defaults it likes:
+
+|Key|Type|Description|
+|---|---|---|
+|`memory`|`String` or `Int`|See [memory](#memory) section below.|
+|`cpu`|`Int`|A recommended minimum number of CPUs for the task. |
+
 
 #### memory
 
