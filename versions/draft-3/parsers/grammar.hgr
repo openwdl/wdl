@@ -374,7 +374,7 @@ grammar {
   }
   parser {
     # Document: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#document
-    $document = list($import) list($workflow_or_task_or_decl) -> Namespace(imports=$0, body=$1)
+    $document = list($import) list($workflow_or_task_or_decl) -> Draft3File(imports=$0, body=$1)
     $workflow_or_task_or_decl = $workflow | $task | $declaration
 
     # Import Statements: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#import-statements
@@ -383,11 +383,12 @@ grammar {
 
     # Task Definition: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#task-definition
     $task = :task :identifier :lbrace list($declaration) list($sections) :rbrace -> Task(name=$1, declarations=$3, sections=$4)
-    $sections = $command | $outputs | $runtime | $parameter_meta | $meta
+    $sections = $command | $inputs | $outputs | $runtime | $parameter_meta | $meta
     $command = :raw_command :raw_cmd_start list($command_part) :raw_cmd_end -> RawCommand(parts=$2)
     $command_part = :cmd_part | $cmd_param
     $cmd_param = :cmd_param_start list($cmd_param_kv) $e :cmd_param_end -> CommandParameter(attributes=$1, expr=$2)
     $cmd_param_kv = :cmd_attr_hint :identifier :equal $e -> CommandParameterAttr(key=$1, value=$3)
+    $inputs = :input :lbrace list($declaration) :rbrace -> Inputs(inputs=$2)
     $outputs = :output :lbrace list($output_kv) :rbrace -> Outputs(attributes=$2)
     $output_kv = $type_e :identifier :equal $e -> Output(type=$0, name=$1, expression=$3)
     $runtime = :runtime $map -> Runtime(map=$1)
@@ -452,7 +453,7 @@ grammar {
 
     # Workflows: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#workflow-definition
     $workflow = :workflow :identifier :lbrace list($wf_body_element) :rbrace -> Workflow(name=$1, body=$3)
-    $wf_body_element = $call | $declaration | $while_loop | $if_stmt | $scatter | $wf_outputs | $wf_parameter_meta | $wf_meta
+    $wf_body_element = $call | $declaration | $while_loop | $if_stmt | $scatter | $inputs | $wf_outputs | $wf_parameter_meta | $wf_meta
     $call = :call :fqn optional($alias) optional($call_body) -> Call(task=$1, alias=$2, body=$3)
     $call_body = :lbrace list($declaration) list($call_input) :rbrace -> CallBody(declarations=$1, io=$2)
     $call_input = :input :colon list($mapping, :comma) -> Inputs(map=$2)
