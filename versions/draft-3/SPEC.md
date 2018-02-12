@@ -844,16 +844,16 @@ python script.py 1 2 3
 
 ##### true and false
 
-'true' and 'false' are only used for type Boolean and they specify what the parameter returns when the Boolean is true or false, respectively.
+'true' and 'false' are available for expressions which evaluate to `Boolean`s. They specify a string literal to insert into the command block when the result is true or false respectively.
 
-For example, `${true='--enable-foo', false='--disable-foo' Boolean yes_or_no}` would evaluate to either `--enable-foo` or `--disable-foo` based on the value of yes_or_no.
+For example, `${true='--enable-foo' false='--disable-foo' allow_foo}` would evaluate the expression `allow_foo` as a variable lookup and depending on its value would either insert the string `--enable-foo` or `--disable-foo` into the command.
 
-If either value is left out, then it's equivalent to specifying the empty string.  If the parameter is `${true='--enable-foo' Boolean yes_or_no}`, and a value of false is specified for this parameter, then the parameter will evaluate to the empty string.
+Both `true` and `false` cases are required. If one case should insert no value then an empty string literal should be used, eg `${true='--enable-foo' false='' allow_foo}`
 
-> *Additional Requirement*:
->
-> 1.  `true` and `false` values MUST be strings.
+> 1.  `true` and `false` values MUST be string literals.
 > 2.  `true` and `false` are only allowed if the type is `Boolean`
+> 3.  Both `true` and `false` cases are required.
+> 4.  Consider using the expression `${if allow_foo then "--enable-foo" else "--disable-foo"}` as a more readable alternative which allows full expressions (rather than string literals) for the true and false cases.
 
 ##### default
 
