@@ -23,7 +23,7 @@ grammar {
     r'workflow(?!{%_identifier_follow%})' -> workflow(:workflow)
     r'import(?!{%_identifier_follow%})' -> :import
     r'input(?!{%_identifier_follow%})' -> :input
-    r'output' -> :output
+    r'output(?!{%_identifier_follow%})' -> :output
     r'as(?!{%_identifier_follow%})' -> :as
     r'if(?!{%_identifier_follow%})' -> :if
     r'then(?!{%_identifier_follow%})' -> :then
