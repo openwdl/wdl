@@ -725,13 +725,15 @@ $task_sections = ($command | $runtime | $task_output | $parameter_meta | $meta)+
 
 ### Command Section
 
-A command is a *task section* that starts with the keyword 'command', and is enclosed in curly braces `{` `}` or triple-angle brackets `<<<` `>>>`.  The body of the command specifies the literal command line to run with placeholders denoted by `${...}` for the parts of the command line that needs to be filled in.
+A command is a *task section* that starts with the keyword 'command'. There are two styles of command body, enclosed in curly braces `{` `}` or triple-angle brackets `<<<` `>>>`.  These command bodies specify a literal command line to run with placeholders containing WDL expressions denoted by `${...}` or `~{...}` respectively.
+
+Note that usual WDL parsing rules are changed inside the command section. Even things that look like WDL comments are instead interpreted as part of the command if they are inside the block. The only exception is interpolated expressions, as detailed below.
 
 #### Command Parts
 
-The parser should read characters from the command line until it reaches a `${` character sequence.  This is interpreted as a literal string regardless of its content (ie ignore usual WDL parsing within the `command` block).
+WDL command blocks may contains a `${...}` expression section (or `~{...}` in the `command <<<` style) to insert the result of a WDL expression into the command in place of a literal value.
 
-The parser should interpret any variable enclosed in `${`...`}` as an expression which must be filled in using variables available in the task's context.
+The parser interprets the contents of these blocks as a single expression which must be evaluated using variables available in the task's context.
 
 For example the expression might reference declarations at the task level, like this:
 
@@ -745,6 +747,16 @@ task test {
 ```
 
 In this case `flags` within the `${...}` is an expression.  The expression can also be more complex, like a function call: `write_lines(some_array_value)`
+
+Here is the same example using the `command <<<` style:
+```wdl
+task test {
+  String flags
+  command <<<
+    ps ~{flags}
+  >>>
+}
+```
 
 > **NOTE**: the expression in this context must be interpolated as a string in the command. This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Object`). To place an array into the command block a separater character must be specified using `sep` (eg `${sep=", " int_array}`).
 
@@ -762,38 +774,6 @@ This command would be parsed as:
 * `${end}` - lookup expression to the variable `end`
 * `' ` - literal string
 * `${input}` - lookup expression to the variable `input`
-
-#### Bash Escapes 
-
-Since it is often required to use the same interpolation syntax `${...}` natively within bash scripts, the escape character `\` forces the next character to be interpreted as a character and not considered part of an interpolation sequence. For example consider the difference between this:
-```wdl
-task foo {
-  String hi
-  command {
-    echo ${hi}
-  }
-}
-```
-
-And the escaped version:
-```wdl
-task foo {
-  command {
-    EXPORT hi=hello
-    echo \${hi\}
-  }
-}
-```
-
-Notice that the closing `}` must also be escaped to avoid the character closing the command block. An alternative to this second escape would be to use the `<<<`...`>>>` syntax:
-```wdl
-task foo {
-  command <<<
-    EXPORT hi=hello
-    echo \${hi}
-  >>>
-}
-```
 
 #### Command Part Options
 
@@ -1723,7 +1703,7 @@ task inc {
   Int i
 
   command <<<
-  python -c "print(${i} + 1)"
+  python -c "print(~{i} + 1)"
   >>>
 
   output {
@@ -1749,7 +1729,7 @@ task inc {
   Int i
 
   command <<<
-  python -c "print(${i} + 1)"
+  python -c "print(~{i} + 1)"
   >>>
 
   output {
@@ -1761,7 +1741,7 @@ task sum {
   Array[Int] ints
 
   command <<<
-  python -c "print(${sep="+" ints})"
+  python -c "print(~{sep="+" ints})"
   >>>
 
   output {
@@ -2281,7 +2261,7 @@ Given any `Object`, this will write out a 2-row, n-column TSV file with the obje
 task test {
   Object input
   command <<<
-    /bin/do_work --obj=${write_object(input)}
+    /bin/do_work --obj=~{write_object(input)}
   >>>
   output {
     File results = stdout()
@@ -2318,7 +2298,7 @@ Given any `Array[Object]`, this will write out a 2+ row, n-column TSV file with 
 task test {
   Array[Object] in
   command <<<
-    /bin/do_work --obj=${write_objects(in)}
+    /bin/do_work --obj=~{write_objects(in)}
   >>>
   output {
     File results = stdout()
