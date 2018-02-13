@@ -724,17 +724,15 @@ $task_sections = ($command | $runtime | $task_output | $parameter_meta | $meta)+
 
 ### Command Section
 
-A command is a *task section* that starts with the keyword 'command'. There are two styles of command body, enclosed in curly braces `{` `}` or triple-angle brackets `<<<` `>>>`.  These command bodies specify a literal command line to run with placeholders containing WDL expressions denoted by `${...}` or `~{...}` respectively.
+A command is a *task section* that starts with the keyword 'command' and defines a shell command which will be run in the appropriate environment after all of the inputs are staged and before the outputs are evaluated. 
 
-Note that usual WDL parsing rules are changed inside the command section. Even things that look like WDL comments are instead interpreted as part of the command if they are inside the block. The only exception is interpolated expressions, as detailed below.
+There are two styles of command body, enclosed in curly braces `{` `}` or triple-angle brackets `<<<` `>>>`.  These command bodies specify a command line script to run and may contain placeholders for WDL expressions. The usual WDL parsing rules are changed inside the command section: with the exception of expression placeholders, everything (even things that look like WDL comments) are interpreted as a literal string to include in the command script.
+
+Expression placeholders are denoted by `${...}` or `~{...}` in the `command { }` and `command <<< >>>` body styles respectively. These placeholders contain a single expression which will be be evaluated using variables available in the task's context before being interpolated into the command script in the appropriate position.
 
 #### Command Parts
 
-WDL command blocks may contains a `${...}` expression section (or `~{...}` in the `command <<<` style) to insert the result of a WDL expression into the command in place of a literal value.
-
-The parser interprets the contents of these blocks as a single expression which must be evaluated using variables available in the task's context.
-
-For example the expression might reference declarations at the task level, like this:
+For example a command might reference declarations at the task level, like this:
 
 ```wdl
 task test {
@@ -745,7 +743,7 @@ task test {
 }
 ```
 
-In this case `flags` within the `${...}` is an expression.  The expression can also be more complex, like a function call: `write_lines(some_array_value)`
+In this case `flags` within the `${...}` is a variable lookup expression.  The expression can also be more complex, like a function call: `write_lines(some_array_value)`
 
 Here is the same example using the `command <<<` style:
 ```wdl
