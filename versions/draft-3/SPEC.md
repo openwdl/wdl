@@ -30,7 +30,6 @@
     * [Sections](#sections)
     * [Command Section](#command-section)
       * [Command Parts](#command-parts)
-      * [Bash Escapes](#bash-escapes)
       * [Command Part Options](#command-part-options)
         * [sep](#sep)
         * [true and false](#true-and-false)
