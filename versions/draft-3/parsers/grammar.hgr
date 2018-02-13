@@ -17,6 +17,7 @@ grammar {
     } -> null
 
     r'#.*' -> null
+    r'version\s+' -> :version @awaiting_version_name
     r'task(?!{%_identifier_follow%})' -> task(:task)
     r'(call)\s+' -> :call[1] @task_fqn
     r'workflow(?!{%_identifier_follow%})' -> workflow(:workflow)
@@ -83,6 +84,10 @@ grammar {
     } -> :qmark
     r'-?[0-9]+\.[0-9]+' -> :float
     r'[0-9]+' -> :integer
+
+    mode<awaiting_version_name> {
+      r'draft3' -> :version_name %pop
+    }
     mode<wf_output> {
       r'\s+' -> null
       r'#.*' -> null
@@ -374,8 +379,11 @@ grammar {
   }
   parser {
     # Document: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#document
-    $document = list($import) list($workflow_or_task_or_decl) -> Draft3File(imports=$0, body=$1)
+    $document = $version list($import) list($workflow_or_task_or_decl) -> Draft3File(version=$0, imports=$1, body=$2)
     $workflow_or_task_or_decl = $workflow | $task | $declaration
+
+    # Version declaration:
+    $version = :version :version_name -> VersionDeclaration(v = $1)
 
     # Import Statements: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#import-statements
     $import = :import :string optional($import_namespace) -> Import(uri=$1, namespace=$2)
