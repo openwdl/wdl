@@ -762,7 +762,7 @@ task test {
 }
 ```
 
-> **NOTE**: the expression in this context must be interpolated as a string in the command. This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Object`). To place an array into the command block a separater character must be specified using `sep` (eg `${sep=", " int_array}`).
+> **NOTE**: the expression result must ultimately be converted to a string in order to take the place of the placeholder in the command script. This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Object`). To place an array into the command block a separater character must be specified using `sep` (eg `${sep=", " int_array}`).
 
 As another example, consider how the parser would parse the following command:
 
