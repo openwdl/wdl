@@ -320,8 +320,6 @@ grammar {
     $cmd_param = :cmd_param_start list($cmd_param_kv) $e :cmd_param_end -> CommandParameter(attributes=$1, expr=$2)
     $cmd_param_kv = :cmd_attr_hint :identifier :equal $e -> CommandParameterAttr(key=$1, value=$3)
     $inputs = :input :lbrace list($declaration) :rbrace -> Inputs(inputs=$2)
-    $outputs = :output :lbrace list($output_kv) :rbrace -> Outputs(attributes=$2)
-    $output_kv = $type_e :identifier :equal $e -> Output(type=$0, name=$1, expression=$3)
     $runtime = :runtime $map -> Runtime(map=$1)
     $map = :lbrace list($kv) :rbrace -> $1
     $kv = :identifier :colon $e -> RuntimeAttribute(key=$0, value=$2)
@@ -382,16 +380,18 @@ grammar {
     }
     $map_kv = $e :colon $e -> MapLiteralKv(key=$0, value=$2)
 
+    # Outputs
+    $outputs = :output :lbrace list($output_kv) :rbrace -> Outputs(outputs=$2)
+    $output_kv = $type_e :identifier :equal $e -> Output(type=$0, name=$1, expression=$3)
+
     # Workflows: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#workflow-definition
     $workflow = :workflow :identifier :lbrace list($wf_body_element) :rbrace -> Workflow(name=$1, body=$3)
-    $wf_body_element = $call | $declaration | $while_loop | $if_stmt | $scatter | $inputs | $wf_outputs | $wf_parameter_meta | $wf_meta
+    $wf_body_element = $call | $declaration | $while_loop | $if_stmt | $scatter | $inputs | $outputs | $wf_parameter_meta | $wf_meta
     $call = :call :fqn optional($alias) optional($call_body) -> Call(task=$1, alias=$2, body=$3)
     $call_body = :lbrace list($declaration) list($call_input) :rbrace -> CallBody(declarations=$1, io=$2)
     $call_input = :input :colon list($mapping, :comma) -> Inputs(map=$2)
     $mapping = :identifier :equal $e -> IOMapping(key=$0, value=$2)
     $alias = :as :identifier -> $1
-    $wf_outputs = :output :lbrace list($wf_output_declaration) :rbrace -> WorkflowOutputs(outputs=$2)
-    $wf_output_declaration = $type_e :identifier :equal $e -> WorkflowOutputDeclaration(type=$0, name=$1, expression=$3)
     $wf_parameter_meta = :parameter_meta $map -> ParameterMeta(map=$1)
     $wf_meta = :meta $map -> Meta(map=$1)
     $while_loop = :while :lparen $e :rparen :lbrace list($wf_body_element) :rbrace -> WhileLoop(expression=$2, body=$5)
