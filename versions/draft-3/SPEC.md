@@ -724,11 +724,18 @@ $task_sections = ($command | $runtime | $task_output | $parameter_meta | $meta)+
 
 ### Command Section
 
-A command is a *task section* that starts with the keyword 'command' and defines a shell command which will be run in the appropriate environment after all of the inputs are staged and before the outputs are evaluated. 
+A command is a *task section* that starts with the keyword 'command'. It defines a shell command which will be run in the appropriate environment after all of the inputs are staged and before the outputs are evaluated. 
 
-There are two styles of command body, enclosed in curly braces `{` `}` or triple-angle brackets `<<<` `>>>`.  These command bodies specify a command line script to run and may contain placeholders for WDL expressions. The usual WDL parsing rules are changed inside the command section: with the exception of expression placeholders, everything (even things that look like WDL comments) are interpreted as a literal string to include in the command script.
+There are two styles of command body, enclosed in curly braces `{` `}` or triple-angle brackets `<<<` `>>>`.  These command bodies specify a command line script to run and may contain placeholders for WDL expressions in order to customize the script. The usual WDL parsing rules are changed inside the command section: with the exception of expression placeholders, everything (even things that look like WDL comments) are interpreted as a literal string to be included in the command script.
 
-Expression placeholders are denoted by `${...}` or `~{...}` in the `command { }` and `command <<< >>>` body styles respectively. These placeholders contain a single expression which will be be evaluated using variables available in the task's context before being interpolated into the command script in the appropriate position.
+Expression placeholders are denoted by `${...}` or `~{...}` depending on whether they appear in a `command { }` or `command <<< >>>` body styles:
+
+|Command Body Style|Placeholder Style|
+|---|---|
+|`command { ... }`|`${}` or `~{}`|
+|`command <<< >>>`|`~{}` only|
+
+These placeholders contain a single expression which will be evaluated using variables available in the task's context. The placeholders are then replaced in the command script with the result of the evaluation.
 
 #### Command Parts
 
