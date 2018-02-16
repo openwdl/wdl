@@ -248,7 +248,7 @@ Float f = 27.3             # A floating point number
 Boolean b = true           # A boolean true/false
 String s = "hello, world"  # A string value
 File f = "path/to/file"    # A file
-FileURI u1 = "file:///path/to/file"    # URI for local file 
+FileURL u1 = "file:///path/to/file"    # URI for local file 
 ```
 
 In addition, the following compound types can be constructed, parameterized by other types. In the examples below `P` represents any of the primitive types above, and `X` and `Y` represent any valid type (even nested compound types):
@@ -275,9 +275,9 @@ For more details on the postfix quantifiers, see the section on [Optional Parame
 
 For more information on type and how they are used to construct commands and define outputs of tasks, see the [Data Types & Serialization](#data-types--serialization) section.
 
-#### Explanation of FileURI
+#### Explanation of FileURL
 
-The FileURI represents a path to a file which could be either local or in a remote object store.  
+The FileURL represents a path to a file which could be either local or in a remote object store.  
 
 Sometimes users wish to track an input as a file, but do not wish to localize or delocalize into the task execution directory. Instead, they wish to make sure:
 
@@ -287,12 +287,12 @@ Sometimes users wish to track an input as a file, but do not wish to localize or
 * If an output
   * The file is created by the time the task completes.
 
-The `FileURI` therefore enables file tracking by the engine and direct reading from object stores without using space in the execution directory to store the file.
+The `FileURL` therefore enables file tracking by the engine and direct reading from object stores without using space in the execution directory to store the file.
 
-Other examples of FileURI:
+Other examples of FileURL:
 ```wdl
-FileURI u1 = "gs://bucket/file" # URI for Google cloud storage file
-FileURI u2 = "path/to/file"    # URI for local file
+FileURL u1 = "gs://bucket/file" # URI for Google cloud storage file
+FileURL u2 = "path/to/file"    # URI for local file
 ```
 
 ### Fully Qualified Names & Namespaced Identifiers
@@ -530,11 +530,11 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`String`|`>=`|`String`|`Boolean`||
 |`String`|`<`|`String`|`Boolean`||
 |`String`|`<=`|`String`|`Boolean`||
-|`FileURI`|`==`|`FileURI`|`Boolean`||
-|`FileURI`|`!=`|`FileURI`|`Boolean`||
-|`FileURI`|`+`|`String`|`FileURI`||
-|`FileURI`|`==`|`String`|`Boolean`||
-|`FileURI`|`!=`|`String`|`Boolean`||
+|`FileURL`|`==`|`FileURL`|`Boolean`||
+|`FileURL`|`!=`|`FileURL`|`Boolean`||
+|`FileURL`|`+`|`String`|`FileURL`||
+|`FileURL`|`==`|`String`|`Boolean`||
+|`FileURL`|`!=`|`String`|`Boolean`||
 ||`-`|`Float`|`Float`||
 ||`+`|`Float`|`Float`||
 ||`-`|`Int`|`Int`||
@@ -732,9 +732,9 @@ task t {
   - Two input files which originated in the same storage directory must also be localized into the same directory for task execution (see the special case handling for Versioning Filesystems below).
 - When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted into the command string.
 
-##### FileURI localization
-`FileURI` inputs also follow specific localization rules:
-- If the URI in the FileURI is a file mounted on the filesystem (e.g. `file:///home/foo/test.txt` or `/home/foo/test.txt`), then the File referenced must be made accessible to the job at execution time by the engine.
+##### FileURL localization
+`FileURL` inputs also follow specific localization rules:
+- If the URI in the FileURL is a file mounted on the filesystem (e.g. `file:///home/foo/test.txt` or `/home/foo/test.txt`), then the File referenced must be made accessible to the job at execution time by the engine.
 - If the URI points to an object storage URI (e.g. `gs://my-bucket/test.txt` for Google Cloud Storage) then an existence and accessibility check should be made but no further action is required for localization.
 
 ##### Special Case: Versioning Filesystems
@@ -1967,12 +1967,12 @@ WDL values can be created from either JSON values or from native language values
 |         |String-like||
 |         |`String`|Identity coercion|
 |         |`File`||
-|         |`FileURI`||
+|         |`FileURL`||
 |`File`   |JSON String|Interpreted as a file path|
 |         |String-like|Interpreted as file path|
 |         |`String`|Interpreted as file path|
 |         |`File`|Identity Coercion|
-|         |`FileURI`|Interpreted as file path|
+|         |`FileURL`|Interpreted as file path|
 |`Int`    |JSON Number|Use floor of the value for non-integers|
 |         |Integer-like||
 |         |`Int`|Identity coercion|
@@ -1982,11 +1982,11 @@ WDL values can be created from either JSON values or from native language values
 |`Boolean`|JSON Boolean||
 |         |Boolean-like||
 |         |`Boolean`|Identity coercion|
-|`FileURI`    |JSON String|Interpreted as a FileURI|
-|         |String-like|Interpreted as a FileURI|
-|         |`String`|Interpreted as a FileURI|
-|         |`File`|Interpreted as a FileURI|
-|         |`FileURI`|Identity Coercion|
+|`FileURL`    |JSON String|Interpreted as a FileURL|
+|         |String-like|Interpreted as a FileURL|
+|         |`String`|Interpreted as a FileURL|
+|         |`File`|Interpreted as a FileURL|
+|         |`FileURL`|Identity Coercion|
 |`Array[T]`|JSON Array|Elements must be coercable to `T`|
 |          |Array-like|Elements must be coercable to `T`|
 |`Map[K, V]`|JSON Object|keys and values must be coercable to `K` and `V`, respectively|
@@ -2191,7 +2191,7 @@ The `read_int()` function takes a file path which is expected to contain 1 line 
 
 If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. 
 
-## String read_string(String|File|FileURI)
+## String read_string(String|File|FileURL)
 
 The `read_string()` function takes a file path which is expected to contain 1 line with 1 string on it.  This function returns that string.
 
@@ -2400,9 +2400,9 @@ And `/local/fs/tmp/map.json` would contain:
 }
 ```
 
-## Float size(File|FileURI, [String])
+## Float size(File|FileURL, [String])
 
-Given a `File` (or `FileURI`) and a `String` (optional), returns the size of the file in Bytes or in the unit specified by the second argument.
+Given a `File` (or `FileURL`) and a `String` (optional), returns the size of the file in Bytes or in the unit specified by the second argument.
 
 ```wdl
 task example {
@@ -2555,7 +2555,7 @@ Primitive Types:
 * Float
 * File
 * Boolean
-* FileURI
+* FileURL
 
 Compound Types:
 
