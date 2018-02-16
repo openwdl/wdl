@@ -248,9 +248,7 @@ Float f = 27.3             # A floating point number
 Boolean b = true           # A boolean true/false
 String s = "hello, world"  # A string value
 File f = "path/to/file"    # A file
-FileURI u1 = "gs://bucket/file" # URI for Google cloud storage file
-FileURI u2 = "path/to/file"    # URI for local file
-FileURI u3 = "file:///path/to/file"    # URI for local file 
+FileURI u1 = "file:///path/to/file"    # URI for local file 
 ```
 
 In addition, the following compound types can be constructed, parameterized by other types. In the examples below `P` represents any of the primitive types above, and `X` and `Y` represent any valid type (even nested compound types):
@@ -279,9 +277,23 @@ For more information on type and how they are used to construct commands and def
 
 #### Explanation of FileURI
 
-The FileURI represents a File that could be either a local file or a file in an object store.  
+The FileURI represents a path to a file which could be either local or in a remote object store.  
 
-Sometimes users do not wish to localize an input file, unless it is on a local filesystem (e.g. the code being run in the task can read an object store directly).  This functionality cannot be replicated with `File` and `String` without changing the WDL itself to accommodate the differing reading paradigms.  The `FileURI` can be used by WDL authors to enable direct reading from object stores when their task supports it.  
+Sometimes users wish to track an input as a file, but do not wish to localize or delocalize into the task execution directory. Instead, they wish to make sure:
+
+* If an input:
+  * That the file exists before the task begins
+  * The file is available to access within the task  
+* If an output
+  * The file is created by the time the task completes.
+
+The `FileURI` therefore enables file tracking by the engine and direct reading from object stores without using space in the execution directory to store the file.
+
+Other examples of FileURI:
+```wdl
+FileURI u1 = "gs://bucket/file" # URI for Google cloud storage file
+FileURI u2 = "path/to/file"    # URI for local file
+```
 
 ### Fully Qualified Names & Namespaced Identifiers
 
@@ -518,7 +530,6 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`String`|`>=`|`String`|`Boolean`||
 |`String`|`<`|`String`|`Boolean`||
 |`String`|`<=`|`String`|`Boolean`||
-|`FileURI`|`+`|`FileURI`|`FileURI`|Append FileURI paths|
 |`FileURI`|`==`|`FileURI`|`Boolean`||
 |`FileURI`|`!=`|`FileURI`|`Boolean`||
 |`FileURI`|`+`|`String`|`FileURI`||
@@ -723,8 +734,8 @@ task t {
 
 ##### FileURI localization
 `FileURI` inputs also follow specific localization rules:
-- If the URI in the FileURI is a file mounted on the filesystem (e.g. `file:///home/foo/test.txt` or `/home/foo/test.txt`), then the File referenced at must be made accessible to the job at execution time by the engine.
-- If the URI points to an object storage URI (e.g. `gs://my-bucket/test.txt` for Google Cloud Storage) then FileURIs are essentially treated as Strings as far as localization.
+- If the URI in the FileURI is a file mounted on the filesystem (e.g. `file:///home/foo/test.txt` or `/home/foo/test.txt`), then the File referenced must be made accessible to the job at execution time by the engine.
+- If the URI points to an object storage URI (e.g. `gs://my-bucket/test.txt` for Google Cloud Storage) then an existence and accessibility check should be made but no further action is required for localization.
 
 ##### Special Case: Versioning Filesystems
 Two or more versions of a file in a versioning filesystem might have the same name and come from the same directory. In that case the following special procedure must be used to avoid collision:
