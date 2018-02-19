@@ -38,6 +38,8 @@
       * [Alternative heredoc syntax](#alternative-heredoc-syntax)
       * [Stripping Leading Whitespace](#stripping-leading-whitespace)
     * [Outputs Section](#outputs-section)
+      * [Globs](#globs)
+        * [Task portability and non-standard BaSH](#task-portability-and-non-standard-bash)
     * [String Interpolation](#string-interpolation)
     * [Runtime Section](#runtime-section)
       * [docker](#docker)
@@ -946,14 +948,36 @@ output {
 }
 ```
 
+#### Globs
 
-Globs can be used to define outputs which contain many files.  The glob function generates an array of File outputs:
+Globs can be used to define outputs which might contain zero, one, or many files. The glob function therefore returns an array of File outputs:
 
 ```
 output {
   Array[File] output_bams = glob("*.bam")
 }
 ```
+
+The array of `File`s returned is the set of files found by the bash expansion of the glob string relative to the task's execution directory and in the same order. It's evaluated in the context of the bash shell installed in the docker image running the task. 
+
+In other words, you might think of `glob()` as finding all of the files (but not the directories) in the same order as would be matched by running `echo <glob>` in bash from the task's execution directory.
+
+Note that this usually will not include files in nested directories. For example say you have an output `Array[File] a_files = glob("a*")` and the end result of running your command has produced a directory structure like this:
+```
+execution_directory
+├── a1.txt
+├── ab.txt
+├── a_dir
+│   ├── a_inner.txt
+├── az.txt
+```
+Then running `echo a*` in the execution directory would expand to `a1.txt`, `ab.txt`, `a_dir` and `az.txt` in that order. Since `glob()` does not include directories we discard `a_dir` and the result of the WDL glob would be `["a1.txt", "ab.txt", "az.txt"]`.
+
+##### Task portability and non-standard BaSH
+
+Note that some specialized docker images may include a non-standard bash shell which supports more complex glob strings. These complex glob strings might allow expansions which include `a_inner.txt` in the example above. 
+
+Therefore to ensure that a WDL is portable when using `glob()`, a docker image should be provided and the WDL author should remember that `glob()` results depend on coordination with the bash implementation installed on that docker image.
 
 ### String Interpolation
 
