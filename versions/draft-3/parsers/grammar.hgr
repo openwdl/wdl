@@ -302,8 +302,8 @@ grammar {
   }
   parser {
     # Document: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#document
-    $document = $version list($import) list($workflow_or_task_or_decl) -> Draft3File(version=$0, imports=$1, body=$2)
-    $workflow_or_task_or_decl = $workflow | $task | $declaration
+    $document = $version list($import) list($workflow_or_task) -> Draft3File(version=$0, imports=$1, body=$2)
+    $workflow_or_task = $workflow | $task
 
     # Version declaration:
     $version = :version :version_name -> VersionDeclaration(v = $1)
@@ -313,13 +313,13 @@ grammar {
     $import_namespace = :as :identifier -> $1
 
     # Task Definition: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#task-definition
-    $task = :task :identifier :lbrace list($declaration) list($sections) :rbrace -> Task(name=$1, declarations=$3, sections=$4)
-    $sections = $command | $inputs | $outputs | $runtime | $parameter_meta | $meta
+    $task = :task :identifier :lbrace list($task_sections) :rbrace -> Task(name=$1, declarations=$3, sections=$4)
+    $task_sections = $command | $inputs | $outputs | $runtime | $parameter_meta | $meta | $declaration
     $command = :raw_command :raw_cmd_start list($command_part) :raw_cmd_end -> RawCommand(parts=$2)
     $command_part = :cmd_part | $cmd_param
     $cmd_param = :cmd_param_start list($cmd_param_kv) $e :cmd_param_end -> CommandParameter(attributes=$1, expr=$2)
     $cmd_param_kv = :cmd_attr_hint :identifier :equal $e -> CommandParameterAttr(key=$1, value=$3)
-    $inputs = :input :lbrace list($declaration) :rbrace -> Inputs(inputs=$2)
+    $inputs = :input :lbrace list($input_declaration) :rbrace -> Inputs(inputs=$2)
     $runtime = :runtime $map -> Runtime(map=$1)
     $map = :lbrace list($kv) :rbrace -> $1
     $kv = :identifier :colon $e -> RuntimeAttribute(key=$0, value=$2)
@@ -334,7 +334,8 @@ grammar {
     $meta_array = :lsquare list($meta_value, :comma) :rsquare
 
     # Declarations: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#declarations
-    $declaration = $type_e :identifier optional($setter) -> Declaration(type=$0, name=$1, expression=$2)
+    $input_declaration = $type_e :identifier optional($setter) -> InputDeclaration(type=$0, name=$1, expression=$2)
+    $declaration = $type_e :identifier $setter -> Declaration(type=$0, name=$1, expression=$2)
     $setter = :equal $e -> $1
 
     # Types: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#types
@@ -388,9 +389,7 @@ grammar {
     $workflow = :workflow :identifier :lbrace list($wf_body_element) :rbrace -> Workflow(name=$1, body=$3)
     $wf_body_element = $call | $declaration | $while_loop | $if_stmt | $scatter | $inputs | $outputs | $wf_parameter_meta | $wf_meta
     $call = :call :fqn optional($alias) optional($call_body) -> Call(task=$1, alias=$2, body=$3)
-    $call_body = :lbrace list($declaration) list($call_input) :rbrace -> CallBody(declarations=$1, io=$2)
-    $call_input = :input :colon list($mapping, :comma) -> Inputs(map=$2)
-    $mapping = :identifier :equal $e -> IOMapping(key=$0, value=$2)
+    $call_body = :lbrace :input :colon list($object_kv, :comma) :rbrace -> CallBody(inputs=$3)
     $alias = :as :identifier -> $1
     $wf_parameter_meta = :parameter_meta $map -> ParameterMeta(map=$1)
     $wf_meta = :meta $map -> Meta(map=$1)
