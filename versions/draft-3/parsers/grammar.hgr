@@ -21,6 +21,7 @@ grammar {
     r'task(?!{%_identifier_follow%})' -> task(:task)
     r'(call)\s+' -> :call[1] @task_fqn
     r'workflow(?!{%_identifier_follow%})' -> workflow(:workflow)
+    r'struct(?!{%_identifier_follow%})' -> :struct
     r'import(?!{%_identifier_follow%})' -> :import
     r'input(?!{%_identifier_follow%})' -> :input
     r'output(?!{%_identifier_follow%})' -> :output
@@ -302,11 +303,14 @@ grammar {
   }
   parser {
     # Document: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#document
-    $document = $version list($import) list($workflow_or_task) -> Draft3File(version=$0, imports=$1, body=$2)
-    $workflow_or_task = $workflow | $task
+    $document = $version list($import) list($file_body_element) -> Draft3File(version=$0, imports=$1, body=$2)
+    $file_body_element = $workflow | $task | $struct
 
     # Version declaration:
     $version = :version :version_name -> VersionDeclaration(v = $1)
+
+    $struct = :struct :identifier :lbrace list($struct_declaration) :rbrace -> Struct(name=$1, entries=$3)
+    $struct_declaration = $type_e :identifier -> StructEntry(type=$0, name=$1)
 
     # Import Statements: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#import-statements
     $import = :import :string optional($import_namespace) -> Import(uri=$1, namespace=$2)
@@ -344,6 +348,7 @@ grammar {
       (*:left) $type_e = :type <=> :qmark -> OptionalType(innerType=$0)
       (*:left) $type_e = :type <=> :plus -> NonEmptyType(innerType=$0)
       $type_e = :type
+      $type_e = :identifier
     }
 
     # Expressions: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#expressions
