@@ -42,18 +42,6 @@ grammar {
     r'{%_identifier%}' -> :identifier
     r'null' -> :null
 
-    # TODO: these should probably be partials...
-    enum {
-      python: r'"([^\\\"\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"'
-      java: "\\\"(?>[^\\\\\\\"\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\\\""
-      javascript: "\\\"([^\\\\\\\"\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\\\\?\""
-    } -> wdl_unescape(:string)
-    enum {
-      python: r'\'([^\\\'\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\''
-      java: "'(?>[^\\\\\\'\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'"
-      javascript: "'([^\\\\\\'\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'"
-    } -> wdl_unescape(:string)
-
     r':' -> :colon
     r',' -> :comma
     r'==' -> :double_equal
@@ -79,12 +67,44 @@ grammar {
     r'>' -> :gt
     r'!' -> :not
     enum {
+      python: r'\"'
+      java: "\""
+      javascript: "\\\\\\\""
+    } -> :quote @dquote_string
+    r'\'' -> :quote @squote_string
+    enum {
       python: r'\?'
       java: "\\?"
       javascript: "\\?"
     } -> :qmark
     r'-?[0-9]+\.[0-9]+' -> :float
     r'[0-9]+' -> :integer
+
+    mode<dquote_string> {
+      enum {
+        python: r'\"'
+        java: "\""
+        javascript: "\\\\\\\""
+      } -> :quote %pop
+      r'\$\{' -> :expression_placeholder_start @expression_placeholder
+      r'~\{' -> :expression_placeholder_start @expression_placeholder
+      enum {
+        python: r'[^\"\n(\$\{)(~\{)]*'
+        java: "[^\"\\n(${)(~{)]*"
+        javascript: "[^\\\\\\\"\\n(${)(~{)]*"
+      } -> :string
+    }
+
+    mode<squote_string> {
+      r'\'' -> :quote %pop
+      r'\$\{' -> :expression_placeholder_start @expression_placeholder
+      r'~\{' -> :expression_placeholder_start @expression_placeholder
+      enum {
+        python: r'[^\'\n(\$\{)(~\{)]*'
+        java: "[^'\\n(${)(~{)]*"
+        javascript: "[^'\\n(${)(~{)]*"
+      } -> :string
+    }
 
     mode<awaiting_version_name> {
       r'draft-3' -> :version_name %pop
@@ -106,7 +126,8 @@ grammar {
     mode<raw_command> {
       r'\{' -> :raw_cmd_start
       r'\}' -> :raw_cmd_end %pop
-      r'\$\{' -> :cmd_param_start @cmd_param
+      r'\$\{' -> :expression_placeholder_start @expression_placeholder
+      r'~\{' -> :expression_placeholder_start @expression_placeholder
       enum {
         python: r'(.*?)(?=\$\{|\})' (DOTALL)
         c: r'(.*?)(?=\$\{|\})' (PCRE_DOTALL)
@@ -117,7 +138,7 @@ grammar {
     mode<raw_command2> {
       r'<<<' -> :raw_cmd_start
       r'>>>' -> :raw_cmd_end %pop
-      r'\$\{' -> :cmd_param_start @cmd_param
+      r'~\{' -> :expression_placeholder_start @expression_placeholder
       enum {
         python: r'(.*?)(?=\$\{|>>>)' (DOTALL)
         c: r'(.*?)(?=\$\{|>>>)' (PCRE_DOTALL)
@@ -125,9 +146,9 @@ grammar {
         javascript: r'([\s\S]*?)(?=\$\{|>>>)' (m)
       } -> :cmd_part
     }
-    mode<cmd_param> {
+    mode<expression_placeholder> {
       r'\s+' -> null
-      r'\}' -> :cmd_param_end %pop
+      r'\}' -> :expression_placeholder_end %pop
       r'\[' -> :lsquare
       r'\]' -> :rsquare
       r'=' -> :equal
@@ -170,15 +191,11 @@ grammar {
 
       # Literals
       enum {
-        python: r'"([^\\\"\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"'
-        java: "\\\"(?>[^\\\\\\\"\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\\\""
-        javascript: "\\\"([^\\\\\\\"\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\\\\?\""
-      } -> wdl_unescape(:string)
-      enum {
-        python: r'\'([^\\\'\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*\''
-        java: "'(?>[^\\\\\\'\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'"
-        javascript: "'([^\\\\\\'\\n]|\\\\[\\\"\\'nrbtfav\\\\?]|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]+|\\\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'"
-      } -> wdl_unescape(:string)
+        python: r'\"'
+        java: "\""
+        javascript: "\\\\\\\""
+      } -> :quote @dquote_string
+      r'\'' -> :quote @squote_string
       r'-?[0-9]+\.[0-9]+' -> :float
       r'[0-9]+' -> :integer
     }
@@ -312,17 +329,20 @@ grammar {
     $struct = :struct :identifier :lbrace list($struct_declaration) :rbrace -> Struct(name=$1, entries=$3)
     $struct_declaration = $type_e :identifier -> StructEntry(type=$0, name=$1)
 
+    $string_literal = :quote list($string_piece) :quote -> StringLiteral(pieces=$1)
+    $string_piece = :string | $expression_placeholder
+
     # Import Statements: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#import-statements
-    $import = :import :string optional($import_namespace) -> Import(uri=$1, namespace=$2)
+    $import = :import $string_literal optional($import_namespace) -> Import(uri=$1, namespace=$2)
     $import_namespace = :as :identifier -> $1
 
     # Task Definition: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#task-definition
     $task = :task :identifier :lbrace list($task_sections) :rbrace -> Task(name=$1, declarations=$3, sections=$4)
     $task_sections = $command | $inputs | $outputs | $runtime | $parameter_meta | $meta | $declaration
     $command = :raw_command :raw_cmd_start list($command_part) :raw_cmd_end -> RawCommand(parts=$2)
-    $command_part = :cmd_part | $cmd_param
-    $cmd_param = :cmd_param_start list($cmd_param_kv) $e :cmd_param_end -> CommandParameter(attributes=$1, expr=$2)
-    $cmd_param_kv = :cmd_attr_hint :identifier :equal $e -> CommandParameterAttr(key=$1, value=$3)
+    $command_part = :cmd_part | $expression_placeholder
+    $expression_placeholder = :expression_placeholder_start list($expression_placeholder_kv) $e :expression_placeholder_end -> ExpressionPlaceholder(attributes=$1, expr=$2)
+    $expression_placeholder_kv = :cmd_attr_hint :identifier :equal $e -> ExpressionPlaceholderAttr(key=$1, value=$3)
     $inputs = :input :lbrace list($input_declaration) :rbrace -> Inputs(inputs=$2)
     $runtime = :runtime $map -> Runtime(map=$1)
     $map = :lbrace list($kv) :rbrace -> $1
@@ -378,7 +398,7 @@ grammar {
       (*:left) $e = :lbrace list($map_kv, :comma) :rbrace -> MapLiteral(map=$1)
       (*:left) $e = :lparen list($e, :comma) :rparen -> TupleLiteral(values=$1)
       (*:left) $e = :if $e :then $e :else $e -> TernaryIf(cond=$1, iftrue=$3, iffalse=$5)
-      $e = :string
+      $e = $string_literal
       $e = :identifier
       $e = :boolean
       $e = :integer
