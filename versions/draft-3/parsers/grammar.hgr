@@ -414,7 +414,7 @@ grammar {
     $workflow = :workflow :identifier :lbrace list($wf_body_element) :rbrace -> Workflow(name=$1, body=$3)
     $wf_body_element = $call | $declaration | $while_loop | $if_stmt | $scatter | $inputs | $outputs | $wf_parameter_meta | $wf_meta
     $call = :call :fqn optional($alias) optional($call_body) -> Call(task=$1, alias=$2, body=$3)
-    $call_body = :lbrace :input :colon list($object_kv, :comma) :rbrace -> CallBody(inputs=$3)
+    $call_body = :lbrace :input :colon list($input_kv, :comma) :rbrace -> CallBody(inputs=$3)
     $alias = :as :identifier -> $1
     $wf_parameter_meta = :parameter_meta $map -> ParameterMeta(map=$1)
     $wf_meta = :meta $map -> Meta(map=$1)
@@ -425,5 +425,6 @@ grammar {
         -> Scatter(item=$2, collection=$4, body=$7)
 
     $object_kv = :identifier :colon $e -> ObjectKV(key=$0, value=$2)
+    $input_kv = :identifier :equal $e -> ObjectKV(key=$0, value=$2)
   }
 }
