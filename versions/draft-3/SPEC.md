@@ -100,6 +100,7 @@
   * [Array\[Pair(X,Y)\] zip(Array\[X\], Array\[Y\])](#arraypairxy-ziparrayx-arrayy)
   * [Array\[Pair(X,Y)\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
   * [Integer length(Array\[X\])](#integer-lengtharrayx)
+  * [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
   * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
   * [X select_first(Array\[X?\])](#x-select_firstarrayx)
   * [Array\[X\] select_all(Array\[X?\])](#arrayx-select_allarrayx)
@@ -2530,6 +2531,28 @@ Integer xlen = length(xs) # 3
 Integer ylen = length(ys) # 3
 Integer zlen = length(zs) # 0
 ```
+
+## Array[X] flatten(Array[Array[X]])
+
+Given an array of arrays, the `flatten` function concatenates all the
+member arrays in the order to appearance to give the result. It does not
+deduplicate the elements. Arrays nested more deeply than 2 must be
+flattened twice (or more) to get down to an unnested `Array[X]`.
+For example:
+
+```wdl
+Array[Array[Integer]] ai2D = [[1, 2, 3], [1], [21, 22]]
+Array[Integer] ai = flatten(ai2D)   # [1, 2, 3, 1, 21, 22]
+
+Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
+Array[File] af = flatten(af2D)   # ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
+
+Array[Array[Pair[Float,String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
+
+Array[Pair[Float,String]] ap = flatten(aap2D) # [(0.1, "mouse"), (3, "cat"), (15, "dog")]
+```
+
+The last example (`aap2D`) is useful because `Map[X, Y]` can be coerced to `Array[Pair[X, Y]]`.
 
 ## Array[String] prefix(String, Array[X])
 
