@@ -329,11 +329,12 @@ grammar {
     $struct = :struct :identifier :lbrace list($struct_declaration) :rbrace -> Struct(name=$1, entries=$3)
     $struct_declaration = $type_e :identifier -> StructEntry(type=$0, name=$1)
 
+    $static_string = :quote :string :quote -> $1
     $string_literal = :quote list($string_piece) :quote -> StringLiteral(pieces=$1)
     $string_piece = :string | $expression_placeholder
 
     # Import Statements: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#import-statements
-    $import = :import $string_literal optional($import_namespace) -> Import(uri=$1, namespace=$2)
+    $import = :import $static_string optional($import_namespace) -> Import(uri=$1, namespace=$2)
     $import_namespace = :as :identifier -> $1
 
     # Task Definition: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#task-definition
@@ -353,7 +354,7 @@ grammar {
     $parameter_meta = :parameter_meta $meta_map -> ParameterMeta(map=$1)
     $meta_map = :lbrace list($meta_kv) :rbrace -> $1
     $meta_kv = :identifier :colon $meta_value
-    $meta_value = :string | :integer | :float | :boolean | :null | $meta_object | $meta_array
+    $meta_value = $static_string | :integer | :float | :boolean | :null | $meta_object | $meta_array
     $meta_object = :lbrace list($meta_kv, :comma) :rbrace
     $meta_array = :lsquare list($meta_value, :comma) :rsquare
 
