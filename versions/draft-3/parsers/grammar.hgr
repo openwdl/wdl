@@ -23,6 +23,7 @@ grammar {
     r'workflow(?!{%_identifier_follow%})' -> workflow(:workflow)
     r'struct(?!{%_identifier_follow%})' -> :struct
     r'import(?!{%_identifier_follow%})' -> :import
+    r'alias(?!{%_identifier_follow%})' -> :alias
     r'input(?!{%_identifier_follow%})' -> :input
     r'output(?!{%_identifier_follow%})' -> :output
     r'as(?!{%_identifier_follow%})' -> :as
@@ -334,8 +335,9 @@ grammar {
     $string_piece = :string | $expression_placeholder
 
     # Import Statements: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#import-statements
-    $import = :import $static_string optional($import_namespace) -> Import(uri=$1, namespace=$2)
+    $import = :import $static_string optional($import_namespace) list($import_alias) -> Import(uri=$1, namespace=$2, aliases=$3)
     $import_namespace = :as :identifier -> $1
+    $import_alias = :alias :identifier :as :identifier -> ImportAlias(old_name=$1, new_name=$3)
 
     # Task Definition: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#task-definition
     $task = :task :identifier :lbrace list($task_sections) :rbrace -> Task(name=$1, declarations=$3, sections=$4)
