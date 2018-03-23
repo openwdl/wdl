@@ -130,10 +130,10 @@ grammar {
       r'\$\{' -> :expression_placeholder_start @expression_placeholder
       r'~\{' -> :expression_placeholder_start @expression_placeholder
       enum {
-        python: r'(.*?)(?=\$\{|\})' (DOTALL)
-        c: r'(.*?)(?=\$\{|\})' (PCRE_DOTALL)
-        java: r'(.*?)(?=\$\{|\})' (DOTALL)
-        javascript: r'([\s\S]*?)(?=\$\{|\})' (m)
+        python: r'(.*?)(?=\$\{|~\{|\})' (DOTALL)
+        c: r'(.*?)(?=\$\{|~\{|\})' (PCRE_DOTALL)
+        java: r'(.*?)(?=\$\{|~\{|\})' (DOTALL)
+        javascript: r'([\s\S]*?)(?=\$\{|~\{|\})' (m)
       } -> :cmd_part
     }
     mode<raw_command2> {
@@ -141,10 +141,10 @@ grammar {
       r'>>>' -> :raw_cmd_end %pop
       r'~\{' -> :expression_placeholder_start @expression_placeholder
       enum {
-        python: r'(.*?)(?=\$\{|>>>)' (DOTALL)
-        c: r'(.*?)(?=\$\{|>>>)' (PCRE_DOTALL)
-        java: r'(.*?)(?=\$\{|>>>)' (DOTALL)
-        javascript: r'([\s\S]*?)(?=\$\{|>>>)' (m)
+        python: r'(.*?)(?=~\{|>>>)' (DOTALL)
+        c: r'(.*?)(?=~\{|>>>)' (PCRE_DOTALL)
+        java: r'(.*?)(?=~\{|>>>)' (DOTALL)
+        javascript: r'([\s\S]*?)(?=~\{|>>>)' (m)
       } -> :cmd_part
     }
     mode<expression_placeholder> {
