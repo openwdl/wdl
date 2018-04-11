@@ -22,21 +22,27 @@
     * [Function Calls](#function-calls)
     * [Array Literals](#array-literals)
     * [Map Literals](#map-literals)
+    * [Object Literals](#object-literals)
     * [Pair Literals](#pair-literals)
   * [Document](#document)
+  * [Versioning](#versioning)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
-    * [Input Declarations](#input-declarations)
-    * [Sections](#sections)
+    * [Task Sections](#task-sections)
+    * [Task Inputs](#task-inputs)
+      * [Task Input Declaration](#task-input-declaration)
+      * [Task Input Localization](#task-input-localization)
     * [Command Section](#command-section)
-      * [Command Parts](#command-parts)
-      * [Command Part Options](#command-part-options)
+      * [Expression Placeholders](#command-parts)
+      * [Expression Placeholder Options](#command-part-options)
         * [sep](#sep)
         * [true and false](#true-and-false)
         * [default](#default)
       * [Alternative heredoc syntax](#alternative-heredoc-syntax)
       * [Stripping Leading Whitespace](#stripping-leading-whitespace)
     * [Outputs Section](#outputs-section)
+      * [Globs](#globs)
+        * [Task portability and non-standard BaSH](#task-portability-and-non-standard-bash)
     * [String Interpolation](#string-interpolation)
     * [Runtime Section](#runtime-section)
       * [docker](#docker)
@@ -51,13 +57,26 @@
       * [Example 5: Word Count](#example-5-word-count)
       * [Example 6: tmap](#example-6-tmap)
   * [Workflow Definition](#workflow-definition)
+    * [Workflow Elements](#workflow-elements)
+    * [Workflow Inputs](#workflow-inputs)
+      * [Optional Inputs](#optional-inputs)
+      * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
+        * [Optional inputs with defaults](#optional-inputs-with-defaults)
     * [Call Statement](#call-statement)
-        * [Sub Workflows](#sub-workflows)
+      * [Call Input Blocks](#call-input-blocks)
+      * [Sub Workflows](#sub-workflows)
     * [Scatter](#scatter)
     * [Conditionals](#conditionals)
     * [Parameter Metadata](#parameter-metadata)
     * [Metadata](#metadata)
     * [Outputs](#outputs)
+  * [Struct Definition](#struct-definition)
+    * [Declarations](#struct-declarations)
+      * [Optional and non Empty Struct Values](#optional-and-non-empty-struct-values)
+    * [Using a Struct](#using-a-struct)
+      * [Struct Assignment From Object Literal](#struct-assignment-from-object-literal)
+      * [Struct Member Access](#struct-member-access)
+      * [Importing Structs](#importing-structs)
 * [Namespaces](#namespaces)
 * [Scope](#scope)
 * [Optional Parameters & Type Constraints](#optional-parameters--type-constraints)
@@ -67,9 +86,13 @@
   * [Task-Level Resolution](#task-level-resolution)
   * [Workflow-Level Resolution](#workflow-level-resolution)
 * [Computing Inputs](#computing-inputs)
-  * [Task Inputs](#task-inputs)
-  * [Workflow Inputs](#workflow-inputs)
+  * [Computing Task Inputs](#task-inputs)
+  * [Computing Workflow Inputs](#workflow-inputs)
   * [Specifying Workflow Inputs in JSON](#specifying-workflow-inputs-in-json)
+  * [Optional Inputs](#optional-inputs)
+  * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
+    * [Optional Inputs with Defaults](#optional-inputs-with-defaults)
+  * [Call Input Blocks](#call-input-blocks)
 * [Type Coercion](#type-coercion)
 * [Standard Library](#standard-library)
   * [File stdout()](#file-stdout)
@@ -97,6 +120,7 @@
   * [Array\[Pair(X,Y)\] zip(Array\[X\], Array\[Y\])](#arraypairxy-ziparrayx-arrayy)
   * [Array\[Pair(X,Y)\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
   * [Integer length(Array\[X\])](#integer-lengtharrayx)
+  * [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
   * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
   * [X select_first(Array\[X?\])](#x-select_firstarrayx)
   * [Array\[X\] select_all(Array\[X?\])](#arrayx-select_allarrayx)
@@ -142,8 +166,10 @@ WDL is meant to be a *human readable and writable* way to express tasks and work
 
 ```wdl
 task hello {
-  String pattern
-  File in
+  input {
+    String pattern
+    File in
+  }
 
   command {
     egrep '${pattern}' '${in}'
@@ -191,7 +217,9 @@ A simple workflow that runs this task in parallel would look like this:
 
 ```wdl
 workflow example {
-  Array[File] files
+  input {
+    Array[File] files
+  }
   scatter(path in files) {
     call hello {input: in=path}
   }
@@ -274,6 +302,11 @@ For more details on the postfix quantifiers, see the section on [Optional Parame
 
 For more information on type and how they are used to construct commands and define outputs of tasks, see the [Data Types & Serialization](#data-types--serialization) section.
 
+#### Custom  Types
+
+WDL provides the ability to define custom compound types called `Structs`. `Structs` are defined directly in the WDL and are usable like any other type. 
+For more information on their usage, see the section on [Structs](#struct-definition)
+
 ### Fully Qualified Names & Namespaced Identifiers
 
 ```
@@ -286,7 +319,9 @@ A fully qualified name is the unique identifier of any particular `call` or call
 other.wdl
 ```wdl
 task foobar {
-  File in
+  input {
+    File in
+  }
   command {
     sh setup.sh ${in}
   }
@@ -378,7 +413,9 @@ A declaration may also refer to elements that are outputs of tasks.  For example
 
 ```wdl
 task test {
-  String var
+  input {
+    String var
+  }
   command {
     ./script ${var}
   }
@@ -388,7 +425,9 @@ task test {
 }
 
 task test2 {
-  Array[String] array
+  input {
+    Array[String] array
+  }
   command {
     ./script ${write_lines(array)}
   }
@@ -566,9 +605,10 @@ The syntax `x.y` refers to member access.  `x` must be an object or task in a wo
 
 ```wdl
 workflow wf {
-  Object obj
-  Object foo
-
+  input {
+    Object obj
+    Object foo
+  }
   # This would cause a syntax error,
   # because foo is defined twice in the same namespace.
   call foo {
@@ -613,6 +653,44 @@ Map[Int, Int] = {1: 10, 2: 11}
 Map[String, Int] = {"a": 1, "b": 2}
 ```
 
+### Object Literals
+
+Object literals are specified similarly to maps, but require an `object` keyword immediately before the `{`:
+
+```wdl
+Object f = object { 
+  a: 10,
+  b: 11
+}
+```
+
+The `object` keyword allows the field keys to be specified as identifiers, rather than `String` literals (eg `a:` rather than `"a":`).
+
+#### Object Coercion from Map
+
+Objects can be coerced from map literals, but beware the following behavioral difference:
+```wdl
+String a = "beware"
+String b = "key"
+String c = "lookup"
+
+# What are the keys to this object?
+Object object_syntax = object { 
+  a: 10,
+  b: 11,
+  c: 12
+}
+
+# What are the keys to this object?
+Object map_coercion = { 
+  a: 10,
+  b: 11,
+  c: 12
+}
+```
+- If an `Object` is specified using the object-style `Object map_syntax = object { a: ...` syntax then the keys will be `"a"`, `"b"` and `"c"`.
+- If an `Object` is specified using the map-style `Object map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
+
 ### Pair Literals
 
 Pair values can be specified inside of a WDL using another Python-like syntax, as follows:
@@ -636,6 +714,16 @@ $document = ($import | $task | $workflow)+
 
 `$document` is the root of the parse tree and it consists of one or more import statement, task, or workflow definition
 
+## Versioning
+
+For portability purposes it is critical that WDL documents be versioned so an engine knows how to process it. From `draft-3` forward, the first line of all WDL files must be a `version` statement, for example
+
+```wdl
+version draft-3
+```
+
+Any WDL files which do not have a `version` field must be treated as `draft-2`.  All WDL files used by a workflow must have the same version.  
+
 ## Import Statements
 
 A WDL file may contain import statements to include WDL code from other sources
@@ -655,8 +743,9 @@ import "http://example.com/lib/stdlib"
 
 
 workflow wf {
-  File bam_file
-
+  input {
+    File bam_file
+  }
   # file_size is from "http://example.com/lib/stdlib"
   call stdlib.file_size {
     input: file=bam_file
@@ -673,30 +762,44 @@ Engines should at the very least support the following protocols for import URIs
 * `file://`
 * no protocol (which should be interpreted as `file://`
 
+
 ## Task Definition
 
-A task is a declarative construct with a focus on constructing a command from a template.  The command specification is interpreted in an engine specific way, though a typical case is that a command is a UNIX command line which would be run in a Docker image.
+A task is a declarative construct with a focus on constructing a command from a template.  The command specification is interpreted in an engine and backend agnostic way. The command is a UNIX bash command line which will be run (ideally in a Docker image).
 
-Tasks also define their outputs, which is essential for building dependencies between tasks.  Any other data specified in the task definition (e.g. runtime information and meta-data) is optional.
+Tasks explicitly define their inputs and outputs which is essential for building dependencies between tasks. 
 
-```
-$task = 'task' $ws+ $identifier $ws* '{' $ws* $declaration* $task_sections $ws* '}'
-```
+To declare a task, use `task name { ... }`.  Inside the curly braces are the following sections:
 
-For example, `task name { ... }`.  Inside the curly braces defines the sections.
+### Task Sections
 
-### Input Declarations
+The task may have the following component sections:
+
+- An `input` section (required if the task will have inputs)
+- Non-input declarations (as many as needed, optional)
+- A `command` section (required)
+- A `runtime` section (optional)
+- An `output` section (required if the task will have outputs)
+- A `meta` section (optional)
+- A `parameter_meta` section (optional)
+
+### Task Inputs
+
+#### Task Input Declaration
 
 Tasks declare inputs within the task block. For example:
 ```wdl
 task t {
-  Int i
-  File f
-  [...]
+  input {
+    Int i
+    File f
+  }
+  
+  # [... other task sections]
 }
 ```
 
-#### Input Localization
+#### Task Input Localization
 `File` inputs must be treated specially since they require localization to within the execution directory:
 - Files are localized into the execution directory prior to the task execution commencing. 
 - When localizing a `File`, the engine may choose to place the file wherever it likes so long as it accords to these rules:
@@ -712,45 +815,58 @@ Two or more versions of a file in a versioning filesystem might have the same na
 
 For example imagine two versions of file `fs://path/to/A.txt` are being localized (labelled version `1.0` and `1.1`). The first might be localized as `/execution_dir/path/to/A.txt`. The second must then be placed in `/execution_dir/path/to/1.1/A.txt`
 
-### Sections
+### Non-Input Declarations
 
-The task has one or more sections:
+A task can have declarations which are intended as intermediate values rather than inputs. These declarations can be based on input values and can be used within the command section. 
 
+For example, this task takes a single `inputs` `Object` but writes it to a JSON file which can then be used by the command:
+
+```wdl
+task t {
+  input {
+    Object inputs
+  }
+  File objects_json = write_json(inputs)
+  
+  # [... other task sections]
+}
 ```
-$task_sections = ($command | $runtime | $task_output | $parameter_meta | $meta)+
-```
-
-> *Additional requirement*: Exactly one `$command` section needs to be defined, preferably as the first section.
 
 ### Command Section
 
-A command is a *task section* that starts with the keyword 'command'. It defines a shell command which will be run in the appropriate environment after all of the inputs are staged and before the outputs are evaluated. 
+The `command` section is the *task section* that starts with the keyword 'command', and is enclosed in either curly braces `{ ... }` or triple angle braces `<<< ... >>>`.
+It defines a shell command which will be run in the execution environment after all of the inputs are staged and before the outputs are evaluated. 
+The body of the command also allows placeholders for the parts of the command line that need to be filled in.
 
-There are two styles of command body, enclosed in curly braces `{` `}` or triple-angle brackets `<<<` `>>>`.  These command bodies specify a command line script to run and may contain placeholders for WDL expressions in order to customize the script. The usual WDL parsing rules are changed inside the command section: with the exception of expression placeholders, everything (even things that look like WDL comments) are interpreted as a literal string to be included in the command script.
+Expression placeholders are denoted by `${...}` or `~{...}` depending on whether they appear in a `command { }` or `command <<< >>>` body styles.
 
-Expression placeholders are denoted by `${...}` or `~{...}` depending on whether they appear in a `command { }` or `command <<< >>>` body styles:
+#### Expression Placeholders
+
+Expression placeholders differ depending on the command section style:
 
 |Command Body Style|Placeholder Style|
 |---|---|
-|`command { ... }`|`${}` or `~{}`|
+|`command { ... }`|`~{}` (preferred) or `${}`|
 |`command <<< >>>`|`~{}` only|
 
-These placeholders contain a single expression which will be evaluated using variables available in the task's context. The placeholders are then replaced in the command script with the result of the evaluation.
+These placeholders contain a single expression which will be evaluated using inputs or declarations available in the task. 
+The placeholders are then replaced in the command script with the result of the evaluation.
 
-#### Command Parts
-
-For example a command might reference declarations at the task level, like this:
+For example a command might reference an input to the task, like this:
 
 ```wdl
 task test {
-  String flags
+  input {
+    String flags
+  }
   command {
-    ps ${flags}
+    ps ~{flags}
   }
 }
 ```
 
-In this case `flags` within the `${...}` is a variable lookup expression.  The expression can also be more complex, like a function call: `write_lines(some_array_value)`
+In this case `flags` within the `${...}` is a variable lookup expression referencing the `flags` input string.
+The expression can also be more complex, like a function call: `write_lines(some_array_value)`
 
 Here is the same example using the `command <<<` style:
 ```wdl
@@ -762,7 +878,10 @@ task test {
 }
 ```
 
-> **NOTE**: the expression result must ultimately be converted to a string in order to take the place of the placeholder in the command script. This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Object`). To place an array into the command block a separater character must be specified using `sep` (eg `${sep=", " int_array}`).
+> **NOTE**: the expression result must ultimately be converted to a string in order to take the place of the placeholder in the command script. 
+This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Object`). 
+To place an array into the command block a separater character must be specified using `sep` (eg `${sep=", " int_array}`).
+
 
 As another example, consider how the parser would parse the following command:
 
@@ -779,15 +898,15 @@ This command would be parsed as:
 * `' ` - literal string
 * `${input}` - lookup expression to the variable `input`
 
-#### Command Part Options
+#### Expression Placeholder Options
 
-```
-$var_option = $var_option_key $ws* '=' $ws* $var_option_value
-$var_option_key = 'sep' | 'true' | 'false' | 'quote' | 'default'
-$var_option_value = $expression
-```
+Expression placeholder options are `option="value"` pairs that precede the expression in an expression command part and customize the interpolation of the WDL value into the command string being built. The following options are available:
 
-The `$var_option` is a set of key-value pairs for any additional and less-used options that need to be set on a parameter.
+* `sep` - eg `${sep=", " array_value}`
+* `true` and `false` - eg `${true="--yes" false="--no" boolean_value}`
+* `default` - eg `${default="foo" optional_value}`
+
+Additional explanation for these command part options follows:
 
 ##### sep
 
@@ -811,16 +930,16 @@ python script.py 1 2 3
 
 ##### true and false
 
-'true' and 'false' are only used for type Boolean and they specify what the parameter returns when the Boolean is true or false, respectively.
+'true' and 'false' are available for expressions which evaluate to `Boolean`s. They specify a string literal to insert into the command block when the result is true or false respectively.
 
-For example, `${true='--enable-foo', false='--disable-foo' Boolean yes_or_no}` would evaluate to either `--enable-foo` or `--disable-foo` based on the value of yes_or_no.
+For example, `${true='--enable-foo' false='--disable-foo' allow_foo}` would evaluate the expression `allow_foo` as a variable lookup and depending on its value would either insert the string `--enable-foo` or `--disable-foo` into the command.
 
-If either value is left out, then it's equivalent to specifying the empty string.  If the parameter is `${true='--enable-foo' Boolean yes_or_no}`, and a value of false is specified for this parameter, then the parameter will evaluate to the empty string.
+Both `true` and `false` cases are required. If one case should insert no value then an empty string literal should be used, eg `${true='--enable-foo' false='' allow_foo}`
 
-> *Additional Requirement*:
->
-> 1.  `true` and `false` values MUST be strings.
+> 1.  `true` and `false` values MUST be string literals.
 > 2.  `true` and `false` are only allowed if the type is `Boolean`
+> 3.  Both `true` and `false` cases are required.
+> 4.  Consider using the expression `${if allow_foo then "--enable-foo" else "--disable-foo"}` as a more readable alternative which allows full expressions (rather than string literals) for the true and false cases.
 
 ##### default
 
@@ -828,7 +947,9 @@ This specifies the default value if no other value is specified for this paramet
 
 ```
 task default_test {
-  String? s
+  input {
+    String? s
+  }
   command {
     ./my_cmd ${default="foobar" s}
   }
@@ -848,7 +969,9 @@ Sometimes a command is sufficiently long enough or might use `{` characters that
 
 ```wdl
 task heredoc {
-  File in
+  input {
+    File in
+  }
 
   command<<<
   python <<CODE
@@ -913,8 +1036,9 @@ output {
 }
 ```
 
+#### Globs
 
-Globs can be used to define outputs which contain many files.  The glob function generates an array of File outputs:
+Globs can be used to define outputs which might contain zero, one, or many files. The glob function therefore returns an array of File outputs:
 
 ```
 output {
@@ -922,14 +1046,37 @@ output {
 }
 ```
 
+The array of `File`s returned is the set of files found by the bash expansion of the glob string relative to the task's execution directory and in the same order. It's evaluated in the context of the bash shell installed in the docker image running the task. 
+
+In other words, you might think of `glob()` as finding all of the files (but not the directories) in the same order as would be matched by running `echo <glob>` in bash from the task's execution directory.
+
+Note that this usually will not include files in nested directories. For example say you have an output `Array[File] a_files = glob("a*")` and the end result of running your command has produced a directory structure like this:
+```
+execution_directory
+├── a1.txt
+├── ab.txt
+├── a_dir
+│   ├── a_inner.txt
+├── az.txt
+```
+Then running `echo a*` in the execution directory would expand to `a1.txt`, `ab.txt`, `a_dir` and `az.txt` in that order. Since `glob()` does not include directories we discard `a_dir` and the result of the WDL glob would be `["a1.txt", "ab.txt", "az.txt"]`.
+
+##### Task portability and non-standard BaSH
+
+Note that some specialized docker images may include a non-standard bash shell which supports more complex glob strings. These complex glob strings might allow expansions which include `a_inner.txt` in the example above. 
+
+Therefore to ensure that a WDL is portable when using `glob()`, a docker image should be provided and the WDL author should remember that `glob()` results depend on coordination with the bash implementation installed on that docker image.
+
 ### String Interpolation
 
 Within tasks, any string literal can use string interpolation to access the value of any of the task's inputs.  The most obvious example of this is being able to define an output file which is named as function of its input.  For example:
 
 ```wdl
 task example {
-  String prefix
-  File bam
+  input {
+    String prefix
+    File bam
+  }
   command {
     python analysis.py --prefix=${prefix} ${bam}
   }
@@ -970,8 +1117,9 @@ Since values are expressions, they can also reference variables in the task:
 
 ```wdl
 task test {
-  String ubuntu_version
-
+  input {
+    String ubuntu_version
+  }
   command {
     python script.py
   }
@@ -989,8 +1137,9 @@ Location of a Docker image for which this task ought to be run.  This can have a
 
 ```wdl
 task docker_test {
-  String arg
-
+  input {
+    String arg
+  }
   command {
     python process.py ${arg}
   }
@@ -1009,7 +1158,9 @@ Memory requirements for this task.  Two kinds of values are supported for this a
 
 ```wdl
 task memory_test {
-  String arg
+  input {
+    String arg
+  }
 
   command {
     python process.py ${arg}
@@ -1054,9 +1205,10 @@ task hello_world {
 
 ```wdl
 task one_and_one {
-  String pattern
-  File infile
-
+  input {
+    String pattern
+    File infile
+  }
   command {
     grep ${pattern} ${infile}
   }
@@ -1070,11 +1222,12 @@ task one_and_one {
 
 ```wdl
 task runtime_meta {
-  String memory_mb
-  String sample_id
-  String param
-  String sample_id
-
+  input {
+    String memory_mb
+    String sample_id
+    String param
+    String sample_id
+  }
   command {
     java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
   }
@@ -1100,12 +1253,13 @@ task runtime_meta {
 
 ```wdl
 task bwa_mem_tool {
-  Int threads
-  Int min_seed_length
-  Int min_std_max_min
-  File reference
-  File reads
-
+  input {
+    Int threads
+    Int min_seed_length
+    Int min_std_max_min
+    File reference
+    File reads
+  }
   command {
     bwa mem -t ${threads} \
             -k ${min_seed_length} \
@@ -1132,7 +1286,9 @@ The 'docker' portion of this task definition specifies which that this task must
 
 ```wdl
 task wc2_tool {
-  File file1
+  input {
+    File file1
+  }
   command {
     wc ${file1}
   }
@@ -1142,7 +1298,9 @@ task wc2_tool {
 }
 
 workflow count_lines4_wf {
-  Array[File] files
+  input {
+    Array[File] files
+  }
   scatter(f in files) {
     call wc2_tool {
       input: file1=f
@@ -1172,9 +1330,10 @@ Task definition would look like this:
 
 ```wdl
 task tmap_tool {
-  Array[String] stages
-  File reads
-
+  input {
+    Array[String] stages
+    File reads
+  }
   command {
     tmap mapall ${sep=' ' stages} < ${reads} > output.sam
   }
@@ -1193,24 +1352,182 @@ For this particular case where the command line is *itself* a mini DSL, The best
 
 ## Workflow Definition
 
-```
-$workflow = 'workflow' $ws* '{' $ws* $workflow_element* $ws* '}'
-$workflow_element = $call | $loop | $conditional | $declaration | $scatter | $parameter_meta | $meta
-```
-
-A workflow is defined as the keyword `workflow` and the body being in curly braces.
+A workflow is declared using the keyword `workflow` followed by the workflow name and the workflow body in curly braces.
 
 An example of a workflow that runs one task (not defined here) would be:
 
 ```wdl
 workflow wf {
-  Array[File] files
-  Int threshold
-  Map[String, String] my_map
-
-  call analysis_job {
-    input: search_paths=files, threshold=threshold, gender_lookup=my_map
+  input {
+    Array[File] files
+    Int threshold
+    Map[String, String] my_map
   }
+  call analysis_job {
+    input: search_paths = files, threshold = threshold, gender_lookup = my_map
+  }
+}
+```
+
+### Workflow Elements
+
+A workflow may have the following elements:
+
+* An `input` section (required if the workflow is to have inputs)
+* Intermediate declarations (as many as needed, optional)
+* Calls to tasks or subworkflows (as many as needed, optional)
+* Scatter blocks (as many as needed, optional)
+* If blocks (as many as needed, optional)
+* An `output` section (required if the workflow is to have outputs)
+* A `meta` section (optional)
+* A `parameter_meta` section (optional)
+
+### Workflow Inputs
+
+As with tasks, a workflow must declare its inputs in an `input` section, like this:
+```wdl
+workflow w {
+  input {
+    Int i
+    String s
+  }
+}
+```
+
+
+
+#### Optional Inputs
+
+An optional input is specified like this:
+
+```wdl
+workflow foo {
+  input {
+    Int? x
+    File? y
+  }
+  # ... remaining workflow content
+}
+```
+
+In these situations, a value may or may not be provided for this input. The following would all be valid input files for the above workflow:
+- No inputs:
+
+```json
+{ }
+```
+- Only x:
+```json
+{
+  "x": 100
+}
+```
+- Only y:
+```json
+{
+  "x": null,
+  "y": "/path/to/file"
+}
+```
+- x and y:
+```json
+{
+  "x": 1000,
+  "y": "/path/to/file"
+}
+```
+
+#### Declared Inputs: Defaults and Overrides
+
+Tasks and workflows can have default values built-in via expressions, like this:
+```wdl
+workflow foo {
+  input {
+    Int x = 5
+  }
+  ...
+}
+```
+
+```wdl
+task foo {
+  input {
+    Int x = 5
+  }
+  ...
+}
+```
+
+In this case, `x` should be considered an optional input to the task or workflow, but unlike optional inputs without defaults, the type can be `Int` rather than `Int?`. If an input is provided, that value should be used. If no input value for x is provided then the default expression is evaluated and used.
+
+Note that to be considered an optional input, the default value must be provided within the `input` section. If the declaration is in the main body of the workflow it is considered an intermediate value and is not overridable. For example below, the `Int x` is an input whereas `Int y` is not. 
+```wdl
+workflow foo {
+  input {
+    Int x = 10
+  }
+  call my_task as t1 { input: int_in = x }
+  Int y = my_task.out
+  call my_task as t2 { input: int_in = y }
+}
+```
+
+Note that it is still possible to override intermediate expressions via optional inputs if that's important to the workflow author. A modified version of the above workflow demonstrates this:
+```wdl
+workflow foo {
+  input {
+    Int x = 10
+    Int y = my_task.out
+  }
+
+  call my_task as t1 { input: int_in = x }
+  call my_task as t2 { input: int_in = y }
+}
+```
+Note that the control flow of the workflow changes depending on whether the value `Int y` is provided:
+
+* If an input value is provided for `y` then it receives that value immediately and `t2` may start running as soon as the workflow starts.
+* In no input value is provided for `y` then it will need to wait for `t1` to complete before it is assigned.
+
+
+##### Optional inputs with defaults
+It *is* possible to provide a default to an optional input type:
+```wdl
+input {
+  String? s = "hello"
+}
+```
+Since the expression is static, this is interpreted as a `String?` value that is set by default, but can be overridden in the inputs file, just like above. Note that if you give a value an optional type like this then you can only use this value in calls or expressions that can handle optional inputs. Here's an example:
+```wdl
+workflow foo {
+  input {
+    String? s = "hello"
+  }
+  
+  call valid { input: s_maybe = s }
+  
+  # This would cause a validation error. Cannot use String? for a String input:
+  call invalid { input: s_definitely = s }
+}
+
+task valid {
+  input {
+    String? s_maybe
+  }
+  ...
+}
+
+task invalid {
+  input {
+    String s_definitely
+  }
+}
+```
+
+The rational for this is that a user may want to provide the following input file to alter how `valid` is called, and such an input would invalidate the call to `invalid` since it is unable to accept optional values:
+```json
+{
+  "foo.s": null
 }
 ```
 
@@ -1260,7 +1577,9 @@ task task1 {
   }
 }
 task task2 {
-  File foobar
+  input {
+    File foobar
+  }
   command {
     python do_stuff2.py ${foobar}
   }
@@ -1273,6 +1592,26 @@ workflow wf {
   call task2 {
     input: foobar=task1.results
   }
+}
+```
+
+#### Call Input Blocks
+
+As mentioned above, call inputs should be provided via call inputs (`call my_task { input: x = 5 }`), or else they will become workflow inputs (`"my_workflow.my_task.x": 5`) and prevent the workflow from being composed as a subworkflow.
+In situations where both are supplied (ie the workflow specifies a call input, and the user tries to supply the same input via an input file), the workflow submission should be rejected because the user has supplied an unexpected input. 
+
+The reasoning for this is that the input value is an intrinsic part of the workflow's control flow and that changing it via an input is inherently dangerous to the correct working of the workflow. 
+
+As always, if the author chooses to allow it, values provided as inputs can be overridden if they're declared in the `input` block:
+```wdl
+workflow foo {
+  input {
+    # This input `my_task_int_in` is usually based on a task output, unless it's overridden in the input set:
+    Int my_task_int_in = some_preliminary_task.int_out
+  }
+  
+  call some_preliminary_task
+  call my_task { input: my_task_int_in = x) }
 }
 ```
 
@@ -1297,7 +1636,9 @@ workflow main_workflow {
 `sub_wdl.wdl`
 ```
 task hello {
-  String addressee
+  input {
+    String addressee
+  }
   command {
     echo "Hello ${addressee}!"
   }
@@ -1310,8 +1651,9 @@ task hello {
 }
 
 workflow wf_hello {
-  String wf_hello_input
-  
+  input {
+    String wf_hello_input
+  }
   call hello {input: addressee = wf_hello_input }
   
   output {
@@ -1358,6 +1700,7 @@ $conditional = 'if' '(' $expression ')' '{' $workflow_element* '}'
 Conditionals only execute the body if the expression evaluates to true.
 
 * When a call's output is referenced outside the same containing `if` it will need to be handled as an optional type. E.g.
+
 ```wdl
 workflow foo {
   # Call 'x', producing a Boolean output:
@@ -1377,10 +1720,14 @@ workflow foo {
   call z { input: optional_int = y_out_maybe }
 }
 ```
+
 * Optional types can be coalesced by using the `select_all` and `select_first` array functions:
+
 ```wdl
 workflow foo {
-  Array[Int] scatter_range = [1, 2, 3, 4, 5]
+  input {
+    Array[Int] scatter_range = [1, 2, 3, 4, 5]
+  }
   scatter (i in scatter_range) {
     call x { input: i = i }
     if (x.validOutput) {
@@ -1401,9 +1748,10 @@ workflow foo {
 * When conditional blocks are nested, referenced outputs are only ever single-level conditionals (i.e. we never produce `Int??` or deeper):
 ```wdl
 workflow foo {
-  Boolean b
-  Boolean c
-
+  input {
+    Boolean b
+    Boolean c
+  }
   if(b) {
     if(c) {
       call x
@@ -1463,7 +1811,9 @@ e.g:
 
 ```
 task t {
-  Int i
+  input {
+    Int i
+  }
   command {
     # do something
   }
@@ -1473,8 +1823,9 @@ task t {
 }
 
 workflow w {
-  String w_input = "some input"
-  
+  input {
+    String w_input = "some input"
+  }
   call t
   call t as u
   
@@ -1503,8 +1854,9 @@ task t {
 }
 
 workflow w {
-  Array[Int] arr = [1, 2]
-  
+  input {
+    Array[Int] arr = [1, 2]
+  }
   scatter(i in arr) {
     call t
   }
@@ -1525,6 +1877,167 @@ However, if a workflow is intended to be called as a subworkflow, it is required
 - To present the same interface when calling subworkflows as when calling tasks.
 - To make it easy for callers of subworkflows to find out exactly what outputs the call is creating.
 - In case of nested subworkflows, to give the outputs at the top level a simple fixed name rather than a long qualified name like `a.b.c.d.out` (which is liable to change if the underlying implementation of `c` changes, for example).
+
+## Struct Definition
+A struct is a C-like construct which enables the user to create new compound types that consisting of previously existing types. Structs
+can then be used within a `Task` or `Workflow` definition as a declaration in place of any other normal types. The struct takes the place of the
+`Object` type in many circumstances and enables proper typing of its members.
+
+Structs are declared separately from any other constructs, and cannot be declared within any `workflow` or `task` definition. They belong to the namespace of the WDL 
+file which they are written in and are therefore accessible globally within that WDL. Additionally, all structs must be evaluated prior to their use within a `task`, 
+`workflow` or another `struct`.
+
+Structs may be defined using the `struct` keyword and have a single section consisting of typed declarations. 
+
+```wdl
+struct name { ... }
+```
+
+### Struct Declarations
+The only contents of struct are a set of declarations. Declarations can be any primitive or compound type, as well as other structs, and are defined
+the same way as they are in any other section. The one caveat to this is that declarations within a struct do not allow an expression statement after
+the initial member declaration. Once defined all structs are added to a global namespace accessible from any other construct within the WDL.
+
+for example the following is a valid struct definition
+```wdl
+struct Name {
+    String myString
+    Int myInt
+}
+```
+Whereas the following is invalid
+
+```wdl
+struct Invalid {
+    String myString = "Cannot do this"
+    Int myInt
+}
+```
+
+Compound types can also be used within a struct to easily encapsulate them within a single object. For example
+```wdl
+struct Name {
+    Array[Array[File]] myFiles
+    Map[String,Pair[String,File]] myComplexType
+    String cohortName
+}
+```
+#### Optional and non Empty Struct Values
+Struct declarations can be optional or non-empty (if they are an array type). 
+
+```wdl
+struct Name {
+    Array[File]+ myFiles
+    Boolean? myBoolean
+}
+```
+
+### Using a Struct
+When using a struct in the declaration section of either a `workflow` or a `task` or `output` section you define them in the same way you would define any other type.
+
+For example, if I have a struct like the following:
+```wdl
+struct Person {
+    String name
+    Int age
+}
+```
+
+then usage of the struct in a workflow would look like the following:
+
+```wdl
+
+task task_a {
+    Person a
+    command {
+        echo "hello my name is ${a.name} and I am ${a.age} years old"
+    }
+}
+
+workflow myWorkflow {
+    Person a
+    call task_a {
+        input:
+            a = a
+    }
+}
+```
+
+#### Struct Assignment from Object Literal
+Structs can be assigned using an object literal. When Writing the object, all entries must conform or be coercible into the underlying type they are being assigned to
+
+```wdl
+
+Person a = {"name": "John","age": 30}
+
+```
+
+
+### Struct Member Access
+In order to access members within a struct, use object notation; ie `myStruct.myName`. If the underlying member is a complex type which supports member access,
+you can access its elements in the way defined by that specific type.
+
+For example, if we have defined a struct like the following:
+```wdl
+struct Experiment {
+    Array[File] experimentFiles
+    Map[String,String] experimentData
+}
+
+```
+**Example 1:**
+Accessing the nth element of experimentFiles and any element in experimentData would look like: 
+```wdl
+workflow workflow_a {
+    Experiment myExperiment
+    File firstFile = myExperiment.experimentFiles[0]
+    String experimentName = myExperiment.experimentData["name"]
+        
+    
+}
+```
+
+**Example 2:**
+If the struct itself is a member of an Array or another type, yo
+
+```wdl
+workflow workflow_a {
+    Array[Experiment] myExperiments
+    
+    File firstFileFromFirstExperiment = myExperiments[0].experimentFiles[0]
+    File eperimentNameFromFirstExperiment = bams[0].experimentData["name"]
+    ....
+}
+    
+```
+
+### Importing Structs
+Any `struct` defined within an imported WDL will be added to a global namespace and will not be a part of the imported wdl's namespace. If two structs
+are named the same it will be necessary to resolve the conflicting names. To do this, one or more structs may be imported under an
+alias defined within the import statement.
+
+For example, if your current WDL defines a struct named `Experiment` and the imported WDL also defines another struct named `Experiment` you can
+alias them as follows:
+
+```wdl
+import http://example.com/example.wdl as ex alias Experiment as OtherExperiment
+```
+
+In order to resolve multiple structs, simply add additional alias statements. 
+```wdl
+import http://example.com/another_exampl.wdl as ex2 
+    alias Parent as Parent2 
+    alias Child as Child2 
+    alias GrandChild as GrandChild2
+```
+
+Its important to note, that when importing from file 2, all structs from file 2's global namespace will be imported. This Includes structs from
+another imported WDL within file 2, even if they are aliased. If a struct is aliased in file 2, it will be imported into file 1 under its
+aliased name.
+
+
+* Note: Alias can be used even when no conflicts are encountered to uniquely identify any struct
+
 
 # Namespaces
 
@@ -1579,18 +2092,22 @@ Scopes are defined as:
 
 Inside of any scope, variables may be [declared](#declarations).  The variables declared in that scope are visible to any sub-scope, recursively.  For example:
 
-```
+```wdl
 task my_task {
-  Int x
-  File f
+  input {
+    Int x
+    File f
+  }
   command {
     my_cmd --integer=${var} ${f}
   }
 }
 
 workflow wf {
-  Array[File] files
-  Int x = 2
+  input {
+    Array[File] files
+    Int x = 2
+  }
   scatter(file in files) {
     Int x = 3
     call my_task {
@@ -1610,13 +2127,14 @@ workflow wf {
 * `?` means that the parameter is optional.  A user does not need to specify a value for the parameter in order to satisfy all the inputs to the workflow.
 * `+` applies only to `Array` types and it represents a constraint that the `Array` value must containe one-or-more elements.
 
-```
+```wdl
 task test {
-  Array[File]  a
-  Array[File]+ b
-  Array[File]? c
-  #File+ d <-- can't do this, + only applies to Arrays
-
+  input {
+    Array[File]  a
+    Array[File]+ b
+    Array[File]? c
+    #File+ d <-- can't do this, + only applies to Arrays
+  }
   command {
     /bin/mycmd ${sep=" " a}
     /bin/mycmd ${sep="," b}
@@ -1673,7 +2191,9 @@ Sometimes, optional parameters need a string prefix.  Consider this task:
 
 ```wdl
 task test {
-  String? val
+  input {
+    String? val
+  }
   command {
     python script.py --val=${val}
   }
@@ -1704,7 +2224,9 @@ The `scatter` block is meant to parallelize a series of identical tasks but give
 
 ```wdl
 task inc {
-  Int i
+  input {
+    Int i
+  }
 
   command <<<
   python -c "print(~{i} + 1)"
@@ -1730,7 +2252,9 @@ Any task that's downstream from the call to `inc` and outside the scatter block 
 
 ```wdl
 task inc {
-  Int i
+  input {
+    Int i
+  }
 
   command <<<
   python -c "print(~{i} + 1)"
@@ -1742,12 +2266,12 @@ task inc {
 }
 
 task sum {
-  Array[Int] ints
-
+  input {
+    Array[Int] ints
+  }
   command <<<
   python -c "print(~{sep="+" ints})"
   >>>
-
   output {
     Int sum = read_int(stdout())
   }
@@ -1768,7 +2292,9 @@ However, from inside the scope of the scatter block, the output of `call inc` is
 
 ```wdl
 workflow wf {
-  Array[Int] integers = [1,2,3,4,5]
+  input {
+    Array[Int] integers = [1,2,3,4,5]
+  }
   scatter(i in integers) {
     call inc {input: i=i}
     call inc as inc2 {input: i=inc.incremented}
@@ -1777,7 +2303,7 @@ workflow wf {
 }
 ```
 
-In this example, `inc` and `inc2` are being called in serial where the output of one is fed to another.  inc2 would output the array `[3,4,5,6,7]`
+In this example, `inc` and `inc2` are being called in serial where the output of one is fed to another. inc2 would output the array `[3,4,5,6,7]`
 
 # Variable Resolution
 
@@ -1789,7 +2315,9 @@ Inside a task, resolution is trivial: The variable referenced MUST be a [declara
 
 ```wdl
 task my_task {
-  Array[String] strings
+  input {
+    Array[String] strings
+  }
   command {
     python analyze.py --strings-file=${write_lines(strings)}
   }
@@ -1804,8 +2332,10 @@ In a workflow, resolution works by traversing the scope heirarchy starting from 
 
 ```wdl
 workflow wf {
-  String s = "wf_s"
-  String t = "t"
+  input {
+    String s = "wf_s"
+    String t = "t"
+  }
   call my_task {
     String s = "my_task_s"
     input: in0 = s+"-suffix", in1 = t+"-suffix"
@@ -1817,42 +2347,45 @@ In this example, there are two expressions: `s+"-suffix"` and `t+"-suffix"`.  `s
 
 # Computing Inputs
 
-Both tasks and workflows have a typed inputs that must be satisfied in order to run.  The following sections describe how to compute inputs for `task` and `workflow` declarations
+Both tasks and workflows have a typed inputs that must be satisfied in order to run.  The following sections describe how to compute inputs for `task` and `workflow` declarations.
 
-## Task Inputs
+## Computing Task Inputs
 
-Tasks define all their inputs as declarations at the top of the task definition.
+Tasks define all their inputs as declarations within the `input` section. Any non-input declarations are not inputs to the task and therefore cannot be overridden.
 
 ```wdl
 task test {
-  String s
-  Int i
-  Float f
-
+  input {
+    Int i
+    Float f
+  }
+  String s = "${i}"
+  
   command {
-    ./script.sh -i ${i} -f ${f}
+    ./script.sh -i ${s} -f ${f}
   }
 }
 ```
 
-In this example, `s`, `i`, and `f` are inputs to this task.  Even though the command line does not reference `${s}`.  Implementations of WDL engines may display a warning or report an error in this case, since `s` isn't used.
+In this example, `i`, and `f` are inputs to this task even though `i` is not directly used in the command section. In comparison, `s` is an input even though the command line references it.
 
-## Workflow Inputs
+## Computing Workflow Inputs
 
-Workflows have declarations, like tasks, but a workflow must also account for all calls to sub-tasks when determining inputs.
+Workflows have inputs that must be satisfied to run them, just like tasks. Inputs to the workflow are provided as a key/value map where the key is of the form `workflow_name.input_name`.
 
-Workflows also return their inputs as fully qualified names.  Tasks only return the names of the variables as inputs (as they're guaranteed to be unique within a task).  However, since workflows can call the same task twice, names might collide.  The general algorithm for computing inputs going something like this:
+* If a workflow is to be used as a sub-workflow it must ensure that all of the inputs to its calls are satisfied.
+* If a workflow will only ever be submitted as a top-level workflow, it may optionally leave its tasks' inputs unsatisfied. This then forces the engine to additionally supply those inputs at run time. In this case, the inputs' names must be qualified in the inputs as `workflow_name.task_name.input_name`.
 
-* Take all inputs to all `call` statements in the workflow
-* Subtract out all inputs that are satisfied through the `input: ` section
-* Add in all declarations which don't have a static value defined
+Anything declaration that appears outside the `input` section is considered an intermediate value and **not** a workflow input. Any declaration can always be moved inside the `input` block to make it overrideable.
 
 Consider the following workflow:
 
 ```wdl
 task t1 {
-  String s
-  Int x
+  input {
+    String s
+    Int x
+  }
 
   command {
     ./script --action=${s} -x${x}
@@ -1863,9 +2396,11 @@ task t1 {
 }
 
 task t2 {
-  String s
-  Int t
-  Int x
+  input {
+    String s
+    Int t
+    Int x
+  }
 
   command {
     ./script2 --action=${s} -x${x} --other=${t}
@@ -1876,8 +2411,10 @@ task t2 {
 }
 
 task t3 {
-  Int y
-  File ref_file # Do nothing with this
+  input {
+    Int y
+    File ref_file # Do nothing with this
+  }
 
   command {
     python -c "print(${y} + 1)"
@@ -1888,16 +2425,20 @@ task t3 {
 }
 
 workflow wf {
-  Int int_val
-  Int int_val2 = 10
-  Array[Int] my_ints
-  File ref_file
-
+  input {
+    Int int_val
+    Int int_val2 = 10
+    Array[Int] my_ints
+    File ref_file
+  }
+  
+  String not_an_input = "hello"  
+  
   call t1 {
-    input: x=int_val
+    input: x = int_val
   }
   call t2 {
-    input: x=int_val, t=t1.count
+    input: x = int_val, t=t1.count
   }
   scatter(i in my_ints) {
     call t3 {
@@ -1915,9 +2456,13 @@ The inputs to `wf` would be:
 * `wf.my_ints` as an `Array[Int]`
 * `wf.ref_file` as a `File`
 
+Note that because some call inputs are left unsatisfied, this workflow could not be used as a sub-workflow. To fix that, additional workflow inputs could be added to pass-through `t1.s` and `t2.s`.
+
 ## Specifying Workflow Inputs in JSON
 
-Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow.  Workflow inputs are specified in JSON or YAML format.  In JSON, the inputs to the workflow in the previous section can be:
+Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow.  Workflow inputs are specified as key/value pairs. The mapping from JSON or YAML values to WDL values is codified in the [serialization of task inputs](#serialization-of-task-inputs) section. 
+
+In JSON, the inputs to the workflow in the previous section might be:
 
 ```
 {
@@ -1929,7 +2474,7 @@ Once workflow inputs are computed (see previous section), the value for each of 
 }
 ```
 
-It's important to note that the type in JSON must be coercable to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "3"`, this coercion from string to integer is not valid and would result in a type error.  See the section on [Type Coercion](#type-coercion) for more details.
+It's important to note that the type in JSON must be coercable to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "three"`, this coercion from string to integer is not valid and would result in a coercion error.  See the section on [Type Coercion](#type-coercion) for more details.
 
 # Type Coercion
 
@@ -1979,8 +2524,10 @@ This task would `grep` through a file and return all strings that matched the pa
 
 ```wdl
 task do_stuff {
-  String pattern
-  File file
+  input {
+    String pattern
+    File file
+  }
   command {
     grep '${pattern}' ${file}
   }
@@ -2002,7 +2549,9 @@ For example, if I write a task that outputs a file to `./results/file_list.tsv`,
 
 ```wdl
 task do_stuff {
-  File file
+  input {
+    File file
+  }
   command {
     python do_stuff.py ${file}
   }
@@ -2026,8 +2575,10 @@ The following task would write a two-column TSV to standard out and that would b
 
 ```wdl
 task do_stuff {
-  String flags
-  File file
+  input {
+    String flags
+    File file
+  }
   command {
     ./script --flags=${flags} ${file}
   }
@@ -2138,7 +2689,9 @@ For example, if I write a task that outputs a file to `./results/file_list.json`
 
 ```wdl
 task do_stuff {
-  File file
+  input {
+    File file
+  }
   command {
     python do_stuff.py ${file}
   }
@@ -2300,7 +2853,9 @@ Given any `Array[Object]`, this will write out a 2+ row, n-column TSV file with 
 
 ```wdl
 task test {
-  Array[Object] in
+  input {
+    Array[Object] in
+  }
   command <<<
     /bin/do_work --obj=~{write_objects(in)}
   >>>
@@ -2345,7 +2900,9 @@ Given something with any type, this writes the JSON equivalent to a file.  See t
 
 ```wdl
 task example {
-  Map[String, String] map = {"key1": "value1", "key2": "value2"}
+  input {
+    Map[String, String] map = {"key1": "value1", "key2": "value2"}
+  }
   command {
     ./script --map=${write_json(map)}
   }
@@ -2360,7 +2917,7 @@ If this task were run, the command might look like:
 
 And `/local/fs/tmp/map.json` would contain:
 
-```
+```json
 {
   "key1": "value1"
   "key2": "value2"
@@ -2373,8 +2930,9 @@ Given a `File` and a `String` (optional), returns the size of the file in Bytes 
 
 ```wdl
 task example {
-  File input_file
-  
+  input {
+    File input_file
+  }
   command {
     echo "this file is 22 bytes" > created_file
   }
@@ -2389,6 +2947,12 @@ task example {
 
 Supported units are KiloByte ("K", "KB"), MegaByte ("M", "MB"), GigaByte ("G", "GB"), TeraByte ("T", "TB") as well as their [binary version](https://en.wikipedia.org/wiki/Binary_prefix) "Ki" ("KiB"), "Mi" ("MiB"), "Gi" ("GiB"), "Ti" ("TiB").
 Default unit is Bytes ("B").
+
+### Acceptable compound input types
+Varieties of the `size` function also exist for the following compound types. The `String` unit is always treated the same as above. Note that to avoid numerical overflow, very long arrays of files should probably favor larger units.
+- `Float size(File?, [String])`: Returns the size of the file, if specified, or 0.0 otherwise.
+- `Float size(Array[File], [String])`: Returns the sum of sizes of the files in the array.
+- `Float size(Array[File?], [String])`: Returns the sum of sizes of all specified files in the array.
 
 
 ## String sub(String, String, String)
@@ -2412,10 +2976,11 @@ The sub function will also accept `input` and `replace` parameters that can be c
 Example 2:
 
 ```wdl
-  task example {
-  File input_file = "my_input_file.bam"
-  String output_file_name = sub(input_file, "\\.bam$", ".index") # my_input_file.index
-
+task example {
+  input {
+    File input_file = "my_input_file.bam"
+    String output_file_name = sub(input_file, "\\.bam$", ".index") # my_input_file.index
+  }
   command {
     echo "I want an index instead" > ${output_file_name}
   }
@@ -2473,6 +3038,28 @@ Integer xlen = length(xs) # 3
 Integer ylen = length(ys) # 3
 Integer zlen = length(zs) # 0
 ```
+
+## Array[X] flatten(Array[Array[X]])
+
+Given an array of arrays, the `flatten` function concatenates all the
+member arrays in the order to appearance to give the result. It does not
+deduplicate the elements. Arrays nested more deeply than 2 must be
+flattened twice (or more) to get down to an unnested `Array[X]`.
+For example:
+
+```wdl
+Array[Array[Integer]] ai2D = [[1, 2, 3], [1], [21, 22]]
+Array[Integer] ai = flatten(ai2D)   # [1, 2, 3, 1, 21, 22]
+
+Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
+Array[File] af = flatten(af2D)   # ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
+
+Array[Array[Pair[Float,String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
+
+Array[Pair[Float,String]] ap = flatten(aap2D) # [(0.1, "mouse"), (3, "cat"), (15, "dog")]
+```
+
+The last example (`aap2D`) is useful because `Map[X, Y]` can be coerced to `Array[Pair[X, Y]]`.
 
 ## Array[String] prefix(String, Array[X])
 
@@ -2548,7 +3135,9 @@ When a task finishes, the `output` section defines how to convert the files and 
 
 ```wdl
 task test {
-  Array[File] files
+  input {
+    Array[File] files
+  }
   command {
     Rscript analysis.R --files=${sep=',' files}
   }
@@ -2570,9 +3159,11 @@ Consider this example:
 
 ```wdl
 task output_example {
-  String s
-  Int i
-  Float f
+  input {
+    String s
+    Int i
+    Float f
+  }
 
   command {
     python do_work.py ${s} ${i} ${f}
@@ -2611,7 +3202,9 @@ The array flattening approach can be done if a parameter is specified as `${sep=
 
 ```wdl
 task test {
-  Array[File] bams
+  input {
+    Array[File] bams
+  }
   command {
     python script.py --bams=${sep=',' bams}
   }
@@ -2634,7 +3227,9 @@ An array may be turned into a file with each element in the array occupying a li
 
 ```wdl
 task test {
-  Array[File] bams
+  input {
+    Array[File] bams
+  }
   command {
     sh script.sh ${write_lines(bams)}
   }
@@ -2669,7 +3264,9 @@ The array may be turned into a JSON document with the file path for the JSON fil
 
 ```wdl
 task test {
-  Array[File] bams
+  input {
+    Array[File] bams
+  }
   command {
     sh script.sh ${write_json(bams)}
   }
@@ -2710,7 +3307,9 @@ The map type can be serialized as a two-column TSV file and the parameter on the
 
 ```wdl
 task test {
-  Map[String, Float] sample_quality_scores
+  input {
+    Map[String, Float] sample_quality_scores
+  }
   command {
     sh script.sh ${write_map(sample_quality_scores)}
   }
@@ -2745,7 +3344,9 @@ The map type can also be serialized as a JSON file and the parameter on the comm
 
 ```wdl
 task test {
-  Map[String, Float] sample_quality_scores
+  input {
+    Map[String, Float] sample_quality_scores
+  }
   command {
     sh script.sh ${write_json(sample_quality_scores)}
   }
@@ -2784,7 +3385,9 @@ An object is a more general case of a map where the keys are strings and the val
 
 ```wdl
 task test {
-  Object sample
+  input {
+    Object sample
+  }
   command {
     perl script.pl ${write_object(sample)}
   }
@@ -2817,7 +3420,9 @@ value1\tvalue2\tvalue3\tvalue4
 
 ```wdl
 task test {
-  Object sample
+  input {
+    Object sample
+  }
   command {
     perl script.pl ${write_json(sample)}
   }
@@ -2859,7 +3464,9 @@ an `Array[Object]` can be serialized using `write_objects()` into a TSV file:
 
 ```wdl
 task test {
-  Array[Object] sample
+  input {
+    Array[Object] sample
+  }
   command {
     perl script.pl ${write_objects(sample)}
   }
@@ -2899,7 +3506,9 @@ an `Array[Object]` can be serialized using `write_json()` into a JSON file:
 
 ```wdl
 task test {
-  Array[Object] sample
+  input {
+    Array[Object] sample
+  }
   command {
     perl script.pl ${write_json(sample)}
   }
@@ -2944,6 +3553,7 @@ Where `/jobs/564759/sample.json` would contain:
 ]
 ```
 
+
 ## De-serialization of Task Outputs
 
 A task's command can only output data as files.  Therefore, every de-serialization function in WDL takes a file input and returns a WDL type
@@ -2956,8 +3566,10 @@ For example, if I have a task that outputs a `String` and an `Int`:
 
 ```wdl
 task output_example {
-  String param1
-  String param2
+  input {
+    String param1
+    String param2
+  }
   command {
     python do_work.py ${param1} ${param2} --out1=int_file --out2=str_file
   }

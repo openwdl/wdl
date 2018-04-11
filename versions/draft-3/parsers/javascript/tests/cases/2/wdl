@@ -1,0 +1,21 @@
+task grep_words {
+  String start
+  File infile
+
+  command {
+    grep '^${start}' ${infile}
+  }
+  output {
+    Array[String] words = read_lines(stdout())
+  }
+}
+workflow wf {
+  File dictionary
+
+  call grep_words as grep_pythonic_words {
+    input: start="pythonic", infile=dictionary
+  }
+  call grep_words as grep_workf_words {
+    input: start="workf", infile=dictionary
+  }
+}
