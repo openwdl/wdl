@@ -33,8 +33,8 @@
       * [Task Input Declaration](#task-input-declaration)
       * [Task Input Localization](#task-input-localization)
     * [Command Section](#command-section)
-      * [Command Parts](#command-parts)
-      * [Command Part Options](#command-part-options)
+      * [Expression Placeholders](#command-parts)
+      * [Expression Placeholder Options](#command-part-options)
         * [sep](#sep)
         * [true and false](#true-and-false)
         * [default](#default)
@@ -834,13 +834,25 @@ task t {
 
 ### Command Section
 
-A command is a *task section* that starts with the keyword 'command', and is enclosed in either curly braces `{ ... }` or triple angle braces `<<< ... >>>`.  The body of the command specifies a bash command line to run with placeholders for the parts of the command line that need to be filled in.
+The `command` section is the *task section* that starts with the keyword 'command', and is enclosed in either curly braces `{ ... }` or triple angle braces `<<< ... >>>`.
+It defines a shell command which will be run in the execution environment after all of the inputs are staged and before the outputs are evaluated. 
+The body of the command also allows placeholders for the parts of the command line that need to be filled in.
 
-#### Command Parts
+Expression placeholders are denoted by `${...}` or `~{...}` depending on whether they appear in a `command { }` or `command <<< >>>` body styles.
 
-WDL considers everything within the command section as a literal string with the exception of interpolated command sections denoted by `${...}`. The content enclosed in `${...}` within the command section provides an expression to evaluate, with the result included in-place in the command string.
+#### Expression Placeholders
 
-The expression is able to reference inputs or declarations at the task level. For example:
+Expression placeholders differ depending on the command section style:
+
+|Command Body Style|Placeholder Style|
+|---|---|
+|`command { ... }`|`~{}` (preferred) or `${}`|
+|`command <<< >>>`|`~{}` only|
+
+These placeholders contain a single expression which will be evaluated using inputs or declarations available in the task. 
+The placeholders are then replaced in the command script with the result of the evaluation.
+
+For example a command might reference an input to the task, like this:
 
 ```wdl
 task test {
@@ -848,14 +860,28 @@ task test {
     String flags
   }
   command {
-    ps ${flags}
+    ps ~{flags}
   }
 }
 ```
 
-In this case `flags` within the `${`...`}` is a simple variable lookup expression to the `flags` input. The expression can be more complex, for example including an inline function call: `write_lines(some_array_value)`.
+In this case `flags` within the `${...}` is a variable lookup expression referencing the `flags` input string.
+The expression can also be more complex, like a function call: `write_lines(some_array_value)`
 
-> **NOTE**: the expression in this context can only evaluate to a primitive type (e.g. not `Array`, `Map`, or `Object`).  The only exception to this rule is when `sep` is specified as one of the `$var_option` fields
+Here is the same example using the `command <<<` style:
+```wdl
+task test {
+  String flags
+  command <<<
+    ps ~{flags}
+  >>>
+}
+```
+
+> **NOTE**: the expression result must ultimately be converted to a string in order to take the place of the placeholder in the command script. 
+This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Object`). 
+To place an array into the command block a separater character must be specified using `sep` (eg `${sep=", " int_array}`).
+
 
 As another example, consider how the parser would parse the following command:
 
@@ -865,16 +891,16 @@ grep '${start}...${end}' ${input}
 
 This command would be parsed as:
 
-* `grep '` - command_part_string
-* `${start}` - command_part_var
-* `...` - command_part_string
-* `${end}` - command_part_var
-* `' ` - command_part_string
-* `${input}` - command_part_var
+* `grep '` - literal string
+* `${start}` - lookup expression to the variable `start`
+* `...` - literal string
+* `${end}` - lookup expression to the variable `end`
+* `' ` - literal string
+* `${input}` - lookup expression to the variable `input`
 
-#### Command Part Options
+#### Expression Placeholder Options
 
-Command part options are `option="value"` pairs that precede the expression in an expression command part and customize the interpolation of the WDL value into the command string being built. The following options are available:
+Expression placeholder options are `option="value"` pairs that precede the expression in an expression command part and customize the interpolation of the WDL value into the command string being built. The following options are available:
 
 * `sep` - eg `${sep=", " array_value}`
 * `true` and `false` - eg `${true="--yes" false="--no" boolean_value}`
@@ -2203,7 +2229,7 @@ task inc {
   }
 
   command <<<
-  python -c "print(${i} + 1)"
+  python -c "print(~{i} + 1)"
   >>>
 
   output {
@@ -2231,7 +2257,7 @@ task inc {
   }
 
   command <<<
-  python -c "print(${i} + 1)"
+  python -c "print(~{i} + 1)"
   >>>
 
   output {
@@ -2244,7 +2270,7 @@ task sum {
     Array[Int] ints
   }
   command <<<
-  python -c "print(${sep="+" ints})"
+  python -c "print(~{sep="+" ints})"
   >>>
   output {
     Int sum = read_int(stdout())
@@ -2792,7 +2818,7 @@ Given any `Object`, this will write out a 2-row, n-column TSV file with the obje
 task test {
   Object input
   command <<<
-    /bin/do_work --obj=${write_object(input)}
+    /bin/do_work --obj=~{write_object(input)}
   >>>
   output {
     File results = stdout()
@@ -2831,7 +2857,7 @@ task test {
     Array[Object] in
   }
   command <<<
-    /bin/do_work --obj=${write_objects(in)}
+    /bin/do_work --obj=~{write_objects(in)}
   >>>
   output {
     File results = stdout()
