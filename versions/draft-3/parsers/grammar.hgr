@@ -355,10 +355,16 @@ grammar {
     $meta = :meta $meta_map -> Meta(map=$1)
     $parameter_meta = :parameter_meta $meta_map -> ParameterMeta(map=$1)
     $meta_map = :lbrace list($meta_kv) :rbrace -> $1
-    $meta_kv = :identifier :colon $meta_value
-    $meta_value = $static_string | :integer | :float | :boolean | :null | $meta_object | $meta_array
-    $meta_object = :lbrace list($meta_kv, :comma) :rbrace
-    $meta_array = :lsquare list($meta_value, :comma) :rsquare
+    $meta_kv = :identifier :colon $meta_value -> MetaKvPair(key=$0, value=$2)
+    $meta_value = parser<expression> {
+      $meta_value = $static_string
+      $meta_value = :boolean
+      $meta_value = :integer
+      $meta_value = :float
+      $meta_value = :null
+      $meta_value = :lsquare list($meta_value, :comma) :rsquare -> MetaArray(values=$1)
+      $meta_value = :lbrace list($meta_kv, :comma) :rbrace -> MetaObject(map=$1)
+    }
 
     # Declarations: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#declarations
     $input_declaration = $type_e :identifier optional($setter) -> InputDeclaration(type=$0, name=$1, expression=$2)
