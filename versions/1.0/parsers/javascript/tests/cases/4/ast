@@ -1,0 +1,107 @@
+(Namespace:
+  imports=[],
+  body=[
+    (Task:
+      name=<{0}:1:6 identifier "d2M=">,
+      declarations=[
+        (Declaration:
+          type=<{0}:2:3 type "U3RyaW5n">,
+          name=<{0}:2:10 identifier "c3Ry">,
+          expression=None
+        )
+      ],
+      sections=[
+        (RawCommand:
+          parts=[
+            <{0}:3:12 cmd_part "CiAgICBlY2hvICI=">,
+            (CommandParameter:
+              attributes=[],
+              expr=<{0}:4:13 identifier "c3Ry">
+            ),
+            <{0}:4:17 cmd_part "IiB8IHdjIC1jCiAg">
+          ]
+        ),
+        (Outputs:
+          attributes=[
+            (Output:
+              type=<{0}:7:5 type "SW50">,
+              name=<{0}:7:9 identifier "Y291bnQ=">,
+              expression=(Subtract:
+                lhs=(FunctionCall:
+                  name=<{0}:7:17 identifier "cmVhZF9pbnQ=">,
+                  params=[
+                    (FunctionCall:
+                      name=<{0}:7:26 identifier "c3Rkb3V0">,
+                      params=[]
+                    )
+                  ]
+                ),
+                rhs=<{0}:7:38 integer "MQ==">
+              )
+            )
+          ]
+        )
+      ]
+    ),
+    (Workflow:
+      name=<{0}:11:10 identifier "d2Y=">,
+      body=[
+        (Declaration:
+          type=(Type:
+            name=<{0}:12:3 type "QXJyYXk=">,
+            subtype=[
+              (Type:
+                name=<{0}:12:9 type "QXJyYXk=">,
+                subtype=[
+                  (Type:
+                    name=<{0}:12:15 type "QXJyYXk=">,
+                    subtype=[
+                      <{0}:12:21 type "U3RyaW5n">
+                    ]
+                  )
+                ]
+              )
+            ]
+          ),
+          name=<{0}:12:31 identifier "dHJpcGxlX2FycmF5">,
+          expression=None
+        ),
+        (Scatter:
+          item=<{0}:13:11 identifier "ZG91YmxlX2FycmF5">,
+          collection=<{0}:13:27 identifier "dHJpcGxlX2FycmF5">,
+          body=[
+            (Scatter:
+              item=<{0}:14:13 identifier "c2luZ2xlX2FycmF5">,
+              collection=<{0}:14:29 identifier "ZG91YmxlX2FycmF5">,
+              body=[
+                (Scatter:
+                  item=<{0}:15:15 identifier "aXRlbQ==">,
+                  collection=<{0}:15:23 identifier "c2luZ2xlX2FycmF5">,
+                  body=[
+                    (Call:
+                      task=<{0}:16:14 fqn "d2M=">,
+                      alias=None,
+                      body=(CallBody:
+                        declarations=[],
+                        io=[
+                          (Inputs:
+                            map=[
+                              (IOMapping:
+                                key=<{0}:16:24 identifier "c3Ry">,
+                                value=<{0}:16:28 identifier "aXRlbQ==">
+                              )
+                            ]
+                          )
+                        ]
+                      )
+                    )
+                  ]
+                )
+              ]
+            )
+          ]
+        )
+      ]
+    )
+  ]
+)
