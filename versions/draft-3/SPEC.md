@@ -3053,6 +3053,18 @@ Array[String] zs = [ "d", "e" ]
 Array[Pair[Int, String]] crossed = cross(xs, zs) # i.e. crossed = [ (1, "d"), (1, "e"), (2, "d"), (2, "e"), (3, "d"), (3, "e") ]
 ```
 
+## Map[X,Y] as_map(Array[Pair[X,Y]])
+
+Given any two Object types in a Pair, the `as_map` function returns a Map in which the given left element is the key and the right element the value.
+
+```
+Array[Pair[String,Int]] x = [("a", 1), ("b", 2), ("c", 3)]
+Array[Pair[String,Pair[File,File]] y = [("a", ("a.bam", "a.bai")), ("b", ("b.bam", "b.bai"))]
+
+Map[String,Int] xmap = as_map(x) # {"a": 1, "b": 2, "c": 3}
+Map[String,Pair[File,File] ymap = as_map(y) # {"a": ("a.bam, "a.bai"), "b": ("b.bam", "b.bai")}
+```
+
 ## Integer length(Array[X])
 
 Given an Array, the `length` function returns the number of elements in the Array as an Integer.
