@@ -119,6 +119,8 @@
   * [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
   * [Array\[Pair(X,Y)\] zip(Array\[X\], Array\[Y\])](#arraypairxy-ziparrayx-arrayy)
   * [Array\[Pair(X,Y)\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
+  * [Array\[Pair(X,Y)\] as_pairs(Map\[X,Y\])](#arraypairxy-as_pairsmapxy)
+  * [Map\[X,Y\] as_map(Array\[Pair(X,Y)\])](#mapxy-as_maparraypairxy)
   * [Integer length(Array\[X\])](#integer-lengtharrayx)
   * [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
   * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
@@ -3053,9 +3055,21 @@ Array[String] zs = [ "d", "e" ]
 Array[Pair[Int, String]] crossed = cross(xs, zs) # i.e. crossed = [ (1, "d"), (1, "e"), (2, "d"), (2, "e"), (3, "d"), (3, "e") ]
 ```
 
+## Array[Pair[X,Y]] as_pairs(Map[X,Y])
+
+Given any two Object types in a Map, the `as_pairs` function returns an Array containing each element in the form of a Pair. The key will be the left element of the Pair and the value the right element.
+
+```
+Map[String, Int] x = {"a": 1, "b": 2, "c": 3}
+Map[String,Pair[File,File] y = {"a": ("a.bam, "a.bai"), "b": ("b.bam", "b.bai")}
+
+Array[Pair[String,Int]] xpairs = as_pairs(x) # [("a", 1), ("b", 2), ("c", 3)]
+Array[Pair[String,Pair[File,File]] ypairs = as_pairs(y) # [("a", ("a.bam", "a.bai")), ("b", ("b.bam", "b.bai"))]
+```
+
 ## Map[X,Y] as_map(Array[Pair[X,Y]])
 
-Given any two Object types in a Pair, the `as_map` function returns a Map in which the given left element is the key and the right element the value.
+Given any two Object types in an Array of Pairs, the `as_map` function returns a Map in which the given left element is the key and the right element the value.
 
 ```
 Array[Pair[String,Int]] x = [("a", 1), ("b", 2), ("c", 3)]
