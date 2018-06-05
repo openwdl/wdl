@@ -4,9 +4,9 @@ WDL is a workflow language meant to be read and written by humans. Broader docum
 by the [WDL website](https://software.broadinstitute.org/wdl/). Any questions or issues can be discussed at
 our [support forum](http://gatkforums.broadinstitute.org/wdl).
 
-* [Draft 1 Language Specification](https://github.com/openwdl/wdl/blob/master/versions/draft-1/SPEC.md) (closed)
-* [Draft 2 Language Specification](https://github.com/openwdl/wdl/blob/master/versions/draft-2/SPEC.md) (closed)
-* [Draft 3 Language Specification](versions/draft-3/SPEC.md) (open)
+* [Official Language Specification](https://github.com/openwdl/wdl/blob/master/versions/1.0/SPEC.md) 
+* [Developmental Language Specification](https://github.com/openwdl/wdl/blob/master/versions/development/SPEC.md) 
+
 
 Library and engine support is provided by
 
