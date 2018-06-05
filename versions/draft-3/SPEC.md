@@ -3057,7 +3057,7 @@ Array[Pair[Int, String]] crossed = cross(xs, zs) # i.e. crossed = [ (1, "d"), (1
 
 ## Array[Pair[X,Y]] as_pairs(Map[X,Y])
 
-Given any two Object types in a Map, the `as_pairs` function returns an Array containing each element in the form of a Pair. The key will be the left element of the Pair and the value the right element.
+Given a Map, the `as_pairs` function returns an Array containing each element in the form of a Pair. The key will be the left element of the Pair and the value the right element.
 
 ```
 Map[String, Int] x = {"a": 1, "b": 2, "c": 3}
@@ -3069,7 +3069,7 @@ Array[Pair[String,Pair[File,File]] ypairs = as_pairs(y) # [("a", ("a.bam", "a.ba
 
 ## Map[X,Y] as_map(Array[Pair[X,Y]])
 
-Given any two Object types in an Array of Pairs, the `as_map` function returns a Map in which the given left element is the key and the right element the value.
+Given an Array consisting of Pairs, the `as_map` function returns a Map in which the left elements of the Pairs are the keys and the right elements the values.
 
 ```
 Array[Pair[String,Int]] x = [("a", 1), ("b", 2), ("c", 3)]
