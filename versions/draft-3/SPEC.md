@@ -3070,7 +3070,7 @@ Array[Pair[String,Pair[File,File]] ypairs = as_pairs(y) # [("a", ("a.bam", "a.ba
 
 ## Map[X,Y] as_map(Array[Pair[X,Y]])
 
-Given an Array consisting of Pairs, the `as_map` function returns a Map in which the left elements of the Pairs are the keys and the right elements the values. The order of the key/value pairs in the resulting Map is the same as the order of the Pairs in the Array.
+Given an Array consisting of Pairs, the `as_map` function returns a Map in which the left elements of the Pairs are the keys and the right elements the values. The left element of the Pairs passed to `as_map` must be a primitive type. The order of the key/value pairs in the resulting Map is the same as the order of the Pairs in the Array.
 
 In cases where multiple Pairs would produce the same key, the workflow will fail.
 
@@ -3084,7 +3084,7 @@ Map[String,Pair[File,File] ymap = as_map(y) # {"a": ("a.bam, "a.bai"), "b": ("b.
 
 ## Map[X,Array[Y]] collect_by_key(Array[Pair[X,Y]])
 
-Given an Array consisting of Pairs, the `collect_by_key` function returns a Map in which the left elements of the Pairs are the keys and the right elements the values. The values will be placed in an Array to allow for multiple Pairs to produce the same key. The order of the keys in the Map is the same as the order in the Array based on their first occurence. The order of the elements in the resulting Arrays is the same as their occurence in the given Array of Pairs.
+Given an Array consisting of Pairs, the `collect_by_key` function returns a Map in which the left elements of the Pairs are the keys and the right elements the values. The left element of the Pairs passed to `as_map` must be a primitive type. The values will be placed in an Array to allow for multiple Pairs to produce the same key. The order of the keys in the Map is the same as the order in the Array based on their first occurence. The order of the elements in the resulting Arrays is the same as their occurence in the given Array of Pairs.
 
 ```
 Array[Pair[String,Int]] x = [("a", 1), ("b", 2), ("a", 3)]
