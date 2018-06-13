@@ -762,7 +762,7 @@ Engines should at the very least support the following protocols for import URIs
 * `file://`
 * No protocol (see below)
 
-In the event that there is no protocol, if this is an absolute path (i.e. starts with `/`) it is interpreted as a `file://`. Otherwise it is **relative** to the location of the current document. For instance, if the current doc is at `file://foo/bar/baz/qux.wdl` and specificies `import some/task.wdl` this will be resolved to `file://foo/bar/baz/some/task.wdl`. Likewise if the current doc is at `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` and imports `subworkflow.wdl`, it will be resolved to `http://www.github.com/openwdl/coolwdls/subworkflow.wdl`. It is up to the implementation to provide a mechanism which will allow these imports to be resolved correctly.
+In the event that there is no protocol the import is **relative** to the location of the current document. For instance, if the current doc is at `file://foo/bar/baz/qux.wdl` and specificies `import some/task.wdl` this will be resolved to `file://foo/bar/baz/some/task.wdl`. Likewise if the current doc is at `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` and imports `subworkflow.wdl`, it will be resolved to `http://www.github.com/openwdl/coolwdls/subworkflow.wdl`. If a protocol-less import starts with `/` it will be interpreted as starting from the root of the host, e.g. if the current file is at `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` and it imports `/openwdl/otherwdls/subworkflow.wdl` it will resolve to `http://www.github.com/openwdl/otherwdls/subworkflow.wdl`. It is up to the implementation to provide a mechanism which will allow these imports to be resolved correctly.
 
 
 ## Task Definition
