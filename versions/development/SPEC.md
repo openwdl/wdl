@@ -762,8 +762,16 @@ Engines should at the very least support the following protocols for import URIs
 * `file://`
 * No protocol (see below)
 
-In the event that there is no protocol the import is **relative** to the location of the current document. For instance, if the current doc is at `file://foo/bar/baz/qux.wdl` and specificies `import some/task.wdl` this will be resolved to `file://foo/bar/baz/some/task.wdl`. Likewise if the current doc is at `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` and imports `subworkflow.wdl`, it will be resolved to `http://www.github.com/openwdl/coolwdls/subworkflow.wdl`. If a protocol-less import starts with `/` it will be interpreted as starting from the root of the host, e.g. if the current file is at `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` and it imports `/openwdl/otherwdls/subworkflow.wdl` it will resolve to `http://www.github.com/openwdl/otherwdls/subworkflow.wdl`. It is up to the implementation to provide a mechanism which will allow these imports to be resolved correctly.
+In the event that there is no protocol the import is resolved **relative** to the location of the current document. If a protocol-less import starts with `/` it will be interpreted as starting from the root of the host in the resolved URL. It is up to the implementation to provide a mechanism which allows these imports to be resolved correctly.
 
+Some examples:
+
+| Root Workflow Location                                | Imported Path                      | Resolved Path                                           |
+|-------------------------------------------------------|------------------------------------|---------------------------------------------------------|
+| file://foo/bar/baz/qux.wdl                            | some/task.wdl                      | file://foo/bar/baz/some/task.wdl                        |
+| http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | subworkflow.wdl                    | http://www.github.com/openwdl/coolwdls/subworkflow.wdl  |
+| http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | /openwdl/otherwdls/subworkflow.wdl | http://www.github.com/openwdl/otherwdls/subworkflow.wdl |
+| file://some/path/hello.wdl                            | /another/path/world.wdl            | file:///another/path/world.wdl                          |
 
 ## Task Definition
 
