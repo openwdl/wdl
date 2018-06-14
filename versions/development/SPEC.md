@@ -732,7 +732,7 @@ A WDL file may contain import statements to include WDL code from other sources
 $import = 'import' $ws+ $string ($ws+ 'as' $ws+ $identifier)?
 ```
 
-The import statement specifies that `$string` which is to be interpted as a URI which points to a WDL file.  The engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code.
+The import statement specifies that `$string` which is to be interpreted as a URI which points to a WDL file.  The engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code.
 
 Every imported WDL file requires a namespace which can be specified using an identifier (via the `as $identifier` syntax). If you do not explicitly specify a namespace identifier then the default namespace is the filename of the imported WDL, minus the .wdl extension.
 For all imported WDL files, the tasks and workflows imported from that file will only be accessible through that assigned [namespace](#namespaces).
