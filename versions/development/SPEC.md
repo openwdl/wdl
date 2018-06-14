@@ -764,7 +764,7 @@ Engines should at the very least support the following protocols for import URIs
 
 In the event that there is no protocol the import is resolved **relative** to the location of the current document. If a protocol-less import starts with `/` it will be interpreted as starting from the root of the host in the resolved URL. It is up to the implementation to provide a mechanism which allows these imports to be resolved correctly.
 
-Some examples:
+Some examples of correct import resolution:
 
 | Root Workflow Location                                | Imported Path                      | Resolved Path                                           |
 |-------------------------------------------------------|------------------------------------|---------------------------------------------------------|
