@@ -1791,13 +1791,13 @@ workflow foo {
 
 ### Info and Debug Logging
 
-Log and debug statements allow a workflow author to signal to the engine to log a value at either *info* or *debug* level.
+Log and debug statements (`info` and `debug`) allow a workflow author to signal to the engine to log a value at either *info* or *debug* level.
 
 The exact mechanism of displaying logged statements to the user is left to the engine and may well be different for different workflows:
 
-* A command line invocation of a workflow may well 'log' to the console
-* A server running a workflow might 'log' into some form of completion report that it provides to the user on job completion. 
-* An engine if free to provide any additional context that it chooses to into the log statements (a timestamp or a fully qualified path to the current workflow, for example)
+* A command line invocation of a workflow may well 'log' to the console's stdout, for example.
+* On the other hand a server running a workflow might 'log' into a completion report that it provides to the user on job completion. 
+* An engine if free to provide any additional context that it chooses as it processes the log statements (a timestamp or a fully qualified path to the current workflow, for example)
 * An engine may even decide not to expose any logs to the end-user at all, if that makes sense in its current execution mode.
 
 The value following the `log` or `info` can be any expression. It must evaluate to a `String` or `String?` value, or a value which can be coerced into `String` or `String?`
@@ -1824,8 +1824,10 @@ starting call to y
 completed call to y
 LOG: y produced the value 66
 workflow completed with output: {
-  x: 55,
-  y: 66
+  x.value: 55,
+  x.other: 101,
+  y.value: 66
+  y.other: 99
 }
 ```
 
@@ -1858,8 +1860,8 @@ completed call to x
 starting call to y
 completed call to y
 workflow completed with output: {
-  x: 55,
-  y: 66
+  x.value: 55,
+  y.value: 66
 }
 ```
 
