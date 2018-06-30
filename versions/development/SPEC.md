@@ -1792,7 +1792,7 @@ workflow foo {
 ### Info and Debug Logging
 
 Log and debug statements allow a workflow author to signal to the engine to log a value at either *info* or *debug* level.
-The exact mechanism of displaying logged statements to the user is left to the engine and may well be different for different workflows (for example a command line invocation may well 'log' to the console, whereas a server might instead 'log' into the completion report it provides to the user on job completion.
+The exact mechanism of displaying logged statements to the user is left to the engine and may well be different for different workflows (for example a command line invocation may well 'log' to the console, whereas a server might instead 'log' into the completion report it provides to the user on job completion. An engine may even decide not to expose any logs to the end-user at all, if that makes sense in its current execution mode.
 
 The value following the `log` or `info` can be any expression. It must evaluate to a `String` or `String?` value, or a value which can be coerced into `String` or `String?`
 
@@ -1826,7 +1826,9 @@ workflow completed with output: {
 #### Log Evaluation Timing:
 Since the fields in the workflow are declarative rather than imperative, there is no chronological order implied by order in the document. Therefore `log` and `debug` statements should be evaluated *graph nodes* in the sense that they can execute as soon as any dependencies of their value expressions are met.
 
-In other words, in the following example the logs evaluate immediately, not in line with the workflow execution:
+In other words, in the following example the logs evaluate immediately, not in line with the order of calls in the document. The rationale being that an event worth logging base solely by its location in the document is probably already logged by the engine regardless.
+
+For example consider this workflow:
 ```wdl
 workflow static_logs {
   call x
@@ -1839,7 +1841,7 @@ workflow static_logs {
 }
 ```
 
-In 'pseduo-console-output', the above workflow might produce the following (probably unintended!) output:
+In 'pseduo-console-output', the workflow might produce the following (probably unintended!) output:
 ```
 #> run static_logs.wdl
 
