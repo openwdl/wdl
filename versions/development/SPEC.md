@@ -1792,7 +1792,13 @@ workflow foo {
 ### Info and Debug Logging
 
 Log and debug statements allow a workflow author to signal to the engine to log a value at either *info* or *debug* level.
-The exact mechanism of displaying logged statements to the user is left to the engine and may well be different for different workflows (for example a command line invocation may well 'log' to the console, whereas a server might instead 'log' into the completion report it provides to the user on job completion. An engine may even decide not to expose any logs to the end-user at all, if that makes sense in its current execution mode.
+
+The exact mechanism of displaying logged statements to the user is left to the engine and may well be different for different workflows:
+
+* A command line invocation of a workflow may well 'log' to the console
+* A server running a workflow might 'log' into some form of completion report that it provides to the user on job completion. 
+* An engine if free to provide any additional context that it chooses to into the log statements (a timestamp or a fully qualified path to the current workflow, for example)
+* An engine may even decide not to expose any logs to the end-user at all, if that makes sense in its current execution mode.
 
 The value following the `log` or `info` can be any expression. It must evaluate to a `String` or `String?` value, or a value which can be coerced into `String` or `String?`
 
@@ -1856,6 +1862,9 @@ workflow completed with output: {
   y: 66
 }
 ```
+
+
+A log statement inside a conditional `if` section should evaluate only if the `if` section containing it evaluates. Similarly, a log statement inside a `scatter` section will evaluate the same number of times as the width of the `scatter`.
 
 ### Parameter Metadata
 
