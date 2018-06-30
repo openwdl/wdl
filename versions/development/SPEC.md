@@ -1809,11 +1809,11 @@ workflow log_something {
 
 In 'pseduo-console-output', the above workflow might produce:
 ```
-#> run static_logs.wdl
+#> run log_something.wdl
 
 starting call to x
 completed call to x
-LOG: x produced the value 55
+DEBUG: x produced the value 55
 starting call to y
 completed call to y
 LOG: y produced the value 66
