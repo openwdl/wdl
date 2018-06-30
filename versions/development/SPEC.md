@@ -1402,6 +1402,7 @@ A workflow may have the following elements:
 * Calls to tasks or subworkflows (as many as needed, optional)
 * Scatter blocks (as many as needed, optional)
 * If blocks (as many as needed, optional)
+* A log or debug statement (as many as needed, optional)
 * An `output` section (required if the workflow is to have outputs)
 * A `meta` section (optional)
 * A `parameter_meta` section (optional)
@@ -1417,8 +1418,6 @@ workflow w {
   }
 }
 ```
-
-
 
 #### Optional Inputs
 
@@ -1789,6 +1788,83 @@ workflow foo {
   call y { input: int_input = select_first([x_out_maybe, 5]) } # The select_first produces an Int, not an Int?
 }
 ```
+
+### Info and Debug Logging
+
+Log and debug statements (`info` and `debug`) allow a workflow author to signal to the engine to log a value at either *info* or *debug* level.
+
+The exact mechanism of displaying logged statements to the user is left to the engine and may well be different for different workflows:
+
+* A command line invocation of a workflow may well 'log' to the console's stdout, for example.
+* On the other hand a server running a workflow might 'log' into a completion report that it provides to the user on job completion. 
+* An engine if free to provide any additional context that it chooses as it processes the log statements (a timestamp or a fully qualified path to the current workflow, for example)
+* An engine may even decide not to expose any logs to the end-user at all, if that makes sense in its current execution mode.
+
+The value following the `log` or `info` can be any expression. It must evaluate to a `String` or `String?` value, or a value which can be coerced into `String` or `String?`
+
+Log and debug statements look like this:
+```wdl
+workflow log_something {
+  call x
+  debug "x produced the value ~{x.value}!"
+
+  call y { input: x = x.value }
+  info "y produced the value ~{y.value}!"
+}
+```
+
+In 'pseduo-console-output', the above workflow might produce:
+```
+#> run log_something.wdl
+
+starting call to x
+completed call to x
+DEBUG: x produced the value 55
+starting call to y
+completed call to y
+LOG: y produced the value 66
+workflow completed with output: {
+  x.value: 55,
+  x.other: 101,
+  y.value: 66
+  y.other: 99
+}
+```
+
+#### Log Evaluation Timing:
+Since the fields in the workflow are declarative rather than imperative, there is no chronological order implied by order in the document. Therefore `log` and `debug` statements should be evaluated *graph nodes* in the sense that they can execute as soon as any dependencies of their value expressions are met.
+
+In other words, in the following example the logs evaluate immediately, not in line with the order of calls in the document. The rationale being that an event worth logging base solely by its location in the document is probably already logged by the engine regardless.
+
+For example consider this workflow:
+```wdl
+workflow static_logs {
+  call x
+  log "Finished x"
+
+  call y { input: x = x.value }
+  log "Finished y"
+}
+```
+
+In 'pseduo-console-output', the workflow might produce the following (probably unintended!) output:
+```
+#> run static_logs.wdl
+
+starting call to x
+LOG: Finished x
+LOG: Finished y
+completed call to x
+starting call to y
+completed call to y
+workflow completed with output: {
+  x.value: 55,
+  y.value: 66
+}
+```
+
+
+A log statement inside a conditional `if` section should evaluate only if the `if` section containing it evaluates. Similarly, a log statement inside a `scatter` section will evaluate the same number of times as the width of the `scatter`.
 
 ### Parameter Metadata
 
