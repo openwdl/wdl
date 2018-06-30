@@ -1840,11 +1840,9 @@ For example consider this workflow:
 ```wdl
 workflow static_logs {
   call x
-
   log "Finished x"
 
   call y { input: x = x.value }
-
   log "Finished y"
 }
 ```
