@@ -1,20 +1,20 @@
 # Workflow Description Language
 
-## Table Of Contents
-
-<!---toc start-->
+Table of Contents
+=================
 
 * [Workflow Description Language](#workflow-description-language)
-  * [Table Of Contents](#table-of-contents)
   * [Introduction](#introduction)
   * [State of the Specification](#state-of-the-specification)
 * [Language Specification](#language-specification)
   * [Global Grammar Rules](#global-grammar-rules)
     * [Whitespace, Strings, Identifiers, Constants](#whitespace-strings-identifiers-constants)
     * [Types](#types)
-    * [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
+      * [Custom  Types](#custom--types)
+    * [Fully Qualified Names &amp; Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
     * [Declarations](#declarations)
     * [Expressions](#expressions)
+      * [If then else](#if-then-else)
     * [Operator Precedence Table](#operator-precedence-table)
     * [Member Access](#member-access)
     * [Map and Array Indexing](#map-and-array-indexing)
@@ -22,7 +22,6 @@
     * [Function Calls](#function-calls)
     * [Array Literals](#array-literals)
     * [Map Literals](#map-literals)
-    * [Object Literals](#object-literals)
     * [Pair Literals](#pair-literals)
   * [Document](#document)
   * [Versioning](#versioning)
@@ -32,9 +31,11 @@
     * [Task Inputs](#task-inputs)
       * [Task Input Declaration](#task-input-declaration)
       * [Task Input Localization](#task-input-localization)
+        * [Special Case: Versioning Filesystems](#special-case-versioning-filesystems)
+    * [Non-Input Declarations](#non-input-declarations)
     * [Command Section](#command-section)
-      * [Expression Placeholders](#command-parts)
-      * [Expression Placeholder Options](#command-part-options)
+      * [Expression Placeholders](#expression-placeholders)
+      * [Expression Placeholder Options](#expression-placeholder-options)
         * [sep](#sep)
         * [true and false](#true-and-false)
         * [default](#default)
@@ -70,67 +71,58 @@
     * [Parameter Metadata](#parameter-metadata)
     * [Metadata](#metadata)
     * [Outputs](#outputs)
+      * [Omitting Workflow Outputs](#omitting-workflow-outputs)
   * [Struct Definition](#struct-definition)
-    * [Declarations](#struct-declarations)
+    * [Struct Declarations](#struct-declarations)
       * [Optional and non Empty Struct Values](#optional-and-non-empty-struct-values)
     * [Using a Struct](#using-a-struct)
-      * [Struct Assignment From Object Literal](#struct-assignment-from-object-literal)
-      * [Struct Member Access](#struct-member-access)
-      * [Importing Structs](#importing-structs)
+      * [Struct Assignment from Map Literal](#struct-assignment-from-map-literal)
+    * [Struct Member Access](#struct-member-access)
+    * [Importing Structs](#importing-structs)
 * [Namespaces](#namespaces)
 * [Scope](#scope)
-* [Optional Parameters & Type Constraints](#optional-parameters--type-constraints)
+* [Optional Parameters &amp; Type Constraints](#optional-parameters--type-constraints)
   * [Prepending a String to an Optional Parameter](#prepending-a-string-to-an-optional-parameter)
 * [Scatter / Gather](#scatter--gather)
 * [Variable Resolution](#variable-resolution)
   * [Task-Level Resolution](#task-level-resolution)
   * [Workflow-Level Resolution](#workflow-level-resolution)
 * [Computing Inputs](#computing-inputs)
-  * [Computing Task Inputs](#task-inputs)
-  * [Computing Workflow Inputs](#workflow-inputs)
+  * [Computing Task Inputs](#computing-task-inputs)
+  * [Computing Workflow Inputs](#computing-workflow-inputs)
   * [Specifying Workflow Inputs in JSON](#specifying-workflow-inputs-in-json)
-  * [Optional Inputs](#optional-inputs)
-  * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
-    * [Optional Inputs with Defaults](#optional-inputs-with-defaults)
-  * [Call Input Blocks](#call-input-blocks)
 * [Type Coercion](#type-coercion)
 * [Standard Library](#standard-library)
   * [File stdout()](#file-stdout)
   * [File stderr()](#file-stderr)
-  * [Array\[String\] read_lines(String|File)](#arraystring-read_linesstringfile)
-  * [Array\[Array\[String\]\] read_tsv(String|File)](#arrayarraystring-read_tsvstringfile)
-  * [Map\[String, String\] read_map(String|File)](#mapstring-string-read_mapstringfile)
-  * [Object read_object(String|File)](#object-read_objectstringfile)
-  * [Array\[Object\] read_objects(String|File)](#arrayobject-read_objectsstringfile)
+  * [Array[String] read_lines(String|File)](#arraystring-read_linesstringfile)
+  * [Array[Array[String]] read_tsv(String|File)](#arrayarraystring-read_tsvstringfile)
+  * [Map[String, String] read_map(String|File)](#mapstring-string-read_mapstringfile)
   * [mixed read_json(String|File)](#mixed-read_jsonstringfile)
   * [Int read_int(String|File)](#int-read_intstringfile)
   * [String read_string(String|File)](#string-read_stringstringfile)
   * [Float read_float(String|File)](#float-read_floatstringfile)
   * [Boolean read_boolean(String|File)](#boolean-read_booleanstringfile)
-  * [File write_lines(Array\[String\])](#file-write_linesarraystring)
-  * [File write_tsv(Array\[Array\[String\]\])](#file-write_tsvarrayarraystring)
-  * [File write_map(Map\[String, String\])](#file-write_mapmapstring-string)
-  * [File write_object(Object)](#file-write_objectobject)
-  * [File write_objects(Array\[Object\])](#file-write_objectsarrayobject)
+  * [File write_lines(Array[String])](#file-write_linesarraystring)
+  * [File write_tsv(Array[Array[String]])](#file-write_tsvarrayarraystring)
+  * [File write_map(Map[String, String])](#file-write_mapmapstring-string)
   * [File write_json(mixed)](#file-write_jsonmixed)
-  * [Float size(File, \[String\])](#float-sizefile-string)
+  * [Float size(File, [String])](#float-sizefile-string)
+    * [Acceptable compound input types](#acceptable-compound-input-types)
   * [String sub(String, String, String)](#string-substring-string-string)
-  * [Array\[Int\] range(Int)](#arrayint-rangeint)
-  * [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
-  * [Array\[Pair(X,Y)\] zip(Array\[X\], Array\[Y\])](#arraypairxy-ziparrayx-arrayy)
-  * [Array\[Pair(X,Y)\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
-  * [Array\[Pair(X,Y)\] as_pairs(Map\[X,Y\])](#arraypairxy-as_pairsmapxy)
-  * [Map\[X,Y\] as_map(Array\[Pair(X,Y)\])](#mapxy-as_maparraypairxy)
-  * [Map\[X,Array\[Y\]\] collect_by_key(Array\[Pair(X,Y)\])](#mapxarrayy-collect_by_keyarraypairxy)
-  * [Integer length(Array\[X\])](#integer-lengtharrayx)
-  * [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
-  * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
-  * [X select_first(Array\[X?\])](#x-select_firstarrayx)
-  * [Array\[X\] select_all(Array\[X?\])](#arrayx-select_allarrayx)
+  * [Array[Int] range(Int)](#arrayint-rangeint)
+  * [Array[Array[X]] transpose(Array[Array[X]])](#arrayarrayx-transposearrayarrayx)
+  * [Array[Pair[X,Y]] zip(Array[X], Array[Y])](#arraypairxy-ziparrayx-arrayy)
+  * [Array[Pair[X,Y]] cross(Array[X], Array[Y])](#arraypairxy-crossarrayx-arrayy)
+  * [Integer length(Array[X])](#integer-lengtharrayx)
+  * [Array[X] flatten(Array[Array[X]])](#arrayx-flattenarrayarrayx)
+  * [Array[String] prefix(String, Array[X])](#arraystring-prefixstring-arrayx)
+  * [X select_first(Array[X?])](#x-select_firstarrayx)
+  * [Array[X] select_all(Array[X?])](#arrayx-select_allarrayx)
   * [Boolean defined(X?)](#boolean-definedx)
   * [String basename(String)](#string-basenamestring)
   * [Int floor(Float), Int ceil(Float) and Int round(Float)](#int-floorfloat-int-ceilfloat-and-int-roundfloat)
-* [Data Types & Serialization](#data-types--serialization)
+* [Data Types &amp; Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
     * [Compound Types](#compound-types)
@@ -141,27 +133,19 @@
       * [Map serialization](#map-serialization)
         * [Map serialization using write_map()](#map-serialization-using-write_map)
         * [Map serialization using write_json()](#map-serialization-using-write_json)
-      * [Object serialization](#object-serialization)
-        * [Object serialization using write_object()](#object-serialization-using-write_object)
-        * [Object serialization using write_json()](#object-serialization-using-write_json)
-      * [Array\[Object\] serialization](#arrayobject-serialization)
-        * [Array\[Object\] serialization using write_objects()](#arrayobject-serialization-using-write_objects)
-        * [Array\[Object\] serialization using write_json()](#arrayobject-serialization-using-write_json)
+      * [Struct serialization](#struct-serialization)
+      * [Struct serialization using write_json()](#struct-serialization-using-write_json)
   * [De-serialization of Task Outputs](#de-serialization-of-task-outputs)
-    * [Primitive Types](#primitive-types)
-    * [Compound Types](#compound-types)
+    * [Primitive Types](#primitive-types-1)
+    * [Compound Types](#compound-types-1)
       * [Array deserialization](#array-deserialization)
         * [Array deserialization using read_lines()](#array-deserialization-using-read_lines)
         * [Array deserialization using read_json()](#array-deserialization-using-read_json)
       * [Map deserialization](#map-deserialization)
         * [Map deserialization using read_map()](#map-deserialization-using-read_map)
         * [Map deserialization using read_json()](#map-deserialization-using-read_json)
-      * [Object deserialization](#object-deserialization)
-        * [Object deserialization using read_object()](#object-deserialization-using-read_object)
-      * [Array\[Object\] deserialization](#arrayobject-deserialization)
-        * [Object deserialization using read_objects()](#object-deserialization-using-read_objects)
 
-<!---toc end-->
+
 
 ## Introduction
 
@@ -286,7 +270,13 @@ In addition, the following compound types can be constructed, parameterized by o
 Array[X] xs = [x1, x2, x3]                    # An array of Xs
 Map[P,Y] p_to_y = { p1: y1, p2: y2, p3: y3 }  # An ordered map from Ps to Ys
 Pair[X,Y] x_and_y = (x, y)                    # A pair of one X and one Y
-Object o = { "field1": f1, "field2": f2 }     # Object keys are always `String`s
+
+struct BamAndIndex {
+    File bam
+    File bam_index
+}
+BamAndIndex b_and_i = {"bam":"NA12878.bam", "bam_index":"NA12878.bam.bai"}
+BamAndIndex b_and_i_2 = object {bam:"NA12878.bam", bam_index:"NA12878.bam.bai"}
 ```
 
 Some examples of types:
@@ -295,6 +285,7 @@ Some examples of types:
 * `Array[File]`
 * `Pair[Int, Array[String]]`
 * `Map[String, String]`
+
 
 Types can also have a postfix quantifier (either `?` or `+`):
 
@@ -604,24 +595,14 @@ runtime {
 
 ### Member Access
 
-The syntax `x.y` refers to member access.  `x` must be an object or task in a workflow.  A Task can be thought of as an object where the attributes are the outputs of the task.
+The syntax `x.y` refers to member access. `x` must be a task in a workflow, or struct. A Task can be thought of as a struct where the attributes are the outputs of the task.
 
 ```wdl
-workflow wf {
-  input {
-    Object obj
-    Object foo
-  }
-  # This would cause a syntax error,
-  # because foo is defined twice in the same namespace.
-  call foo {
-    input: var=obj.attr # Object attribute
-  }
+call foo
+String x = foo.y
 
-  call foo as foo2 {
-    input: var=foo.out # Task output
-  }
-}
+Struct z
+String a = z.b
 ```
 
 ### Map and Array Indexing
@@ -649,50 +630,31 @@ Array[Int] b = [0,1,2]
 
 ### Map Literals
 
-Maps values can be specified using a similar Python-like syntax:
+Map values can be specified using a similar Python-like syntax:
 
 ```
 Map[Int, Int] = {1: 10, 2: 11}
 Map[String, Int] = {"a": 1, "b": 2}
+String a = "one"
+Map[String, Int] = {a: 1, "not " + a: 2}
 ```
 
 ### Object Literals
 
-Object literals are specified similarly to maps, but require an `object` keyword immediately before the `{`:
+Similar to Map literals, however object literal keys are unquoted strings.
+This makes them well suited for assigning to `Structs`.
+Beware the behaviour difference with Map literals
 
-```wdl
-Object f = object {
-  a: 10,
-  b: 11
-}
+```
+Map[String, Int] map_1 = object {a: 1, b: 2}
+String a = "one"
+String b = "two"
+# map_2 != map_1
+Map[String, Int] map_2 = {a: 1, b: 2}
 ```
 
-The `object` keyword allows the field keys to be specified as identifiers, rather than `String` literals (eg `a:` rather than `"a":`).
-
-#### Object Coercion from Map
-
-Objects can be coerced from map literals, but beware the following behavioral difference:
-```wdl
-String a = "beware"
-String b = "key"
-String c = "lookup"
-
-# What are the keys to this object?
-Object object_syntax = object {
-  a: 10,
-  b: 11,
-  c: 12
-}
-
-# What are the keys to this object?
-Object map_coercion = {
-  a: 10,
-  b: 11,
-  c: 12
-}
-```
-- If an `Object` is specified using the object-style `Object map_syntax = object { a: ...` syntax then the keys will be `"a"`, `"b"` and `"c"`.
-- If an `Object` is specified using the map-style `Object map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
+map_1 has the keys 'a' and 'b'.
+map_2 has the keys 'one' and 'two'.
 
 ### Pair Literals
 
@@ -832,16 +794,15 @@ For example imagine two versions of file `fs://path/to/A.txt` are being localize
 
 A task can have declarations which are intended as intermediate values rather than inputs. These declarations can be based on input values and can be used within the command section.
 
-For example, this task takes a single `inputs` `Object` but writes it to a JSON file which can then be used by the command:
+For example, this task takes an input, but performs some calculation which can then be used by the command:
 
 ```wdl
 task t {
   input {
-    Object inputs
+    Int size
   }
-  File objects_json = write_json(inputs)
+  size_clamped = if size > 10 then 10 else size
 
-  # [... other task sections]
 }
 ```
 
@@ -892,7 +853,7 @@ task test {
 ```
 
 > **NOTE**: the expression result must ultimately be converted to a string in order to take the place of the placeholder in the command script.
-This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Object`).
+This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Struct`).
 To place an array into the command block a separator character must be specified using `sep` (eg `${sep=", " int_array}`).
 
 
@@ -1919,32 +1880,33 @@ However, if a workflow is intended to be called as a subworkflow, it is required
 - In case of nested subworkflows, to give the outputs at the top level a simple fixed name rather than a long qualified name like `a.b.c.d.out` (which is liable to change if the underlying implementation of `c` changes, for example).
 
 ## Struct Definition
-A struct is a C-like construct which enables the user to create new compound types that consisting of previously existing types. Structs
-can then be used within a `Task` or `Workflow` definition as a declaration in place of any other normal types. The struct takes the place of the
-`Object` type in many circumstances and enables proper typing of its members.
+
+A struct enables the user to create a new type that packages different types together.
+This is also known as struct in some C-like languages, and tuple in others.
+Once defined structs can be used just like any other normal type.
+`Map`s and `Array`s are similar, but they are for packaging identical types together,
+and in unlimited number.
 
 Structs are declared separately from any other constructs, and cannot be declared within any `workflow` or `task` definition. They belong to the namespace of the WDL
 file which they are written in and are therefore accessible globally within that WDL. Additionally, all structs must be evaluated prior to their use within a `task`,
 `workflow` or another `struct`.
 
-Structs may be defined using the `struct` keyword and have a single section consisting of typed declarations.
-
-```wdl
-struct name { ... }
-```
-
 ### Struct Declarations
-The only contents of struct are a set of declarations. Declarations can be any primitive or compound type, as well as other structs, and are defined
-the same way as they are in any other section. The one caveat to this is that declarations within a struct do not allow an expression statement after
-the initial member declaration. Once defined all structs are added to a global namespace accessible from any other construct within the WDL.
 
-for example the following is a valid struct definition
+Structs may be defined using the `struct` keyword and have a single section consisting of typed declarations.
+Declarations can be any other type, and are defined
+the same way as they are in any other section. The one caveat to this is that declarations within a struct do not allow an `=` and expression statement after
+the `type` and name declaration. Once defined all structs are added to a global namespace accessible from any other construct within the WDL.
+
+For example the following is a valid struct definition
+
 ```wdl
 struct Name {
     String myString
     Int myInt
 }
 ```
+
 Whereas the following is invalid
 
 ```wdl
@@ -1955,14 +1917,18 @@ struct Invalid {
 ```
 
 Compound types can also be used within a struct to easily encapsulate them within a single object. For example
+
 ```wdl
 struct Name {
     Array[Array[File]] myFiles
     Map[String,Pair[String,File]] myComplexType
     String cohortName
 }
+
 ```
+
 #### Optional and non Empty Struct Values
+
 Struct declarations can be optional or non-empty (if they are an array type).
 
 ```wdl
@@ -1973,7 +1939,16 @@ struct Name {
 ```
 
 ### Using a Struct
+
 When using a struct in the declaration section of either a `workflow` or a `task` or `output` section you define them in the same way you would define any other type.
+
+Structs should be declared with Object literals, as the keys can be checked
+for correctness before run time.
+Assignment is also possible from `Maps`, other `Structs`, and `Tasks`.
+As `Map` literals can contain arbitrary expressions for the keys,
+their use for defining `Structs` is discouraged.
+If the expression assigned to the `Struct` is not compatible with the
+`Struct` fields, the workflow should error.
 
 For example, if I have a struct like the following:
 ```wdl
@@ -1986,38 +1961,36 @@ struct Person {
 then usage of the struct in a workflow would look like the following:
 
 ```wdl
-
-task task_a {
-    Person a
-    command {
-        echo "hello my name is ${a.name} and I am ${a.age} years old"
+task myTask {
+    input {
+      Person a
+    }
+    command <<<
+        echo "hello my name is ~{a.name} and I am ~{a.age} years old"
+    >>>
+    output {
+      String name = a.name + "Potter"
+      Int age = a.age * 2
     }
 }
 
 workflow myWorkflow {
-    Person a
-    call task_a {
+    Person harry = object {name: "Harry", age: 11}
+    call myTask {
         input:
-            a = a
+            a = harry
     }
+    Person harry_p = myTask
 }
 ```
 
-#### Struct Assignment from Object Literal
-Structs can be assigned using an object literal. When Writing the object, all entries must conform or be coercible into the underlying type they are being assigned to
-
-```wdl
-
-Person a = {"name": "John","age": 30}
-
-```
-
-
 ### Struct Member Access
-In order to access members within a struct, use object notation; ie `myStruct.myName`. If the underlying member is a complex type which supports member access,
+
+In order to access members within a struct, use member access notation; ie `myStruct.name`. If the underlying member is a complex type which supports member access,
 you can access its elements in the way defined by that specific type.
 
 For example, if we have defined a struct like the following:
+
 ```wdl
 struct Experiment {
     Array[File] experimentFiles
@@ -2025,15 +1998,17 @@ struct Experiment {
 }
 
 ```
+
 **Example 1:**
 Accessing the nth element of experimentFiles and any element in experimentData would look like:
+
 ```wdl
 workflow workflow_a {
+  input {
     Experiment myExperiment
-    File firstFile = myExperiment.experimentFiles[0]
-    String experimentName = myExperiment.experimentData["name"]
-
-
+  }
+  File firstFile = myExperiment.experimentFiles[0]
+  String experimentName = myExperiment.experimentData["name"]
 }
 ```
 
@@ -2042,16 +2017,19 @@ If the struct itself is a member of an Array or another type, yo
 
 ```wdl
 workflow workflow_a {
-    Array[Experiment] myExperiments
+    input {
+        Array[Experiment] myExperiments
+    }
 
     File firstFileFromFirstExperiment = myExperiments[0].experimentFiles[0]
-    File eperimentNameFromFirstExperiment = bams[0].experimentData["name"]
+    File experimentNameFromFirstExperiment = myExperiments[0].experimentData["name"]
     ....
 }
 
 ```
 
 ### Importing Structs
+
 Any `struct` defined within an imported WDL will be added to a global namespace and will not be a part of the imported wdl's namespace. If two structs
 are named the same it will be necessary to resolve the conflicting names. To do this, one or more structs may be imported under an
 alias defined within the import statement.
@@ -2064,6 +2042,7 @@ import http://example.com/example.wdl as ex alias Experiment as OtherExperiment
 ```
 
 In order to resolve multiple structs, simply add additional alias statements.
+
 ```wdl
 import http://example.com/another_exampl.wdl as ex2
     alias Parent as Parent2
@@ -2075,9 +2054,7 @@ Its important to note, that when importing from file 2, all structs from file 2'
 another imported WDL within file 2, even if they are aliased. If a struct is aliased in file 2, it will be imported into file 1 under its
 aliased name.
 
-
-* Note: Alias can be used even when no conflicts are encountered to uniquely identify any struct
-
+* Note: Alias can be used even when no conflicts are encountered to uniquely identify any struct.
 
 # Namespaces
 
@@ -2629,86 +2606,6 @@ task do_stuff {
 
 If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
-## Object read_object(String|File)
-
-Given a file-like object that contains a 2-row and n-column TSV file, this function will turn that into an Object.
-
-```wdl
-task test {
-  command <<<
-    python <<CODE
-    print('\t'.join(["key_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    CODE
-  >>>
-  output {
-    Object my_obj = read_object(stdout())
-  }
-}
-```
-
-The command will output to stdout the following:
-
-```
-key_1\tkey_2\tkey_3
-value_1\tvalue_2\tvalue_3
-```
-
-Which would be turned into an `Object` in WDL that would look like this:
-
-|Attribute|Value|
-|---------|-----|
-|key_1    |"value_1"|
-|key_2    |"value_2"|
-|key_3    |"value_3"|
-
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
-
-## Array[Object] read_objects(String|File)
-
-Given a file-like object that contains a 2-row and n-column TSV file, this function will turn that into an Object.
-
-```wdl
-task test {
-  command <<<
-    python <<CODE
-    print('\t'.join(["key_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    CODE
-  >>>
-  output {
-    Array[Object] my_obj = read_objects(stdout())
-  }
-}
-```
-
-The command will output to stdout the following:
-
-```
-key_1\tkey_2\tkey_3
-value_1\tvalue_2\tvalue_3
-value_1\tvalue_2\tvalue_3
-value_1\tvalue_2\tvalue_3
-```
-
-Which would be turned into an `Array[Object]` in WDL that would look like this:
-
-|Index|Attribute|Value|
-|-----|---------|-----|
-|0    |key_1    |"value_1"|
-|     |key_2    |"value_2"|
-|     |key_3    |"value_3"|
-|1    |key_1    |"value_1"|
-|     |key_2    |"value_2"|
-|     |key_3    |"value_3"|
-|2    |key_1    |"value_1"|
-|     |key_2    |"value_2"|
-|     |key_3    |"value_3"|
-
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
-
 ## mixed read_json(String|File)
 
 the `read_json()` function takes one parameter, which is a file-like object (`String`, `File`) and returns a data type which matches the data structure in the JSON file.  The mapping of JSON type to WDL type is:
@@ -2740,7 +2637,8 @@ task do_stuff {
 }
 ```
 
-Then when the task finishes, to fulfill the `output_table` variable, `./results/file_list.json` must be a valid TSV file or an error will be reported.
+If when the file is read, the types cannot be converted into the type declared by
+output_table, an error will be reported.
 
 If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
@@ -2847,90 +2745,6 @@ And `/local/fs/tmp/map.tsv` would contain:
 ```
 key1\tvalue1
 key2\tvalue2
-```
-
-## File write_object(Object)
-
-Given any `Object`, this will write out a 2-row, n-column TSV file with the object's attributes and values.
-
-```
-task test {
-  Object input
-  command <<<
-    /bin/do_work --obj=~{write_object(input)}
-  >>>
-  output {
-    File results = stdout()
-  }
-}
-```
-
-if `input` were to have the value:
-
-|Attribute|Value|
-|---------|-----|
-|key_1    |"value_1"|
-|key_2    |"value_2"|
-|key_3    |"value_3"|
-
-The command would instantiate to:
-
-```
-/bin/do_work --obj=/path/to/input.tsv
-```
-
-Where `/path/to/input.tsv` would contain:
-
-```
-key_1\tkey_2\tkey_3
-value_1\tvalue_2\tvalue_3
-```
-
-## File write_objects(Array[Object])
-
-Given any `Array[Object]`, this will write out a 2+ row, n-column TSV file with each object's attributes and values.
-
-```wdl
-task test {
-  input {
-    Array[Object] in
-  }
-  command <<<
-    /bin/do_work --obj=~{write_objects(in)}
-  >>>
-  output {
-    File results = stdout()
-  }
-}
-```
-
-if `in` were to have the value:
-
-|Index|Attribute|Value|
-|-----|---------|-----|
-|0    |key_1    |"value_1"|
-|     |key_2    |"value_2"|
-|     |key_3    |"value_3"|
-|1    |key_1    |"value_4"|
-|     |key_2    |"value_5"|
-|     |key_3    |"value_6"|
-|2    |key_1    |"value_7"|
-|     |key_2    |"value_8"|
-|     |key_3    |"value_9"|
-
-The command would instantiate to:
-
-```
-/bin/do_work --obj=/path/to/input.tsv
-```
-
-Where `/path/to/input.tsv` would contain:
-
-```
-key_1\tkey_2\tkey_3
-value_1\tvalue_2\tvalue_3
-value_4\tvalue_5\tvalue_6
-value_7\tvalue_8\tvalue_9
 ```
 
 ## File write_json(mixed)
@@ -3041,7 +2855,8 @@ Given a two dimensional array argument, the `transpose` function transposes the 
 
 ## Array[Pair[X,Y]] zip(Array[X], Array[Y])
 
-Given any two Object types, the `zip` function returns the dot product of those Object types in the form of a Pair object.
+Return the dot product of the two arrays. If the arrays have different length
+it is an error.
 
 ```
 Pair[Int, String] p = (0, "z")
@@ -3054,15 +2869,14 @@ Array[Pair[Int, String]] zipped = zip(xs, ys)     # i.e.  zipped = [ (1, "a"), (
 
 ## Array[Pair[X,Y]] cross(Array[X], Array[Y])
 
-Given any two Object types, the `cross` function returns the cross product of those Object types in the form of a Pair object.
+Return the cross product of the two arrays. Array[Y][1] appears before
+Array[X][1] in the output.
 
 ```
-Pair[Int, String] p = (0, "z")
 Array[Int] xs = [ 1, 2, 3 ]
-Array[String] ys = [ "a", "b", "c" ]
-Array[String] zs = [ "d", "e" ]
+Array[String] ys = [ "a", "b" ]
 
-Array[Pair[Int, String]] crossed = cross(xs, zs) # i.e. crossed = [ (1, "d"), (1, "e"), (2, "d"), (2, "e"), (3, "d"), (3, "e") ]
+Array[Pair[Int, String]] crossed = cross(xs, ys) # i.e. crossed = [ (1, "a"), (1, "b"), (2, "a"), (2, "b") ]
 ```
 
 ## Array[Pair[X,Y]] as_pairs(Map[X,Y])
@@ -3192,8 +3006,8 @@ Compound Types:
 
 * Array
 * Map
-* Object
 * Pair
+* Struct
 
 When a WDL workflow engine instantiates a command specified in the `command` section of a `task`, it must serialize all `${...}` tags in the command into primitive types.
 
@@ -3455,182 +3269,53 @@ Where `/jobs/564757/sample_quality_scores.json` would contain:
 }
 ```
 
-#### Object serialization
+#### Struct serialization
 
-An object is a more general case of a map where the keys are strings and the values are of arbitrary types and treated as strings.  Objects can be serialized with either `write_object()` or `write_json()` functions:
+A struct can be serialized by treating it like a `Map` with `String` keys
+and differently typed values.
 
-##### Object serialization using write_object()
+#### Struct serialization using write_json()
 
 ```wdl
-task test {
+struct Person {
+    String name
+    Int age
+    Array[String] friends
+}
+
+task process_person {
   input {
-    Object sample
+    Person p
   }
-  command {
-    perl script.pl ${write_object(sample)}
-  }
+  command <<<
+    perl script.py ~{write_json(p)}
+  >>>
 }
 ```
 
-if sample is provided as:
-
-|Attribute|Value |
-|---------|------|
-|attr1    |value1|
-|attr2    |value2|
-|attr3    |value3|
-|attr4    |value4|
-
-Then, the resulting command line could look like:
-
-```
-perl script.pl /jobs/564759/sample.tsv
-```
-
-Where `/jobs/564759/sample.tsv` would contain:
-
-```
-attr1\tattr2\tattr3\tattr4
-value1\tvalue2\tvalue3\tvalue4
-```
-
-##### Object serialization using write_json()
-
-```wdl
-task test {
-  input {
-    Object sample
-  }
-  command {
-    perl script.pl ${write_json(sample)}
-  }
-}
-```
-
-if sample is provided as:
-
-|Attribute|Value |
-|---------|------|
-|attr1    |value1|
-|attr2    |value2|
-|attr3    |value3|
-|attr4    |value4|
-
-Then, the resulting command line could look like:
-
-```
-perl script.pl /jobs/564759/sample.json
-```
-
-Where `/jobs/564759/sample.json` would contain:
+If `p` is provided as:
 
 ```
 {
-  "attr1": "value1",
-  "attr2": "value2",
-  "attr3": "value3",
-  "attr4": "value4",
-}
-```
-#### Array[Object] serialization
-
-`Array[Object]` must guarantee that all objects in the array have the same set of attributes.  These can be serialized with either `write_objects()` or `write_json()` functions, as described in following sections.
-
-##### Array[Object] serialization using write_objects()
-
-an `Array[Object]` can be serialized using `write_objects()` into a TSV file:
-
-```wdl
-task test {
-  input {
-    Array[Object] sample
-  }
-  command {
-    perl script.pl ${write_objects(sample)}
-  }
+  "name", "John"
+  "age", 5
+  "friends": ["James", "Jim"]
 }
 ```
 
-if sample is provided as:
+Then, the resulting command line might look like:
 
-|Index|Attribute|Value  |
-|-----|---------|-------|
-|0    |attr1    |value1 |
-|     |attr2    |value2 |
-|     |attr3    |value3 |
-|     |attr4    |value4 |
-|1    |attr1    |value5 |
-|     |attr2    |value6 |
-|     |attr3    |value7 |
-|     |attr4    |value8 |
-
-Then, the resulting command line could look like:
-
-```
-perl script.pl /jobs/564759/sample.tsv
-```
-
-Where `/jobs/564759/sample.tsv` would contain:
-
-```
-attr1\tattr2\tattr3\tattr4
-value1\tvalue2\tvalue3\tvalue4
-value5\tvalue6\tvalue7\tvalue8
-```
-
-##### Array[Object] serialization using write_json()
-
-an `Array[Object]` can be serialized using `write_json()` into a JSON file:
-
-```wdl
-task test {
-  input {
-    Array[Object] sample
-  }
-  command {
-    perl script.pl ${write_json(sample)}
-  }
-}
-```
-
-if sample is provided as:
-
-|Index|Attribute|Value  |
-|-----|---------|-------|
-|0    |attr1    |value1 |
-|     |attr2    |value2 |
-|     |attr3    |value3 |
-|     |attr4    |value4 |
-|1    |attr1    |value5 |
-|     |attr2    |value6 |
-|     |attr3    |value7 |
-|     |attr4    |value8 |
-
-Then, the resulting command line could look like:
-
-```
-perl script.pl /jobs/564759/sample.json
-```
+```perl script.pl /jobs/564759/sample.json```
 
 Where `/jobs/564759/sample.json` would contain:
 
+```json
+{
+  "name": "John",
+  "age": 5,
+  "friends": ["James", "Jim"]
+}
 ```
-[
-  {
-    "attr1": "value1",
-    "attr2": "value2",
-    "attr3": "value3",
-    "attr4": "value4"
-  },
-  {
-    "attr1": "value5",
-    "attr2": "value6",
-    "attr3": "value7",
-    "attr4": "value8"
-  }
-]
-```
-
 
 ## De-serialization of Task Outputs
 
@@ -3662,7 +3347,7 @@ Both files `file_with_int` and `file_with_uri` should contain one line with the 
 
 ### Compound Types
 
-Tasks can also output to a file or stdout/stderr an `Array`, `Map`, or `Object` data structure in a two major formats:
+Tasks can also output to a file or stdout/stderr an `Array`, `Map`, or `Struct` data structure in a two major formats:
 
 * JSON - because it fits naturally with the types within WDL
 * Text based / TSV - These are usually simple table and text-based encodings (e.g. `Array[String]` could be serialized by having each element be a line in a file)
@@ -3764,54 +3449,3 @@ This task would assign the one key-value pair map in the echo statement to `my_m
 
 If the echo statement was instead `echo '["foo", "bar"]'`, the engine MUST fail the task for a type mismatch.
 
-#### Object deserialization
-
-Objects are deserialized from files that contain a two-row, n-column TSV file.  The first row are the object attribute names and the corresponding entries on the second row are the values.
-
-##### Object deserialization using read_object()
-
-`read_object()` will return an `Object` where the keys are the first row in the TSV input file and the corresponding values are the second row (corresponding column).
-
-```wdl
-task test {
-  command <<<
-    python <<CODE
-    print('\t'.join(["key_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    CODE
-  >>>
-  output {
-    Object my_obj = read_object(stdout())
-  }
-}
-```
-
-This would put an object containing three attributes (`key_0`, `key_1`, and `key_2`) and three respective values (`value_0`, `value_1`, and `value_2`) as the value of `my_obj`
-
-#### Array[Object] deserialization
-
-`Array[Object]` MUST assume that all objects in the array are homogeneous (they have the same attributes, but the attributes don't have to have the same values)
-
-An `Array[Object]` is deserialized from files that contains at least 2 rows and a uniform n-column TSV file.  The first row are the object attribute names and the corresponding entries on the subsequent rows are the values
-
-##### Object deserialization using read_objects()
-
-`read_object()` will return an `Object` where the keys are the first row in the TSV input file and the corresponding values are the second row (corresponding column).
-
-```wdl
-task test {
-  command <<<
-    python <<CODE
-    print('\t'.join(["key_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    CODE
-  >>>
-  output {
-    Array[Object] my_obj = read_objects(stdout())
-  }
-}
-```
-
-This would create an array of **three identical** `Object`s containing three attributes (`key_0`, `key_1`, and `key_2`) and three respective values (`value_0`, `value_1`, and `value_2`) as the value of `my_obj`
