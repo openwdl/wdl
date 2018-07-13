@@ -2112,6 +2112,7 @@ However, you can import two workflows with different namespace identifiers that 
 Scopes are defined as:
 
 * `workflow {...}` blocks
+* `task {...}` blocks
 * `call` blocks
 * `while(expr) {...}` blocks
 * `if(expr) {...}` blocks
@@ -2122,7 +2123,7 @@ Inside of any scope, variables may be [declared](#declarations).  The variables 
 ```wdl
 task my_task {
   input {
-    Int x
+    Int var
     File f
   }
   command {
@@ -2139,7 +2140,7 @@ workflow wf {
     Int x = 3
     call my_task {
       Int x = 4
-      input: var=x, f=file
+      input: var = x, f = file
     }
   }
 }
