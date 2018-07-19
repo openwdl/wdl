@@ -2113,7 +2113,6 @@ Scopes are defined as:
 
 * `workflow {...}` blocks
 * `call` blocks
-* `while(expr) {...}` blocks
 * `if(expr) {...}` blocks
 * `scatter(x in y) {...}` blocks
 
