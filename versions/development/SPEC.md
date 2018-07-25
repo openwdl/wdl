@@ -302,7 +302,37 @@ For more details on the postfix quantifiers, see the section on [Optional Parame
 
 For more information on type and how they are used to construct commands and define outputs of tasks, see the [Data Types & Serialization](#data-types--serialization) section.
 
-#### Custom  Types
+#### Numeric Types
+
+`Int` and `Float` are the numeric types.
+Int can be used to hold any integer, there is no size limit.
+Float is used to hold a finite 64-bit IEEE-754 floating point number.
+Note that WDL itself is not intended to be used for heavy numeric computation.
+There are no number formatting utilities, many mathematical functions are absent,
+and engine behaviour at extreme values is not defined and should not be relied upon.
+
+The mathematical operators are defined only for identical types.
+In expressions using an operator with mismatched numeric types,
+the `Int` will be cast to `Float` and the result will be `Float`.
+Note that this will cause loss of precision. The `Float` can be
+converted to `Int` with the `ceil`, `round` or `floor` functions if needed.
+
+In expressions involving a numeric type and a String, the numeric type
+will be converted to a string. This is straigthforward for `Int`.
+For `Float`, behaviour will be similar to the 'g' conversion specifier
+defined by the C language.
+If you have stricter requirements for `Float` formatting, you should use `String`
+and call out to your language or tool of choice for numerical manipulation.
+
+#### String Types
+
+`String` and `File` are the string types.
+`File` type can be used in place of `String` in expressions.
+The engine may fail if the value assigned to a `File` type cannot be handled.
+`File` values will normally be unix absolute paths, or URIs.
+Engines should document the supported values for `File`.
+
+#### Custom Types
 
 WDL provides the ability to define custom compound types called `Structs`. `Structs` are defined directly in the WDL and are usable like any other type.
 For more information on their usage, see the section on [Structs](#struct-definition)
@@ -481,52 +511,18 @@ Below are the valid results for operators on types.  Any combination not in the 
 |-----------|-----------|-----------------|---------|---------|
 |`Boolean`|`==`|`Boolean`|`Boolean`||
 |`Boolean`|`!=`|`Boolean`|`Boolean`||
-|`Boolean`|`>`|`Boolean`|`Boolean`||
-|`Boolean`|`>=`|`Boolean`|`Boolean`||
-|`Boolean`|`<`|`Boolean`|`Boolean`||
-|`Boolean`|`<=`|`Boolean`|`Boolean`||
 |`Boolean`|`||`|`Boolean`|`Boolean`||
 |`Boolean`|`&&`|`Boolean`|`Boolean`||
-|`File`|`+`|`File`|`File`|Append file paths|
-|`File`|`==`|`File`|`Boolean`||
-|`File`|`!=`|`File`|`Boolean`||
-|`File`|`+`|`String`|`File`||
-|`File`|`==`|`String`|`Boolean`||
-|`File`|`!=`|`String`|`Boolean`||
 |`Float`|`+`|`Float`|`Float`||
 |`Float`|`-`|`Float`|`Float`||
 |`Float`|`*`|`Float`|`Float`||
 |`Float`|`/`|`Float`|`Float`||
-|`Float`|`%`|`Float`|`Float`||
 |`Float`|`==`|`Float`|`Boolean`||
 |`Float`|`!=`|`Float`|`Boolean`||
 |`Float`|`>`|`Float`|`Boolean`||
 |`Float`|`>=`|`Float`|`Boolean`||
 |`Float`|`<`|`Float`|`Boolean`||
 |`Float`|`<=`|`Float`|`Boolean`||
-|`Float`|`+`|`Int`|`Float`||
-|`Float`|`-`|`Int`|`Float`||
-|`Float`|`*`|`Int`|`Float`||
-|`Float`|`/`|`Int`|`Float`||
-|`Float`|`%`|`Int`|`Float`||
-|`Float`|`==`|`Int`|`Boolean`||
-|`Float`|`!=`|`Int`|`Boolean`||
-|`Float`|`>`|`Int`|`Boolean`||
-|`Float`|`>=`|`Int`|`Boolean`||
-|`Float`|`<`|`Int`|`Boolean`||
-|`Float`|`<=`|`Int`|`Boolean`||
-|`Float`|`+`|`String`|`String`||
-|`Int`|`+`|`Float`|`Float`||
-|`Int`|`-`|`Float`|`Float`||
-|`Int`|`*`|`Float`|`Float`||
-|`Int`|`/`|`Float`|`Float`||
-|`Int`|`%`|`Float`|`Float`||
-|`Int`|`==`|`Float`|`Boolean`||
-|`Int`|`!=`|`Float`|`Boolean`||
-|`Int`|`>`|`Float`|`Boolean`||
-|`Int`|`>=`|`Float`|`Boolean`||
-|`Int`|`<`|`Float`|`Boolean`||
-|`Int`|`<=`|`Float`|`Boolean`||
 |`Int`|`+`|`Int`|`Int`||
 |`Int`|`-`|`Int`|`Int`||
 |`Int`|`*`|`Int`|`Int`||
@@ -538,10 +534,7 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Int`|`>=`|`Int`|`Boolean`||
 |`Int`|`<`|`Int`|`Boolean`||
 |`Int`|`<=`|`Int`|`Boolean`||
-|`Int`|`+`|`String`|`String`||
-|`String`|`+`|`Float`|`String`||
-|`String`|`+`|`Int`|`String`||
-|`String`|`+`|`String`|`String`||
+|`String`|`+`|`String`|`String`|Concatenation|
 |`String`|`==`|`String`|`Boolean`||
 |`String`|`!=`|`String`|`Boolean`||
 |`String`|`>`|`String`|`Boolean`||
@@ -549,9 +542,7 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`String`|`<`|`String`|`Boolean`||
 |`String`|`<=`|`String`|`Boolean`||
 ||`-`|`Float`|`Float`||
-||`+`|`Float`|`Float`||
 ||`-`|`Int`|`Int`||
-||`+`|`Int`|`Int`||
 ||`!`|`Boolean`|`Boolean`||
 
 #### If then else
@@ -582,7 +573,6 @@ runtime {
 | 10         | Index                 | left-to-right | x[y]                 |
 | 9          | Function Call         | left-to-right | x(y,z,...)           |
 | 8          | Logical NOT           | right-to-left | !x                   |
-|            | Unary Plus            | right-to-left | +x                   |
 |            | Unary Negation        | right-to-left | -x                   |
 | 7          | Multiplication        | left-to-right | x*y                  |
 |            | Division              | left-to-right | x/y                  |
@@ -597,7 +587,6 @@ runtime {
 |            | Inequality            | left-to-right | x!=y                 |
 | 3          | Logical AND           | left-to-right | x&&y                 |
 | 2          | Logical OR            | left-to-right | x\|\|y               |
-| 1          | Assignment            | right-to-left | x=y                  |
 
 ### Member Access
 
