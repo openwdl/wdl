@@ -1152,6 +1152,25 @@ task docker_test {
 }
 ```
 
+#### singularity
+
+Location of a Singularity image for which this task ought to be run. This can have a format like `patrickvdb/fastqc-singularity`,
+`shub://patrickvdb/fastqc-singularity:latest` or `docker://biocontainers/fastqc:latest`.
+
+```wdl
+task docker_test {
+  input {
+    String arg
+  }
+  command {
+    python process.py ${arg}
+  }
+  runtime {
+    singularity: "docker://ubuntu:latest"
+  }
+}
+```
+
 #### memory
 
 Memory requirements for this task.  Two kinds of values are supported for this attributes:
