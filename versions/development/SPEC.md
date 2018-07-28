@@ -3139,6 +3139,15 @@ Array[Pair[Float,String]] ap = flatten(aap2D) # [(0.1, "mouse"), (3, "cat"), (15
 
 The last example (`aap2D`) is useful because `Map[X, Y]` can be coerced to `Array[Pair[X, Y]]`.
 
+## String escape(String|File)
+
+Escape a string suitable for interpretation by a shell as a single parameter. 
+
+```
+escape("abc xyz ' ")
+> "'abc xyz '\'' '"
+```
+
 ## Array[String] prefix(String, Array[X])
 
 Given a String and an Array[X] where X is a primitive type, the `prefix` function returns an array of strings comprised
