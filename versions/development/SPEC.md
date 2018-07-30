@@ -1163,7 +1163,7 @@ task container_test {
 
 Since there are multiple container solutions out in the wild it is best to make the location of the image clear. In case the image should be pulled from DockerHub `docker://ubuntu:latest` should be used. 
 In case it should be pulled from the Singularity hub `shub://ubuntu:latest` should be used. 
-In case a container solution named `foo` comes along `foo://bar:baz` should be used. Since `docker://` and `shub://` images can both be pulled by singularity, the execution engine should allow 
+In case a container solution named `foo` comes along with its own FooHub `foo://ubuntu:latest` should be used. Since `docker://` and `shub://` images can both be pulled by singularity, the execution engine should allow 
 to set which prefix (`docker://`, `shub://` or `foo://`) should be matched to which container solution.
 ```
 
