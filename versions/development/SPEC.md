@@ -45,7 +45,7 @@
         * [Task portability and non-standard BaSH](#task-portability-and-non-standard-bash)
     * [String Interpolation](#string-interpolation)
     * [Runtime Section](#runtime-section)
-      * [docker](#docker)
+      * [container](#container)
       * [memory](#memory)
     * [Parameter Metadata Section](#parameter-metadata-section)
     * [Metadata Section](#metadata-section)
@@ -179,7 +179,7 @@ task hello {
   }
 
   runtime {
-    docker: "broadinstitute/my_image"
+    container: "docker://dbroadinstitute/my_image"
   }
 
   output {
@@ -778,7 +778,7 @@ Some examples of correct import resolution:
 
 ## Task Definition
 
-A task is a declarative construct with a focus on constructing a command from a template.  The command specification is interpreted in an engine and backend agnostic way. The command is a UNIX bash command line which will be run (ideally in a Docker image).
+A task is a declarative construct with a focus on constructing a command from a template.  The command specification is interpreted in an engine and backend agnostic way. The command is a UNIX bash command line which will be run (ideally in a container (such as a Docker image)).
 
 Tasks explicitly define their inputs and outputs which is essential for building dependencies between tasks.
 
@@ -1059,7 +1059,7 @@ output {
 }
 ```
 
-The array of `File`s returned is the set of files found by the bash expansion of the glob string relative to the task's execution directory and in the same order. It's evaluated in the context of the bash shell installed in the docker image running the task.
+The array of `File`s returned is the set of files found by the bash expansion of the glob string relative to the task's execution directory and in the same order. It's evaluated in the context of the bash shell installed in the container running the task.
 
 In other words, you might think of `glob()` as finding all of the files (but not the directories) in the same order as would be matched by running `echo <glob>` in bash from the task's execution directory.
 
@@ -1076,9 +1076,9 @@ Then running `echo a*` in the execution directory would expand to `a1.txt`, `ab.
 
 ##### Task portability and non-standard BaSH
 
-Note that some specialized docker images may include a non-standard bash shell which supports more complex glob strings. These complex glob strings might allow expansions which include `a_inner.txt` in the example above.
+Note that some specialized container images may include a non-standard bash shell which supports more complex glob strings. These complex glob strings might allow expansions which include `a_inner.txt` in the example above.
 
-Therefore to ensure that a WDL is portable when using `glob()`, a docker image should be provided and the WDL author should remember that `glob()` results depend on coordination with the bash implementation installed on that docker image.
+Therefore to ensure that a WDL is portable when using `glob()`, a container image (i.e. singularity or docker) should be provided and the WDL author should remember that `glob()` results depend on coordination with the bash implementation installed on that container image.
 
 ### String Interpolation
 
@@ -1119,12 +1119,12 @@ task test {
     python script.py
   }
   runtime {
-    docker: ["ubuntu:latest", "broadinstitute/scala-baseimage"]
+    container: ["docker://ubuntu:latest", "docker://broadinstitute/scala-baseimage"]
   }
 }
 ```
 
-The value for the `docker` runtime attribute in this case is an array of values.  The parser should accept this.  Some engines might interpret it as an "either this image or that image" or could reject it outright.
+The value for the `container` runtime attribute in this case is an array of values.  The parser should accept this.  Some engines might interpret it as an "either this image or that image" or could reject it outright.
 
 Since values are expressions, they can also reference variables in the task:
 
@@ -1137,19 +1137,19 @@ task test {
     python script.py
   }
   runtime {
-    docker: "ubuntu:" + ubuntu_version
+    container: "docker://ubuntu:" + ubuntu_version
   }
 }
 ```
 
 Most key/value pairs are arbitrary.  However, the following keys have recommended conventions:
 
-#### docker
+#### container
 
-Location of a Docker image for which this task ought to be run.  This can have a format like `ubuntu:latest` or `broadinstitute/scala-baseimage` in which case it should be interpreted as an image on DockerHub (i.e. it is valid to use in a `docker pull` command).
+Location of a container image for which this task ought to be run.  This can have a format like `ubuntu:latest` or `broadinstitute/scala-baseimage` in which case it should be interpreted as an image on the default container hub. The default container engine and or hub should be settable in the execution engine. For example when Docker is used as default engine this will evaluate to a `docker pull` command and when singularity is used it will evaluate to a `singularity pull` command.
 
 ```wdl
-task docker_test {
+task container_test {
   input {
     String arg
   }
@@ -1157,9 +1157,14 @@ task docker_test {
     python process.py ${arg}
   }
   runtime {
-    docker: "ubuntu:latest"
+    container: "ubuntu:latest"
   }
 }
+
+Since there are multiple container solutions out in the wild it is best to make the location of the image clear. In case the image should be pulled from DockerHub `docker://ubuntu:latest` should be used. 
+In case it should be pulled from the Singularity hub `shub://ubuntu:latest` should be used. 
+In case a container solution named `foo` comes along `foo://bar:baz` should be used. Since `docker://` and `shub://` images can both be pulled by singularity, the execution engine should allow 
+to set which prefix (`docker://`, `shub://` or `foo://`) should be matched to which container solution.
 ```
 
 #### memory
@@ -1308,7 +1313,7 @@ task bwa_mem_tool {
     File sam = "output.sam"
   }
   runtime {
-    docker: "broadinstitute/baseimg"
+    container: "docker://broadinstitute/baseimg"
   }
 }
 ```
@@ -1317,7 +1322,7 @@ Notable pieces in this example is `${sep=',' min_std_max_min+}` which specifies 
 
 This task also defines that it exports one file, called 'sam', which is the stdout of the execution of bwa mem.
 
-The 'docker' portion of this task definition specifies which that this task must only be run on the Docker image specified.
+The 'container' portion of this task definition specifies which that this task must only be run on the container image specified (a docker image in this case).
 
 #### Example 5: Word Count
 
@@ -1680,7 +1685,7 @@ task hello {
     echo "Hello ${addressee}!"
   }
   runtime {
-      docker: "ubuntu:latest"
+      container: "docker://ubuntu:latest"
   }
   output {
     String salutation = read_string(stdout())
