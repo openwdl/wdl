@@ -302,35 +302,11 @@ For more details on the postfix quantifiers, see the section on [Optional Parame
 
 For more information on type and how they are used to construct commands and define outputs of tasks, see the [Data Types & Serialization](#data-types--serialization) section.
 
-#### Numeric Types
+#### Numeric Behaviour
 
 `Int` and `Float` are the numeric types.
-Int can be used to hold any integer, there is no size limit.
-Float is used to hold a finite 64-bit IEEE-754 floating point number.
-Note that WDL itself is not intended to be used for heavy numeric computation.
-There are no number formatting utilities, many mathematical functions are absent,
-and engine behaviour at extreme values is not defined and should not be relied upon.
-
-The mathematical operators are defined only for identical types.
-In expressions using an operator with mismatched numeric types,
-the `Int` will be cast to `Float` and the result will be `Float`.
-Note that this will cause loss of precision. The `Float` can be
-converted to `Int` with the `ceil`, `round` or `floor` functions if needed.
-
-In expressions involving a numeric type and a String, the numeric type
-will be converted to a string. This is straigthforward for `Int`.
-For `Float`, behaviour will be similar to the 'g' conversion specifier
-defined by the C language.
-If you have stricter requirements for `Float` formatting, you should use `String`
-and call out to your language or tool of choice for numerical manipulation.
-
-#### String Types
-
-`String` and `File` are the string types.
-`File` type can be used in place of `String` in expressions.
-The engine may fail if the value assigned to a `File` type cannot be handled.
-`File` values will normally be unix absolute paths, or URIs.
-Engines should document the supported values for `File`.
+`Int` can be used to hold any integer, there is no size limit.
+`Float` is a finite 64-bit IEEE-754 floating point number.
 
 #### Custom Types
 
@@ -523,6 +499,22 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Float`|`>=`|`Float`|`Boolean`||
 |`Float`|`<`|`Float`|`Boolean`||
 |`Float`|`<=`|`Float`|`Boolean`||
+|`Float`|`+`|`Int`|`Float`||
+|`Float`|`-`|`Int`|`Float`||
+|`Float`|`*`|`Int`|`Float`||
+|`Float`|`/`|`Int`|`Float`||
+|`Float`|`>`|`Int`|`Boolean`||
+|`Float`|`>=`|`Int`|`Boolean`||
+|`Float`|`<`|`Int`|`Boolean`||
+|`Float`|`<=`|`Int`|`Boolean`||
+|`Int`|`+`|`Float`|`Float`||
+|`Int`|`-`|`Float`|`Float`||
+|`Int`|`*`|`Float`|`Float`||
+|`Int`|`/`|`Float`|`Float`||
+|`Int`|`>`|`Float`|`Boolean`||
+|`Int`|`>=`|`Float`|`Boolean`||
+|`Int`|`<`|`Float`|`Boolean`||
+|`Int`|`<=`|`Float`|`Boolean`||
 |`Int`|`+`|`Int`|`Int`||
 |`Int`|`-`|`Int`|`Int`||
 |`Int`|`*`|`Int`|`Int`||
@@ -541,9 +533,16 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`String`|`>=`|`String`|`Boolean`||
 |`String`|`<`|`String`|`Boolean`||
 |`String`|`<=`|`String`|`Boolean`||
+|`File`|`==`|`File`|`Boolean`||
+|`File`|`!=`|`File`|`Boolean`||
 ||`-`|`Float`|`Float`||
 ||`-`|`Int`|`Int`||
 ||`!`|`Boolean`|`Boolean`||
+
+Note: In expressions using an operator with mismatched numeric types,
+the `Int` will be cast to `Float` and the result will be `Float`.
+This will could cause loss of precision. The `Float` can be
+converted to `Int` with the `ceil`, `round` or `floor` functions if needed.
 
 #### If then else
 
@@ -1076,7 +1075,28 @@ task example {
 }
 ```
 
-Any `${identifier}` inside of a string literal must be replaced with the value of the identifier.  If prefix were specified as `foobar`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
+Any `${expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
+
+Different types for the expression are formatted in different ways.
+`String` is substituted directly.
+`File` is substituted as if it were a `String`.
+`Int` is formatted without leading zeros (unless the value is `0`), with a leading `-` if the value is negative.
+`Float` is printed in the style `[-]ddd.ddd`, with 6 digits after the decimal point.
+The expression cannot have the value of any other type.
+
+```
+"${"abc"}" == "abc"
+
+File def = "hij"
+"${def}" == "hij"
+
+"${5}" == "5"
+
+"${3.141}" == "3.141000"
+"${3.141 * 1E-10}" == "0.000000"
+"${3.141 * 1E10}" == "31410000000.000000"
+```
+
 
 ### Runtime Section
 
