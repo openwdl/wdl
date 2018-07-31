@@ -489,6 +489,8 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Boolean`|`!=`|`Boolean`|`Boolean`||
 |`Boolean`|`||`|`Boolean`|`Boolean`||
 |`Boolean`|`&&`|`Boolean`|`Boolean`||
+|`File`|`==`|`File`|`Boolean`||
+|`File`|`!=`|`File`|`Boolean`||
 |`Float`|`+`|`Float`|`Float`||
 |`Float`|`-`|`Float`|`Float`||
 |`Float`|`*`|`Float`|`Float`||
@@ -533,16 +535,14 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`String`|`>=`|`String`|`Boolean`||
 |`String`|`<`|`String`|`Boolean`||
 |`String`|`<=`|`String`|`Boolean`||
-|`File`|`==`|`File`|`Boolean`||
-|`File`|`!=`|`File`|`Boolean`||
 ||`-`|`Float`|`Float`||
 ||`-`|`Int`|`Int`||
 ||`!`|`Boolean`|`Boolean`||
 
 Note: In expressions using an operator with mismatched numeric types,
 the `Int` will be cast to `Float` and the result will be `Float`.
-This will could cause loss of precision. The `Float` can be
-converted to `Int` with the `ceil`, `round` or `floor` functions if needed.
+This will cause loss of precision if the `Int` is too large to be represented exactly by the `Float`.
+The `Float` can be converted to `Int` with the `ceil`, `round` or `floor` functions if needed.
 
 #### If then else
 
