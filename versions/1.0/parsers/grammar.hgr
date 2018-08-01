@@ -117,6 +117,7 @@ grammar {
 
     mode<awaiting_version_name> {
       r'1.0' -> :version_name %pop
+      r'draft-3' -> :version_name %pop
     }
     mode<task_fqn> {
       r'\s+' -> null
@@ -339,7 +340,7 @@ grammar {
     $struct = :struct :identifier :lbrace list($struct_declaration) :rbrace -> Struct(name=$1, entries=$3)
     $struct_declaration = $type_e :identifier -> StructEntry(type=$0, name=$1)
 
-    $static_string = :quote :string :quote -> $1
+    $static_string = :quote optional(:string) :quote -> StaticString(value=$1)
     $string_literal = :quote list($string_piece) :quote -> StringLiteral(pieces=$1)
     $string_piece = :string | $expression_placeholder
 
