@@ -778,7 +778,7 @@ Some examples of correct import resolution:
 
 ## Task Definition
 
-A task is a declarative construct with a focus on constructing a command from a template.  The command specification is interpreted in an engine and backend agnostic way. The command is a UNIX bash command line which will be run (ideally in a container (such as a Docker image)).
+A task is a declarative construct with a focus on constructing a command from a template.  The command specification is interpreted in an engine and backend agnostic way. The command is a UNIX bash command line which will be run (ideally in a container such as a Docker or Singularity container).
 
 Tasks explicitly define their inputs and outputs which is essential for building dependencies between tasks.
 
