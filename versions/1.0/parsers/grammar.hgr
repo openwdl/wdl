@@ -7,79 +7,84 @@ grammar {
       r'{%_identifier_start%}({%_identifier_follow%})*' -> _identifier
     }
 
-    r'\s+' -> null
-
-    enum {
-      python: r'/\*(.*?)\*/' (DOTALL)
-      c: r'/\*(.*?)\*/' (PCRE_DOTALL)
-      java: r'/\*(.*?)\*/' (DOTALL)
-      javascript: r'/\*(.*?)\*/' (m)
-    } -> null
-
     r'#.*' -> null
-    r'version\s+' -> :version @awaiting_version_name
-    r'task(?!{%_identifier_follow%})' -> task(:task)
-    r'(call)\s+' -> :call[1] @task_fqn
-    r'workflow(?!{%_identifier_follow%})' -> workflow(:workflow)
-    r'struct(?!{%_identifier_follow%})' -> :struct
-    r'import(?!{%_identifier_follow%})' -> :import
-    r'alias(?!{%_identifier_follow%})' -> :alias
-    r'input(?!{%_identifier_follow%})' -> :input
-    r'output(?!{%_identifier_follow%})' -> :output
-    r'as(?!{%_identifier_follow%})' -> :as
-    r'if(?!{%_identifier_follow%})' -> :if
-    r'then(?!{%_identifier_follow%})' -> :then
-    r'else(?!{%_identifier_follow%})' -> :else
-    r'while(?!{%_identifier_follow%})' -> :while
-    r'runtime(?!{%_identifier_follow%})' -> :runtime
-    r'scatter(?!{%_identifier_follow%})' -> :scatter @scatter
-    r'command\s*(?=<<<)' -> :raw_command  @raw_command2
-    r'command\s*(?=\{)' -> :raw_command  @raw_command
-    r'parameter_meta(?!{%_identifier_follow%})' -> :parameter_meta
-    r'meta(?!{%_identifier_follow%})' -> :meta
-    r'(true|false)(?!{%_identifier_follow%})' -> :boolean
-    r'(object)\s*(\{)' -> :object :lbrace
-    r'{%_type%}(?!{%_identifier_follow%})' -> :type
-    r'{%_identifier%}' -> :identifier
-    r'null' -> :null
+    r'\s+' -> null
+    r'^version(?!{%_identifier_follow%})' -> :version @awaiting_version_name
 
-    r':' -> :colon
-    r',' -> :comma
-    r'==' -> :double_equal
-    r'\|\|' -> :double_pipe
-    r'\&\&' -> :double_ampersand
-    r'!=' -> :not_equal
-    r'=' -> :equal
-    r'\.' -> :dot
-    r'\{' -> :lbrace
-    r'\}' -> :rbrace
-    r'\(' -> :lparen
-    r'\)' -> :rparen
-    r'\[' -> :lsquare
-    r'\]' -> :rsquare
-    r'\+' -> :plus
-    r'\*' -> :asterisk
-    r'-' -> :dash
-    r'/' -> :slash
-    r'%' -> :percent
-    r'<=' -> :lteq
-    r'<' -> :lt
-    r'>=' -> :gteq
-    r'>' -> :gt
-    r'!' -> :not
-    enum {
-      python: r'\"'
-      java: "\""
-      javascript:"\""
-    } -> :quote @dquote_string
-    r'\'' -> :quote @squote_string
-    enum {
-      python: r'\?'
-      java: "\\?"
-      javascript: "\\?"
-    } -> :qmark
-    r'-?[0-9]+\.[0-9]+' -> :float
-    r'[0-9]+' -> :integer
+    mode<main> {
+
+      r'\s+' -> null
+
+      enum {
+        python: r'/\*(.*?)\*/' (DOTALL)
+        c: r'/\*(.*?)\*/' (PCRE_DOTALL)
+        java: r'/\*(.*?)\*/' (DOTALL)
+        javascript: r'/\*(.*?)\*/' (m)
+      } -> null
+
+      r'#.*' -> null
+      r'task(?!{%_identifier_follow%})' -> task(:task)
+      r'(call)\s+' -> :call[1] @task_fqn
+      r'workflow(?!{%_identifier_follow%})' -> workflow(:workflow)
+      r'struct(?!{%_identifier_follow%})' -> :struct
+      r'import(?!{%_identifier_follow%})' -> :import
+      r'alias(?!{%_identifier_follow%})' -> :alias
+      r'input(?!{%_identifier_follow%})' -> :input
+      r'output(?!{%_identifier_follow%})' -> :output
+      r'as(?!{%_identifier_follow%})' -> :as
+      r'if(?!{%_identifier_follow%})' -> :if
+      r'then(?!{%_identifier_follow%})' -> :then
+      r'else(?!{%_identifier_follow%})' -> :else
+      r'runtime(?!{%_identifier_follow%})' -> :runtime
+      r'scatter(?!{%_identifier_follow%})' -> :scatter @scatter
+      r'command\s*(?=<<<)' -> :raw_command  @raw_command2
+      r'command\s*(?=\{)' -> :raw_command  @raw_command
+      r'parameter_meta(?!{%_identifier_follow%})' -> :parameter_meta
+      r'meta(?!{%_identifier_follow%})' -> :meta
+      r'(true|false)(?!{%_identifier_follow%})' -> :boolean
+      r'(object)\s*(\{)' -> :object :lbrace
+      r'{%_type%}(?!{%_identifier_follow%})' -> :type
+      r'{%_identifier%}' -> :identifier
+      r'null' -> :null
+
+      r':' -> :colon
+      r',' -> :comma
+      r'==' -> :double_equal
+      r'\|\|' -> :double_pipe
+      r'\&\&' -> :double_ampersand
+      r'!=' -> :not_equal
+      r'=' -> :equal
+      r'\.' -> :dot
+      r'\{' -> :lbrace
+      r'\}' -> :rbrace
+      r'\(' -> :lparen
+      r'\)' -> :rparen
+      r'\[' -> :lsquare
+      r'\]' -> :rsquare
+      r'\+' -> :plus
+      r'\*' -> :asterisk
+      r'-' -> :dash
+      r'/' -> :slash
+      r'%' -> :percent
+      r'<=' -> :lteq
+      r'<' -> :lt
+      r'>=' -> :gteq
+      r'>' -> :gt
+      r'!' -> :not
+      enum {
+        python: r'\"'
+        java: "\""
+        javascript:"\""
+      } -> :quote @dquote_string
+      r'\'' -> :quote @squote_string
+      enum {
+        python: r'\?'
+        java: "\\?"
+        javascript: "\\?"
+      } -> :qmark
+      r'-?[0-9]+\.[0-9]+' -> :float
+      r'[0-9]+' -> :integer
+    }
 
     mode<dquote_string> {
       # String ends immediately (empty)
@@ -116,7 +121,8 @@ grammar {
     }
 
     mode<awaiting_version_name> {
-      r'1.0' -> :version_name %pop
+      r'\s+' -> null
+      r'1.0' -> :version_name @main
     }
     mode<task_fqn> {
       r'\s+' -> null
