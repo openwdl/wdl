@@ -280,6 +280,7 @@ Float f = 27.3             # A floating point number
 Boolean b = true           # A boolean true/false
 String s = "hello, world"  # A string value
 File f = "path/to/file"    # A file
+Directory d = "/path/to/"  # The contents of a directory (including sub-directories)
 ```
 
 In addition, the following compound types can be constructed, parameterized by other types. In the examples below `P` represents any of the primitive types above, and `X` and `Y` represent any valid type (even nested compound types):
@@ -803,6 +804,7 @@ task t {
   input {
     Int i
     File f
+    Directory d
   }
 
   # [... other task sections]
@@ -810,13 +812,19 @@ task t {
 ```
 
 #### Task Input Localization
-`File` inputs must be treated specially since they require localization to within the execution directory:
-- Files are localized into the execution directory prior to the task execution commencing.
+`File` and `Directory` inputs must be treated specially since they require localization to within the execution directory:
+- Files and directories are localized into the execution directory prior to the task execution commencing. 
 - When localizing a `File`, the engine may choose to place the file wherever it likes so long as it accords to these rules:
   - The original file name must be preserved even if the path to it has changed.
   - Two input files with the same name must be located separately, to avoid name collision.
   - Two input files which originated in the same storage directory must also be localized into the same directory for task execution (see the special case handling for Versioning Filesystems below).
+- When localizing a `Directory`, the engine follows the same set of rules as for Files:
+  - The original directory name must be preserved even if the path to it has changed.
+  - Two input directories with the same name must be located separately, to avoid name collision.
+  - Two input directories which originated in the same parent storage directory must be localized into the same parent directory for task execution.
+  - The internal structure of files and sub-directories in the directory is preserved within the new directory location.
 - When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted into the command string.
+- When a WDL author uses a `Directory` input in their [Command Section](#command-section), the fully qualified localized path to the directory (with no trailing '/') is substituted into the command string.
 
 ##### Special Case: Versioning Filesystems
 Two or more versions of a file in a versioning filesystem might have the same name and come from the same directory. In that case the following special procedure must be used to avoid collision:
@@ -1044,6 +1052,43 @@ output {
   String a = "a"
   String ab = a + "b"
 }
+```
+
+#### Directory Outputs
+
+Directories can be declared as outputs just like files. For example:
+```
+output {
+  Directory d = "created/directory/"
+}
+```
+
+Notes:
+
+ - When a directory is output, the contents (including subdirectories) are considered part of the output but the path is not. 
+ - When a directory is output, its contents *do not overwrite* any pre-existing directory content. For example:
+
+```wdl
+workflow directory_manipulation {
+  # Make a directory:
+  call make_directory
+  Directory d = make_directory.made_directory
+  
+  # List the contents before the "update_directory" task:
+  call list_contents as list_contents_before { input: d = d }
+  String d_contents_before = list_contents_before.list
+
+  # An update task:
+  call update_directory { input: d = d }
+  
+  # List the contents again:
+  call list_contents as list_contents_after { input: d = d }
+  String d1_contents_after = list_contents_after.list
+
+  # No matter what update directory does, the following is *always* true:
+  Boolean match = d1_contents_before == d1_contents_after
+}
+
 ```
 
 #### Globs
