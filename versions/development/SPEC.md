@@ -3094,7 +3094,7 @@ Map[String,Pair[File,File]] ymap = as_map(y) # {"a": ("a.bam", "a.bai"), "b": ("
 
 ## Array[X] keys(Map[X,Y])
 
-Given an Map ,the `keys` function returns a Array of the keys of map. The order of the keys in the resulting Array is the same as the order of the Pairs in the Map.
+Given a Map, the `keys` function returns an Array consisting of the keys in the Map. The order of the keys in the resulting Array is the same as the order of the Pairs in the Map.
 
 In cases where multiple Pairs would produce the same key, the workflow will fail.
 
