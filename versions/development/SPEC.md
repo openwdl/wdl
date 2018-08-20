@@ -2998,7 +2998,8 @@ Varieties of the `size` function also exist for the following compound types. Th
 ## String sub(String, String, String)
 
 Given 3 String parameters `input`, `pattern`, `replace`, this function will replace any occurrence matching `pattern` in `input` by `replace`.
-`pattern` is expected to be a [regular expression](https://en.wikipedia.org/wiki/Regular_expression). The regular expression will be evaluated as a [PERL-style regular expression](http://perldoc.perl.org/perlre.html#Regular-Expressions).
+`pattern` is expected to be a [regular expression](https://en.wikipedia.org/wiki/Regular_expression). 
+The regular expression will be evaluated as a [POSIX  Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 
 Example 1:
 
