@@ -302,10 +302,10 @@ For more details on the postfix quantifiers, see the section on [Optional Parame
 
 For more information on type and how they are used to construct commands and define outputs of tasks, see the [Data Types & Serialization](#data-types--serialization) section.
 
-#### Numeric Behaviour
+#### Numeric Behavior
 
 `Int` and `Float` are the numeric types.
-`Int` can be used to hold any integer, there is no size limit.
+`Int` can be used to hold a signed Integer in the range \[-2^63, 2^63). 
 `Float` is a finite 64-bit IEEE-754 floating point number.
 
 #### Custom Types
