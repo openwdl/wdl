@@ -160,7 +160,7 @@ Modify this and save it to `hello.json`:
 Then, use the `run` subcommand to run the workflow:
 
 ```
-$ java -jar cromwell.jar run hello.wdl hello.json
+$ java -jar cromwell.jar run hello.wdl -i hello.json
 ... truncated ...
 {
   "test.hello.response": "/home/user/test/c1d15098-bb57-4a0e-bc52-3a8887f7b439/call-hello/stdout8818073565713629828.tmp"
@@ -199,7 +199,7 @@ workflow test {
 Now when this is run, we get the string output for `test.hello.response`:
 
 ```
-$ java -jar cromwell.jar run hello.wdl hello.json
+$ java -jar cromwell.jar run hello.wdl -i hello.json
 ... truncated ...
 {
   "test.hello.response": "Hello World!"
@@ -232,7 +232,7 @@ workflow test {
 Now when this is run, we get the string output for `test.hello.response`:
 
 ```
-$ java -jar cromwell.jar run hello.wdl hello.json
+$ java -jar cromwell.jar run hello.wdl -i hello.json
 ... truncated ...
 {
   "test.hello.response": "Hello World!"
@@ -334,7 +334,7 @@ Now, we need to specify a value for `test.hello2.name` in the hello.json file:
 Running this workflow now produces two outputs:
 
 ```
-$ java -jar cromwell.jar run hello.wdl hello.json
+$ java -jar cromwell.jar run hello.wdl -i hello.json
 ... truncated ...
 {
   "test.hello.response": "Hello World!",
@@ -380,7 +380,7 @@ Now, the `hello.json` would require three inputs:
 Running this workflow still gives us the two greetings we expect:
 
 ```
-$ java -jar cromwell.jar run hello.wdl hello.json
+$ java -jar cromwell.jar run hello.wdl -i hello.json
 ... truncated ...
 {
   "test.hello.response": "Greetings World!",
@@ -429,7 +429,7 @@ The inputs required to run this would be:
 And this would produce the following outputs when run
 
 ```
-$ java -jar cromwell.jar run hello.wdl hello.json
+$ java -jar cromwell.jar run hello.wdl -i hello.json
 ... truncated ...
 {
   "test.hello.response": "Hello, World!",
@@ -480,7 +480,7 @@ And then the inputs JSON file would be:
 The result of running this would be:
 
 ```
-$ java -jar cromwell.jar run grep.wdl grep.json
+$ java -jar cromwell.jar run grep.wdl -i grep.json
 ... truncated ...
 {
   "test.grep.count": 3
