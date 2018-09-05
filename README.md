@@ -138,18 +138,7 @@ workflow test {
 }
 ```
 
-Generate a template `hello.json` file with the `inputs` subcommand:
-
-```
-$ java -jar wdltool.jar inputs hello.wdl
-{
-  "test.hello.name": "String"
-}
-```
-
-WDL has a concept of fully-qualified names.  In the above output, `test.hello.name` is a fully-qualified name which should be read as: the `name` input on the `hello` call within workflow `test`.  Fully-qualified names are used to unambiguously refer to specific elements of a workflow.  All inputs are specified by fully-qualified names and all outputs are returned as fully-qualified names.
-
-Modify this and save it to `hello.json`:
+Create a parameter file as well, `hello.json`:
 
 ```
 {
@@ -157,22 +146,9 @@ Modify this and save it to `hello.json`:
 }
 ```
 
-Then, use the `run` subcommand to run the workflow:
+WDL has a concept of fully-qualified names.  In the above output, `test.hello.name` is a fully-qualified name which should be read as: the `name` input on the `hello` call within workflow `test`.  Fully-qualified names are used to unambiguously refer to specific elements of a workflow.  All inputs are specified by fully-qualified names and all outputs are returned as fully-qualified names.
 
-```
-$ java -jar cromwell.jar run hello.wdl hello.json
-... truncated ...
-{
-  "test.hello.response": "/home/user/test/c1d15098-bb57-4a0e-bc52-3a8887f7b439/call-hello/stdout8818073565713629828.tmp"
-}
-```
-
-Since the `hello` task returns a `File`, the result is a file that contains the string "Hello World!" in it.
-
-```
-$ cat /home/user/test/c1d15098-bb57-4a0e-bc52-3a8887f7b439/call-hello/stdout8818073565713629828.tmp
-hello world!
-```
+Since the `hello` task returns a `File`, when you run `hello.wdl` with `hello.json` by any of WDL engines, the result is a file that contains the string "Hello World!" in it.
 
 ## Modifying Task Outputs
 
@@ -199,8 +175,6 @@ workflow test {
 Now when this is run, we get the string output for `test.hello.response`:
 
 ```
-$ java -jar cromwell.jar run hello.wdl hello.json
-... truncated ...
 {
   "test.hello.response": "Hello World!"
 }
@@ -232,8 +206,6 @@ workflow test {
 Now when this is run, we get the string output for `test.hello.response`:
 
 ```
-$ java -jar cromwell.jar run hello.wdl hello.json
-... truncated ...
 {
   "test.hello.response": "Hello World!"
 }
@@ -268,14 +240,10 @@ Now when this is run, the `outFiles` output array will contain all files
 found by evaluating the specified glob.
 
 ```
-$ java -jar cromwell.jar run globber.wdl -
-... truncated ...
 {
   "test.globber.outFiles": ["/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-3/3.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-5/5.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-2/2.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-4/4.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-1/1.txt"]
 }
 ```
-
-This workflow has no inputs, so a "-" was passed to Cromwell for the inputs file.
 
 ## Using String Interpolation
 
@@ -334,8 +302,6 @@ Now, we need to specify a value for `test.hello2.name` in the hello.json file:
 Running this workflow now produces two outputs:
 
 ```
-$ java -jar cromwell.jar run hello.wdl hello.json
-... truncated ...
 {
   "test.hello.response": "Hello World!",
   "test.hello2.response": "Hello Boston!"
@@ -380,8 +346,6 @@ Now, the `hello.json` would require three inputs:
 Running this workflow still gives us the two greetings we expect:
 
 ```
-$ java -jar cromwell.jar run hello.wdl hello.json
-... truncated ...
 {
   "test.hello.response": "Greetings World!",
   "test.hello2.response": "Hello Boston!"
@@ -429,8 +393,6 @@ The inputs required to run this would be:
 And this would produce the following outputs when run
 
 ```
-$ java -jar cromwell.jar run hello.wdl hello.json
-... truncated ...
 {
   "test.hello.response": "Hello, World!",
   "test.hello2.response": "Hello and nice to meet you, Boston!"
@@ -480,8 +442,6 @@ And then the inputs JSON file would be:
 The result of running this would be:
 
 ```
-$ java -jar cromwell.jar run grep.wdl grep.json
-... truncated ...
 {
   "test.grep.count": 3
 }
@@ -533,8 +493,6 @@ workflow example {
 This example calls the `analysis` task once for each element in the array that the `prepare` task outputs.  The resulting outputs of this workflow would be:
 
 ```
-$ java -jar cromwell.jar run scatter.wdl -
-... truncated ...
 {
   "example.analysis.out": ["_one_", "_two_", "_three_", "_four_"],
   "example.gather.str": "_one_ _two_ _three_ _four_",
