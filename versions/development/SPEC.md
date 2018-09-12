@@ -247,12 +247,14 @@ The inputs to this workflow would be `example.files` and `example.hello.pattern`
 
 ## Global Grammar Rules
 
+WDL files are encoded in UTF-8, with no BOM.
+
 ### Whitespace, Strings, Identifiers, Constants
 
 These are common among many of the following sections
 
 ```
-$ws = (0x20 | 0x9 | 0xD | 0xA)+
+$ws = (0x20 | 0x09 | 0x0D | 0x0A)+
 $identifier = [a-zA-Z][a-zA-Z0-9_]+
 $boolean = 'true' | 'false'
 $integer = [1-9][0-9]*|0[xX][0-9a-fA-F]+|0[0-7]*
@@ -262,10 +264,17 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 `$string` can accept the following between single or double-quotes:
 
 * Any character not in set: `\`, `"` (or `'` for single-quoted string), `\n`
-* An escape sequence starting with `\`, followed by one of the following characters: `\nrbtfav?`
-* An escape sequence starting with `\`, followed by 1 to 3 digits of value 0 through 7 inclusive.  This specifies an octal escape code.
-* An escape sequence starting with `\x`, followed by hexadecimal characters `0-9a-fA-F`.  This specifies a hexadecimal escape code.
-* An escape sequence starting with `\u` or `\U` followed by either 4 or 8 hexadecimal characters `0-9a-fA-F`.  This specifies a unicode code point
+* An escape sequence starting with `\`, followed by one of the following characters: `\nt"'`
+* An escape sequence starting with `\`, followed by 3 digits of value 0 through 7 inclusive.  This specifies an octal escape code.
+* An escape sequence starting with `\x`, followed by 2 hexadecimal digits `0-9a-fA-F`.  This specifies a hexadecimal escape code.
+* An escape sequence starting with `\u` followed by 4 hexadecimal characters or `\U` followed by 8 hexadecimal characters `0-9a-fA-F`.  This specifies a unicode code point.
+
+|Escape Sequence|Meaning|\x Equivalent|
+|`\\`|`\`|`\x5C`|
+|`\n`|newline|`\x0A`|
+|`\t`|tab|`\x09`|
+|`\'`|single quote|`\x22`|
+|`\"`|double quote|`\x27`|
 
 ### Types
 
