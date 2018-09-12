@@ -305,13 +305,7 @@ For more details on the postfix quantifiers, see the section on [Optional Parame
 
 For more information on type and how they are used to construct commands and define outputs of tasks, see the [Data Types & Serialization](#data-types--serialization) section.
 
-#### Numeric Behavior
-
-`Int` and `Float` are the numeric types.
-`Int` can be used to hold a signed Integer in the range \[-2^63, 2^63). 
-`Float` is a finite 64-bit IEEE-754 floating point number.
-
-#### Custom Types
+#### Custom  Types
 
 WDL provides the ability to define custom compound types called `Structs`. `Structs` are defined directly in the WDL and are usable like any other type.
 For more information on their usage, see the section on [Structs](#struct-definition)
@@ -490,14 +484,23 @@ Below are the valid results for operators on types.  Any combination not in the 
 |-----------|-----------|-----------------|---------|---------|
 |`Boolean`|`==`|`Boolean`|`Boolean`||
 |`Boolean`|`!=`|`Boolean`|`Boolean`||
+|`Boolean`|`>`|`Boolean`|`Boolean`||
+|`Boolean`|`>=`|`Boolean`|`Boolean`||
+|`Boolean`|`<`|`Boolean`|`Boolean`||
+|`Boolean`|`<=`|`Boolean`|`Boolean`||
 |`Boolean`|`||`|`Boolean`|`Boolean`||
 |`Boolean`|`&&`|`Boolean`|`Boolean`||
+|`File`|`+`|`File`|`File`|Append file paths|
 |`File`|`==`|`File`|`Boolean`||
 |`File`|`!=`|`File`|`Boolean`||
+|`File`|`+`|`String`|`File`||
+|`File`|`==`|`String`|`Boolean`||
+|`File`|`!=`|`String`|`Boolean`||
 |`Float`|`+`|`Float`|`Float`||
 |`Float`|`-`|`Float`|`Float`||
 |`Float`|`*`|`Float`|`Float`||
 |`Float`|`/`|`Float`|`Float`||
+|`Float`|`%`|`Float`|`Float`||
 |`Float`|`==`|`Float`|`Boolean`||
 |`Float`|`!=`|`Float`|`Boolean`||
 |`Float`|`>`|`Float`|`Boolean`||
@@ -508,14 +511,21 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Float`|`-`|`Int`|`Float`||
 |`Float`|`*`|`Int`|`Float`||
 |`Float`|`/`|`Int`|`Float`||
+|`Float`|`%`|`Int`|`Float`||
+|`Float`|`==`|`Int`|`Boolean`||
+|`Float`|`!=`|`Int`|`Boolean`||
 |`Float`|`>`|`Int`|`Boolean`||
 |`Float`|`>=`|`Int`|`Boolean`||
 |`Float`|`<`|`Int`|`Boolean`||
 |`Float`|`<=`|`Int`|`Boolean`||
+|`Float`|`+`|`String`|`String`||
 |`Int`|`+`|`Float`|`Float`||
 |`Int`|`-`|`Float`|`Float`||
 |`Int`|`*`|`Float`|`Float`||
 |`Int`|`/`|`Float`|`Float`||
+|`Int`|`%`|`Float`|`Float`||
+|`Int`|`==`|`Float`|`Boolean`||
+|`Int`|`!=`|`Float`|`Boolean`||
 |`Int`|`>`|`Float`|`Boolean`||
 |`Int`|`>=`|`Float`|`Boolean`||
 |`Int`|`<`|`Float`|`Boolean`||
@@ -531,7 +541,10 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Int`|`>=`|`Int`|`Boolean`||
 |`Int`|`<`|`Int`|`Boolean`||
 |`Int`|`<=`|`Int`|`Boolean`||
-|`String`|`+`|`String`|`String`|Concatenation|
+|`Int`|`+`|`String`|`String`||
+|`String`|`+`|`Float`|`String`||
+|`String`|`+`|`Int`|`String`||
+|`String`|`+`|`String`|`String`||
 |`String`|`==`|`String`|`Boolean`||
 |`String`|`!=`|`String`|`Boolean`||
 |`String`|`>`|`String`|`Boolean`||
@@ -539,13 +552,10 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`String`|`<`|`String`|`Boolean`||
 |`String`|`<=`|`String`|`Boolean`||
 ||`-`|`Float`|`Float`||
+||`+`|`Float`|`Float`||
 ||`-`|`Int`|`Int`||
+||`+`|`Int`|`Int`||
 ||`!`|`Boolean`|`Boolean`||
-
-Note: In expressions using an operator with mismatched numeric types,
-the `Int` will be cast to `Float` and the result will be `Float`.
-This will cause loss of precision if the `Int` is too large to be represented exactly by the `Float`.
-The `Float` can be converted to `Int` with the `ceil`, `round` or `floor` functions if needed.
 
 #### If then else
 
@@ -575,6 +585,7 @@ runtime {
 | 10         | Index                 | left-to-right | x[y]                 |
 | 9          | Function Call         | left-to-right | x(y,z,...)           |
 | 8          | Logical NOT           | right-to-left | !x                   |
+|            | Unary Plus            | right-to-left | +x                   |
 |            | Unary Negation        | right-to-left | -x                   |
 | 7          | Multiplication        | left-to-right | x*y                  |
 |            | Division              | left-to-right | x/y                  |
@@ -589,6 +600,7 @@ runtime {
 |            | Inequality            | left-to-right | x!=y                 |
 | 3          | Logical AND           | left-to-right | x&&y                 |
 | 2          | Logical OR            | left-to-right | x\|\|y               |
+| 1          | Assignment            | right-to-left | x=y                  |
 
 ### Member Access
 
@@ -1088,28 +1100,7 @@ task example {
 }
 ```
 
-Any `${expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
-
-Different types for the expression are formatted in different ways.
-`String` is substituted directly.
-`File` is substituted as if it were a `String`.
-`Int` is formatted without leading zeros (unless the value is `0`), with a leading `-` if the value is negative.
-`Float` is printed in the style `[-]ddd.ddd`, with 6 digits after the decimal point.
-The expression cannot have the value of any other type.
-
-```
-"${"abc"}" == "abc"
-
-File def = "hij"
-"${def}" == "hij"
-
-"${5}" == "5"
-
-"${3.141}" == "3.141000"
-"${3.141 * 1E-10}" == "0.000000"
-"${3.141 * 1E10}" == "31410000000.000000"
-```
-
+Any `${identifier}` inside of a string literal must be replaced with the value of the identifier.  If prefix were specified as `foobar`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
 
 ### Runtime Section
 
