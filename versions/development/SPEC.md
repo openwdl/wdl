@@ -121,7 +121,6 @@
   * [Array\[Pair(X,Y)\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
   * [Array\[Pair(X,Y)\] as_pairs(Map\[X,Y\])](#arraypairxy-as_pairsmapxy)
   * [Map\[X,Y\] as_map(Array\[Pair(X,Y)\])](#mapxy-as_maparraypairxy)
-  * [Array\[X\] keys(Map\[X,Y\])](#arrayx-keysmapxy)
   * [Map\[X,Array\[Y\]\] collect_by_key(Array\[Pair(X,Y)\])](#mapxarrayy-collect_by_keyarraypairxy)
   * [Integer length(Array\[X\])](#integer-lengtharrayx)
   * [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
@@ -3099,20 +3098,6 @@ Array[Pair[String,Pair[File,File]]] y = [("a", ("a.bam", "a.bai")), ("b", ("b.ba
 
 Map[String,Int] xmap = as_map(x) # {"a": 1, "b": 2, "c": 3}
 Map[String,Pair[File,File]] ymap = as_map(y) # {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
-```
-
-## Array[X] keys(Map[X,Y])
-
-Given a Map, the `keys` function returns an Array consisting of the keys in the Map. The order of the keys in the resulting Array is the same as the order of the Pairs in the Map.
-
-In cases where multiple Pairs would produce the same key, the workflow will fail.
-
-```
-Map[String,Int] x = {("a", 1), ("b", 2), ("c", 3)}
-Map[String,Pair[File,File]] y = {("a", ("a.bam", "a.bai")), ("b", ("b.bam", "b.bai"))}
-
-Array[String] xmap = keys(x) # ["a", "b", "c"]
-Array[String] ymap = keys(y) # ["a", "b"]
 ```
 
 ## Map[X,Array[Y]] collect_by_key(Array[Pair[X,Y]])
