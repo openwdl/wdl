@@ -272,6 +272,8 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 
 ### Types
 
+In WDL *all* types represent immutable values. Even types like `File` and `Directory` represent snapshots of a file or directory at the time when the value is created
+
 All inputs and outputs must be typed. The following primitive types exist in WDL:
 
 ```wdl
@@ -1054,42 +1056,33 @@ output {
 }
 ```
 
-#### Directory Outputs
+#### File Outputs
 
-Directories can be declared as outputs just like files. For example:
+Individual `File` outputs can be declared using a String path relative to the execution directory. For example:
 ```
 output {
-  Directory d = "created/directory/"
+  File f = "created_file"
 }
 ```
 
 Notes:
 
- - When a directory is output, the contents (including subdirectories) are considered part of the output but the path is not. 
- - When a directory is output, its contents *do not overwrite* any pre-existing directory content. For example:
+ - When a file is output, the name and contents are considered part of the output but the local path is not.
+ - If the specified file is a hard- or soft- link then it shall be resolved into a regular file for the WDL `File` output.
 
-```wdl
-workflow directory_manipulation {
-  # Make a directory:
-  call make_directory
-  Directory d = make_directory.made_directory
-  
-  # List the contents before the "update_directory" task:
-  call list_contents as list_contents_before { input: d = d }
-  String d_contents_before = list_contents_before.list
+#### Directory Outputs
 
-  # An update task:
-  call update_directory { input: d = d }
-  
-  # List the contents again:
-  call list_contents as list_contents_after { input: d = d }
-  String d1_contents_after = list_contents_after.list
-
-  # No matter what update directory does, the following is *always* true:
-  Boolean match = d1_contents_before == d1_contents_after
-}
-
+A `Directory` can be declared as an output just like a `File`. For example:
 ```
+output {
+  Directory d = "created/directory"
+}
+```
+
+Notes:
+
+ - When a directory is output, the name and contents (including subdirectories) are considered part of the output but the path is not.
+ - Any hard- or soft- links within the execution directory shall be resolved into separate, regular files in the WDL `Directory` value produced as the output.
 
 #### Globs
 
@@ -2587,7 +2580,7 @@ WDL values can be created from either JSON values or from native language values
 |`String` |JSON String||
 |         |String-like||
 |         |`String`|Identity coercion|
-|         |`File`||
+|         |`File`|May be removed in the future. Note that `Directory` to String is NOT a supported coercion.|
 |`File`   |JSON String|Interpreted as a file path|
 |         |String-like|Interpreted as file path|
 |         |`String`|Interpreted as file path|
