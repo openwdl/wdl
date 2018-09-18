@@ -166,15 +166,17 @@ while [[ $(get_operation_done_status "${OPERATION_ID}") == "false" ]]; do
     # have an "exec.sh" with no "*-rc.txt" file.
     WS_CALLS_STARTED=$(
       echo "${WS_EXECS}" \
-        | sed -e 's#[^/]\+/[^/]\+/##' \
+        | sed -E \
+              -e 's#[^/]+/[^/]+/##' \
               -e 's#/exec.sh##' \
-              -e 's#/attempt-[0-9]\+##' \
+              -e 's#/attempt-[0-9]+##' \
         | sort -u)
     WS_CALLS_COMPLETE=$(
       echo "${WS_RCS}" \
-        | sed -e 's#[^/]\+/[^/]\+/##' \
-              -e 's#/[^/]\+-rc.txt##' \
-              -e 's#/attempt-[0-9]\+##' \
+        | sed -E \
+              -e 's#[^/]+/[^/]+/##' \
+              -e 's#/[^/]+-rc.txt##' \
+              -e 's#/attempt-[0-9]+##' \
         | sort -u)
 
     IN_PROGRESS=$(\
@@ -211,9 +213,11 @@ done
 echo
 echo "$(date '+%Y-%m-%d %H:%M:%S'): operation complete"
 
+echo
 echo "Completed operation status information"
 get_operation_status "${OPERATION_ID}" | indent
 
+echo
 echo "Operation output"
 gsutil_ls "${OUTPUTS}" | indent
 
@@ -222,7 +226,8 @@ echo "Preemption retries:"
 WS_PREEMPTS=$(gsutil_ls ${WORKSPACE}/**/attempt-*/exec.sh)
 if [[ -n "${WS_PREEMPTS}" ]]; then
   echo "${WS_PREEMPTS}" \
-    | sed -e 's#^'${WORKSPACE}'/[^/]\+/[^/]\+/##' \
+    | sed -E \
+          -e 's#^'${WORKSPACE}'/[^/]+/[^/]+/##' \
           -e 's#/exec.sh##' \
     | indent
 
