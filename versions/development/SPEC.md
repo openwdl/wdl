@@ -272,7 +272,9 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 
 ### Types
 
-In WDL *all* types represent immutable values. Even types like `File` and `Directory` represent snapshots of a file or directory at the time when the value is created
+In WDL *all* types represent immutable values. 
+  - Even types like `File` and `Directory` represent logical "snapshots" of the file or directory at the time when the value was created.
+  - It's impossible for a task to change an upstream value which has been provided as an input: even if it makes changes to its local copy the original value is unaffected.
 
 All inputs and outputs must be typed. The following primitive types exist in WDL:
 
