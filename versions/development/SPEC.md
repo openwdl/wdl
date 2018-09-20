@@ -1086,6 +1086,29 @@ Notes:
  - When a directory is output, the name and contents (including subdirectories) are considered part of the output but the path is not.
  - Any hard- or soft- links within the execution directory shall be resolved into separate, regular files in the WDL `Directory` value produced as the output.
 
+##### Soft link resolution example
+
+For example imagine a task which produces:
+```
+dir/
+ - a           # a file, 10 MB
+ - b -> a      # a softlink to 'a'
+```
+
+As a WDL directory this would manifest as:
+```
+dir/
+ - a           # a file, 10 MB
+ - b           # another file, 10 MB
+```
+
+And therefore if used as an input to a subsequent task:
+```
+dir/
+ - a           # a file, 10 MB
+ - b           # another file, 10 MB
+```
+
 #### Globs
 
 Globs can be used to define outputs which might contain zero, one, or many files. The glob function therefore returns an array of File outputs:
