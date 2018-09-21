@@ -250,7 +250,7 @@ grammar {
         for regex, base in ctx.user_context['escapes'].items():
             for escape_sequence, number in regex.findall(source_string):
                 source_string = source_string.replace(escape_sequence, chr(int(number, base)))
-        default_action(ctx, terminal, source_string[1:-1], line, col)
+        default_action(ctx, terminal, source_string, line, col)
     PYTHON
 
     code<java> << JAVA
@@ -323,7 +323,7 @@ grammar {
                      return n1;
                    });
             }
-            var repl_str = strip_slashes(source_string.substring(1, source_string.length - 1));
+            var repl_str = strip_slashes(source_string);
             default_action(ctx, terminal, repl_str, line, col);
         }
         JAVASCRIPT
