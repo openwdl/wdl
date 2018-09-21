@@ -82,29 +82,37 @@ grammar {
     r'[0-9]+' -> :integer
 
     mode<dquote_string> {
+      # String ends immediately (empty)
       enum {
         python: r'\"'
         java: "\""
         javascript:"\""
       } -> :quote %pop
+
+      # String is an expression placeholder
       r'\$\{' -> :expression_placeholder_start @expression_placeholder
       r'~\{' -> :expression_placeholder_start @expression_placeholder
+
+      # String with ordinary contents
       enum {
         python: r'[^\"\n(\$\{)(~\{)]*'
         java: "(.*?)(?=\\$\\{|~\\{|\")"
         javascript: "[^\"\\n(${)(~{)]*"
-      } -> :string
+      } -> wdl_unescape(:string)
     }
 
     mode<squote_string> {
+      # String ends immediately (empty)
       r'\'' -> :quote %pop
       r'\$\{' -> :expression_placeholder_start @expression_placeholder
       r'~\{' -> :expression_placeholder_start @expression_placeholder
+
+      # String with ordinary contents
       enum {
         python: r'[^\'\n(\$\{)(~\{)]*'
         java: "(.*?)(?=\\$\\{|~\\{|')"
         javascript: "[^'\\n(${)(~{)]*"
-      } -> :string
+      } -> wdl_unescape(:string)
     }
 
     mode<awaiting_version_name> {
@@ -242,7 +250,7 @@ grammar {
         for regex, base in ctx.user_context['escapes'].items():
             for escape_sequence, number in regex.findall(source_string):
                 source_string = source_string.replace(escape_sequence, chr(int(number, base)))
-        default_action(ctx, terminal, source_string[1:-1], line, col)
+        default_action(ctx, terminal, source_string, line, col)
     PYTHON
 
     code<java> << JAVA
@@ -268,7 +276,8 @@ grammar {
         default_action(ctx, terminal, source_string, line, col);
     }
     public void wdl_unescape(LexerContext ctx, TerminalIdentifier terminal, String source_string, int line, int col) {
-        default_action(ctx, terminal, StringEscapeUtils.unescapeJava(source_string.substring(1, source_string.length() - 1)), line, col);
+        // As distinct from draft-2, the enclosing quotes are not included in `source_string` so no substring needed
+        default_action(ctx, terminal, StringEscapeUtils.unescapeJava(source_string), line, col);
     }
     JAVA
 
@@ -314,7 +323,7 @@ grammar {
                      return n1;
                    });
             }
-            var repl_str = strip_slashes(source_string.substring(1, source_string.length - 1));
+            var repl_str = strip_slashes(source_string);
             default_action(ctx, terminal, repl_str, line, col);
         }
         JAVASCRIPT
