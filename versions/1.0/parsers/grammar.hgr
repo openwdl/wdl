@@ -117,7 +117,6 @@ grammar {
 
     mode<awaiting_version_name> {
       r'1.0' -> :version_name %pop
-      r'draft-3' -> :version_name %pop
     }
     mode<task_fqn> {
       r'\s+' -> null
