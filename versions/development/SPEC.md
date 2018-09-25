@@ -2481,7 +2481,10 @@ Inside of [expressions](#expressions), variables are resolved differently depend
 
 ## Task-Level Resolution
 
-Inside a task, resolution is trivial: The variable referenced MUST be a [declaration](#declarations) of the task.  For example:
+Within a task, value names are unique. Any variable referenced MUST be an input or non-input [declaration](#declarations) of the task.  You *cannot* access workflow values
+from within a task.
+
+For example:
 
 ```wdl
 task my_task {
@@ -2489,7 +2492,7 @@ task my_task {
     Array[String] strings
   }
   command {
-    python analyze.py --strings-file=${write_lines(strings)}
+    python analyze.py --strings-file=~{write_lines(strings)}
   }
 }
 ```
@@ -2498,22 +2501,28 @@ Inside of this task, there exists only one expression: `write_lines(strings)`.  
 
 ## Workflow-Level Resolution
 
-In a workflow, resolution works by traversing the scope hierarchy starting from expression that references the variable.
+Within a workflow, value names must be unique. Resolution works by finding the referenced variable anywhere within the workflow, including nested `scatter` and `if` sections.
+Note that when you reference a value from outside a `scatter` which contains it, the value will be a gathered `Array`. When you reference a value from outside an `if` which
+contains it, the value will be an optional value.
+
 
 ```wdl
 workflow wf {
   input {
     String s = "wf_s"
-    String t = "t"
   }
+
+  scatter (i in range(1)) {
+    String t = "t~{i}"
+  }
+
   call my_task {
-    String s = "my_task_s"
-    input: in0 = s+"-suffix", in1 = t+"-suffix"
+    input: in0 = s + "-suffix", in1 = t[0] + "-suffix"
   }
 }
 ```
 
-In this example, there are two expressions: `s+"-suffix"` and `t+"-suffix"`.  `s` is resolved as `"my_task_s"` and `t` is resolved as `"t"`.
+In this example, there are two expressions: `s+"-suffix"` and `t+"-suffix"`.  `s` is resolved as `"wf_s"` and `t` is resolved as `"t0"`.
 
 # Computing Inputs
 
