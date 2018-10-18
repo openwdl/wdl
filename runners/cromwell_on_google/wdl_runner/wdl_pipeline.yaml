@@ -1,7 +1,7 @@
 actions:
 - name: WDL_Runner
   commands: [ '/wdl_runner/wdl_runner.sh' ]
-  imageUri: gcr.io/google.com/kbinder-sandbox/wdl_runner
+  imageUri: <link to updated public docker image>
 
 resources:
    virtualMachine:
