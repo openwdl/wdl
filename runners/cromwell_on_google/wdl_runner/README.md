@@ -5,7 +5,7 @@
 This example demonstrates running a multi-stage workflow on
 Google Cloud Platform.
 
-* The workflow is launched with the Google Genomics [Pipelines API](https://cloud.google.com/genomics/v1alpha2/pipelines).
+* The workflow is launched with the Google Genomics [Pipelines API](https://cloud.google.com/genomics/docs/quickstart).
 * The workflow is defined using the Broad Institute's
 [Workflow Definition Language](https://software.broadinstitute.org/wdl/) (WDL).
 * The workflow stages are orchestrated by the Broad Institute's
@@ -133,8 +133,8 @@ docker:
 ```
 gcloud \
   alpha genomics pipelines run \
-  --pipeline-file wdl_pipeline.yaml \
-  --zones us-central1-f \
+  --command-line '/wdl_runner/wdl_runner.sh' \
+  --regions us-central1 \
   --inputs-from-file WDL=test-wdl/ga4ghMd5.wdl \
   --inputs-from-file WORKFLOW_INPUTS=test-wdl/ga4ghMd5.inputs.json \
   --inputs-from-file WORKFLOW_OPTIONS=test-wdl/basic.papi.us.options.json \
