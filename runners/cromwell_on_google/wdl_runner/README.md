@@ -67,7 +67,7 @@ Take a look at the [Dockerfile](./Dockerfile) for full details.
 2. Enable the Genomics, Cloud Storage, and Compute Engine APIs on a new
    or existing Google Cloud Project using the [Cloud Console](https://console.cloud.google.com/flows/enableapi?apiid=genomics,storage_component,compute_component&redirect=https://console.cloud.google.com)
 
-3. Follow the Google Genomics [getting started instructions](https://cloud.google.com/genomics/install-genomics-tools#install-genomics-tools) to install and authorize the Google Cloud SDK.
+3. Follow the Google Genomics [getting started instructions](https://cloud.google.com/genomics/docs/quickstart) to install and authorize the Google Cloud SDK.
 
 4. Follow the Cloud Storage instructions for [Creating Storage Buckets](https://cloud.google.com/storage/docs/creating-buckets) to create a bucket for workflow output and logging 
 
