@@ -15,7 +15,6 @@ import subprocess
 
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
-#from oauth2client.client import GoogleCredentials
 
 import sys_util
 
@@ -67,7 +66,6 @@ def verify_gcs_dir_empty_or_missing(path):
   prefix = parts[1] if len(parts) > 1 else None
 
   # Get the storage endpoint
-  #credentials = GoogleCredentials.get_application_default()
   service = discovery.build('storage', 'v1', cache_discovery=False)
 
   # Build the request - only need the name

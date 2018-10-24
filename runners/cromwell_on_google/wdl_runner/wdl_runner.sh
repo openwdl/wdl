@@ -11,13 +11,13 @@ set -o nounset
 
 readonly INPUT_PATH=/pipeline/input
 
-# WDL, INPUTS, and OPTIONS file contents are all passed into
+# WDL, INPUTS, and OPTIONS filenames are all passed into
 # the pipeline as environment variables - write them out as
 # files.
 mkdir -p "${INPUT_PATH}"
-cp "${WDL}"  "${INPUT_PATH}/wf.wdl"
-cp "${WORKFLOW_INPUTS}"  "${INPUT_PATH}/wf.inputs.json"
-cp "${WORKFLOW_OPTIONS}"  "${INPUT_PATH}/wf.options.json"
+cp "${WDL}" "${INPUT_PATH}/wf.wdl"
+cp "${WORKFLOW_INPUTS}" "${INPUT_PATH}/wf.inputs.json"
+cp "${WORKFLOW_OPTIONS}" "${INPUT_PATH}/wf.options.json"
 
 # Set the working directory to the location of the scripts
 readonly SCRIPT_DIR=$(dirname $0)

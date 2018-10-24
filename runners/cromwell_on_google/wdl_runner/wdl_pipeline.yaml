@@ -5,5 +5,5 @@ actions:
 
 resources:
    virtualMachine:
-     machineType: n1-standard-2
+     machineType: n1-standard-1
 
