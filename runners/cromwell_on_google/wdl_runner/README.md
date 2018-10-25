@@ -135,11 +135,11 @@ gcloud \
   alpha genomics pipelines run \
   --pipeline-file wdl_pipeline.yaml \
   --regions us-central1 \
-  --inputs-from-file WDL=test-wdl/ga4ghMd5.wdl \
-  --inputs-from-file WORKFLOW_INPUTS=test-wdl/ga4ghMd5.inputs.json \
-  --inputs-from-file WORKFLOW_OPTIONS=test-wdl/basic.papi.us.options.json \
-  --inputs WORKSPACE=gs://YOUR-BUCKET/wdl_runner/work \
-  --inputs OUTPUTS=gs://YOUR-BUCKET/wdl_runner/output \
+  --inputs-from-file WDL=test-wdl/ga4ghMd5.wdl,\
+  WORKFLOW_INPUTS=test-wdl/ga4ghMd5.inputs.json,\
+  WORKFLOW_OPTIONS=test-wdl/basic.papi.us.options.json \
+  --env-vars WORKSPACE=gs://YOUR-BUCKET/wdl_runner/work,\
+  OUTPUTS=gs://YOUR-BUCKET/wdl_runner/output \
   --logging gs://YOUR-BUCKET/wdl_runner/logging
 ```
 
