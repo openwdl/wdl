@@ -1,7 +1,13 @@
 actions:
+- name: SSH
+  imageUri: gcr.io/cloud-genomics-pipelines/tools
+  entrypoint: ssh-server
+  flags: [ 'RUN_IN_BACKGROUND' ]
+  portMappings:
+    22: 22 
 - name: WDL_Runner
   commands: [ '/wdl_runner/wdl_runner.sh' ]
-  imageUri: gcr.io/google.com/kbinder-sandbox/wdl_runner 
+  imageUri: gcr.io/google.com/kbinder-sandbox/wdl_runner
 
 resources:
    virtualMachine:
