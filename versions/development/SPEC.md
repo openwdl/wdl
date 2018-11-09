@@ -79,6 +79,7 @@
 * [Scope](#scope)
 * [Optional Parameters & Type Constraints](#optional-parameters--type-constraints)
   * [Prepending a String to an Optional Parameter](#prepending-a-string-to-an-optional-parameter)
+  * [The None argument](#the-none-argument)
 * [Scatter / Gather](#scatter--gather)
 * [Variable Resolution](#variable-resolution)
   * [Task-Level Resolution](#task-level-resolution)
@@ -2319,7 +2320,7 @@ python script.py ${"--val=" + val}
 
 ## The `None` argument
 
-Sometimes you need to define an output that is optional, because it depends on a command parameter for example:
+Sometimes you need to define an output that is optional, because it depends on a command parameter. For example:
 ```wdl
 task test
   input {
