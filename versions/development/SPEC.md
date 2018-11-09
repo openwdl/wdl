@@ -2334,6 +2334,7 @@ task test
     File? logFile = if logFile then "test.log" else None
   }
 }
+```
 If `logFile` is true, the command will evaluate to `test --log inputFile outputPath` and a log will be created.
 If `logFile` is false, the command will evaluate to `test inputFile outputPath` and log will not be created.
 
