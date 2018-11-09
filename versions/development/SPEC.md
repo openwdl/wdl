@@ -2341,8 +2341,6 @@ If `logFile` is false, the command will evaluate to `test inputFile outputPath` 
 Using a non-optional `File` will crash when `logFile` is false. The `None` directive is there for these and
 other cases where an optional variable is conditionally defined.
 
-```
-
 # Scatter / Gather
 
 The `scatter` block is meant to parallelize a series of identical tasks but give them slightly different inputs.  The simplest example is:
