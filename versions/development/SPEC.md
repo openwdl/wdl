@@ -300,7 +300,7 @@ For more information on type and how they are used to construct commands and def
 #### Numeric Behavior
 
 `Int` and `Float` are the numeric types.
-`Int` can be used to hold a signed Integer in the range \[-2^63, 2^63). 
+`Int` can be used to hold a signed Integer in the range \[-2^63, 2^63).
 `Float` is a finite 64-bit IEEE-754 floating point number.
 
 #### Custom Types
@@ -2232,6 +2232,7 @@ task test {
     Array[File]+ b
     Array[File]? c
     #File+ d <-- can't do this, + only applies to Arrays
+    Array[File]+? e  # An optional array that, if defined, must contain more than one element
   }
   command {
     /bin/mycmd ${sep=" " a}
@@ -2314,6 +2315,31 @@ The latter case is very likely an error case, and this `--val=` part should be l
 
 ```
 python script.py ${"--val=" + val}
+```
+
+## The `None` argument
+
+Sometimes you need to define an output that is optional, because it depends on a command parameter for example:
+```wdl
+task test
+  input {
+    File inputFile
+    String outputPath
+    Boolean logFile
+  }
+  command {
+    test ~{true="--log" false="" logFile} inputFile outputPath
+  }
+  output {
+    File? logFile = if logFile then "test.log" else None
+  }
+}
+If `logFile` is true, the command will evaluate to `test --log inputFile outputPath` and a log will be created.
+If `logFile` is false, the command will evaluate to `test inputFile outputPath` and log will not be created.
+
+Using a non-optional `File` will crash when `logFile` is false. The `None` directive is there for these and
+other cases where an optional variable is conditionally defined.
+
 ```
 
 # Scatter / Gather
