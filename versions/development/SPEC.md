@@ -272,6 +272,10 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 
 ### Types
 
+In WDL *all* types represent immutable values. 
+  - Even types like `File` and `Directory` represent logical "snapshots" of the file or directory at the time when the value was created.
+  - It's impossible for a task to change an upstream value which has been provided as an input: even if it makes changes to its local copy the original value is unaffected.
+
 All inputs and outputs must be typed. The following primitive types exist in WDL:
 
 ```wdl
@@ -280,6 +284,7 @@ Float f = 27.3             # A floating point number
 Boolean b = true           # A boolean true/false
 String s = "hello, world"  # A string value
 File f = "path/to/file"    # A file
+Directory d = "/path/to/"  # The contents of a directory (including sub-directories)
 ```
 
 In addition, the following compound types can be constructed, parameterized by other types. In the examples below `P` represents any of the primitive types above, and `X` and `Y` represent any valid type (even nested compound types):
@@ -803,6 +808,7 @@ task t {
   input {
     Int i
     File f
+    Directory d
   }
 
   # [... other task sections]
@@ -810,13 +816,19 @@ task t {
 ```
 
 #### Task Input Localization
-`File` inputs must be treated specially since they require localization to within the execution directory:
-- Files are localized into the execution directory prior to the task execution commencing.
+`File` and `Directory` inputs must be treated specially since they require localization to within the execution directory:
+- Files and directories are localized into the execution directory prior to the task execution commencing. 
 - When localizing a `File`, the engine may choose to place the file wherever it likes so long as it accords to these rules:
   - The original file name must be preserved even if the path to it has changed.
   - Two input files with the same name must be located separately, to avoid name collision.
   - Two input files which originated in the same storage directory must also be localized into the same directory for task execution (see the special case handling for Versioning Filesystems below).
+- When localizing a `Directory`, the engine follows the same set of rules as for Files:
+  - The original directory name must be preserved even if the path to it has changed.
+  - Two input directories with the same name must be located separately, to avoid name collision.
+  - Two input directories which originated in the same parent storage directory must be localized into the same parent directory for task execution.
+  - The internal structure of files and sub-directories in the directory is preserved within the new directory location.
 - When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted into the command string.
+- When a WDL author uses a `Directory` input in their [Command Section](#command-section), the fully qualified localized path to the directory (with no trailing '/') is substituted into the command string.
 
 ##### Special Case: Versioning Filesystems
 Two or more versions of a file in a versioning filesystem might have the same name and come from the same directory. In that case the following special procedure must be used to avoid collision:
@@ -1044,6 +1056,57 @@ output {
   String a = "a"
   String ab = a + "b"
 }
+```
+
+#### File Outputs
+
+Individual `File` outputs can be declared using a String path relative to the execution directory. For example:
+```
+output {
+  File f = "created_file"
+}
+```
+
+Notes:
+
+ - When a file is output, the name and contents are considered part of the output but the local path is not.
+ - If the specified file is a hard- or soft- link then it shall be resolved into a regular file for the WDL `File` output.
+
+#### Directory Outputs
+
+A `Directory` can be declared as an output just like a `File`. For example:
+```
+output {
+  Directory d = "created/directory"
+}
+```
+
+Notes:
+
+ - When a directory is output, the name and contents (including subdirectories) are considered part of the output but the path is not.
+ - Any hard- or soft- links within the execution directory shall be resolved into separate, regular files in the WDL `Directory` value produced as the output.
+
+##### Soft link resolution example
+
+For example imagine a task which produces:
+```
+dir/
+ - a           # a file, 10 MB
+ - b -> a      # a softlink to 'a'
+```
+
+As a WDL directory this would manifest as:
+```
+dir/
+ - a           # a file, 10 MB
+ - b           # another file, 10 MB
+```
+
+And therefore if used as an input to a subsequent task:
+```
+dir/
+ - a           # a file, 10 MB
+ - b           # another file, 10 MB
 ```
 
 #### Globs
@@ -2542,7 +2605,7 @@ WDL values can be created from either JSON values or from native language values
 |`String` |JSON String||
 |         |String-like||
 |         |`String`|Identity coercion|
-|         |`File`||
+|         |`File`|May be removed in the future. Note that `Directory` to String is NOT a supported coercion.|
 |`File`   |JSON String|Interpreted as a file path|
 |         |String-like|Interpreted as file path|
 |         |`String`|Interpreted as file path|

@@ -3,7 +3,7 @@ grammar {
     partials {
       r'[a-zA-Z]' -> _identifier_start
       r'[a-zA-Z0-9_]' -> _identifier_follow
-      r'(Array|Map|Object|Pair|Boolean|Int|Float|Uri|File|String)(?!{%_identifier_follow%})' -> _type
+      r'(Array|Map|Object|Pair|Boolean|Int|Float|Uri|File|Directory|String)(?!{%_identifier_follow%})' -> _type
       r'{%_identifier_start%}({%_identifier_follow%})*' -> _identifier
     }
 
