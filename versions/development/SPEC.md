@@ -23,6 +23,11 @@
     * [Map Literals](#map-literals)
     * [Object Literals](#object-literals)
     * [Pair Literals](#pair-literals)
+<<<<<<< HEAD
+=======
+    * [Optional Literals](#optional-literals)
+  * [Document](#document)
+>>>>>>> process feedback, move chapter on None
   * [Versioning](#versioning)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
@@ -79,7 +84,6 @@
 * [Scope](#scope)
 * [Optional Parameters & Type Constraints](#optional-parameters--type-constraints)
   * [Prepending a String to an Optional Parameter](#prepending-a-string-to-an-optional-parameter)
-  * [The None argument](#the-none-argument)
 * [Scatter / Gather](#scatter--gather)
 * [Variable Resolution](#variable-resolution)
   * [Task-Level Resolution](#task-level-resolution)
@@ -690,6 +694,51 @@ Pair values can also be specified within the [workflow inputs JSON](https://gith
 }
 ```
 
+<<<<<<< HEAD
+=======
+### Optional literals
+
+Any non-optional value can be wrapped into an optional value by assigning it to an optional variable:
+
+```WDL
+Int? maybe_integer = 5
+```
+
+The `None` literal is the value that an optional has when it is not defined.
+
+```WDL
+Int? maybe_integer = None
+# maybe_integer is not defined
+```
+
+This is useful in a number of cases, for example when an output of a command depends on a certain flag:
+```wdl
+task test
+  input {
+    File inputFile
+    String outputPath
+    Boolean log
+  }
+  command {
+    test ~{true="--log" false="" log} inputFile outputPath
+  }
+  output {
+    File? logFile = if log then "test.log" else None
+  }
+}
+```
+If `log` is true, the command will evaluate to `test --log inputFile outputPath` and `logFile` will be a defined optional.
+If `log` is false, the command will evaluate to `test inputFile outputPath` and `logFile` will be an undefined optional.
+
+## Document
+
+```
+$document = ($import | $task | $workflow)+
+```
+
+`$document` is the root of the parse tree and it consists of one or more import statement, task, or workflow definition
+
+>>>>>>> process feedback, move chapter on None
 ## Versioning
 
 For portability purposes it is critical that WDL documents be versioned so an engine knows how to process it. From `draft-3` forward, the first non-comment statement of all WDL files must be a `version` statement, for example
@@ -2317,30 +2366,6 @@ The latter case is very likely an error case, and this `--val=` part should be l
 ```
 python script.py ${"--val=" + val}
 ```
-
-## The `None` argument
-
-Sometimes you need to define an output that is optional, because it depends on a command parameter. For example:
-```wdl
-task test
-  input {
-    File inputFile
-    String outputPath
-    Boolean logFile
-  }
-  command {
-    test ~{true="--log" false="" logFile} inputFile outputPath
-  }
-  output {
-    File? logFile = if logFile then "test.log" else None
-  }
-}
-```
-If `logFile` is true, the command will evaluate to `test --log inputFile outputPath` and a log will be created.
-If `logFile` is false, the command will evaluate to `test inputFile outputPath` and log will not be created.
-
-Using a non-optional `File` will crash when `logFile` is false. The `None` directive is there for these and
-other cases where an optional variable is conditionally defined.
 
 # Scatter / Gather
 
