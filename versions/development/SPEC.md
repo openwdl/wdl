@@ -7,7 +7,6 @@
 * [Workflow Description Language](#workflow-description-language)
   * [Table Of Contents](#table-of-contents)
   * [Introduction](#introduction)
-  * [State of the Specification](#state-of-the-specification)
 * [Language Specification](#language-specification)
   * [Global Grammar Rules](#global-grammar-rules)
     * [Whitespace, Strings, Identifiers, Constants](#whitespace-strings-identifiers-constants)
@@ -231,18 +230,6 @@ workflow example {
 ```
 
 The inputs to this workflow would be `example.files` and `example.hello.pattern`.
-
-## State of the Specification
-
-**17 August 2015**
-
-* Added concept of fully-qualified-name as well as namespace identifier.
-* Changed task definitions to have all inputs as declarations.
-* Changed command parameters (`${`...`}`) to accept expressions and fewer "declarative" elements
-  * command parameters also are required to evaluate to primitive types
-* Added a `output` section to workflows
-* Added a lot of functions to the standard library for serializing/deserializing WDL values
-* Specified scope, namespace, and variable resolution semantics
 
 # Language Specification
 
