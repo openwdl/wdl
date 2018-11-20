@@ -2259,16 +2259,16 @@ The top level scopes which can contain value declarations are:
 * `workflow {...}` definitions
 * `task {...}` definitions
 
-Within these top-level scopes, various sub-scopes exist which can also contain value declarations:
+Within these top-level scopes, various sub-sections exist which can also contain value declarations:
 
 * `scatter` blocks
 * `if` blocks
 * `input` sections
 * `output` sections
 
-Some sub-scopes provide scoped values:
+Some sub-sections provide scoped values:
 
-* `scatter(x in ...)` provides a value `x` **only within the scope of the scatter**
+* `scatter(x in ...)` provides a value `x` **only within the scatter's `{...}` block**
 
 ## Input, Output and Graph Values
 
@@ -2295,12 +2295,12 @@ Values declared within a `task` are either inputs or outputs. Workflows have inp
 * A graph value may be used as a depenency higher up in the WDL file than the location where it is declared.
     * This is OK because graph execution order is defined by the DAG, not the order in the page.
     * See the [Forward Reference](#forward-reference) example.
-* Despite always being reachable, some sub-scopes cause the types of values to change if accessed from outside the sub-scope:
+* Despite values being reachable from outside sub-sections, the types of values may change if accessed from outside:
     * Using a value which was declared within a `scatter` from outside that `scatter` implicitly collects the results, turning any X into an `Array[X]`.
     * Using a value which was declared within a `if` from outside the `if` implicitly optionalizes the results, turning any `X` into an `X?`.
 * References must always be acyclic:
     * If "`a` depends on `b`" then it cannot also be true that "`b` depends on `a`".
-    * References must also not cause cyclic dependencies between sub-scopes. See the [Acyclic Sub-Scopes](#acyclic-sub-scopes) for an example of what this means.
+    * References must also not cause cyclic dependencies between sub-sections. See the [Acyclic Sub-Sections](#acyclic-sub-sections) for an example of what this means.
 
 ## Examples
 
@@ -2403,7 +2403,7 @@ z depends on {my_task}
 * There are no cycles in this dependency graph.
 * Therefore, although not necessarily recommended for readability reasons, this workflow would processed without problem.
 
-### Referencing values within and from outside sub-scopes
+### Referencing values within and from outside sub-sections
 
 This example scatters over the `my_task` task from the previous examples.
 ```wdl
@@ -2431,13 +2431,13 @@ workflow my_workflow {
 ```
 
 * The expression for `Int z = ...` accesses `my_task.z` from within the same scatter.
-* The output `zs` can reference the value `z` even though it is declared in a sub-scope. However because `z` is declared within a `scatter`, the type of `zs` is `Array[Int]`.
+* The output `zs` can reference the value `z` even though it was declared in a sub-section. However because `z` is declared within a `scatter` sub-section, the type of `zs` is `Array[Int]`.
 
-### Acyclic Sub-Scopes
+### Acyclic Sub-Sections
 
-This example shows what is meant by a cyclic dependency between sub-scopes.
+This example shows what is meant by a cyclic dependency between sub-sections.
 
-First let's sets the scene by showing that sub-scopes can find and reference values in other sub-scopes:
+First let's sets the scene by showing that sub-sections can find and reference values in other sub-sections:
 
 ```wdl
 version development
@@ -2462,7 +2462,7 @@ workflow my_workflow {
 
 ```
 
-* The declaration for `x_b` is able to access the value for `x_a` even though the declaration is in another sub-scope of the `workflow`.
+* The declaration for `x_b` is able to access the value for `x_a` even though the declaration is in another sub-section of the `workflow`.
 * Because the declaration for `x_b` is outside the `scatter` in which `x_a` was declared, the type is `Array[Int]`
 
 This change would introduce a cyclic dependency between the scatter blocks themselves:
@@ -2495,7 +2495,7 @@ workflow my_workflow {
 
 * Note that the dependency graph now has to criss-cross between the `scatter(a in as)` block and the `scatter(b in bs)` block. 
     * This is **not** allowed.
-* To avoid this criss-crossing between scopes, scatters may be split into separate `scatter` blocks over the same input array:
+* To avoid this criss-crossing between sub-sections, scatters may be split into separate `scatter` blocks over the same input array:
 
 ```wdl
 version development
