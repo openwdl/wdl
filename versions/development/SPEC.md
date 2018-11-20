@@ -24,7 +24,6 @@
     * [Map Literals](#map-literals)
     * [Object Literals](#object-literals)
     * [Pair Literals](#pair-literals)
-  * [Document](#document)
   * [Versioning](#versioning)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
@@ -702,14 +701,6 @@ Pair values can also be specified within the [workflow inputs JSON](https://gith
   "wf_hello.twenty_threes": { "Left": 23, "Right": "twenty-three" }
 }
 ```
-
-## Document
-
-```
-$document = ($import | $task | $workflow)+
-```
-
-`$document` is the root of the parse tree and it consists of one or more import statement, task, or workflow definition
 
 ## Versioning
 
