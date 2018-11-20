@@ -80,7 +80,7 @@ Table of Contents
     * [Struct Member Access](#struct-member-access)
     * [Importing Structs](#importing-structs)
 * [Namespaces](#namespaces)
-* [Scope](#scope)
+* [Value Scopes and Reachability](#value-scopes-and-reachability)
 * [Optional Parameters &amp; Type Constraints](#optional-parameters--type-constraints)
   * [Prepending a String to an Optional Parameter](#prepending-a-string-to-an-optional-parameter)
 * [Scatter / Gather](#scatter--gather)
@@ -2250,44 +2250,280 @@ Now everything inside of `tasks.wdl` must be accessed through the default namesp
 Each namespace may contain namespaces, tasks, and at most one workflow.  The names of the contained namespaces, tasks, and workflow need to be unique within that namespace. For example, one cannot import two workflows while they have the same namespace identifier. Additionally, a workflow and a namespace both named `foo` cannot exist inside a common namespace. Similarly there cannot be a task `foo` in a workflow also named `foo`.
 However, you can import two workflows with different namespace identifiers that have identically named tasks. For example, you can import namespaces `foo` and `bar`, both of which contain a task `baz`, and you can call `foo.baz` and `bar.baz` from the same primary workflow.
 
-# Scope
+# Value Scopes and Reachability
 
-Scopes are defined as:
+## Top Level Scopes
 
-* `workflow {...}` blocks
-* `call` blocks
-* `if(expr) {...}` blocks
-* `scatter(x in y) {...}` blocks
+The top level scopes which can contain value declarations are:
 
-Inside of any scope, variables may be [declared](#declarations).  The variables declared in that scope are visible to any sub-scope, recursively.  For example:
+* `workflow {...}` definitions
+* `task {...}` definitions
+
+Within these top-level scopes, various sub-scopes exist which can also contain value declarations:
+
+* `scatter` blocks
+* `if` blocks
+* `input` sections
+* `output` sections
+
+Some sub-scopes provide scoped values:
+
+* `scatter(x in ...)` provides a value `x` **only within the scope of the scatter**
+
+## Input, Output and Graph Values
+
+Values declared within a `task` are either inputs or outputs. Workflows have inputs and outputs as well, and also allow declaration of "graph" values.
+
+* Inputs are evaluated before anything else in the task or workflow is started.
+* Outputs are evaluated after everything else in the task or workflow completes.
+* Graph values are evaluated as part of the normal execution of the workflow DAG. This means that they can be evaluated as soon as all their dependencies are available.
+* Examples of dependencies which graph values may have include:
+    * Inputs
+    * `call` outputs
+    * Other graph values
+* Scatter variables are 
+
+## Value Reachability Rules
+
+* Within a top-level (`workflow` or `task`) scope, each value name is unique and always reachable.
+    * Exception: `scatter` value names 
+        * For example the value named `x` in the line `scatter(x in ...) { ... }`
+        * Scatter values are only accessible within the scope of the scatter block
+        * Scatter value names can be reused as scatter value names by other scatter blocks
+    * Exception: `output` values
+        * Because they must be calculated last, `output` values are *not* reachable from outside the `output` section.
+* A graph value may be used as a depenency higher up in the WDL file than the location where it is declared.
+    * This is OK because graph execution order is defined by the DAG, not the order in the page.
+    * See the [Forward Reference](#forward-reference) example.
+* Despite always being reachable, some sub-scopes cause the types of values to change if accessed from outside the sub-scope:
+    * Using a value which was declared within a `scatter` from outside that `scatter` implicitly collects the results, turning any X into an `Array[X]`.
+    * Using a value which was declared within a `if` from outside the `if` implicitly optionalizes the results, turning any `X` into an `X?`.
+* References must always be acyclic:
+    * If "`a` depends on `b`" then it cannot also be true that "`b` depends on `a`".
+    * References must also not cause cyclic dependencies between sub-scopes. See the [Acyclic Sub-Scopes](#acyclic-sub-scopes) for an example of what this means.
+
+## Examples
+
+### Task Scoping
 
 ```wdl
+version development
+
 task my_task {
   input {
     Int x
     File f
   }
-  command {
-    my_cmd --integer=${var} ${f}
-  }
-}
 
-workflow wf {
-  input {
-    Array[File] files
-    Int x = 2
+  Int y = x + 1
+
+  command {
+    my_cmd --integer1=~{x} --integer2=~{y} ~{f}
   }
-  scatter(file in files) {
-    Int x = 3
-    call my_task {
-      Int x = 4
-      input: var=x, f=file
-    }
+
+  output {
+    Int z = read_int(stdout())
+    Int z_plus_one = z + 1
   }
 }
 ```
 
-`my_task` will use `x=4` to set the value for `var` in its command line.  However, `my_task` also needs a value for `x` which is defined at the task level.  Since `my_task` has two inputs (`x` and `var`), and only one of those is set in the `call my_task` declaration, the value for `my_task.x` still needs to be provided by the user when the workflow is run.
+* `x` and `f` are `input` values which will be evaluated before the task begins.
+* `y` is a graph value with an upstream depenency on the input `x`.
+* The `command` section is able to access all `input`s and graph values. It is not able to reference `output` values.
+* `z` is an `output` value - it cannot be accessed except by the other declaration in the `output` section.
+* `z_plus_one` is another `output` value.
+
+### Workflow Scoping
+
+This workflow calls the `my_task` task from the previous example.
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    File file
+    Int x = 2
+  }
+
+  call my_task { input:
+    x = x,
+    f = file
+  }
+
+  output {
+    Int z = my_task.z
+  }
+}
+```
+
+* `file` and `x` are `input` values which will be evaluated before the workflow begins.
+* The call block provides inputs for the task values `x` and `f`.
+    * Note that `x` is used twice in the line `x = x,`
+        * First: to name the value in the task being provided. This must reference an input value in the `task` scope of the appropriate `task`.
+        * Second: as part of the input expression. This expression may reference any values in scope in the current `workflow`.
+* `z` is an output value which depends on the output from the `call` to `my_task`. It is not accessible from elsewhere in the `workflow`.
+
+### Forward Reference
+
+This example shows that forward references are alright so long as they can ultimately be processed as an acyclic graph.
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    File file
+    Int x = 2
+  }
+
+  call my_task { input:
+    x = x_modified,
+    f = file
+  }
+
+  Int x_modified = x
+
+  output {
+    Int z = my_task.z
+  }
+}
+```
+
+* The graph dependencies for this workflow would be:
+```
+file is an input
+x is an input
+x_modified depends on {x}
+my_task depends on {x_modified, file}
+z depends on {my_task}
+```
+
+* There are no cycles in this dependency graph.
+* Therefore, although not necessarily recommended for readability reasons, this workflow would processed without problem.
+
+### Referencing values within and from outside sub-scopes
+
+This example scatters over the `my_task` task from the previous examples.
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    File file
+    Array[Int] xs = [1, 2, 3]
+  }
+
+  scatter (x in xs) {
+    call my_task { input:
+      x = x,
+      f = file
+    }
+
+    Int z = my_task.z
+  }
+
+  output {
+    Array[Int] zs = z
+  }
+}
+```
+
+* The expression for `Int z = ...` accesses `my_task.z` from within the same scatter.
+* The output `zs` can reference the value `z` even though it is declared in a sub-scope. However because `z` is declared within a `scatter`, the type of `zs` is `Array[Int]`.
+
+### Acyclic Sub-Scopes
+
+This example shows what is meant by a cyclic dependency between sub-scopes.
+
+First let's sets the scene by showing that sub-scopes can find and reference values in other sub-scopes:
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    Array[Int] as
+    Array[Int] bs
+  }
+
+  scatter(a in as) {
+    Int x_a = a
+  }
+  scatter(b in bs) {
+    Array[Int] x_b = x_a
+  }
+
+  output {
+    Array[Array[Int]] xs_output = x_b
+  }
+}
+
+```
+
+* The declaration for `x_b` is able to access the value for `x_a` even though the declaration is in another sub-scope of the `workflow`.
+* Because the declaration for `x_b` is outside the `scatter` in which `x_a` was declared, the type is `Array[Int]`
+
+This change would introduce a cyclic dependency between the scatter blocks themselves:
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    Array[Int] as
+    Array[Int] bs
+  }
+
+  scatter(a in as) {
+    Int x_a = a
+    Array[Int] y_a = y_b
+  }
+  scatter(b in bs) {
+    Array[Int] x_b = x_a
+    Int x_b = b
+  }
+
+  output {
+    Array[Array[Int]] xs_output = x_b
+    Array[Array[Int]] ys_output = y_a
+  }
+}
+
+```
+
+* Note that the dependency graph now has to criss-cross between the `scatter(a in as)` block and the `scatter(b in bs)` block. 
+    * This is **not** allowed.
+* To avoid this criss-crossing between scopes, scatters may be split into separate `scatter` blocks over the same input array:
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    Array[Int] as
+    Array[Int] bs
+  }
+
+  scatter(a in as) {
+    Int x_a = a
+  }
+  scatter(b in bs) {
+    Array[Int] x_b = x_a
+    Int x_b = b
+  }
+  scatter(a2 in as) {
+    Array[Int] y_a = y_b
+  }
+
+  output {
+    Array[Array[Int]] xs_output = x_b
+    Array[Array[Int]] ys_output = y_a
+  }
+}
+
+```
 
 # Optional Parameters & Type Constraints
 
@@ -2474,55 +2710,6 @@ workflow wf {
 ```
 
 In this example, `inc` and `inc2` are being called in serial where the output of one is fed to another. inc2 would output the array `[3,4,5,6,7]`
-
-# Variable Resolution
-
-Inside of [expressions](#expressions), variables are resolved differently depending on if the expression is in a `task` declaration or a `workflow` declaration
-
-## Task-Level Resolution
-
-Within a task, value names are unique. Any variable referenced MUST be an input or non-input [declaration](#declarations) of the task.  You *cannot* access workflow values
-from within a task.
-
-For example:
-
-```wdl
-task my_task {
-  input {
-    Array[String] strings
-  }
-  command {
-    python analyze.py --strings-file=~{write_lines(strings)}
-  }
-}
-```
-
-Inside of this task, there exists only one expression: `write_lines(strings)`.  In here, when the expression evaluator tries to resolve `strings`, which must be a declaration of the task (in this case it is).
-
-## Workflow-Level Resolution
-
-Within a workflow, value names must be unique. Resolution works by finding the referenced variable anywhere within the workflow, including nested `scatter` and `if` sections.
-Note that when you reference a value from outside a `scatter` which contains it, the value will be a gathered `Array`. When you reference a value from outside an `if` which
-contains it, the value will be an optional value.
-
-
-```wdl
-workflow wf {
-  input {
-    String s = "wf_s"
-  }
-
-  scatter (i in range(1)) {
-    String t = "t~{i}"
-  }
-
-  call my_task {
-    input: in0 = s + "-suffix", in1 = t[0] + "-suffix"
-  }
-}
-```
-
-In this example, there are two expressions: `s+"-suffix"` and `t+"-suffix"`.  `s` is resolved as `"wf_s"` and `t` is resolved as `"t0"`.
 
 # Computing Inputs
 
