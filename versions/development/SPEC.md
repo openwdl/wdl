@@ -727,8 +727,8 @@ task test
   }
 }
 ```
-If `log` is true, the command will evaluate to `test --log inputFile outputPath` and `logFile` will be a defined optional.
-If `log` is false, the command will evaluate to `test inputFile outputPath` and `logFile` will be an undefined optional.
+If `log` is true, the command will evaluate to `test --log inputFile outputPath` and `logFile` will be `test.log`.
+If `log` is false, the command will evaluate to `test inputFile outputPath` and `logFile` will be `None`.
 
 ## Document
 
@@ -2282,7 +2282,7 @@ task test {
     Array[File]+ b
     Array[File]? c
     #File+ d <-- can't do this, + only applies to Arrays
-    Array[File]+? e  # An optional array that, if defined, must contain more than one element
+    Array[File]+? e  # An optional array that, if defined, must contain at least one element
   }
   command {
     /bin/mycmd ${sep=" " a}
