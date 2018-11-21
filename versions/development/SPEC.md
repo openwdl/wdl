@@ -712,11 +712,11 @@ Int? maybe_integer = None
 Int? maybe_numeral = 5
 Int certain_integer = 3
 # maybe_numeral is a defined optional
-is_defined(maybe_integer) # Evaluates to false
-is_defined(maybe_numeral) # Evaluates to true
-maybe_integer == None # Evaluates to true, same as !is_defined(maybe_integer)
-maybe_integer != None # Evaluates to false, same as is_defined(maybe_integer)
-certain_integer == None # This will cause an error. Since None only makes sense when dealing with optionals.
+Boolean test_defined = defined(maybe_integer) # Evaluates to false
+Boolean test_defined2 = defined(maybe_numeral) # Evaluates to true
+Boolean test_is_none = maybe_integer == None # Evaluates to true, same as !defined(maybe_integer)
+Boolean test_not_none = maybe_integer != None # Evaluates to false, same as defined(maybe_integer)
+Boolean compare_int_to_none = certain_integer == None # This will cause an error. Since None only makes sense when dealing with optionals.
 ```
 
 This is useful in a number of cases, for example when an output of a command depends on a certain flag:
