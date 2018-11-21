@@ -721,7 +721,7 @@ certain_integer == None # This will cause an error. Since None only makes sense 
 
 This is useful in a number of cases, for example when an output of a command depends on a certain flag:
 ```wdl
-task test
+task test {
   input {
     File inputFile
     String outputPath
