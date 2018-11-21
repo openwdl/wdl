@@ -698,7 +698,7 @@ Pair values can also be specified within the [workflow inputs JSON](https://gith
 =======
 ### Optional literals
 
-Any non-optional value can be wrapped into an optional value by assigning it to an optional variable:
+Any non-optional value can be  turned into an optional value by assigning it to an optional variable:
 
 ```WDL
 Int? maybe_integer = 5
