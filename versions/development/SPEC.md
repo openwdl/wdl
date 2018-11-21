@@ -3280,9 +3280,32 @@ Array[String] env2_param = prefix("-f ", env2) # ["-f 1", "-f 2", "-f 3"]
 
 Given an array of optional values, `select_first` will select the first defined value and return it. Note that this is a runtime check and requires that at least one defined value will exist: if no defined value is found when select_first is evaluated, the workflow will fail.
 
+```WDL
+version 1.0
+workflow SelectFirst {
+  input {
+    Int? maybe_integer = 5
+    Int? maybe_number = None
+    Int? maybe_numeral = 3
+  }
+  Int five = select_first([maybe_integer, maybe_number, maybe_numeral]) # This evaluates to 5
+  Int five = select_first([maybe_number, maybe_integer, maybe_numeral]) # This also evaluates to 5
+}
+
 ## Array[X] select_all(Array[X?])
 
 Given an array of optional values, `select_all` will select only those elements which are defined.
+
+```WDL
+version 1.0
+workflow SelectFirst {
+  input {
+    Int? maybe_integer = 5
+    Int? maybe_number = None
+    Int? maybe_numeral = 3
+  }
+  Array[Int] fivethree = select_all([maybe_integer, maybe_number, maybe_numeral]) # This evaluates to [5, 3]
+}
 
 ## Boolean defined(X?)
 
