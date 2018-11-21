@@ -709,6 +709,14 @@ The `None` literal is the value that an optional has when it is not defined.
 ```WDL
 Int? maybe_integer = None
 # maybe_integer is not defined
+Int? maybe_numeral = 5
+Int certain_integer = 3
+# maybe_numeral is a defined optional
+is_defined(maybe_integer) # Evaluates to false
+is_defined(maybe_numeral) # Evaluates to true
+maybe_integer == None # Evaluates to true, same as !is_defined(maybe_integer)
+maybe_integer != None # Evaluates to false, same as is_defined(maybe_integer)
+certain_integer == None # This will cause an error. Since None only makes sense when dealing with optionals.
 ```
 
 This is useful in a number of cases, for example when an output of a command depends on a certain flag:
