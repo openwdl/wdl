@@ -701,22 +701,24 @@ Pair values can also be specified within the [workflow inputs JSON](https://gith
 Any non-optional value can be  turned into an optional value by assigning it to an optional variable:
 
 ```WDL
-Int? maybe_integer = 5
+Int? maybe_five = 5
 ```
 
 The `None` literal is the value that an optional has when it is not defined.
 
 ```WDL
-Int? maybe_integer = None
-# maybe_integer is not defined
-Int? maybe_numeral = 5
-Int certain_integer = 3
-# maybe_numeral is a defined optional
-Boolean test_defined = defined(maybe_integer) # Evaluates to false
-Boolean test_defined2 = defined(maybe_numeral) # Evaluates to true
-Boolean test_is_none = maybe_integer == None # Evaluates to true, same as !defined(maybe_integer)
-Boolean test_not_none = maybe_integer != None # Evaluates to false, same as defined(maybe_integer)
-Boolean compare_int_to_none = certain_integer == None # This will cause an error. Since None only makes sense when dealing with optionals.
+Int? maybe_five_but_is_not = None
+# maybe_five_but_is_not is an undefined optional
+Int? maybe_five_and_is = 5
+# maybe_five_and_is is a defined optional
+Int certainly_five = 5
+# Certainly five is not an optional
+
+Boolean test_defined = defined(maybe_five_but_is_not) # Evaluates to false
+Boolean test_defined2 = defined(maybe_five_and_is) # Evaluates to true
+Boolean test_is_none = maybe_five_but_is_not == None # Evaluates to true, same as !definedmaybe_five_but_is_not)
+Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false, same as defined(maybe_five_but_is_not )
+Boolean compare_int_to_none = certainly_five == None # This will cause an error, since None only makes sense when dealing with optionals.
 ```
 
 This is useful in a number of cases, for example when an output of a command depends on a certain flag:
