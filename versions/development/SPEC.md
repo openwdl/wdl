@@ -698,7 +698,8 @@ Pair values can also be specified within the [workflow inputs JSON](https://gith
 =======
 ### Optional literals
 
-Any non-optional value can be  turned into an optional value by assigning it to an optional variable:
+Any non-optional value can be stored into an optional variable by assigning it to an optional variable.
+This does not change the value, but it changes the type of the value:
 
 ```WDL
 Int? maybe_five = 5
@@ -3294,12 +3295,12 @@ Given an array of optional values, `select_first` will select the first defined 
 version 1.0
 workflow SelectFirst {
   input {
-    Int? maybe_integer = 5
-    Int? maybe_number = None
-    Int? maybe_numeral = 3
+    Int? maybe_five = 5
+    Int? maybe_four_but_is_not = None
+    Int? maybe_three = 3
   }
-  Int five = select_first([maybe_integer, maybe_number, maybe_numeral]) # This evaluates to 5
-  Int five = select_first([maybe_number, maybe_integer, maybe_numeral]) # This also evaluates to 5
+  Int five = select_first([maybe_five, maybe_four_but_is_not, maybe_three]) # This evaluates to 5
+  Int five = select_first([maybe_four_but_is_not, maybe_five, maybe_three]) # This also evaluates to 5
 }
 
 ## Array[X] select_all(Array[X?])
@@ -3310,11 +3311,11 @@ Given an array of optional values, `select_all` will select only those elements 
 version 1.0
 workflow SelectFirst {
   input {
-    Int? maybe_integer = 5
-    Int? maybe_number = None
-    Int? maybe_numeral = 3
+    Int? maybe_five = 5
+    Int? maybe_four_but_is_not = None
+    Int? maybe_three = 3
   }
-  Array[Int] fivethree = select_all([maybe_integer, maybe_number, maybe_numeral]) # This evaluates to [5, 3]
+  Array[Int] fivethree = select_all([maybe_five, maybe_four_but_is_not, maybe_three]) # This evaluates to [5, 3]
 }
 
 ## Boolean defined(X?)
