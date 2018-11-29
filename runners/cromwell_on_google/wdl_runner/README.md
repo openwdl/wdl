@@ -5,7 +5,7 @@
 This example demonstrates running a multi-stage workflow on
 Google Cloud Platform.
 
-* The workflow is launched with the Google Genomics [Pipelines API](https://cloud.google.com/genomics/v1alpha2/pipelines).
+* The workflow is launched with the Google Genomics [Pipelines API](https://cloud.google.com/genomics/docs/quickstart).
 * The workflow is defined using the Broad Institute's
 [Workflow Definition Language](https://software.broadinstitute.org/wdl/) (WDL).
 * The workflow stages are orchestrated by the Broad Institute's
@@ -55,7 +55,7 @@ The code in the wdl_runner Docker image includes:
 
 * [OpenJDK 8](http://openjdk.java.net/projects/jdk8/) runtime engine (JRE)
 * [Python 2.7](https://www.python.org/download/releases/2.7/) interpreter
-* [Cromwell release 29](https://github.com/broadinstitute/cromwell/releases/tag/29)
+* [Cromwell release 36](https://github.com/broadinstitute/cromwell/releases/tag/36)
 * [Python and shell scripts from this repository](.)
 
 Take a look at the [Dockerfile](./Dockerfile) for full details.
@@ -67,7 +67,7 @@ Take a look at the [Dockerfile](./Dockerfile) for full details.
 2. Enable the Genomics, Cloud Storage, and Compute Engine APIs on a new
    or existing Google Cloud Project using the [Cloud Console](https://console.cloud.google.com/flows/enableapi?apiid=genomics,storage_component,compute_component&redirect=https://console.cloud.google.com)
 
-3. Follow the Google Genomics [getting started instructions](https://cloud.google.com/genomics/install-genomics-tools#install-genomics-tools) to install and authorize the Google Cloud SDK.
+3. Follow the Google Genomics [getting started instructions](https://cloud.google.com/genomics/docs/quickstart) to install and authorize the Google Cloud SDK.
 
 4. Follow the Cloud Storage instructions for [Creating Storage Buckets](https://cloud.google.com/storage/docs/creating-buckets) to create a bucket for workflow output and logging 
 
@@ -134,12 +134,12 @@ docker:
 gcloud \
   alpha genomics pipelines run \
   --pipeline-file wdl_pipeline.yaml \
-  --zones us-central1-f \
-  --inputs-from-file WDL=test-wdl/ga4ghMd5.wdl \
-  --inputs-from-file WORKFLOW_INPUTS=test-wdl/ga4ghMd5.inputs.json \
-  --inputs-from-file WORKFLOW_OPTIONS=test-wdl/basic.papi.us.options.json \
-  --inputs WORKSPACE=gs://YOUR-BUCKET/wdl_runner/work \
-  --inputs OUTPUTS=gs://YOUR-BUCKET/wdl_runner/output \
+  --regions us-central1 \
+  --inputs-from-file WDL=test-wdl/ga4ghMd5.wdl,\
+WORKFLOW_INPUTS=test-wdl/ga4ghMd5.inputs.json,\
+WORKFLOW_OPTIONS=test-wdl/basic.papi.us.options.json \
+  --env-vars WORKSPACE=gs://YOUR-BUCKET/wdl_runner/work,\
+OUTPUTS=gs://YOUR-BUCKET/wdl_runner/output \
   --logging gs://YOUR-BUCKET/wdl_runner/logging
 ```
 
@@ -222,7 +222,7 @@ TOTAL: 2 objects, 5297 bytes (5.17 KiB)
 ## (6) Check the output
 
 ```
-$ gsutil cat gs://YOUR-BUCKET/pipelines-api-examples/wdl_runner/output/md5sum.txt
+$ gsutil cat gs://YOUR-BUCKET/wdl_runner/output/md5sum.txt
 00579a00e3e7fa0674428ac7049423e2
 ```
 

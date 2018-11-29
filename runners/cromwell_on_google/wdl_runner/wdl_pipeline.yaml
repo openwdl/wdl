@@ -1,24 +1,15 @@
-name: WDL Runner
-description: Run a workflow defined by a WDL file
-
-inputParameters:
-- name: WDL
-  description: Workflow definition
-- name: WORKFLOW_INPUTS
-  description: Workflow inputs
-- name: WORKFLOW_OPTIONS
-  description: Workflow options
-
-- name: WORKSPACE
-  description: Cloud Storage path for intermediate files
-- name: OUTPUTS
-  description: Cloud Storage path for output files
-
-docker:
-  imageName: gcr.io/broad-dsde-outreach/wdl_runner:2017_10_02
-
-  cmd: >
-    /wdl_runner/wdl_runner.sh
+actions:
+- name: SSH
+  imageUri: gcr.io/cloud-genomics-pipelines/tools
+  entrypoint: ssh-server
+  flags: [ 'RUN_IN_BACKGROUND' ]
+  portMappings:
+    22: 22 
+- name: WDL_Runner
+  commands: [ '/wdl_runner/wdl_runner.sh' ]
+  imageUri: gcr.io/broad-dsde-outreach/wdl_runner:2018_11_28
 
 resources:
-  minimumRamGb: 3.75
+   virtualMachine:
+     machineType: n1-standard-1
+
