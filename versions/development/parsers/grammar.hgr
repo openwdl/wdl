@@ -25,6 +25,7 @@ grammar {
       r'#.*' -> null
       r'task(?!{%_identifier_follow%})' -> task(:task)
       r'(call)\s+' -> :call[1] @task_fqn
+      r'after(?!{%_identifier_follow%})' -> :after
       r'workflow(?!{%_identifier_follow%})' -> workflow(:workflow)
       r'struct(?!{%_identifier_follow%})' -> :struct
       r'import(?!{%_identifier_follow%})' -> :import
@@ -437,9 +438,10 @@ grammar {
     # Workflows: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#workflow-definition
     $workflow = :workflow :identifier :lbrace list($wf_body_element) :rbrace -> Workflow(name=$1, body=$3)
     $wf_body_element = $call | $declaration | $if_stmt | $scatter | $inputs | $outputs | $wf_parameter_meta | $wf_meta
-    $call = :call :fqn optional($alias) optional($call_body) -> Call(task=$1, alias=$2, body=$3)
+    $call = :call :fqn optional($alias) optional($call_after) optional($call_body) -> Call(task=$1, alias=$2, after=$3, body=$4)
     $call_body = :lbrace :input :colon list($input_kv, :comma) :rbrace -> CallBody(inputs=$3)
     $alias = :as :identifier -> $1
+    $call_after = :after :identifier -> $1
     $wf_parameter_meta = :parameter_meta $meta_map -> ParameterMeta(map=$1)
     $wf_meta = :meta $meta_map -> Meta(map=$1)
     $if_stmt = :if :lparen $e :rparen :lbrace list($wf_body_element) :rbrace -> If(expression=$2, body=$5)
