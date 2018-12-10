@@ -438,7 +438,7 @@ grammar {
     # Workflows: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#workflow-definition
     $workflow = :workflow :identifier :lbrace list($wf_body_element) :rbrace -> Workflow(name=$1, body=$3)
     $wf_body_element = $call | $declaration | $if_stmt | $scatter | $inputs | $outputs | $wf_parameter_meta | $wf_meta
-    $call = :call :fqn optional($alias) optional($call_after) optional($call_body) -> Call(task=$1, alias=$2, after=$3, body=$4)
+    $call = :call :fqn optional($alias) list($call_after) optional($call_body) -> Call(task=$1, alias=$2, after=$3, body=$4)
     $call_body = :lbrace :input :colon list($input_kv, :comma) :rbrace -> CallBody(inputs=$3)
     $alias = :as :identifier -> $1
     $call_after = :after :identifier -> $1
