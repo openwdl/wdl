@@ -72,7 +72,7 @@
     * [Declarations](#struct-declarations)
       * [Optional and non Empty Struct Values](#optional-and-non-empty-struct-values)
     * [Using a Struct](#using-a-struct)
-      * [Struct Assignment From Object Literal](#struct-assignment-from-object-literal)
+      * [Struct Literals](#struct-literals)
       * [Struct Member Access](#struct-member-access)
       * [Importing Structs](#importing-structs)
 * [Namespaces](#namespaces)
@@ -2069,12 +2069,35 @@ workflow myWorkflow {
 }
 ```
 
-#### Struct Assignment from Object Literal
-Structs can be assigned using an object literal. When Writing the object, all entries must conform or be coercible into the underlying type they are being assigned to
+#### Struct Literals
+Structs can be created and assigned using the `Struct Literal` notation. Struct literal notation enables the creation of typed struct objects which enforces the typing of all of is
+assigned parameters. It vaguely resembles object literal notation ('{ "foo":"bar" }'), however it attempts to be more declarative to help engine implementations apply the proper
+type conversions to nested structs, as well as remove any ambiguity over what the object being constructed represents.
+
+A `Struct Literal` declaration looks like an engine function call, where instead of a function the name of the struct is used followed by parenthesis. For example:
+
+```wdl
+Person( ... )
+```
+
+Arugments placed within the parethesis are key-value pairs, where the key is the name of one of the struct declarations, and the value is the value to set the argument to.  
+There is no need to wrap a key in quotation marks, instead keys are represented in plain text followed by a colon. The value follows after the colon. Multiple arguments can 
+be separated by a comma ',' and arguments do not need to be specified in a specific order.
+
+Values passed to struct literals can be any previously defined declaration, or they themselves can be a literal notation. 
+
 
 ```wdl
 
-Person a = {"name": "John","age": 30}
+#Simple case
+File fastq_1
+File fastq_2
+Sample sample_1 = Sample( type: "Blood", sequencing_info: "WGS", fastq: fastq_1 )
+Sample sample_2 = Sample( type: "Liver", sequencing_info: "WES", fastq: fastq_2 )
+Person a = Person(name: "John", age: 30, samples: [sample_1,sample_2])
+
+#You can also use Struct literals wihtin another Struct literal
+Person c = Person( name: "Bob", age: 45, samples: [ Sample( type: "Oral", sequencing_info: "WES", fastq: fastq_3 )] )
 
 ```
 
