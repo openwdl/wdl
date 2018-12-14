@@ -263,6 +263,35 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 |`\'`|single quote|`\x22`|
 |`\"`|double quote|`\x27`|
 
+### Comments
+
+Comments are a useful way of providing useful information such as workflow usage, requirements, copyright etc directly within the wdl file. Comments can be added anywhere within the `WDL` and are used to indicate text which should be ignored by an engine implementation.
+
+A comment is started with the number sign `#`. Any text following the number sign will be completely ignored, regardless of its content by an engine. Comments can be placed at the start of a new line or after any declarations within the WDL itself. At the moment, there is no planned support for multi-line comments, instead simply use a `#` at the start of each line.
+
+```wdl
+
+# This Is how you would
+# write a long
+# multiline
+# comment
+
+workflow wf {
+  input {
+    Integer number  #This comment comes after a variable declaration
+  }
+
+  #You can have comments anywhere in the workflow
+  call test
+  
+  output { #You can also put comments after braces
+    Number result = test.result
+  }
+  
+}
+```
+
+
 ### Types
 
 In WDL *all* types represent immutable values. 
