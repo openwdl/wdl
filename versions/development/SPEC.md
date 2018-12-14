@@ -10,6 +10,7 @@
 * [Language Specification](#language-specification)
   * [Global Grammar Rules](#global-grammar-rules)
     * [Whitespace, Strings, Identifiers, Constants](#whitespace-strings-identifiers-constants)
+    * [Comments](#comments)
     * [Types](#types)
     * [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
     * [Declarations](#declarations)
