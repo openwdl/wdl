@@ -98,12 +98,24 @@ grammar {
       r'\$\{' -> :expression_placeholder_start @expression_placeholder
       r'~\{' -> :expression_placeholder_start @expression_placeholder
 
+      # Escape sequences
+      r'\\[0-7][0-7][0-7]' -> :escape
+      r'\\x[0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+      r'\\u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+      r'\\U[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+
+      enum {
+        python: r'\\.'
+        java: "\\\\."
+        javascript: "\\."
+      } -> :escape
+
       # String with ordinary contents
       enum {
-        python: r'[^\"\n(\$\{)(~\{)]*'
-        java: "(.*?)(?=\\$\\{|~\\{|\")"
-        javascript: "[^\"\\n(${)(~{)]*"
-      } -> wdl_unescape(:string)
+        python: r'[^\\\"\n(\$\{)(~\{)]*'
+        java: "(.*?)(?=\\\\|\\$\\{|~\\{|\")"
+        javascript: "[^\\\"\\n(${)(~{)]*"
+      } -> :string
     }
 
     mode<squote_string> {
@@ -112,12 +124,24 @@ grammar {
       r'\$\{' -> :expression_placeholder_start @expression_placeholder
       r'~\{' -> :expression_placeholder_start @expression_placeholder
 
+      # Escape sequences
+      r'\\[0-7][0-7][0-7]' -> :escape
+      r'\\x[0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+      r'\\u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+      r'\\U[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+
+      enum {
+        python: r'\\.'
+        java: "\\\\."
+        javascript: "\\."
+      } -> :escape
+
       # String with ordinary contents
       enum {
-        python: r'[^\'\n(\$\{)(~\{)]*'
-        java: "(.*?)(?=\\$\\{|~\\{|')"
-        javascript: "[^'\\n(${)(~{)]*"
-      } -> wdl_unescape(:string)
+        python: r'[^\\\'\n(\$\{)(~\{)]*'
+        java: "(.*?)(?=\\\\|\\$\\{|~\\{|\')"
+        javascript: "[^\\\'\\n(${)(~{)]*"
+      } -> :string
     }
 
     mode<awaiting_version_name> {
@@ -246,17 +270,6 @@ grammar {
         if ctx.user_context['context'] == 'workflow':
             ctx.stack.append('wf_output')
         default_action(ctx, terminal, source_string, line, col)
-    def wdl_unescape(ctx, terminal, source_string, line, col):
-
-        for regex, c in ctx.user_context['replacements'].items():
-            source_string = regex.sub(chr(c), source_string)
-
-        source_string = source_string.replace("\u005C\u005C", "\u005C")
-
-        for regex, base in ctx.user_context['escapes'].items():
-            for escape_sequence, number in regex.findall(source_string):
-                source_string = source_string.replace(escape_sequence, chr(int(number, base)))
-        default_action(ctx, terminal, source_string, line, col)
     PYTHON
 
     code<java> << JAVA
@@ -281,10 +294,6 @@ grammar {
         }
         default_action(ctx, terminal, source_string, line, col);
     }
-    public void wdl_unescape(LexerContext ctx, TerminalIdentifier terminal, String source_string, int line, int col) {
-        // As distinct from draft-2, the enclosing quotes are not included in `source_string` so no substring needed
-        default_action(ctx, terminal, StringEscapeUtils.unescapeJava(source_string), line, col);
-    }
     JAVA
 
     code<javascript> << JAVASCRIPT
@@ -306,32 +315,6 @@ grammar {
             }
             default_action(ctx, terminal, source_string, line, col);
         }
-        function wdl_unescape(ctx, terminal, source_string, line, col) {
-            var strip_slashes = function(str) {
-               return str
-                   .replace(/\\(.?)/g, function (s, n1) {
-                     var escapes = {
-                         '\\': '\\',
-                         '0' : '\u0000',
-                         ''  : '',
-                         'n' : '\n',
-                         'r' : '\r',
-                         'b' : '\b',
-                         't' : '\t',
-                         'f' : '\f',
-                         'a' : '\a',
-                         'v' : '\v'};
-
-                     var symbol = escapes[n1];
-                     if (symbol !== undefined) {
-                         return symbol;
-                     }
-                     return n1;
-                   });
-            }
-            var repl_str = strip_slashes(source_string);
-            default_action(ctx, terminal, repl_str, line, col);
-        }
         JAVASCRIPT
   }
   parser {
@@ -345,9 +328,10 @@ grammar {
     $struct = :struct :identifier :lbrace list($struct_declaration) :rbrace -> Struct(name=$1, entries=$3)
     $struct_declaration = $type_e :identifier -> StructEntry(type=$0, name=$1)
 
-    $static_string = :quote optional(:string) :quote -> StaticString(value=$1)
+    $static_string = :quote list($static_string_piece) :quote -> StaticString(value=$1)
     $string_literal = :quote list($string_piece) :quote -> StringLiteral(pieces=$1)
-    $string_piece = :string | $expression_placeholder
+    $static_string_piece = :string | :escape
+    $string_piece = $static_string_piece | $expression_placeholder
 
     # Import Statements: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#import-statements
     $import = :import $static_string optional($import_namespace) list($import_alias) -> Import(uri=$1, namespace=$2, aliases=$3)
