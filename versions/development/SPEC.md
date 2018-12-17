@@ -23,11 +23,8 @@
     * [Map Literals](#map-literals)
     * [Object Literals](#object-literals)
     * [Pair Literals](#pair-literals)
-<<<<<<< HEAD
-=======
     * [Optional Literals](#optional-literals)
   * [Document](#document)
->>>>>>> process feedback, move chapter on None
   * [Versioning](#versioning)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
@@ -263,7 +260,7 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 
 ### Types
 
-In WDL *all* types represent immutable values. 
+In WDL *all* types represent immutable values.
   - Even types like `File` and `Directory` represent logical "snapshots" of the file or directory at the time when the value was created.
   - It's impossible for a task to change an upstream value which has been provided as an input: even if it makes changes to its local copy the original value is unaffected.
 
@@ -749,7 +746,6 @@ $document = ($import | $task | $workflow)+
 
 `$document` is the root of the parse tree and it consists of one or more import statement, task, or workflow definition
 
->>>>>>> process feedback, move chapter on None
 ## Versioning
 
 For portability purposes it is critical that WDL documents be versioned so an engine knows how to process it. From `draft-3` forward, the first non-comment statement of all WDL files must be a `version` statement, for example
@@ -856,7 +852,7 @@ task t {
 
 #### Task Input Localization
 `File` and `Directory` inputs must be treated specially since they require localization to within the execution directory:
-- Files and directories are localized into the execution directory prior to the task execution commencing. 
+- Files and directories are localized into the execution directory prior to the task execution commencing.
 - When localizing a `File`, the engine may choose to place the file wherever it likes so long as it accords to these rules:
   - The original file name must be preserved even if the path to it has changed.
   - Two input files with the same name must be located separately, to avoid name collision.
