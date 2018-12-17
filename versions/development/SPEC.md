@@ -691,8 +691,6 @@ Pair values can also be specified within the [workflow inputs JSON](https://gith
 }
 ```
 
-<<<<<<< HEAD
-=======
 ### Optional literals
 
 Any non-optional value can be stored into an optional variable by assigning it to an optional variable.
@@ -743,8 +741,6 @@ If `log` is false, the command will evaluate to `test inputFile outputPath` and 
 ```
 $document = ($import | $task | $workflow)+
 ```
-
-`$document` is the root of the parse tree and it consists of one or more import statement, task, or workflow definition
 
 ## Versioning
 
