@@ -716,24 +716,6 @@ Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false, same
 Boolean compare_int_to_none = certainly_five == None # This will cause an error, since None only makes sense when dealing with optionals.
 ```
 
-This is useful in a number of cases, for example when an output of a command depends on a certain flag:
-```wdl
-task test {
-  input {
-    File inputFile
-    String outputPath
-    Boolean log
-  }
-  command {
-    test ~{true="--log" false="" log} inputFile outputPath
-  }
-  output {
-    File? logFile = if log then "test.log" else None
-  }
-}
-```
-If `log` is true, the command will evaluate to `test --log inputFile outputPath` and `logFile` will be `test.log`.
-If `log` is false, the command will evaluate to `test inputFile outputPath` and `logFile` will be `None`.
 
 ## Versioning
 
