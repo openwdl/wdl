@@ -24,7 +24,6 @@
     * [Object Literals](#object-literals)
     * [Pair Literals](#pair-literals)
     * [Optional Literals](#optional-literals)
-  * [Document](#document)
   * [Versioning](#versioning)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
@@ -735,12 +734,6 @@ task test {
 ```
 If `log` is true, the command will evaluate to `test --log inputFile outputPath` and `logFile` will be `test.log`.
 If `log` is false, the command will evaluate to `test inputFile outputPath` and `logFile` will be `None`.
-
-## Document
-
-```
-$document = ($import | $task | $workflow)+
-```
 
 ## Versioning
 
