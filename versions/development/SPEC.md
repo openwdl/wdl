@@ -713,7 +713,6 @@ Boolean test_defined = defined(maybe_five_but_is_not) # Evaluates to false
 Boolean test_defined2 = defined(maybe_five_and_is) # Evaluates to true
 Boolean test_is_none = maybe_five_but_is_not == None # Evaluates to true, same as !definedmaybe_five_but_is_not)
 Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false, same as defined(maybe_five_but_is_not )
-Boolean compare_int_to_none = certainly_five == None # This will cause an error, since None only makes sense when dealing with optionals.
 ```
 
 
