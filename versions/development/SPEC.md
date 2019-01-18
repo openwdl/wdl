@@ -2077,11 +2077,15 @@ type conversions to nested structs, as well as remove any ambiguity over what th
 A `Struct Literal` declaration looks like an engine function call, where instead of a function the name of the struct is used followed by parenthesis. For example:
 
 ```wdl
+
+
+
+
 Person( ... )
 ```
 
 Arugments placed within the parethesis are key-value pairs, where the key is the name of one of the struct declarations, and the value is the value to set the argument to.  
-There is no need to wrap a key in quotation marks, instead keys are represented in plain text followed by a colon. The value follows after the colon. Multiple arguments can 
+There is no need to wrap a key in quotation marks, instead keys are represented in plain text followed by an equals sign `=`. The value follows after the `=`. Multiple arguments can 
 be separated by a comma ',' and arguments do not need to be specified in a specific order.
 
 Values passed to struct literals can be any previously defined declaration, or they themselves can be a literal notation. 
@@ -2092,12 +2096,12 @@ Values passed to struct literals can be any previously defined declaration, or t
 #Simple case
 File fastq_1
 File fastq_2
-Sample sample_1 = Sample( type: "Blood", sequencing_info: "WGS", fastq: fastq_1 )
-Sample sample_2 = Sample( type: "Liver", sequencing_info: "WES", fastq: fastq_2 )
-Person a = Person(name: "John", age: 30, samples: [sample_1,sample_2])
+Sample sample_1 = Sample( type = "Blood", sequencing_info = "WGS", fastq = fastq_1 )
+Sample sample_2 = Sample( type = "Liver", sequencing_info = "WES", fastq = fastq_2 )
+Person person_1 = Person(name: "John", age: 30, samples: [sample_1,sample_2])
 
-#You can also use Struct literals wihtin another Struct literal
-Person c = Person( name: "Bob", age: 45, samples: [ Sample( type: "Oral", sequencing_info: "WES", fastq: fastq_3 )] )
+#You can also use Struct literals within another Struct literal
+Person person_2 = Person( name = "Bob", age = 45, samples = [ Sample( type = "Oral", sequencing_info = "WES", fastq = fastq_3 )] )
 
 ```
 
