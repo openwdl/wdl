@@ -1,9 +1,0 @@
-{
-  "SimpleVariantDiscovery.name": "NA12878",
-  "SimpleVariantDiscovery.refIndex": "/path/to/SimpleVariantDiscovery/ref/human_g1k_b37_20.fasta.fai",
-  "SimpleVariantDiscovery.haplotypeCaller.bamIndex": "/path/to/SimpleVariantDiscovery/inputs/NA12878_wgs_20.bai",
-  "SimpleVariantDiscovery.haplotypeCaller.inputBAM": "/path/to/SimpleVariantDiscovery/inputs/NA12878_wgs_20.bam",
-  "SimpleVariantDiscovery.refFasta": "/path/to/SimpleVariantDiscovery/ref/human_g1k_b37_20.fasta",
-  "SimpleVariantDiscovery.gatk": "/path/to/GenomeAnalysisTK.jar",
-  "SimpleVariantDiscovery.refDict": "/path/to/SimpleVariantDiscovery/ref/human_g1k_b37_20.dict"
-}
