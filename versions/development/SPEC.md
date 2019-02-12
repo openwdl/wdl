@@ -10,6 +10,7 @@
 * [Language Specification](#language-specification)
   * [Global Grammar Rules](#global-grammar-rules)
     * [Whitespace, Strings, Identifiers, Constants](#whitespace-strings-identifiers-constants)
+    * [Comments](#comments)
     * [Types](#types)
     * [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
     * [Declarations](#declarations)
@@ -262,6 +263,52 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 |`\t`|tab|`\x09`|
 |`\'`|single quote|`\x22`|
 |`\"`|double quote|`\x27`|
+
+### Comments
+
+Comments are a useful way of providing helpful information such as workflow usage, requirements, copyright etc directly within the wdl file. Comments can be added anywhere within the `WDL` document and are used to indicate text which should be ignored by an engine implementation. The one caveat to be aware of, is that within the `command` section, *ALL* text will be included in the underlying command and any lines prepended by `#` will be included.
+
+A comment is started with the hash symbol `#`. Any text following the number sign will be completely ignored, regardless of its content by an engine. Comments can be placed at the start of a new line or after any declarations within the WDL itself. At the moment, there is no special syntax for multi-line comments, instead simply use a `#` at the start of each line.
+
+```wdl
+# Comments are allowed before versions
+
+version 1.0
+
+# This is how you would
+# write a long
+# multiline
+# comment
+
+task test {
+
+    #This comment will not be included within the command
+    command <<<
+        #This comment WILL be included within the command after it has been parsed
+        echo 'Hello World'
+    >>>
+
+    output {
+        String result = read_string(stdout())
+    }
+}
+
+
+workflow wf {
+  input {
+    Integer number  #This comment comes after a variable declaration
+  }
+
+  #You can have comments anywhere in the workflow
+  call test
+  
+  output { #You can also put comments after braces
+    String result = test.result
+  }
+  
+}
+```
+
 
 ### Types
 
