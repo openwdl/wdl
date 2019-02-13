@@ -975,7 +975,7 @@ task heredoc {
 
   command<<<
   python <<CODE
-    with open("${in}") as fp:
+    with open("~{in}") as fp:
       for line in fp:
         if not line.startswith('#'):
           print(line.strip())
@@ -984,7 +984,7 @@ task heredoc {
 }
 ```
 
-Parsing of this command should be the same as the prior section describes.
+Parsing of this command should be the same as the prior section describes, with one major difference. Within `<<<`...`>>>` blocks, string interpolation must be done using the syntax `~{ }`, as noted in the [Expression Placeholders](#command-parts) section.
 
 #### Stripping Leading Whitespace
 
@@ -1087,7 +1087,7 @@ task example {
 }
 ```
 
-Any `${identifier}` inside of a string literal must be replaced with the value of the identifier.  If prefix were specified as `foobar`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
+Any `${identifier}` inside of a string literal must be replaced with the value of the identifier.  If prefix were specified as `foobar`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`. Much like the command section, either the format `${ }` or `~{ }` may be used.
 
 ### Runtime Section
 
