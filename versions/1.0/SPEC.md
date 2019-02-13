@@ -880,7 +880,7 @@ task test {
 
 > **NOTE**: the expression result must ultimately be converted to a string in order to take the place of the placeholder in the command script.
 This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Object`).
-To place an array into the command block a separater character must be specified using `sep` (eg `${sep=", " int_array}`).
+To place an array into the command block a separator character must be specified using `sep` (eg `~{sep=", " int_array}`).
 
 
 As another example, consider how the parser would parse the following command:
@@ -1087,7 +1087,7 @@ task example {
 }
 ```
 
-Any `${identifier}` inside of a string literal must be replaced with the value of the identifier.  If prefix were specified as `foobar`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`. Much like the command section, either the format `${ }` or `~{ }` may be used.
+Any `${identifier}` inside of a string literal must be replaced with the value of the identifier.  If prefix were specified as `foobar`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`. Much like [Expression Placeholders](#command-parts) in the `command { }` case, either the format `${ }` or `~{ }` may be used.
 
 ### Runtime Section
 
@@ -1111,7 +1111,7 @@ task test {
 }
 ```
 
-The value for the `docker` runtime attribute in this case is an array of values.  The parser should accept this.  Some engines might interpret it as an "either this image or that image" or could reject it outright.
+The value for the `docker` runtime attribute in this case is an array of values.  The parser should accept this.  Some engines might interpret it as an "either this image or that image" or could reject it ou
 
 Since values are expressions, they can also reference variables in the task:
 
