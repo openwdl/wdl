@@ -328,8 +328,7 @@ struct BamAndIndex {
     File bam
     File bam_index
 }
-BamAndIndex b_and_i = {"bam":"NA12878.bam", "bam_index":"NA12878.bam.bai"}
-BamAndIndex b_and_i_2 = object {bam:"NA12878.bam", bam_index:"NA12878.bam.bai"}
+BamAndIndex b_and_i = BamAndIndex(bam="NA12878.bam",bam_index="NA12878.bam.bai")
 ```
 
 Some examples of types:
@@ -679,23 +678,6 @@ Map[String, Int] = {"a": 1, "b": 2}
 String a = "one"
 Map[String, Int] = {a: 1, "not " + a: 2}
 ```
-
-### Object Literals
-
-Similar to Map literals, however object literal keys are unquoted strings.
-This makes them well suited for assigning to `Structs`.
-Beware the behaviour difference with Map literals
-
-```
-Map[String, Int] map_1 = object {a: 1, b: 2}
-String a = "one"
-String b = "two"
-# map_2 != map_1
-Map[String, Int] map_2 = {a: 1, b: 2}
-```
-
-map_1 has the keys 'a' and 'b'.
-map_2 has the keys 'one' and 'two'.
 
 ### Pair Literals
 
@@ -2069,7 +2051,7 @@ struct Name {
 
 When using a struct in the declaration section of either a `workflow` or a `task` or `output` section you define them in the same way you would define any other type.
 
-Structs should be declared with Object literals, as the keys can be checked
+Structs should be declared with Struct literals, as the keys can be checked
 for correctness before run time.
 Assignment is also possible from `Maps`, other `Structs`.
 As `Map` literals can contain arbitrary expressions for the keys,
@@ -2102,7 +2084,7 @@ task myTask {
 }
 
 workflow myWorkflow {
-    Person harry = object {name: "Harry", age: 11}
+    Person harry = Person(name="Harry", age=11}
     call myTask {
         input:
             a = harry
@@ -2112,7 +2094,7 @@ workflow myWorkflow {
 
 #### Struct Literals
 Structs can be created and assigned using the `Struct Literal` notation. Struct literal notation enables the creation of typed struct objects which enforces the typing of all of is
-assigned parameters. It vaguely resembles object literal notation ('{ "foo":"bar" }'), however it attempts to be more declarative to help engine implementations apply the proper
+assigned parameters. Struct literal notation attempts to be more declarative to help engine implementations apply the proper
 type conversions to nested structs, as well as remove any ambiguity over what the object being constructed represents.
 
 A `Struct Literal` declaration looks like an engine function call, where instead of a function the name of the struct is used followed by parenthesis. For example:
