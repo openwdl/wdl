@@ -1111,7 +1111,7 @@ task test {
 }
 ```
 
-The value for the `docker` runtime attribute in this case is an array of values.  The parser should accept this.  Some engines might interpret it as an "either this image or that image" or could reject it ou
+The value for the `docker` runtime attribute in this case is an array of values.  The parser should accept this.  Some engines might interpret it as an "either this image or that image" or could reject it outright.
 
 Since values are expressions, they can also reference variables in the task:
 
