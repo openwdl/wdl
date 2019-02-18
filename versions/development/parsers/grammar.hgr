@@ -45,6 +45,7 @@ grammar {
       r'(true|false)(?!{%_identifier_follow%})' -> :boolean
       r'(object)\s*(\{)' -> :object :lbrace
       r'{%_type%}(?!{%_identifier_follow%})' -> :type
+      r'None' -> :none
       r'{%_identifier%}' -> :identifier
       r'null' -> :null
 
@@ -72,6 +73,7 @@ grammar {
       r'>=' -> :gteq
       r'>' -> :gt
       r'!' -> :not
+
       enum {
         python: r'\"'
         java: "\""
@@ -201,6 +203,7 @@ grammar {
       r'{%_identifier%}(?=\s*=)' -> :cmd_attr_hint[] :identifier
       r'(true|false)(?!{%_identifier_follow%})' -> :boolean
       r'{%_type%}(?!{%_identifier_follow%})' -> :type
+      r'None' -> :none
       r'{%_identifier%}' -> :identifier
 
       # Expression tokens
@@ -412,6 +415,7 @@ grammar {
       $e = :boolean
       $e = :integer
       $e = :float
+      $e = :none
     }
     $map_kv = $e :colon $e -> MapLiteralKv(key=$0, value=$2)
 
