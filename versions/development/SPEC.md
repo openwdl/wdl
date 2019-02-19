@@ -2337,7 +2337,7 @@ Quantifiers may apply within compound types; for example, if `a : Array[T?]+`, t
 
 Interpolations with `~{}` and `${}` accept optional string expressions and substitute the empty string for `None` at runtime.
 
-String concatenation with the `+` operator accepts optional string expressions, and produces the empty string if *either* operand is `None` at runtime. This unusual semantic facilitates command-line flag interpolation. Consider this task:
+String concatenation with the `+` operator has special typing properties. When applied to two non-optional operands, the result is a non-optional `String`. However, if either operand has an optional type, then the concatenation has type `String?`, and the runtime result is `None` if either operand is `None`. These unusual semantics facilitate command-line flag interpolation. Consider this task:
 
 ```wdl
 task test {
