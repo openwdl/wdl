@@ -2266,7 +2266,7 @@ workflow wf {
 
 [Types](#types) can be optionally suffixed with a `?` or `+` in certain cases.
 
-* `?` means that the parameter is optional.  A user does not need to specify a value for the parameter in order to satisfy all the inputs to the workflow.
+* `?` means that the parameter is optional, potentially `None` at runtime. A user does not need to specify a value for the parameter in order to satisfy all the inputs to the workflow.
 * `+` applies only to `Array` types and it represents a constraint that the `Array` value must contain one-or-more elements.
 
 ```wdl
@@ -2327,9 +2327,17 @@ Then the command would be instantiated as:
 /bin/mycmd /path/to/c.txt
 ```
 
-## Prepending a String to an Optional Parameter
+In general, it's invalid to supply an expression of optional type `T?` for a non-optional input or variable of type `T`, as the latter cannot accept `None`. (The idiom `select_first([expr, default])` coerces `expr : T?` to `T` by substituting `default : T` when `expr` is undefined; if `default` is omitted, then the coercion fails at runtime.) Similarly, an `Array[T]` expression does not satisfy an `Array[T]+` input.
 
-Sometimes, optional parameters need a string prefix.  Consider this task:
+These constraints also apply to function arguments, with exceptions for string concatenation, described below, and the equality/inequality operators `==` and `!=`, which can compare two values of types differing only in their quantifiers, considering `None` equal to itself but no other value.
+
+Quantifiers may apply within compound types; for example, if `a : Array[T?]+`, then `a[0] : T?`. An array type can be both non-empty and optional, `Array[T]+?`, such that the value can be `None` or a non-empty array, but not the empty array. (Reliance on this subtle distinction is discouraged, but it arises from other constructs such as a conditional call with an `Array[T]+` output.)
+
+## Interpolating and concatenating optional strings
+
+Interpolations with `~{}` and `${}` accept optional string expressions and substitute the empty string for `None` at runtime.
+
+String concatenation with the `+` operator accepts optional string expressions, and produces the empty string if *either* operand is `None` at runtime. This unusual semantic facilitates command-line flag interpolation. Consider this task:
 
 ```wdl
 task test {
