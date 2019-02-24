@@ -292,18 +292,18 @@ workflow wf {
 
   #You can have comments anywhere in the workflow
   call test
-  
+
   output { #You can also put comments after braces
     String result = test.result
   }
-  
+
 }
 ```
 
 
 ### Types
 
-In WDL *all* types represent immutable values. 
+In WDL *all* types represent immutable values.
   - Even types like `File` and `Directory` represent logical "snapshots" of the file or directory at the time when the value was created.
   - It's impossible for a task to change an upstream value which has been provided as an input: even if it makes changes to its local copy the original value is unaffected.
 
@@ -352,7 +352,7 @@ For more information on type and how they are used to construct commands and def
 #### Numeric Behavior
 
 `Int` and `Float` are the numeric types.
-`Int` can be used to hold a signed Integer in the range \[-2^63, 2^63). 
+`Int` can be used to hold a signed Integer in the range \[-2^63, 2^63).
 `Float` is a finite 64-bit IEEE-754 floating point number.
 
 #### Custom Types
@@ -818,7 +818,7 @@ task t {
 
 #### Task Input Localization
 `File` and `Directory` inputs must be treated specially since they require localization to within the execution directory:
-- Files and directories are localized into the execution directory prior to the task execution commencing. 
+- Files and directories are localized into the execution directory prior to the task execution commencing.
 - When localizing a `File`, the engine may choose to place the file wherever it likes so long as it accords to these rules:
   - The original file name must be preserved even if the path to it has changed.
   - Two input files with the same name must be located separately, to avoid name collision.
@@ -1659,7 +1659,7 @@ All `call` statements must be uniquely identifiable.  By default, the call's uni
 
 A `call` statement may reference a workflow too (e.g. `call other_workflow`).  In this case, the inputs section specifies the workflow's inputs by name.
 
-Calls can be run as soon as their inputs are available. If `call x`'s inputs are based on `call y`'s outputs, this means that `call x` can be run as soon as `call y` has completed. 
+Calls can be run as soon as their inputs are available. If `call x`'s inputs are based on `call y`'s outputs, this means that `call x` can be run as soon as `call y` has completed.
 
 To add a dependency from x to y that isn't based on outputs, you can use the `after` keyword, such as `call x after y after z`. But note that this is only required if `x` doesn't already depend on an output from `y`.
 
@@ -2387,7 +2387,7 @@ workflow wf {
 }
 ```
 
-Running this workflow (which needs no inputs), would yield a value of `[2,3,4,5,6]` for `wf.inc`.  While `task inc` itself returns an `Int`, when it is called inside a scatter block, that type becomes an `Array[Int]`.
+Running this workflow (which needs no inputs), would yield a value of `[2,3,4,5,6]` for `wf.inc.incremented`.  While `task inc` itself returns an `Int`, when it is called inside a scatter block, that type becomes an `Array[Int]`.
 
 Any task that's downstream from the call to `inc` and outside the scatter block must accept an `Array[Int]`:
 
@@ -2424,7 +2424,7 @@ workflow wf {
   scatter (i in integers) {
     call inc {input: i=i}
   }
-  call sum {input: ints = inc.increment}
+  call sum {input: ints = inc.incremented}
 }
 ```
 
@@ -2441,7 +2441,7 @@ workflow wf {
     call inc {input: i=i}
     call inc as inc2 {input: i=inc.incremented}
   }
-  call sum {input: ints = inc2.increment}
+  call sum {input: ints = inc2.incremented}
 }
 ```
 
@@ -2569,7 +2569,7 @@ task t3 {
 workflow wf {
   input {
     Int int_val
-    Int int_val2 = 10
+    Int int_val2 = 10 # This value is not needed actually, so better delete this line?
     Array[Int] my_ints
     File ref_file
   }
@@ -3483,7 +3483,7 @@ task output_example {
 }
 ```
 
-Both files `file_with_int` and `file_with_uri` should contain one line with the value on that line.  This value is then validated against the type of the variable.  If `file_with_int` contains a line with the text "foobar", the workflow must fail this task with an error.
+Both files `int_file` and `str_file` should contain one line with the value on that line.  This value is then validated against the type of the variable.  If `int_file` contains a line with the text "foobar", the workflow must fail this task with an error.
 
 ### Compound Types
 
@@ -3588,4 +3588,3 @@ task test {
 This task would assign the one key-value pair map in the echo statement to `my_map`.
 
 If the echo statement was instead `echo '["foo", "bar"]'`, the engine MUST fail the task for a type mismatch.
-
