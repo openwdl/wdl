@@ -2327,17 +2327,15 @@ Then the command would be instantiated as:
 /bin/mycmd /path/to/c.txt
 ```
 
-In general, it's invalid to supply an expression of optional type `T?` for a non-optional input or variable of type `T`, as the latter cannot accept `None`. (The idiom `select_first([expr, default])` coerces `expr : T?` to `T` by substituting `default : T` when `expr` is undefined; if `default` is omitted, then the coercion fails at runtime.) Similarly, an `Array[T]` expression does not satisfy an `Array[T]+` input.
+It's invalid (a static validation error) to supply an expression of optional type `T?` for a non-optional input or variable of type `T`, as the latter cannot accept `None`. (The idiom `select_first([expr, default])` coerces `expr : T?` to `T` by substituting `default : T` when `expr` is undefined; if `default` is omitted, then the coercion fails at runtime.) This constraint propagates into compound types, so for example an `Array[T?]` expression doesn't satisfy an `Array[T]` input. It also applies to function arguments, with exceptions for string concatenation, described below, and the equality/inequality operators `==` and `!=`, which can compare two values of types differing only in their quantifiers, considering `None` equal to itself but no other value.
 
-These constraints also apply to function arguments, with exceptions for string concatenation, described below, and the equality/inequality operators `==` and `!=`, which can compare two values of types differing only in their quantifiers, considering `None` equal to itself but no other value.
-
-Quantifiers may apply within compound types; for example, if `a : Array[T?]+`, then `a[0] : T?`. An array type can be both non-empty and optional, `Array[T]+?`, such that the value can be `None` or a non-empty array, but not the empty array. (Reliance on this subtle distinction is discouraged, but it arises from other constructs such as a conditional call with an `Array[T]+` output.)
+The nonempty array quantifier `Array[T]+` isn't statically validated in the same way, but rather as a runtime assertion: binding an empty array to an `Array[T]+` input or function argument is a runtime error. An array type can be both non-empty and optional, `Array[T]+?`, such that the value can be `None` or a non-empty array, but not the empty array.
 
 ## Interpolating and concatenating optional strings
 
 Interpolations with `~{}` and `${}` accept optional string expressions and substitute the empty string for `None` at runtime.
 
-String concatenation with the `+` operator has special typing properties. When applied to two non-optional operands, the result is a non-optional `String`. However, if either operand has an optional type, then the concatenation has type `String?`, and the runtime result is `None` if either operand is `None`. These unusual semantics facilitate command-line flag interpolation. Consider this task:
+Within interpolations, string concatenation with the `+` operator has special typing properties to facilitate formulation of command-line flags. When applied to two non-optional operands, the result is a non-optional `String`. However, if either operand has an optional type, then the concatenation has type `String?`, and the runtime result is `None` if either operand is `None`. To illustrate how this can be used, consider this task:
 
 ```wdl
 task test {
@@ -2367,6 +2365,8 @@ The latter case is very likely an error case, and this `--val=` part should be l
 ```
 python script.py ${"--val=" + val}
 ```
+
+The `+` operator cannot accept optional operands outside of interpolations.
 
 # Scatter / Gather
 
