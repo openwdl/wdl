@@ -2569,7 +2569,6 @@ task t3 {
 workflow wf {
   input {
     Int int_val
-    Int int_val2 = 10 # This value is not needed actually, so better delete this line?
     Array[Int] my_ints
     File ref_file
   }
