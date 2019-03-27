@@ -2107,7 +2107,7 @@ A `Struct Literal` declaration looks like an engine function call, where instead
 Person( ... )
 ```
 
-Arugments placed within the parethesis are key-value pairs, where the key is the name of one of the struct declarations, and the value is the value to set the argument to.  
+Arguments placed within the parenthesis are key-value pairs, where the key is the name of one of the struct declarations, and the value is the value to set the argument to.  
 There is no need to wrap a key in quotation marks, instead keys are represented in plain text followed by an equals sign `=`. The value follows after the `=`. Multiple arguments can 
 be separated by a comma ',' and arguments do not need to be specified in a specific order.
 
@@ -3073,7 +3073,7 @@ Array[String] ymap = keys(y) # ["a", "b"]
 
 ## Map[X,Array[Y]] collect_by_key(Array[Pair[X,Y]])
 
-Given an Array consisting of Pairs, the `collect_by_key` function returns a Map in which the left elements of the Pairs are the keys and the right elements the values. The left element of the Pairs passed to `as_map` must be a primitive type. The values will be placed in an Array to allow for multiple Pairs to produce the same key. The order of the keys in the Map is the same as the order in the Array based on their first occurence. The order of the elements in the resulting Arrays is the same as their occurence in the given Array of Pairs.
+Given an Array consisting of Pairs, the `collect_by_key` function returns a Map in which the left elements of the Pairs are the keys and the right elements the values. The left element of the Pairs passed to `as_map` must be a primitive type. The values will be placed in an Array to allow for multiple Pairs to produce the same key. The order of the keys in the Map is the same as the order in the Array based on their first occurrence. The order of the elements in the resulting Arrays is the same as their occurrence in the given Array of Pairs.
 
 ```
 Array[Pair[String,Int]] x = [("a", 1), ("b", 2), ("a", 3)]
