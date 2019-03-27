@@ -2084,7 +2084,7 @@ task myTask {
 }
 
 workflow myWorkflow {
-    Person harry = Person(name="Harry", age=11}
+    Person harry = Person(name="Harry", age=11)
     call myTask {
         input:
             a = harry
@@ -2093,7 +2093,7 @@ workflow myWorkflow {
 ```
 
 #### Struct Literals
-Structs can be created and assigned using the `Struct Literal` notation. Struct literal notation enables the creation of typed struct objects which enforces the typing of all of is
+Structs can be created and assigned using the `Struct Literal` notation. Struct literal notation enables the creation of typed struct objects which enforces the typing of all of its
 assigned parameters. Struct literal notation attempts to be more declarative to help engine implementations apply the proper
 type conversions to nested structs, as well as remove any ambiguity over what the object being constructed represents.
 
@@ -2117,8 +2117,12 @@ Values passed to struct literals can be any previously defined declaration, or t
 ```wdl
 
 #Simple case
-File fastq_1
-File fastq_2
+
+input {
+    File fastq_1
+    File fastq_2
+}
+
 Sample sample_1 = Sample( type="Blood", sequencing_info="WGS", fastq=fastq_1 )
 Sample sample_2 = Sample( type="Liver", sequencing_info="WES", fastq=fastq_2 )
 Person person_1 = Person( name="John", age=30, samples=[sample_1,sample_2] )
