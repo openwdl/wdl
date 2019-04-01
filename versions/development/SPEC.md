@@ -2340,8 +2340,8 @@ task my_task {
 ```
 
 * `x` and `f` are `input` values which will be evaluated before the task begins.
-* `y` is a graph value with an upstream depenency on the input `x`.
-* The `command` section is able to access all `input`s and graph values. It is not able to reference `output` values.
+* `y` is an intermediate value with an upstream dependency on the input `x`.
+* The `command` section is able to access all `input`s and intermediate values. It is not able to reference `output` values.
 * `z` is an `output` value - it cannot be accessed except by the other declaration in the `output` section.
 * `z_plus_one` is another `output` value.
 
