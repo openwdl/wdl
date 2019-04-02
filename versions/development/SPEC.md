@@ -2650,7 +2650,7 @@ It's important to note that the type in JSON must be coercible to the WDL type. 
 
 ## Specifying / Overriding Runtime Attributes in JSON
 
-Workflow runtime attributes may additionally be specified as key/value pairs within the JSON input. The mapping from JSON or YAML values to WDL values is codified similar to the serialization of task inputs section, however with an additional runtime tag. The runtime attribute does not need to be specified in the task defintion to be overidden by the JSON.
+Workflow runtime attributes may additionally be specified as key/value pairs within a JSON input file. Ideally this should be a separate `runtime.json` file to   The mapping from JSON or YAML values to WDL values is codified similar to the serialization of task inputs section, however with an additional runtime tag to avoid name collisions and allow for unspecified attributes to be set by the runtime input file. Runtime attributes do not need to be specified in the task defintion to be overidden or set by the JSON.
 
 In JSON, the user may be able to specify task-specific runtime attributes similar to the following:
 
@@ -2663,7 +2663,7 @@ In JSON, the user may be able to specify task-specific runtime attributes simila
 }
 ```
 
-As the runtime section consists of key/value pairs, it's up to user to ensure they provide the correct coercible type for the backend they are targeting. See the section on [Type Coercion](#type-coercion) for more details.
+As the runtime section consists of key/value pairs, it is the user's responsibility to ensure they provide the correct coercible type for the backend they are targeting. Expressions are explicitly forbidden disallowed within the `runtime.json`, hence no input will be coerced to an expression. See the section on [Type Coercion](#type-coercion) for more details.
 
 ### Resolution Order
 
