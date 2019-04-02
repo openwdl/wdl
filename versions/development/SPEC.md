@@ -91,6 +91,8 @@ Table of Contents
   * [Computing Task Inputs](#computing-task-inputs)
   * [Computing Workflow Inputs](#computing-workflow-inputs)
   * [Specifying Workflow Inputs in JSON](#specifying-workflow-inputs-in-json)
+  * [Specifying / Overriding runtime attributes in JSON](#specifying--overriding-runtime-attributes-in-json)
+    * [Resolution Order](#resolution-order)
   * [Optional Inputs](#optional-inputs)
   * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
     * [Optional Inputs with Defaults](#optional-inputs-with-defaults)
@@ -2646,6 +2648,30 @@ In JSON, the inputs to the workflow in the previous section might be:
 
 It's important to note that the type in JSON must be coercible to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "three"`, this coercion from string to integer is not valid and would result in a coercion error.  See the section on [Type Coercion](#type-coercion) for more details.
 
+## Specifying / Overriding Runtime Attributes in JSON
+
+Workflow runtime attributes may additionally be specified as key/value pairs within the JSON input. The mapping from JSON or YAML values to WDL values is codified similar to the serialization of task inputs section, however with an additional runtime tag. The runtime attribute does not need to be specified in the task defintion to be overidden by the JSON.
+
+In JSON, the user may be able to specify task-specific runtime attributes similar to the following:
+
+```json
+{
+  "wf.t1.runtime.memory": "16 GB",
+  "wf.t2.runtime.cpus": 2,
+  "wf.t2.runtime.disks": "100 GB",
+  "wf.t3.runtime.arbitrary_key": ["arbitrary", "value"]
+}
+```
+
+As the runtime section consists of key/value pairs, it's up to user to ensure they provide the correct coercible type for the backend they are targeting. See the section on [Type Coercion](#type-coercion) for more details.
+
+### Resolution Order
+
+Similar to how inputs are resolved, these runtime parameters are resolved in the following order:
+
+1. Inputs provided by the inputs JSON
+2. The value provided inline on the task, whether that's an expression or literal value.
+
 # Type Coercion
 
 WDL values can be created from either JSON values or from native language values.  The below table references String-like, Integer-like, etc to refer to values in a particular programming language.  For example, "String-like" could mean a `java.io.String` in the Java context or a `str` in Python.  An "Array-like" could refer to a `Seq` in Scala or a `list` in Python.
@@ -3639,4 +3665,3 @@ task test {
 This task would assign the one key-value pair map in the echo statement to `my_map`.
 
 If the echo statement was instead `echo '["foo", "bar"]'`, the engine MUST fail the task for a type mismatch.
-
