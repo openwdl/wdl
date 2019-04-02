@@ -1678,6 +1678,14 @@ The rational for this is that a user may want to provide the following input fil
 
 ### Call Statement
 
+```
+$call = 'call' $ws* $namespaced_identifier $ws+ ('as' $identifier)? $ws* $call_body?
+$call_body = '{' $ws* $inputs? $ws* '}'
+$inputs = 'input' $ws* ':' $ws* $variable_mappings
+$variable_mappings = $variable_mapping_kv (',' $variable_mapping_kv)*
+$variable_mapping_kv = $identifier $ws* '=' $ws* $expression
+```
+
 A workflow calls other tasks/workflows via the `call` keyword.  A `call` is followed by the name of the task or subworkflow to run.  Most commonly that's simply the name of a task (see examples below), but it can also use `.` as a namespace resolver.
 
 See the section on [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details about how the identifier ought to be interpreted.
