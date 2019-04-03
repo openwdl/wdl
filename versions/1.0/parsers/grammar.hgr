@@ -101,7 +101,7 @@ grammar {
       # String with ordinary contents
       enum {
         python: r'[^\"\n(\$\{)(~\{)]*'
-        java: "(.*?)(?=\\$\\{|~\\{|\")"
+        java: "(.*?)(?=\\$\\{|~\\{|(?<!\\\\)\")"
         javascript: "[^\"\\n(${)(~{)]*"
       } -> wdl_unescape(:string)
     }
@@ -115,7 +115,7 @@ grammar {
       # String with ordinary contents
       enum {
         python: r'[^\'\n(\$\{)(~\{)]*'
-        java: "(.*?)(?=\\$\\{|~\\{|')"
+        java: "(.*?)(?=\\$\\{|~\\{|(?<!\\\\)')"
         javascript: "[^'\\n(${)(~{)]*"
       } -> wdl_unescape(:string)
     }
