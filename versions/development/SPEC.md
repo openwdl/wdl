@@ -130,7 +130,7 @@ Table of Contents
   * [Boolean defined(X?)](#boolean-definedx)
   * [String basename(String)](#string-basenamestring)
   * [Int floor(Float), Int ceil(Float) and Int round(Float)](#int-floorfloat-int-ceilfloat-and-int-roundfloat)
-  * [Int min(Int, Int) and Int max(Int, Int)](#int-minintint-int-maxintint)
+  * [X min(Y, Z) and X max(Y, Z)](#x-minyz-x-maxyz)
 * [Data Types &amp; Serialization](#data-types--serialization)
   * [Serialization of Task Inputs](#serialization-of-task-inputs)
     * [Primitive Types](#primitive-types)
@@ -3183,7 +3183,7 @@ This function will return `false` if the argument is an unset optional value. It
   - ceil: Round **up** to the next higher integer
   - round: Round to the nearest integer based on standard rounding rules
 
-## Int min(Int, Int) and Int max(Int, Int)
+## X min(Y, Z) and X max(Y, Z)
 
 The function `min` returns the smaller of its two arguments and the function `max` returns the larger of its two
 arguments. They are shorthand for writing an `if` expression. For example,
@@ -3193,15 +3193,18 @@ version 1.0
 workflow Max {
   input {
     Int value1
-    Int value2
+    Float value2
   }
 
   output {
-    Int max1 = if value1 > value2 then value1 else value2
-    Int max2 = max(value1, value2)
+    Float max1 = if value1 > value2 then value1 else value2
+    Float max2 = max(value1, value2)
   }
 }
 ``` 
+
+These functions can accept any combination of `Int` and `Float` arguments. If both arguments are type `Int`, than the 
+result is type `Int`, otherwise the result is type `Float`. 
 
 # Data Types & Serialization
 
