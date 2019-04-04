@@ -3203,7 +3203,7 @@ workflow Max {
 }
 ``` 
 
-These functions can accept any combination of `Int` and `Float` arguments. If both arguments are type `Int`, than the 
+These functions can accept any combination of `Int` and `Float` arguments. If both arguments are type `Int` then the 
 result is type `Int`, otherwise the result is type `Float`. 
 
 # Data Types & Serialization
