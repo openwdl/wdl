@@ -24,6 +24,7 @@ Table of Contents
     * [Map Literals](#map-literals)
     * [Pair Literals](#pair-literals)
     * [Optional Literals](#optional-literals)
+    * [Keywords](#keywords)
   * [Versioning](#versioning)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
@@ -738,6 +739,17 @@ Boolean test_is_none = maybe_five_but_is_not == None # Evaluates to true, same a
 Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false, same as defined(maybe_five_but_is_not )
 ```
 
+### Keywords
+
+The following language keywords cannot be used as the names of values, calls, tasks, workflows, import namespaces, or struct types & aliases.
+
+```
+Array Float Int Map None Pair String
+alias as call command else false if
+import input left meta object output
+parameter_meta right runtime scatter
+struct task then true workflow
+```
 
 ## Versioning
 
