@@ -980,9 +980,7 @@ Alternatively, if the command were `python script.py ${sep=' ' numbers}` it woul
 python script.py 1 2 3
 ```
 
-> *Additional Requirements*:
->
-> 1. sep MUST accept only a string as its value
+> *Additional requirements*: sep MUST accept only a string as its value
 
 ##### true and false
 
@@ -993,9 +991,9 @@ For example, `${true='--enable-foo' false='--disable-foo' allow_foo}` would eval
 Both `true` and `false` cases are required. If one case should insert no value then an empty string literal should be used, eg `${true='--enable-foo' false='' allow_foo}`
 
 1. `true` and `false` values MUST be string literals.
-1. `true` and `false` are only allowed if the type is `Boolean`
-1. Both `true` and `false` cases are required.
-1. Consider using the expression `${if allow_foo then "--enable-foo" else "--disable-foo"}` as a more readable alternative which allows full expressions (rather than string literals) for the true and false cases.
+2. `true` and `false` are only allowed if the type is `Boolean`
+3. Both `true` and `false` cases are required.
+4. Consider using the expression `${if allow_foo then "--enable-foo" else "--disable-foo"}` as a more readable alternative which allows full expressions (rather than string literals) for the true and false cases.
 
 ##### default
 
@@ -1014,7 +1012,7 @@ task default_test {
 
 This task takes an optional `String` parameter and if a value is not specified, then the value of `foobar` will be used instead.
 
-> *Additional Requirements*:
+> *Additional requirements*:
 >
 > 1. The type of the expression must match the type of the parameter
 > 2. If 'default' is specified, the `$type_postfix_quantifier` for the variable's type MUST be `?`
@@ -1126,7 +1124,7 @@ Notes:
 
 For example imagine a task which produces:
 
-```sh
+```txt
 dir/
  - a           # a file, 10 MB
  - b -> a      # a softlink to 'a'
@@ -1134,7 +1132,7 @@ dir/
 
 As a WDL directory this would manifest as:
 
-```sh
+```txt
 dir/
  - a           # a file, 10 MB
  - b           # another file, 10 MB
@@ -1142,7 +1140,7 @@ dir/
 
 And therefore if used as an input to a subsequent task:
 
-```sh
+```txt
 dir/
  - a           # a file, 10 MB
  - b           # another file, 10 MB
@@ -1415,9 +1413,9 @@ task bwa_mem_tool {
   input {
     Int threads
     Int min_seed_length
-    Array[Int] min_std_max_min
+    Array[Int]+ min_std_max_min
     File reference
-    Array[File] reads
+    Array[File]+ reads
   }
   command {
     bwa mem -t ${threads} \
@@ -1435,7 +1433,7 @@ task bwa_mem_tool {
 }
 ```
 
-Notable pieces in this example is `${sep=',' min_std_max_min}` which specifies that min_std_max_min can be one or more integers (the `+` after the variable name indicates that it can be one or more).  If an `Array[Int]` is passed into this parameter, then it's flattened by combining the elements with the separator character (`sep=','`).
+One notable piece in this example is `${sep=',' min_std_max_min}` which specifies that min_std_max_min will be flattened by combining the elements with the separator character (`sep=','`).
 
 This task also defines that it exports one file, called 'sam', which is the stdout of the execution of bwa mem.
 
@@ -3525,12 +3523,10 @@ task process_person {
 
 If `p` is provided as:
 
-```
-{
-  "name", "John"
-  "age", 5
-  "friends": ["James", "Jim"]
-}
+```txt
+name = "John"
+age = 5
+friends = ["James", "Jim"]
 ```
 
 Then, the resulting command line might look like:
