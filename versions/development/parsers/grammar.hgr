@@ -74,7 +74,6 @@ grammar {
       r'>=' -> :gteq
       r'>' -> :gt
       r'!' -> :not
-      r'@' -> :atsign
 
       enum {
         python: r'\"'
@@ -234,7 +233,6 @@ grammar {
       r'>=' -> :gteq
       r'>' -> :gt
       r'!' -> :not
-      r'@' -> :atsign
 
       # Literals
       enum {
@@ -326,8 +324,7 @@ grammar {
         JAVASCRIPT
   }
   parser {
-    # Document: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#document
-    $document = $version list($import) list($file_body_element) -> WDL2File(version=$0, imports=$1, body=$2)
+    $document = $version list($import) list($file_body_element) -> Draft3File(version=$0, imports=$1, body=$2)
     $file_body_element = $workflow | $task | $struct
 
     # Version declaration:
@@ -442,8 +439,7 @@ grammar {
     $scatter = :scatter :lparen :identifier :in $e :rparen :lbrace list($wf_body_element) :rbrace
         -> Scatter(item=$2, collection=$4, body=$7)
 
-    $identifier_equals = :identifier_being_assigned :equal -> ParameterName(id=$0)
-    $struct_literal_kv = $identifier_equals $e -> StructLiteralKv(parametername=$0, value=$1)
+    $struct_literal_kv = :identifier_being_assigned :equal $e -> StructLiteralKv(parametername=$0, value=$2)
     $struct_literal_param_list = list($struct_literal_kv, :comma) -> $0
     $fcall_param_list = list($e, :comma) -> $0
     $param_list = $struct_literal_param_list | $fcall_param_list
