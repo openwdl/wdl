@@ -328,7 +328,7 @@ struct BamAndIndex {
     File bam
     File bam_index
 }
-BamAndIndex b_and_i = BamAndIndex(bam="NA12878.bam",bam_index="NA12878.bam.bai")
+BamAndIndex b_and_i = BamAndIndex { bam: "NA12878.bam", bam_index: "NA12878.bam.bai" }
 ```
 
 Some examples of types:
@@ -2084,7 +2084,7 @@ task myTask {
 }
 
 workflow myWorkflow {
-    Person harry = Person(name="Harry", age=11)
+    Person harry = Person { name: "Harry", age: 11 } 
     call myTask {
         input:
             a = harry
@@ -2097,18 +2097,14 @@ Structs can be created and assigned using the `Struct Literal` notation. Struct 
 assigned parameters. Struct literal notation attempts to be more declarative to help engine implementations apply the proper
 type conversions to nested structs, as well as remove any ambiguity over what the object being constructed represents.
 
-A `Struct Literal` declaration looks like an engine function call, where instead of a function the name of the struct is used followed by parenthesis. For example:
+A `Struct Literal` declaration is similar to a map literal except it is preceded by a reference to the struct name. For example, the basic syntax for the `Person` struct would look like the following:
 
 ```wdl
-
-
-
-
-Person( ... )
+Person {...}
 ```
 
-Arguments placed within the parenthesis are key-value pairs, where the key is the name of one of the struct declarations, and the value is the value to set the argument to.  
-There is no need to wrap a key in quotation marks, instead keys are represented in plain text followed by an equals sign `=`. The value follows after the `=`. Multiple arguments can 
+Arguments placed within the brackets are key-value pairs, where the key is the name of one of the struct declarations, and the value is the value to set the argument to.  
+There is no need to wrap a key in quotation marks, instead keys are represented in plain text followed by a colon `:`. The value follows after the `:`. Multiple arguments can 
 be separated by a comma ',' and arguments do not need to be specified in a specific order.
 
 Values passed to struct literals can be any previously defined declaration, or they themselves can be a literal notation.
@@ -2123,17 +2119,19 @@ input {
     File fastq_2
 }
 
-Sample sample_1 = Sample( type="Blood", sequencing_info="WGS", fastq=fastq_1 )
-Sample sample_2 = Sample( type="Liver", sequencing_info="WES", fastq=fastq_2 )
-Person person_1 = Person( name="John", age=30, samples=[sample_1,sample_2] )
+Sample sample_1 = Sample { type: "Blood", sequencing_info: "WGS", fastq: fastq_1 }
+
+Sample sample_2 = Sample { type: "Liver", sequencing_info: "WES", fastq: fastq_2 }
+Person person_1 = Person { name: "John", age: 30, samples: [sample_1,sample_2] }
 
 #Example representing using different literal notations
-SomeStruct struct_1 = SomeStruct(someDict={"key":"value"},someArray=[1.0,2.3,1.5])
+SomeStruct struct_1 = SomeStruct { someDict: {"key":"value"}, someArray: [1.0,2.3,1.5] }
 
 #You can also use Struct literals within another Struct literal
-Person person_2 = Person( name="Bob", age=45, samples=[Sample( type="Oral", sequencing_info="WES", fastq=fastq_3 )] )
+Person person_2 = Person { name: "Bob", age: 45, samples: [Sample { type:"Oral", sequencing_info: "WES", fastq: fastq_3 }] )
 
 ```
+
 
 
 ### Struct Member Access
