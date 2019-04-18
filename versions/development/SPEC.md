@@ -2650,7 +2650,7 @@ It's important to note that the type in JSON must be coercible to the WDL type. 
 
 ## Specifying / Overriding Runtime Attributes in JSON
 
-Workflow runtime attributes may additionally be specified as key/value pairs within a JSON input file. Ideally this should be a separate `runtime.json` file to   The mapping from JSON or YAML values to WDL values is codified similar to the serialization of task inputs section, however with an additional runtime tag to avoid name collisions and allow for unspecified attributes to be set by the runtime input file. Runtime attributes do not need to be specified in the task defintion to be overidden or set by the JSON.
+Workflow runtime attributes may additionally be specified as key/value pairs within a JSON input file. It's recommended that this should be a separate inputs file called `runtime.json`. The mapping from JSON or YAML values to WDL values is codified similar to the serialization of task inputs section, however with an additional runtime tag to avoid name collisions and allow for unspecified attributes to be set by the runtime input file. Runtime attributes do not need to be specified in the task defintion to be overidden or set by the JSON.
 
 In JSON, the user may be able to specify task-specific runtime attributes similar to the following:
 
