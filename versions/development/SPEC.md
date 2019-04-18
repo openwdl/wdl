@@ -250,6 +250,7 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 * An escape sequence starting with `\u` followed by 4 hexadecimal characters or `\U` followed by 8 hexadecimal characters `0-9a-fA-F`.  This specifies a unicode code point.
 
 |Escape Sequence|Meaning|\x Equivalent|
+|-|-|-|
 |`\\`|`\`|`\x5C`|
 |`\n`|newline|`\x0A`|
 |`\t`|tab|`\x09`|
