@@ -41,6 +41,7 @@
       * [Alternative heredoc syntax](#alternative-heredoc-syntax)
       * [Stripping Leading Whitespace](#stripping-leading-whitespace)
     * [Outputs Section](#outputs-section)
+      * [Files and Optional Outputs](#files-and-optional-outputs)
       * [Globs](#globs)
         * [Task portability and non-standard BaSH](#task-portability-and-non-standard-bash)
     * [String Interpolation](#string-interpolation)
@@ -1035,6 +1036,42 @@ output {
   String ab = a + "b"
 }
 ```
+
+#### Files and Optional Outputs
+
+File outputs are described as string paths relative to the initial working
+directory.
+
+```
+File somefile = "my/path/to/something.txt"
+```
+
+All file outputs are required to exist, otherwise the task will fail.
+
+However, outputs may be annotated as `Optional` types (including array types),
+in which case they will be null if files do not exist.
+
+E.g., in this example task:
+
+```
+task optional_output {
+    command <<<
+        touch example_exists.txt
+        touch arr2.exists.txt
+    >>>
+    output {
+        File example_exists = "example_exists.txt"
+        File? example_optional = "example_optional.txt"
+        Array[File?] array_optional = ["arr1.dne.txt", "arr2.exists.txt"]
+    }
+}
+```
+
+If run, will generate the following outputs:
+
+* `optional_output.example_exists` will resolve to a File
+* `optional_output.example_optional` will resolve to `null`
+* `optional_output.array_optional` will resolve to `[<File>, null]`
 
 #### Globs
 
