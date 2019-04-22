@@ -21,7 +21,7 @@ Current core team members are:
 | Mike Lin           | Sponsored by the Chan Zuckerberg Initiative                        | [mlin](https://github.com/mlin) |
 | Patrick Magee      | DNAStack                                                           | [patmagee](https://github.com/patmagee) |
 | Brian O'Connor     | University of California, Santa Cruz                               | [briandoconnor](https://github.com/briandoconnor) |
-| O. Rodeh           | DNAnexus                                                           | [ordeh](https://github.com/orodeh) |
+| O. Rodeh           | DNAnexus                                                           | [orodeh](https://github.com/orodeh) |
 | Geraldine Van der Auwera | Broad Institute                                              | [vdauwera](https://github.com/vdauwera) |
 
 
