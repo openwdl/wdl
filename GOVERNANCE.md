@@ -16,23 +16,23 @@ Current core team members are:
 
 | Name               | Organization            | github                  |
 |:-------------------|:-------------|:------------------
-| Brad Chapman       | Harvard School of Public Health | [chapmanb](https://github.com/chapmanb) |
-| Jeff Gentry        | Broad Institute                 | [geoffjentry](https://github.com/geoffjentry) |
-| Mike Lin           | DNANexus                        | [mlin](https://github.com/mlin) |
-| Patrick Magee      | DNAStack                        | [patmagee](https://github.com/patmagee) |
-| Brian O'Connor     | University of California, Santa Cruz | [briandoconnor](https://github.com/briandoconnor) |
-| Abirami Prabhakaran| Intel | [aprabhak2](https://github.com/aprabhak2) |
-| Geraldine Van der Auwera | Broad Institute | [vdauwera](https://github.com/vdauwera) |
+| Jeff Gentry        | Broad Institute                                                    | [geoffjentry](https://github.com/geoffjentry) |
+| Chris Llanwarne    | Broad Institute                                                    | [cjllanwarne](https://github.com/cjllanwarne)
+| Mike Lin           | Sponsored by the Chan Zuckerberg Initiative                        | [mlin](https://github.com/mlin) |
+| Patrick Magee      | DNAStack                                                           | [patmagee](https://github.com/patmagee) |
+| Brian O'Connor     | University of California, Santa Cruz                               | [briandoconnor](https://github.com/briandoconnor) |
+| O. Rodeh           | DNAnexus                                                           | [orodeh](https://github.com/orodeh) |
+| Geraldine Van der Auwera | Broad Institute                                              | [vdauwera](https://github.com/vdauwera) |
 
 
-At the core group's discretion a new member may be added by a majority vote. This addition will be done to recognize **significant** contributions to the community. *Contributions* include such things as:
+At this group's discretion a new core member may be added by a majority vote. This addition will be done to recognize **significant** contributions to the community. *Contributions* include such things as:
 
  - Active participation in discussions, mailing list, forums
  - Community building efforts
  - Helping with documentation, standards documents, etc
  - Building supporting software and tooling
 
-Generally members are only removed at their own request are due to very long term inactivity. In extreme circumstances the core group can vote to remove a member.
+Generally core members are only removed at their own request, e.g. due to very long term inactivity. In extreme circumstances the core group can vote to remove another core member.
 
 RFC Process
 -----------
@@ -44,7 +44,7 @@ Most technical decisions are decided through the RFC process. Small changes, suc
  3. A core team member will be assigned as the *shepherd* of this RFC. The shepherd shall be responsible for keeping the discussion moving and ensuring all concerns are responded to.
  4. Work to build broad support from the community. Encouraging people to comment, show support, show dissent, etc. Ultimately the level of community support for a change will decide its fate. 
  5. When the discussion appears to be winding down, the shepherd will make an official summary on where the consensus has wound up.
- 6. The shepherd will put out an official call for votes. This call shall be advertised broadly and will last ten calendar days. Any interested member may vote via +1/-1.
+ 6. The shepherd will put out an official call for votes. This call shall be advertised broadly and will last ten calendar days. Any interested community member may vote via +1/-1.
  7. After the voting process is complete the core group shall decide to officially approve this RFC. It is expected that barring extreme circumstances this is a rubber stamp of the voting process. An example of an exceptional case would be if representatives for every WDL implementation vote against the feature for feasibility reasons.
 
 When an RFC is approved it will become part of the current draft version of the specification. This will allow time for implementers to verify feasibility and cutting edge users  to get used to the new syntax. In order to prevent untested features from entering into an official specification version at least one WDL implementation must support a feature before it’s allowed to graduate from the current draft.
