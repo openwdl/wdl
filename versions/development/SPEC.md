@@ -2660,7 +2660,7 @@ In JSON, the user may be able to specify task-specific runtime attributes simila
 }
 ```
 
-As the runtime section consists of key/value pairs, it is the user's responsibility to ensure they provide the correct coercible type for the backend they are targeting. An input value should not be coerced to an expression, hence values provided within the `runtime.json` should be evaluated. See the section on [Type Coercion](#type-coercion) for more details.
+As the runtime section consists of key/value pairs, it is the user's responsibility to ensure they provide the correct coercible type for the backend they are targeting. An input value should not be coerced to an expression, hence values provided within the `runtime.json` should not be evaluated. See the section on [Type Coercion](#type-coercion) for more details.
 
 ### Resolution Order
 
