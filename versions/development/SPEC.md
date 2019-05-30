@@ -3150,6 +3150,7 @@ workflow SelectFirst {
   Int five = select_first([maybe_five, maybe_four_but_is_not, maybe_three]) # This evaluates to 5
   Int five = select_first([maybe_four_but_is_not, maybe_five, maybe_three]) # This also evaluates to 5
 }
+```
 
 ## Array[X] select_all(Array[X?])
 
@@ -3165,6 +3166,7 @@ workflow SelectFirst {
   }
   Array[Int] fivethree = select_all([maybe_five, maybe_four_but_is_not, maybe_three]) # This evaluates to [5, 3]
 }
+```
 
 ## Boolean defined(X?)
 
