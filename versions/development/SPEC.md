@@ -90,7 +90,8 @@ Table of Contents
 * [Computing Inputs](#computing-inputs)
   * [Computing Task Inputs](#computing-task-inputs)
   * [Computing Workflow Inputs](#computing-workflow-inputs)
-  * [Specifying Workflow Inputs in JSON](#specifying-workflow-inputs-in-json)
+  * [Specifying Workflow Inputs](#specifying-workflow-inputs)
+    * [Cromwell-style inputs](#cromwell-style-inputs)
   * [Optional Inputs](#optional-inputs)
   * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
     * [Optional Inputs with Defaults](#optional-inputs-with-defaults)
@@ -2629,9 +2630,13 @@ The inputs to `wf` would be:
 
 Note that because some call inputs are left unsatisfied, this workflow could not be used as a sub-workflow. To fix that, additional workflow inputs could be added to pass-through `t1.s` and `t2.s`.
 
-## Specifying Workflow Inputs in JSON
+## Specifying Workflow Inputs
 
-Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow.  Workflow inputs are specified as key/value pairs. The mapping from JSON or YAML values to WDL values is codified in the [serialization of task inputs](#serialization-of-task-inputs) section.
+Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow. The format of workflow inputs is implementation specific.
+
+### Cromwell-style Inputs:
+
+The "Cromwell-style" input format is widely supported by WDL implementations and recommended for portability purposes. In the Cromwell-style format, workflow inputs are specified as key/value pairs in JSON or YAML. The mapping to WDL values is codified in the [serialization of task inputs](#serialization-of-task-inputs) section.
 
 In JSON, the inputs to the workflow in the previous section might be:
 
@@ -2641,7 +2646,12 @@ In JSON, the inputs to the workflow in the previous section might be:
   "wf.t2.s": "some_string",
   "wf.int_val": 3,
   "wf.my_ints": [5,6,7,8],
-  "wf.ref_file": "/path/to/file.txt"
+  "wf.ref_file": "/path/to/file.txt",
+  "wf.some_struct": {
+    "fieldA": "some_string",
+    "fieldB": 42,
+    "fieldC": "/path/to/file.txt"
+  }
 }
 ```
 
