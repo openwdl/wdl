@@ -1297,11 +1297,11 @@ task test {
 
 #### container (**Required**)
 
-The container key must accept one ore more locations which inform the engine where to retrieve a container image to execute the task. It is expected (but not enforced) that each container image provided are identical, and will provide the same final results when the task is run. It is the responsibility of the individual execution engine to define the specific image sources which it supports, and to determine which image is the "best" one to use at runtime. Defining multiple images enables greater portability across a broad range of execution environments. 
+The container key must accept one ore more locations which inform the engine where to retrieve a container image to execute the task. It is expected that each container image provided are identical, and will MUST the same final results when the task is run. It is the responsibility of the individual execution engine to define the specific image sources which it supports, and to determine which image is the "best" one to use at runtime. Defining multiple images enables greater portability across a broad range of execution environments. 
 
 Container source locations should use the syntax defined by the individual container repository. For example an image defined as `ubuntu:latest` would conventionally refer a docker image living on `DockerHub`, while an image defined as `quay.io/bitnami/python` would refer to a `quay.io` repository. 
 
-The supported attributes are:
+The supported attribute types are:
 
 * `String`: A single container location
 * `Array[String]`: A list of container entries. **Note**: the ordering of the list does not imply any implicit preference or ordering of the containers. All images are expected to be the same, and therefore any choice would be equally valid.
@@ -1328,7 +1328,7 @@ task multiple_image_test {
 
 #### cpu (**Required**)
 
-The `cpu` key defines the _minimum_ CPU required for this task, which must be available prior to the engine starting execution. The engine does not need to provide the exact amount of CPU requested (depending on the underlying infrastructure restrictions), however it may ONLY provision more CPU than requested and not less. For example if the wdl requested `cpu: 0.5`, but only discrete values were supported, then the engine might choose to provision `1.0` cpu instead.  Values are expected to be a `Float` (where supported) or an `Int`
+The `cpu` key defines the _minimum_ CPU required for this task, which must be available prior to the engine starting execution. The engine does not need to provide the exact amount of CPU requested (depending on the underlying infrastructure restrictions), however it may ONLY provision more CPU than requested and not less. For example if the wdl requested `cpu: 0.5`, but only discrete values were supported, then the engine might choose to provision `1.0` cpu instead.  Values are expected to be a `Float` or an `Int`
 
 ```wdl
 task cpu_example {
@@ -1534,7 +1534,7 @@ task foo {
 
 In order to encourage interopable workflows, wdl authors and engine creators should view the `hints` section strictly as an optimization that can be made for a specific task at runtime, and they should not view it as a set of requirements for that task. By following this principle, we can guarantee that a workflow is runnable on all platforms assuming the `runtime` block has the required parameters, regardless of what is contained within the hints section.
 
-The following is a basic set of guidelines that engines and authors should follow when writing hints:
+The following is a basic set of guidelines that engines and authors must follow when writing hints:
 
 1. A hint should never be required
 2. Less is more. Before adding a new hint key, ask yourself "do you really need another hint?", or "is there a better way to specify the behaviour you require". If so, then adding a hints is not likely the right way to go about your task.
@@ -2467,9 +2467,9 @@ task myTask {
     }
     
     runtime {
-		container: "my_image:latest"
-		cpu: 1
-		memory: "1 GB"
+	  container: "my_image:latest"
+	  cpu: 1
+	  memory: "1 GB"
 	}
 }
 
