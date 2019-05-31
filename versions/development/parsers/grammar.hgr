@@ -45,6 +45,7 @@ grammar {
       r'(true|false)(?!{%_identifier_follow%})' -> :boolean
       r'(object)\s*(\{)' -> :object :lbrace
       r'{%_type%}(?!{%_identifier_follow%})' -> :type
+      r'None' -> :none
       r'{%_identifier%}' -> :identifier
       r'null' -> :null
 
@@ -72,6 +73,7 @@ grammar {
       r'>=' -> :gteq
       r'>' -> :gt
       r'!' -> :not
+
       enum {
         python: r'\"'
         java: "\""
@@ -201,6 +203,7 @@ grammar {
       r'{%_identifier%}(?=\s*=)' -> :cmd_attr_hint[] :identifier
       r'(true|false)(?!{%_identifier_follow%})' -> :boolean
       r'{%_type%}(?!{%_identifier_follow%})' -> :type
+      r'None' -> :none
       r'{%_identifier%}' -> :identifier
 
       # Expression tokens
@@ -412,6 +415,7 @@ grammar {
       $e = :boolean
       $e = :integer
       $e = :float
+      $e = :none
     }
     $map_kv = $e :colon $e -> MapLiteralKv(key=$0, value=$2)
 
@@ -422,8 +426,9 @@ grammar {
     # Workflows: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#workflow-definition
     $workflow = :workflow :identifier :lbrace list($wf_body_element) :rbrace -> Workflow(name=$1, body=$3)
     $wf_body_element = $call | $declaration | $if_stmt | $scatter | $inputs | $outputs | $wf_parameter_meta | $wf_meta
-    $call = :call :fqn optional($alias) list($call_after) optional($call_body) -> Call(task=$1, alias=$2, after=$3, body=$4)
-    $call_body = :lbrace :input :colon list($input_kv, :comma) :rbrace -> CallBody(inputs=$3)
+    $call = :call :fqn optional($alias) list($call_after) optional($call_brace_block) -> Call(task=$1, alias=$2, after=$3, body=$4)
+    $call_brace_block = :lbrace optional($call_body) :rbrace -> $1
+    $call_body = :input :colon list($input_kv, :comma) -> CallBody(inputs=$2)
     $alias = :as :identifier -> $1
     $call_after = :after :identifier -> $1
     $wf_parameter_meta = :parameter_meta $meta_map -> ParameterMeta(map=$1)

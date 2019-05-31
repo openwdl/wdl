@@ -23,6 +23,7 @@ Table of Contents
     * [Array Literals](#array-literals)
     * [Map Literals](#map-literals)
     * [Pair Literals](#pair-literals)
+    * [Optional Literals](#optional-literals)
   * [Versioning](#versioning)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
@@ -258,6 +259,7 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 * An escape sequence starting with `\u` followed by 4 hexadecimal characters or `\U` followed by 8 hexadecimal characters `0-9a-fA-F`.  This specifies a unicode code point.
 
 |Escape Sequence|Meaning|\x Equivalent|
+|-|-|-|
 |`\\`|`\`|`\x5C`|
 |`\n`|newline|`\x0A`|
 |`\t`|tab|`\x09`|
@@ -319,7 +321,7 @@ workflow wf {
 
 ### Types
 
-In WDL *all* types represent immutable values. 
+In WDL *all* types represent immutable values.
   - Even types like `File` and `Directory` represent logical "snapshots" of the file or directory at the time when the value was created.
   - It's impossible for a task to change an upstream value which has been provided as an input: even if it makes changes to its local copy the original value is unaffected.
 
@@ -368,7 +370,7 @@ For more information on type and how they are used to construct commands and def
 #### Numeric Behavior
 
 `Int` and `Float` are the numeric types.
-`Int` can be used to hold a signed Integer in the range \[-2^63, 2^63). 
+`Int` can be used to hold a signed Integer in the range \[-2^63, 2^63).
 `Float` is a finite 64-bit IEEE-754 floating point number.
 
 #### Custom Types
@@ -752,6 +754,32 @@ Pair values can also be specified within the [workflow inputs JSON](https://gith
 }
 ```
 
+### Optional literals
+
+Any non-optional value can be stored into an optional variable by assigning it to an optional variable.
+This does not change the value, but it changes the type of the value:
+
+```WDL
+Int? maybe_five = 5
+```
+
+The `None` literal is the value that an optional has when it is not defined.
+
+```WDL
+Int? maybe_five_but_is_not = None
+# maybe_five_but_is_not is an undefined optional
+Int? maybe_five_and_is = 5
+# maybe_five_and_is is a defined optional
+Int certainly_five = 5
+# Certainly five is not an optional
+
+Boolean test_defined = defined(maybe_five_but_is_not) # Evaluates to false
+Boolean test_defined2 = defined(maybe_five_and_is) # Evaluates to true
+Boolean test_is_none = maybe_five_but_is_not == None # Evaluates to true, same as !definedmaybe_five_but_is_not)
+Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false, same as defined(maybe_five_but_is_not )
+```
+
+
 ## Versioning
 
 For portability purposes it is critical that WDL documents be versioned so an engine knows how to process it. From `draft-3` forward, the first non-comment statement of all WDL files must be a `version` statement, for example
@@ -859,7 +887,7 @@ task t {
 
 #### Task Input Localization
 `File` and `Directory` inputs must be treated specially since they require localization to within the execution directory:
-- Files and directories are localized into the execution directory prior to the task execution commencing. 
+- Files and directories are localized into the execution directory prior to the task execution commencing.
 - When localizing a `File`, the engine may choose to place the file wherever it likes so long as it accords to these rules:
   - The original file name must be preserved even if the path to it has changed.
   - Two input files with the same name must be located separately, to avoid name collision.
@@ -1042,7 +1070,7 @@ task heredoc {
 
   command<<<
   python <<CODE
-    with open("${in}") as fp:
+    with open("~{in}") as fp:
       for line in fp:
         if not line.startswith('#'):
           print(line.strip())
@@ -1052,7 +1080,7 @@ task heredoc {
 }
 ```
 
-Parsing of this command should be the same as the prior section describes.
+Parsing of this command should be the same as the prior section describes.  As noted earlier in the [Expression Placeholders](#command-parts) section, it is important to remember that string interpolation within `<<<`...`>>>` blocks must be done using the syntax `~{expression}`.
 
 #### Stripping Leading Whitespace
 
@@ -1212,7 +1240,7 @@ task example {
 }
 ```
 
-Any `${expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
+Any `${expression}` or `~{expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
 
 Different types for the expression are formatted in different ways.
 `String` is substituted directly.
@@ -1996,7 +2024,7 @@ workflow wf {
 }
 ```
 
-The call inputs block (eg `{ input: x=a, y=b, z=c } `) is optional and specifies how to satisfy a subset of the the task or workflow's input parameters.
+The call inputs block (eg `{ input: x=a, y=b, z=c } `) is optional and specifies how to satisfy a subset of the the task or workflow's input parameters. An empty call inputs block of the form `call no_input_task { }` is valid and has the same meaning as `call no_input_task`.
 
 Each variable mapping in the call inputs block maps input parameters in the task to expressions from the workflow.  These expressions usually reference outputs of other tasks, but they can be arbitrary expressions.
 
@@ -2623,6 +2651,7 @@ task test {
     Array[File]+ b
     Array[File]? c
     #File+ d <-- can't do this, + only applies to Arrays
+    Array[File]+? e  # An optional array that, if defined, must contain at least one element
   }
   command {
     /bin/mycmd ${sep=" " a}
@@ -3565,9 +3594,34 @@ Array[String] env2_param = prefix("-f ", env2) # ["-f 1", "-f 2", "-f 3"]
 
 Given an array of optional values, `select_first` will select the first defined value and return it. Note that this is a runtime check and requires that at least one defined value will exist: if no defined value is found when select_first is evaluated, the workflow will fail.
 
+```WDL
+version 1.0
+workflow SelectFirst {
+  input {
+    Int? maybe_five = 5
+    Int? maybe_four_but_is_not = None
+    Int? maybe_three = 3
+  }
+  Int five = select_first([maybe_five, maybe_four_but_is_not, maybe_three]) # This evaluates to 5
+  Int five = select_first([maybe_four_but_is_not, maybe_five, maybe_three]) # This also evaluates to 5
+}
+```
+
 ## Array[X] select_all(Array[X?])
 
 Given an array of optional values, `select_all` will select only those elements which are defined.
+
+```WDL
+version 1.0
+workflow SelectFirst {
+  input {
+    Int? maybe_five = 5
+    Int? maybe_four_but_is_not = None
+    Int? maybe_three = 3
+  }
+  Array[Int] fivethree = select_all([maybe_five, maybe_four_but_is_not, maybe_three]) # This evaluates to [5, 3]
+}
+```
 
 ## Boolean defined(X?)
 
