@@ -1271,9 +1271,9 @@ $runtime_kv = $identifier $ws* '=' $ws* $expression
 ```
 
 
-The runtime section defines a set of key/value pairs which represent the minimum requirements needed to run a task or, which define the conditions under which a task should be interpreted as a failure or success. All keys within the runtime section are well defined, and must be honored by the execution engine. This also means that arbitrary key/value pairs within the runtime section are not defined within the spec, would not be considered legal, and should be rejected by an engine. Arbitrary Key/value pairs instead should be added to the `hints` section.
+The runtime section defines a set of key/value pairs which represent the minimum requirements needed to run a task or, which define the conditions under which a task should be interpreted as a failure or success. All keys within the runtime section are well defined, and must be honored by the execution engine. This also means that arbitrary key/value pairs within the runtime section are not allowed, and should be rejected by an engine. Arbitrary Key/value pairs should be added to the `hints` section instead.
 
-During execution of a task, resource requirements within the runtime section must be enforced by the engine. If the engine is not able to provision the requested resource, then the task should immediately fail prior to the start of execution. In order to ensure adequate information is provided to execute a task, there are a number or required keys, which are defined below
+During execution of a task, resource requirements within the runtime section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task should immediately fail prior to the start of execution. In order to ensure adequate information is provided to execute a task, there are a number or required keys, which are defined below.
 
 Values can be any expression which evaluate to a valid entry for that runtime property. Since values are expressions, they can also reference variables in the task:
 
@@ -1287,7 +1287,7 @@ task test {
   }
   
   runtime {
-    container: "my_image:latest"
+    container: ubuntu_version
     cpu: 1
     memory: "1 GB"
   }
@@ -1301,7 +1301,7 @@ The container key must accept one ore more locations which inform the engine whe
 
 Container source locations should use the syntax defined by the individual container repository. For example an image defined as `ubuntu:latest` would conventionally refer a docker image living on `DockerHub`, while an image defined as `quay.io/bitnami/python` would refer to a `quay.io` repository. 
 
-The support attributes are:
+The supported attributes are:
 
 * `String`: A single container location
 * `Array[String]`: A list of container entries. **Note**: the ordering of the list does not imply any implicit preference or ordering of the containers. All images are expected to be the same, and therefore any choice would be equally valid.
@@ -1342,7 +1342,7 @@ task cpu_example {
 
 #### memory (**Required**)
 
-The `memory` key defines the _minimum_ memory required for this task which must be available prior to the engine starting execution. The engine does not need to provide the exact amount of memory requested, however it may ONLY provision more memory then requested and not less. For example, if the wdl requested `1 GB`but only blocks of `4 GB` were availabe, the engine might choose to provision `4.0 GB` instead.  Two kinds of values are supported for this attribute:
+The `memory` key defines the _minimum_ memory required for this task which must be available prior to the engine starting execution. The engine does not need to provide the exact amount of memory requested, however it may ONLY provision more memory then requested and not less. For example, if the wdl requested `1 GB` but only blocks of `4 GB` were available, the engine might choose to provision `4.0 GB` instead.  Two kinds of values are supported for this attribute:
 
 * `Int` - Interpreted as bytes
 * `String` - This should be a decimal value with suffixes like `B`, `KB`, `MB` or binary suffixes `KiB`, `MiB`.  For example: `6.2 GB`, `5MB`, `2GiB`.
@@ -1351,7 +1351,7 @@ The `memory` key defines the _minimum_ memory required for this task which must 
 task memory_test {
   #....
   runtime {
-    memory: "2GB"
+    memory: "2 GB"
   }
 }
 ```
@@ -1375,7 +1375,7 @@ task gpu_test {
 
 #### disks (**Optional - but strongly encouraged**)
 
-The `disks` key provides a way to request one or more persistent volumes of at least a specific size and mounted at a specific location. When the disks key is provided the engine must guarantee the resource requested are available, or immediately fail the task prior to execution. This property does not specify exactly what type of persistent volume is being requested (ie SSD, HDD), but leaves this up to the engine to decide, based on what hardware is available or a `hints` value.
+The `disks` key provides a way to request one or more persistent volumes of at least a specific size and mounted at a specific location. When the disks key is provided the engine must guarantee the resources requested are available, or immediately fail the task prior to execution. This property does not specify exactly what type of persistent volume is being requested (ie SSD, HDD), but leaves this up to the engine to decide, based on what hardware is available or a `hints` value.
 
 The general format of a `disks` value is: `</absolute/mount/point> <Size in GB>`. A WDL may leave out the mount point and only provide the size in GB that is being requested for ONE disks entry. This should be interpreted by the engine as a persistent volume mounted at the root of the execution directory within a task. If more then one disks entries for a task leaves out the mount point, the engine should fail the tasks.
 
@@ -1493,6 +1493,7 @@ The values within the `hints` section are arbitrary K/V pairs, and it is general
 task foo {
   ...
   hints {
+    some-key: "some-value"
 		
   }
 }
@@ -1500,15 +1501,15 @@ task foo {
 
 #### Reserved Keys
 
-Although `hints` are arbitrary, there are a number of keys which are reserved by the language in or oder to try and encourage interoperability of tasks and workflows between different execution engines. The list of Reserved keys is likely to grow, and in order to prevent name space collisions, engines should follow the [best practices](#conventions-and-best-practices) for specifying hints. 
+Although `hints` are arbitrary, there are a number of keys which are reserved by the language in or order to try and encourage interoperability of tasks and workflows between different execution engines. The list of Reserved keys is likely to grow, and in order to prevent name space collisions, engines should follow the [best practices](#conventions-and-best-practices) for specifying hints. 
 
 * **maxCpu**: Specify the maximum CPU to be provisioned for a task. It is up to the engine, whether or not it enforces the `maxCpu` hint. The type of this hint should be the same as `runtime.cpu`
 * **maxMemory**: Specify the maximum memory provisioned for a task. It is up to the engine, whether or not it enforces the `maxMemory` hint. the type of this hint should be the same as `runtime.memory`
-* **shortTask**: Tell the execution engine that this task is not expected to take long to execute, and therefore the engine can attempt to optimize the execution in whatever way it defines. This flag can be used to tell an engine to use the cost optimized instance types that many clouds provide (but are available only for a limited time). An example of this would be `preemptible` instances on `gcp` and `spot` instances on `aws`.
+* **shortTask**: Tell the execution engine that this task is not expected to take long to execute, and therefore the engine can attempt to optimize the execution in whatever way it defines. This flag can be used to tell an engine to use the cost optimized instance types that many clouds provide (but are available only for a limited time). An example of this would be `preemptible` instances on `gcp` and `spot` instances on `aws`. "Short" is a bit relative, but should generally be interpreted as << 24h. 
 * **localizationOptional**: Tell the execution engine that whenever possible it does not need to localize the defined `File` type inputs for this task. Important to note, is this directive should not have any impact on the success or failure of a task (ie it should run with or without localization). The type of this hint is a boolean value
 * **inputs**: Provides input specific `hints` in the form of a hints object. Each key within this hint should refer to an actual input defined for the current task.
   * **inputs.<key>.localizationOptional**: Tell the execution engine that a specific `File` input does not need to be localized for this task
-* **outputs**: provide outputs specific `hints` in the formn of a hints object. Each key wihthin this hint should refer to an actual output defined for the current task
+* **outputs**: provide outputs specific `hints` in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task
   
 ```wdl
 task foo {
@@ -1555,7 +1556,7 @@ The following is a basic set of guidelines that engines and authors should follo
 	 }
 	}
 	```
-6. Conventions are our friend: certain `hints` keys should conventionally be reserverd and should have the same semantic meaning across all execution engines. A good example of keys which have conventions attached to them would be cloud provider specific details:
+6. Conventions are our friend: certain `hints` keys should conventionally be reserved and should have the same semantic meaning across all execution engines. A good example of keys which have conventions attached to them would be cloud provider specific details:
  ```wdl
   task foo {
 	 .... 
@@ -1572,7 +1573,8 @@ The following is a basic set of guidelines that engines and authors should follo
 	    ...
 	   }
 	   
-	   openshift: {
+	   alibaba: {
+	    ...
 	   }
 	 }
   }
