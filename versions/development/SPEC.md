@@ -45,8 +45,15 @@ Table of Contents
         * [Task portability and non-standard BaSH](#task-portability-and-non-standard-bash)
     * [String Interpolation](#string-interpolation)
     * [Runtime Section](#runtime-section)
-      * [docker](#docker)
-      * [memory](#memory)
+      * [container](#container-required)
+      * [cpu](#cpu-required)
+      * [memory](#gpu-optional)
+      * [disks](#disks-optional---but-strongly-encouraged)
+      * [maxRetries](#maxretries-optional)
+      * [returnCodes](#returncodes-optional)
+  	* [Hints Section](#hints-section)
+  	  * [Reserved Keys](#reserved-keys)
+  	  * [Conventions and Best Practices](#conventions-and-best-practices)
     * [Parameter Metadata Section](#parameter-metadata-section)
     * [Metadata Section](#metadata-section)
     * [Examples](#examples)
@@ -170,7 +177,9 @@ task hello {
   }
 
   runtime {
-    docker: "broadinstitute/my_image"
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 
   output {
@@ -282,6 +291,13 @@ task test {
     output {
         String result = read_string(stdout())
     }
+    
+    runtime {
+    	container: "my_image:latest"
+    	cpu: 1
+    	memory: "1 GB"
+    }
+    
 }
 
 
@@ -381,6 +397,12 @@ task foobar {
   output {
     File results = stdout()
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -395,6 +417,12 @@ task test {
   }
   output {
     File results = stdout()
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 
@@ -475,6 +503,12 @@ task test {
   output {
     String value = read_string(stdout())
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 
 task test2 {
@@ -486,6 +520,12 @@ task test2 {
   }
   output {
     Int value = read_int(stdout())
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 
@@ -759,6 +799,7 @@ workflow wf {
   call analysis.my_analysis_task {
     input: size=file_size.bytes, file=bam_file
   }
+  
 }
 ```
 
@@ -884,6 +925,8 @@ task test {
   command {
     ps ~{flags}
   }
+  
+  ....
 }
 ```
 
@@ -897,6 +940,7 @@ task test {
   command <<<
     ps ~{flags}
   >>>
+  .....
 }
 ```
 
@@ -975,6 +1019,7 @@ task default_test {
   command {
     ./my_cmd ${default="foobar" s}
   }
+  ....
 }
 ```
 
@@ -1003,6 +1048,7 @@ task heredoc {
           print(line.strip())
   CODE
   >>>
+  ....
 }
 ```
 
@@ -1157,6 +1203,12 @@ task example {
     File analyzed = "${prefix}.out"
     File bam_sibling = "${bam}.suffix"
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -1190,24 +1242,12 @@ $runtime = 'runtime' $ws* '{' ($ws* $runtime_kv $ws*)* '}'
 $runtime_kv = $identifier $ws* '=' $ws* $expression
 ```
 
-The runtime section defines key/value pairs for runtime information needed for this task.  Individual backends will define which keys they will inspect so a key/value pair may or may not actually be honored depending on how the task is run.
 
-Values can be any expression and it is up to the engine to reject keys and/or values that do not make sense in that context.  For example, consider the following WDL:
+The runtime section defines a set of key/value pairs which represent the minimum requirements needed to run a task or, which define the conditions under which a task should be interpreted as a failure or success. All keys within the runtime section are well defined, and must be honored by the execution engine. This also means that arbitrary key/value pairs within the runtime section are not defined within the spec, would not be considered legal, and should be rejected by an engine. Arbitrary Key/value pairs instead should be added to the `hints` section.
 
-```wdl
-task test {
-  command {
-    python script.py
-  }
-  runtime {
-    docker: ["ubuntu:latest", "broadinstitute/scala-baseimage"]
-  }
-}
-```
+During execution of a task, resource requirements within the runtime section must be enforced by the engine. If the engine is not able to provision the requested resource, then the task should immediately fail prior to the start of execution. In order to ensure adequate information is provided to execute a task, there are a number or required keys, which are defined below
 
-The value for the `docker` runtime attribute in this case is an array of values.  The parser should accept this.  Some engines might interpret it as an "either this image or that image" or could reject it outright.
-
-Since values are expressions, they can also reference variables in the task:
+Values can be any expression which evaluate to a valid entry for that runtime property. Since values are expressions, they can also reference variables in the task:
 
 ```wdl
 task test {
@@ -1217,53 +1257,298 @@ task test {
   command {
     python script.py
   }
+  
   runtime {
-    docker: "ubuntu:" + ubuntu_version
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
 
-Most key/value pairs are arbitrary.  However, the following keys have recommended conventions:
 
-#### docker
+#### container (**Required**)
 
-Location of a Docker image for which this task ought to be run.  This can have a format like `ubuntu:latest` or `broadinstitute/scala-baseimage` in which case it should be interpreted as an image on DockerHub (i.e. it is valid to use in a `docker pull` command).
+The container key must accept one ore more locations which inform the engine where to retrieve a container image to execute the task. It is expected (but not enforced) that each container image provided are identical, and will provide the same final results when the task is run. It is the responsibility of the individual execution engine to define the specific image sources which it supports, and to determine which image is the "best" one to use at runtime. Defining multiple images enables greater portability across a broad range of execution environments. 
+
+Container source locations should use the syntax defined by the individual container repository. For example an image defined as `ubuntu:latest` would conventionally refer a docker image living on `DockerHub`, while an image defined as `quay.io/bitnami/python` would refer to a `quay.io` repository. 
+
+The support attributes are:
+
+* `String`: A single container location
+* `Array[String]`: A list of container entries. **Note**: the ordering of the list does not imply any implicit preference or ordering of the containers. All images are expected to be the same, and therefore any choice would be equally valid.
+
+**Single Image**
+```wdl
+task single_image_test {
+  #....
+  runtime {
+    container: "ubuntu:latest"
+  }
+```
+
+**Multiple Images**
+```wdl
+task multiple_image_test {
+  #.....
+  runtime {
+    container: ["ubuntu:latest", "gcr.io/standard-images/ubuntu:latest"]
+  }
+}
+```
+
+
+#### cpu (**Required**)
+
+The `cpu` key defines the _minimum_ CPU required for this task, which must be available prior to the engine starting execution. The engine does not need to provide the exact amount of CPU requested (depending on the underlying infrastructure restrictions), however it may ONLY provision more CPU than requested and not less. For example if the wdl requested `cpu: 0.5`, but only discrete values were supported, then the engine might choose to provision `1.0` cpu instead.  Values are expected to be a `Float` (where supported) or an `Int`
 
 ```wdl
-task docker_test {
-  input {
-    String arg
-  }
-  command {
-    python process.py ${arg}
-  }
+task cpu_example {
+  #....	
   runtime {
-    docker: "ubuntu:latest"
+    cpu: 8
   }
 }
+
 ```
 
-#### memory
+#### memory (**Required**)
 
-Memory requirements for this task.  Two kinds of values are supported for this attributes:
+The `memory` key defines the _minimum_ memory required for this task which must be available prior to the engine starting execution. The engine does not need to provide the exact amount of memory requested, however it may ONLY provision more memory then requested and not less. For example, if the wdl requested `1 GB`but only blocks of `4 GB` were availabe, the engine might choose to provision `4.0 GB` instead.  Two kinds of values are supported for this attribute:
 
 * `Int` - Interpreted as bytes
 * `String` - This should be a decimal value with suffixes like `B`, `KB`, `MB` or binary suffixes `KiB`, `MiB`.  For example: `6.2 GB`, `5MB`, `2GiB`.
 
 ```wdl
 task memory_test {
-  input {
-    String arg
-  }
-
-  command {
-    python process.py ${arg}
-  }
+  #....
   runtime {
     memory: "2GB"
   }
 }
 ```
+
+#### gpu (**Optional**)
+
+The `gpu` key provides a way to accommodate modern workflows which are increasingly becoming reliant on GPU computations. This key is a `true` or `false` value and simply indicates to the engine that a task requires a GPU to run to completion. A task with this flag set to `true` is guaranteed to only run if a GPU is a available within the runtime environment. It is the responsibility of the engine to check prior to execution whether a GPU is provisionable, and if not, preemptively fail the task.
+
+It is important to note, that this flag does not provide any information on the quantity or type of GPUs to make available to the task. This information should be provided within the `hints` section according to the specific engine parameters.
+
+
+```wdl
+task gpu_test {
+  #.....
+  runtime {
+    gpu: true
+  }
+}
+```
+
+
+#### disks (**Optional - but strongly encouraged**)
+
+The `disks` key provides a way to request one or more persistent volumes of at least a specific size and mounted at a specific location. When the disks key is provided the engine must guarantee the resource requested are available, or immediately fail the task prior to execution. This property does not specify exactly what type of persistent volume is being requested (ie SSD, HDD), but leaves this up to the engine to decide, based on what hardware is available or a `hints` value.
+
+The general format of a `disks` value is: `</absolute/mount/point> <Size in GB>`. A WDL may leave out the mount point and only provide the size in GB that is being requested for ONE disks entry. This should be interpreted by the engine as a persistent volume mounted at the root of the execution directory within a task. If more then one disks entries for a task leaves out the mount point, the engine should fail the tasks.
+
+There are several ways to specify the `disks` attribute:
+
+* `Int` - GB of disk space to request, eg: `100`, `200`.
+* `String` (`"<size>" || "<mount-point> <size>"`)
+* `Array[String]` - A list of disks to attach. 
+
+
+**Simple declaration**
+ 
+```wdl
+task disks_test {
+  #.....
+  runtime {
+    disks: 100
+  }
+}
+```
+
+**Declaration with mount point**
+```wdl
+task disks_test {
+  #.....
+  runtime {
+    disks: "/mnt/outputs 500"
+  }
+}
+```
+ 
+ 
+**Declaration with multiple disks**
+```wdl
+task disks_test {
+  #.....
+  runtime {
+  	# The first value will be mounted at the execution root
+    disks: ["500","/mnt/outputs 500","/mnt/tmp 500"]
+  }
+}
+```
+
+#### maxRetries (**Optional**)
+
+The `maxRetries` key provides a mechanism for a task to be retried in the event of a failure. If this key is defined, the engine must retry the task UP TO but not exceeding the number of attempts that it specifies. If this key is not defined, then the engine must interpret the task as not retryable, therefore any failure in the task should never result in a retry by the engine, and the final status of the task should remain the same.
+
+**Note**: The engine may choose to define an upper bound on the number of retry attempts which it permits. This number must exceed 1
+
+```wdl
+task maxRetries_test {
+  #.....
+  runtime {
+    maxRetries: 4
+  }
+}
+```
+
+#### returnCodes (**Optional**)
+
+The `returnCodes` key provides a mechanism for a wdl to specify the return code which constitute a successful execution of a task.  The value of this key can be an, `Int`, `Array[Int]`, or `"*"`. The engine must honor the return codes specified within the runtime block and set the tasks status appropriately. If no `returnCodes` key is provided, then a returnCode of `0` will be considered a success.
+
+* `"*"` - This special value indicates that ALL returnCodes should be considered a success
+* `Int` - Only the specified return code should be considered a success
+* `Array[Int]` - Only the return codes specify in the array should be considered a success
+
+
+**Single return code**
+```wdl
+task maxRetries_test {
+  #.....
+  runtime {
+    returnCodes: 1
+  }
+}
+```
+
+**Multiple return codes**
+```wdl
+task maxRetries_test {
+  #.....
+  runtime {
+    returnCodes: [1,2,5,10]
+  }
+}
+```
+
+**All return codes**
+```wdl
+task maxRetries_test {
+  #.....
+  runtime {
+    returnCodes: "*"
+  }
+}
+```
+
+### Hints Section
+
+```
+$hints = 'hints' $ws* '{' ($ws* $hints_kv $ws*)* '}'
+$hints_kv = $identifier $ws* ':' $ws* $hints_value
+$hints_value = $string | $number | $boolean | 'null' | $hints_object | $hints_array
+$hints_object = '{}' | '{' $hints_kv (, $hints_kv)* '}'
+$hints_array = '[]' |  '[' $hints_value (, $hints_value)* ']'
+```
+
+The hints section is purely optional and contains key/value pairs. The purpose of this section is to enable the author a means to encode information directly into the task which can be used by an execution engine, which understands the provided information, to optimize the execution of a task. An important distinction to make between `runtime` and `hints` is that a task cannot run without the parameters defined within the `runtime` section, however all properties within the `hints` section are optional and a task SHOULD be able to execute even if the engine completely ignored the entire hints section. Therefore, if there are specific  values within a `hints` section which an engine is expecting, then the engine must always define reasonable default values and not have a strict requirement for the author to provide them.
+
+It must also be clarified that the purpose of this section is **NOT** to provide an execution engine a means to encode all sorts of required values that it needs in order to execute a task without setting any default values. This practice should strictly be considered an anti-pattern and should be avoided by execution engines
+
+The values within the `hints` section are arbitrary K/V pairs, and it is generally up to the execution engine to define what values they are interested in. The provided values can be simple (`String`,`boolean`,`number`...)  or more complex (`Arrays`,`hints object`)
+
+```wdl
+task foo {
+  ...
+  hints {
+		
+  }
+}
+```
+
+#### Reserved Keys
+
+Although `hints` are arbitrary, there are a number of keys which are reserved by the language in or oder to try and encourage interoperability of tasks and workflows between different execution engines. The list of Reserved keys is likely to grow, and in order to prevent name space collisions, engines should follow the [best practices](#conventions-and-best-practices) for specifying hints. 
+
+* **maxCpu**: Specify the maximum CPU to be provisioned for a task. It is up to the engine, whether or not it enforces the `maxCpu` hint. The type of this hint should be the same as `runtime.cpu`
+* **maxMemory**: Specify the maximum memory provisioned for a task. It is up to the engine, whether or not it enforces the `maxMemory` hint. the type of this hint should be the same as `runtime.memory`
+* **shortTask**: Tell the execution engine that this task is not expected to take long to execute, and therefore the engine can attempt to optimize the execution in whatever way it defines. This flag can be used to tell an engine to use the cost optimized instance types that many clouds provide (but are available only for a limited time). An example of this would be `preemptible` instances on `gcp` and `spot` instances on `aws`.
+* **localizationOptional**: Tell the execution engine that whenever possible it does not need to localize the defined `File` type inputs for this task. Important to note, is this directive should not have any impact on the success or failure of a task (ie it should run with or without localization). The type of this hint is a boolean value
+* **inputs**: Provides input specific `hints` in the form of a hints object. Each key within this hint should refer to an actual input defined for the current task.
+  * **inputs.<key>.localizationOptional**: Tell the execution engine that a specific `File` input does not need to be localized for this task
+* **outputs**: provide outputs specific `hints` in the formn of a hints object. Each key wihthin this hint should refer to an actual output defined for the current task
+  
+```wdl
+task foo {
+   
+  input {
+    File bar
+  } 
+  ...
+  hints {
+    maxMemory: "36 GB"
+    maxCpu: 24
+    shortTask: true
+    localizationOptional: true
+    inputs: { bar: { localizationOptional: true } }
+    outputs: {}
+  }
+}
+```
+
+
+#### Conventions and Best Practices
+
+In order to encourage interopable workflows, wdl authors and engine creators should view the `hints` section strictly as an optimization that can be made for a specific task at runtime, and they should not view it as a set of requirements for that task. By following this principle, we can guarantee that a workflow is runnable on all platforms assuming the `runtime` block has the required parameters, regardless of what is contained within the hints section.
+
+The following is a basic set of guidelines that engines and authors should follow when writing hints:
+
+1. A hint should never be required
+2. Less is more. Before adding a new hint key, ask yourself "do you really need another hint?", or "is there a better way to specify the behaviour you require". If so, then adding a hints is not likely the right way to go about your task.
+3. Complexity is killer. By allowing any arbitrary keys it is possible that the `hints` section can get quite unruly and complex. This should be discouraged, and instead a patter of simplicity should be stressed. 
+4. Sharing is caring. People tend to look for similar behaviour between different execution environments. It is strongly encouraged that engines try to reuse keys between engines, where this common behaviour becomes prevalent. 
+5. Use objects to avoid collisions: If there is specific hints that are unlikely to ever be shared between execution engines, it is considered good practice to encapsulate these within their own `hints object` and use a key that refers to the engine specifically. For example:
+	```wdl
+	task foo {
+	 .... 
+	 hints {
+	   cromwell: {
+	    # cromwell specific 
+		...
+	   }
+	   
+	   miniwdl: {
+		...
+	   }
+	 }
+	}
+	```
+6. Conventions are our friend: certain `hints` keys should conventionally be reserverd and should have the same semantic meaning across all execution engines. A good example of keys which have conventions attached to them would be cloud provider specific details:
+ ```wdl
+  task foo {
+	 .... 
+	 hints {
+	   gcp: {
+		...
+	   }
+	   
+	   aws: {
+		...
+	   }
+	   
+	   azure: {
+	    ...
+	   }
+	   
+	   openshift: {
+	   }
+	 }
+  }
+ ```
 
 ### Parameter Metadata Section
 
@@ -1296,6 +1581,12 @@ task wc {
   }
   output {
      String retval = stdout()
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -1333,6 +1624,11 @@ task one_and_one {
   output {
     File filtered = stdout()
   }
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -1352,9 +1648,6 @@ task runtime_meta {
   output {
     File results = "${sample_id}.out"
   }
-  runtime {
-    docker: "broadinstitute/baseimg"
-  }
   parameter_meta {
     memory_mb: "Amount of memory to allocate to the JVM"
     param: "Some arbitrary parameter"
@@ -1363,6 +1656,11 @@ task runtime_meta {
   meta {
     author: "Joe Somebody"
     email: "joe@company.org"
+  }
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -1389,7 +1687,9 @@ task bwa_mem_tool {
     File sam = "output.sam"
   }
   runtime {
-    docker: "broadinstitute/baseimg"
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -1412,6 +1712,11 @@ task wc2_tool {
   }
   output {
     Int count = read_int(stdout())
+  }
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 
@@ -1457,6 +1762,11 @@ task tmap_tool {
   }
   output {
     File sam = "output.sam"
+  }
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -1700,6 +2010,12 @@ task task1 {
   output {
     File results = stdout()
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 task task2 {
   input {
@@ -1710,6 +2026,12 @@ task task2 {
   }
   output {
     File results = stdout()
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 workflow wf {
@@ -1768,7 +2090,9 @@ task hello {
     echo "Hello ${addressee}!"
   }
   runtime {
-      docker: "ubuntu:latest"
+    container: "ubuntu:latest"
+    cpu: 1
+    memory: "1 GB"
   }
   output {
     String salutation = read_string(stdout())
@@ -1946,6 +2270,12 @@ task t {
   output {
     String out = "out"
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 
 workflow w {
@@ -1977,6 +2307,12 @@ task t {
   }
   output {
     String out = "out"
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 
@@ -2099,6 +2435,12 @@ task myTask {
       String name = a.name + "Potter"
       Int age = a.age * 2
     }
+    
+    runtime {
+		container: "my_image:latest"
+		cpu: 1
+		memory: "1 GB"
+	}
 }
 
 workflow myWorkflow {
@@ -2243,6 +2585,11 @@ task my_task {
   command {
     my_cmd --integer=${var} ${f}
   }
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 
 workflow wf {
@@ -2281,6 +2628,12 @@ task test {
     /bin/mycmd ${sep=" " a}
     /bin/mycmd ${sep="," b}
     /bin/mycmd ${write_lines(c)}
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 
@@ -2339,6 +2692,12 @@ task test {
   command {
     python script.py --val=${val}
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -2377,6 +2736,12 @@ task inc {
   output {
     Int incremented = read_int(stdout())
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 
 workflow wf {
@@ -2405,6 +2770,12 @@ task inc {
   output {
     Int incremented = read_int(stdout())
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 
 task sum {
@@ -2416,6 +2787,12 @@ task sum {
   >>>
   output {
     Int sum = read_int(stdout())
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 
@@ -2463,6 +2840,12 @@ task my_task {
   command {
     python analyze.py --strings-file=${write_lines(strings)}
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -2506,6 +2889,12 @@ task test {
   command {
     ./script.sh -i ${s} -f ${f}
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -2535,6 +2924,12 @@ task t1 {
   output {
     Int count = read_int(stdout())
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 
 task t2 {
@@ -2550,6 +2945,12 @@ task t2 {
   output {
     Int count = read_int(stdout())
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 
 task t3 {
@@ -2563,6 +2964,12 @@ task t3 {
   }
   output {
     Int incr = read_int(stdout())
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 
@@ -2676,6 +3083,12 @@ task do_stuff {
   output {
     Array[String] matches = read_lines(stdout())
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -2760,6 +3173,12 @@ task do_stuff {
   output {
     Map[String, String] output_table = read_json("./results/file_list.json")
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -2804,6 +3223,12 @@ task example {
   command {
     ./script --file-list=${write_lines(array)}
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -2831,6 +3256,12 @@ task example {
   command {
     ./script --tsv=${write_tsv(array)}
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -2856,6 +3287,12 @@ task example {
   Map[String, String] map = {"key1": "value1", "key2": "value2"}
   command {
     ./script --map=${write_map(map)}
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -2884,6 +3321,12 @@ task example {
   }
   command {
     ./script --map=${write_json(map)}
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -2921,6 +3364,12 @@ task example {
     Float input_file_size = size(input_file)
     Float created_file_size = size("created_file") # 22.0
     Float created_file_size_in_KB = size("created_file", "K") # 0.022
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -2967,6 +3416,12 @@ task example {
 
   output {
     File outputFile = output_file_name
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -3176,6 +3631,12 @@ task test {
   output {
     Array[String] strs = read_lines(stdout())
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -3199,6 +3660,13 @@ task output_example {
 
   command {
     python do_work.py ${s} ${i} ${f}
+  
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -3240,6 +3708,12 @@ task test {
   command {
     python script.py --bams=${sep=',' bams}
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -3264,6 +3738,12 @@ task test {
   }
   command {
     sh script.sh ${write_lines(bams)}
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -3301,6 +3781,12 @@ task test {
   }
   command {
     sh script.sh ${write_json(bams)}
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -3345,6 +3831,12 @@ task test {
   command {
     sh script.sh ${write_map(sample_quality_scores)}
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -3381,6 +3873,12 @@ task test {
   }
   command {
     sh script.sh ${write_json(sample_quality_scores)}
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -3430,6 +3928,12 @@ task process_person {
   command <<<
     perl script.py ~{write_json(p)}
   >>>
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -3480,6 +3984,12 @@ task output_example {
     Int my_int = read_int("int_file")
     String my_str = read_string("str_file")
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -3517,6 +4027,12 @@ task test {
   output {
     Array[Int] my_ints = read_lines(stdout())
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -3533,6 +4049,12 @@ task test {
   >>>
   output {
     Array[String] my_array = read_json(stdout())
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
@@ -3565,6 +4087,12 @@ task test {
   output {
     Map[String, Int] my_ints = read_map(stdout())
   }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
+  }
 }
 ```
 
@@ -3581,6 +4109,12 @@ task test {
   >>>
   output {
     Map[String, String] my_map = read_json(stdout())
+  }
+  
+  runtime {
+    container: "my_image:latest"
+    cpu: 1
+    memory: "1 GB"
   }
 }
 ```
