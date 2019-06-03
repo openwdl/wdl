@@ -294,11 +294,11 @@ workflow wf {
 
   #You can have comments anywhere in the workflow
   call test
-  
+
   output { #You can also put comments after braces
     String result = test.result
   }
-  
+
 }
 ```
 
@@ -1687,7 +1687,7 @@ All `call` statements must be uniquely identifiable.  By default, the call's uni
 
 A `call` statement may reference a workflow too (e.g. `call other_workflow`).  In this case, the inputs section specifies the workflow's inputs by name.
 
-Calls can be run as soon as their inputs are available. If `call x`'s inputs are based on `call y`'s outputs, this means that `call x` can be run as soon as `call y` has completed. 
+Calls can be run as soon as their inputs are available. If `call x`'s inputs are based on `call y`'s outputs, this means that `call x` can be run as soon as `call y` has completed.
 
 To add a dependency from x to y that isn't based on outputs, you can use the `after` keyword, such as `call x after y after z`. But note that this is only required if `x` doesn't already depend on an output from `y`.
 
@@ -1747,6 +1747,17 @@ workflow wf {
   }
 }
 ```
+
+Cycles are not allowed in the call graph. For example, the workflow below has two tasks that depend on each other, forming a circle with two edges.
+
+```wdl
+workflow wf_with_cycle { 
+	call task1 { input: task2.result }
+	call task2 { input: task1.result }
+}
+```
+
+Cycles can be complex, involving many edges, and they may be hard to spot in a large program. They are not allowed, as they can cause deadlocks.
 
 #### Call Input Blocks
 
@@ -3642,4 +3653,3 @@ task test {
 This task would assign the one key-value pair map in the echo statement to `my_map`.
 
 If the echo statement was instead `echo '["foo", "bar"]'`, the engine MUST fail the task for a type mismatch.
-
