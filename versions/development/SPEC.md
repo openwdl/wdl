@@ -179,8 +179,6 @@ task hello {
 
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 
   output {
@@ -296,8 +294,6 @@ task test {
     
     runtime {
     	container: "my_image:latest"
-    	cpu: 1
-    	memory: "1 GB"
     }
     
 }
@@ -402,8 +398,6 @@ task foobar {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -423,8 +417,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -508,8 +500,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -526,8 +516,6 @@ task test2 {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -968,7 +956,7 @@ task test {
   command <<<
     ps ~{flags}
   >>>
-  .....
+  ....
 }
 ```
 
@@ -1234,8 +1222,6 @@ task example {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -1273,7 +1259,7 @@ $runtime_kv = $identifier $ws* '=' $ws* $expression
 
 The runtime section defines a set of key/value pairs which represent the minimum requirements needed to run a task or, which define the conditions under which a task should be interpreted as a failure or success. All keys within the runtime section are well defined, and must be honored by the execution engine. This also means that arbitrary key/value pairs within the runtime section are not allowed, and should be rejected by an engine. Arbitrary Key/value pairs should be added to the `hints` section instead.
 
-During execution of a task, resource requirements within the runtime section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task should immediately fail prior to the start of execution. In order to ensure adequate information is provided to execute a task, there are a number or required keys, which are defined below.
+During execution of a task, resource requirements within the runtime section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task should immediately fail prior to the start of execution. In order to ensure adequate information is provided to execute a task, there are is one required keys, and strict default values for optional keys, which are defined below. Default values for all optional keys are directly defined by the WDL specification in order to encourage portability of workflows and tasks. Execution engines should NOT provide additional mechanisms to set _default_ values for when no runtime attributes are defined.
 
 Values can be any expression which evaluate to a valid entry for that runtime property. Since values are expressions, they can also reference variables in the task:
 
@@ -1288,8 +1274,6 @@ task test {
   
   runtime {
     container: ubuntu_version
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -1297,7 +1281,7 @@ task test {
 
 #### container (**Required**)
 
-The container key must accept one ore more locations which inform the engine where to retrieve a container image to execute the task. It is expected that each container image provided are identical, and will MUST the same final results when the task is run. It is the responsibility of the individual execution engine to define the specific image sources which it supports, and to determine which image is the "best" one to use at runtime. Defining multiple images enables greater portability across a broad range of execution environments. 
+The container key must accept one ore more locations which inform the engine where to retrieve a container image to execute the task. It is expected that all container images provided are identical. They MUST produce the same final results when the task is run. It is the responsibility of the individual execution engine to define the specific image sources which it supports, and to determine which image is the "best" one to use at runtime. Defining multiple images enables greater portability across a broad range of execution environments. 
 
 Container source locations should use the syntax defined by the individual container repository. For example an image defined as `ubuntu:latest` would conventionally refer a docker image living on `DockerHub`, while an image defined as `quay.io/bitnami/python` would refer to a `quay.io` repository. 
 
@@ -1326,9 +1310,15 @@ task multiple_image_test {
 ```
 
 
-#### cpu (**Required**)
+#### cpu (**Optional**)
 
 The `cpu` key defines the _minimum_ CPU required for this task, which must be available prior to the engine starting execution. The engine does not need to provide the exact amount of CPU requested (depending on the underlying infrastructure restrictions), however it may ONLY provision more CPU than requested and not less. For example if the wdl requested `cpu: 0.5`, but only discrete values were supported, then the engine might choose to provision `1.0` cpu instead.  Values are expected to be a `Float` or an `Int`
+
+
+##### Default Value
+
+If the `cpu` key is not defined, then the engine must set a default value of `1` CPU. The task, therefore will be guaranteed to run with 1 CPU. The engine must not provide a mechanism to set their own default value for disks which circumvents this, ie `runtime-defaults`. 
+
 
 ```wdl
 task cpu_example {
@@ -1340,12 +1330,17 @@ task cpu_example {
 
 ```
 
-#### memory (**Required**)
+#### memory (**Optional**)
 
 The `memory` key defines the _minimum_ memory required for this task which must be available prior to the engine starting execution. The engine does not need to provide the exact amount of memory requested, however it may ONLY provision more memory then requested and not less. For example, if the wdl requested `1 GB` but only blocks of `4 GB` were available, the engine might choose to provision `4.0 GB` instead.  Two kinds of values are supported for this attribute:
 
 * `Int` - Interpreted as bytes
-* `String` - This should be a decimal value with suffixes like `B`, `KB`, `MB` or binary suffixes `KiB`, `MiB`.  For example: `6.2 GB`, `5MB`, `2GiB`.
+* `String` - This should be a decimal value with suffixes like `B`, `KB`, `MB` or binary suffixes `KiB`, `MiB`.  For example: `6.2 GB`, `5MB`, `2GiB`. The space between the value and the suffix can be ignored and both should be seend as valid.
+
+##### Default Value
+
+If the `memory` key is not defined, then the engine must set a default value of `2 GiB` of memory, ensuring that the task can successfully complete with only `2 GiB` of memory. The engine must not provide a mechanism to set their own default value for disks which circumvents this, ie `runtime-defaults`. 
+
 
 ```wdl
 task memory_test {
@@ -1362,6 +1357,10 @@ The `gpu` key provides a way to accommodate modern workflows which are increasin
 
 It is important to note, that this flag does not provide any information on the quantity or type of GPUs to make available to the task. This information should be provided within the `hints` section according to the specific engine parameters.
 
+##### Default Value
+
+If the `gpu` key is not defined, then the engine must set a default value of `false`. The engine must not provide a mechanism to set their own default value for disks which circumvents this,  ie `runtime-defaults`. 
+
 
 ```wdl
 task gpu_test {
@@ -1373,17 +1372,23 @@ task gpu_test {
 ```
 
 
-#### disks (**Optional - but strongly encouraged**)
+#### disks (**Optional**)
 
 The `disks` key provides a way to request one or more persistent volumes of at least a specific size and mounted at a specific location. When the disks key is provided the engine must guarantee the resources requested are available, or immediately fail the task prior to execution. This property does not specify exactly what type of persistent volume is being requested (ie SSD, HDD), but leaves this up to the engine to decide, based on what hardware is available or a `hints` value.
 
-The general format of a `disks` value is: `</absolute/mount/point> <Size in GB>`. A WDL may leave out the mount point and only provide the size in GB that is being requested for ONE disks entry. This should be interpreted by the engine as a persistent volume mounted at the root of the execution directory within a task. If more then one disks entries for a task leaves out the mount point, the engine should fail the tasks.
+The general format of a `disks` value is: `</absolute/mount/point> <size> <units>` or `</absolute/mount/point> <suffix>` (implying GiB). The suffix can optionally be provided to the disks string as a suffix of the format of `MB`, `GB`, `TB` or a binary suffix `GiB`, `TiB` etc. Space between the size and the suffix is optional and both should be interpreted as correct. If no units are specified then the size value must be interpreted as gibibytes. A WDL may leave out the mount point and only provide the size that is being requested for ONE disks entry. This should be interpreted by the engine as a persistent volume mounted at the root of the execution directory within a task. If more then one disks entry for a task leaves out the mount point, the engine should fail the tasks. 
+
 
 There are several ways to specify the `disks` attribute:
 
-* `Int` - GB of disk space to request, eg: `100`, `200`.
-* `String` (`"<size>" || "<mount-point> <size>"`)
+* `Int` - GiB of disk space to request, eg: `100`, `200`.
+* `String` (`"<size>" || "<size> <suffix>" || "<mount-point> <size>" || "<mount-point> <size> <suffix>"`)
 * `Array[String]` - A list of disks to attach. 
+
+##### Default Value
+
+If the `disks` key is not defined then the engine must enforce a default value of `1 GiB` mounted at the execution directory. The engine must not provide a mechanism to set their own default value for disks which circumvents this,  ie `runtime-defaults`. 
+
 
 
 **Simple declaration**
@@ -1402,7 +1407,7 @@ task disks_test {
 task disks_test {
   #.....
   runtime {
-    disks: "/mnt/outputs 500"
+    disks: "/mnt/outputs 500 GiB"
   }
 }
 ```
@@ -1414,16 +1419,20 @@ task disks_test {
   #.....
   runtime {
   	# The first value will be mounted at the execution root
-    disks: ["500","/mnt/outputs 500","/mnt/tmp 500"]
+    disks: ["500","/mnt/outputs 500 GiB","/mnt/tmp 5 TB"]
   }
 }
 ```
 
 #### maxRetries (**Optional**)
 
-The `maxRetries` key provides a mechanism for a task to be retried in the event of a failure. If this key is defined, the engine must retry the task UP TO but not exceeding the number of attempts that it specifies. If this key is not defined, then the engine must interpret the task as not retryable, therefore any failure in the task should never result in a retry by the engine, and the final status of the task should remain the same.
+The `maxRetries` key provides a mechanism for a task to be retried in the event of a failure. If this key is defined, the engine must retry the task UP TO but not exceeding the number of attempts that it specifies.
 
 **Note**: The engine may choose to define an upper bound on the number of retry attempts which it permits. This number must exceed 1
+
+##### Default Value
+
+ If this key is not defined, then the engine must interpret the task as not retryable, therefore any failure in the task should never result in a retry by the engine, and the final status of the task should remain the same.
 
 ```wdl
 task maxRetries_test {
@@ -1436,12 +1445,16 @@ task maxRetries_test {
 
 #### returnCodes (**Optional**)
 
-The `returnCodes` key provides a mechanism for a wdl to specify the return code which constitute a successful execution of a task.  The value of this key can be an, `Int`, `Array[Int]`, or `"*"`. The engine must honor the return codes specified within the runtime block and set the tasks status appropriately. If no `returnCodes` key is provided, then a returnCode of `0` will be considered a success.
+The `returnCodes` key provides a mechanism for a wdl to specify the return code which constitute a successful execution of a task.  The value of this key can be an, `Int`, `Array[Int]`, or `"*"`. The engine must honor the return codes specified within the runtime block and set the tasks status appropriately. 
 
 * `"*"` - This special value indicates that ALL returnCodes should be considered a success
 * `Int` - Only the specified return code should be considered a success
 * `Array[Int]` - Only the return codes specify in the array should be considered a success
 
+
+##### Default Value
+
+If no `returnCodes` key is provided, then a returnCode of `0` will be considered a success.
 
 **Single return code**
 ```wdl
@@ -1615,8 +1628,6 @@ task wc {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -1656,8 +1667,6 @@ task one_and_one {
   }
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -1689,8 +1698,6 @@ task runtime_meta {
   }
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -1718,8 +1725,6 @@ task bwa_mem_tool {
   }
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -1745,8 +1750,6 @@ task wc2_tool {
   }
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -1795,8 +1798,6 @@ task tmap_tool {
   }
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -2043,8 +2044,6 @@ task task1 {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 task task2 {
@@ -2060,8 +2059,6 @@ task task2 {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 workflow wf {
@@ -2121,8 +2118,6 @@ task hello {
   }
   runtime {
     container: "ubuntu:latest"
-    cpu: 1
-    memory: "1 GB"
   }
   output {
     String salutation = read_string(stdout())
@@ -2303,8 +2298,6 @@ task t {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -2341,8 +2334,6 @@ task t {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -2468,8 +2459,6 @@ task myTask {
     
     runtime {
 	  container: "my_image:latest"
-	  cpu: 1
-	  memory: "1 GB"
 	}
 }
 
@@ -2617,8 +2606,6 @@ task my_task {
   }
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -2663,8 +2650,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -2726,8 +2711,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -2770,8 +2753,6 @@ task inc {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -2804,8 +2785,6 @@ task inc {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -2822,8 +2801,6 @@ task sum {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -2874,8 +2851,6 @@ task my_task {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -2923,8 +2898,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -2958,8 +2931,6 @@ task t1 {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -2979,8 +2950,6 @@ task t2 {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -2999,8 +2968,6 @@ task t3 {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 
@@ -3117,8 +3084,6 @@ task do_stuff {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3207,8 +3172,6 @@ task do_stuff {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3257,8 +3220,6 @@ task example {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3290,8 +3251,6 @@ task example {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3322,8 +3281,6 @@ task example {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3356,8 +3313,6 @@ task example {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3399,8 +3354,6 @@ task example {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3451,8 +3404,6 @@ task example {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3690,8 +3641,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3721,8 +3670,6 @@ task output_example {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3767,8 +3714,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3798,8 +3743,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3841,8 +3784,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3890,8 +3831,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3933,8 +3872,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -3987,8 +3924,6 @@ task process_person {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -4043,8 +3978,6 @@ task output_example {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -4086,8 +4019,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -4109,8 +4040,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -4146,8 +4075,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
@@ -4169,8 +4096,6 @@ task test {
   
   runtime {
     container: "my_image:latest"
-    cpu: 1
-    memory: "1 GB"
   }
 }
 ```
