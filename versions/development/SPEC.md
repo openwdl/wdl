@@ -123,7 +123,7 @@ Table of Contents
   * [Map\[X,Y\] as_map(Array\[Pair(X,Y)\])](#mapxy-as_maparraypairxy)
   * [Array\[X\] keys(Map\[X,Y\])](#arrayx-keysmapxy)
   * [Map\[X,Array\[Y\]\] collect_by_key(Array\[Pair(X,Y)\])](#mapxarrayy-collect_by_keyarraypairxy)
-  * [Integer length(Array\[X\])](#integer-lengtharrayx)
+  * [Int length(Array\[X\])](#int-lengtharrayx)
   * [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
   * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
   * [X select_first(Array\[X?\])](#x-select_firstarrayx)
@@ -290,7 +290,7 @@ task test {
 
 workflow wf {
   input {
-    Integer number  #This comment comes after a variable declaration
+    Int number  #This comment comes after a variable declaration
   }
 
   #You can have comments anywhere in the workflow
@@ -3098,18 +3098,18 @@ Map[String,Array[Int]] xmap = as_map(x) # {"a": [1, 3], "b": [2]}
 Map[String,Array[Pair[File,File]]] ymap = as_map(y) # {"a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], "b": [("b.bam", "b.bai")]}
 ```
 
-## Integer length(Array[X])
+## Int length(Array[X])
 
-Given an Array, the `length` function returns the number of elements in the Array as an Integer.
+Given an Array, the `length` function returns the number of elements in the Array as an Int.
 
 ```
 Array[Int] xs = [ 1, 2, 3 ]
 Array[String] ys = [ "a", "b", "c" ]
 Array[String] zs = [ ]
 
-Integer xlen = length(xs) # 3
-Integer ylen = length(ys) # 3
-Integer zlen = length(zs) # 0
+Int xlen = length(xs) # 3
+Int ylen = length(ys) # 3
+Int zlen = length(zs) # 0
 ```
 
 ## Array[X] flatten(Array[Array[X]])
@@ -3121,8 +3121,8 @@ flattened twice (or more) to get down to an unnested `Array[X]`.
 For example:
 
 ```wdl
-Array[Array[Integer]] ai2D = [[1, 2, 3], [1], [21, 22]]
-Array[Integer] ai = flatten(ai2D)   # [1, 2, 3, 1, 21, 22]
+Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
+Array[Int] ai = flatten(ai2D)   # [1, 2, 3, 1, 21, 22]
 
 Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
 Array[File] af = flatten(af2D)   # ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
@@ -3143,7 +3143,7 @@ of each element of the input array prefixed by the specified prefix string.  For
 Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
 Array[String] env_param = prefix("-e ", env) # ["-e key1=value1", "-e key2=value2", "-e key3=value3"]
 
-Array[Integer] env2 = [1, 2, 3]
+Array[Int] env2 = [1, 2, 3]
 Array[String] env2_param = prefix("-f ", env2) # ["-f 1", "-f 2", "-f 3"]
 ```
 
