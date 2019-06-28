@@ -3036,7 +3036,7 @@ Given an integer argument, the `range` function creates an array of integers of 
 
 ## Array[Array[X]] transpose(Array[Array[X]])
 
-Given a two dimensional array argument, the `transpose` function transposes the two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
+Given a two dimensional array argument, the `transpose` function transposes the two dimensional array according to the standard matrix transpose rules. For example `transpose( [[0, 1, 2], [3, 4, 5]] )` will return the rotated two-dimensional array: `[[0, 3], [1, 4], [2, 5]]`.
 
 ## Array[Pair[X,Y]] zip(Array[X], Array[Y])
 
