@@ -1740,6 +1740,8 @@ workflow wf {
 ```
 
 The call inputs block (eg `{ input: x=a, y=b, z=c }`) is optional and specifies how to satisfy a subset of the the task or workflow's input parameters.
+The call inputs block (eg `{ input: x=a, y=b, z=c } `) is optional and specifies how to satisfy a subset of the the task or workflow's input parameters. An empty call inputs block of the form `call no_input_task { }` is valid and has the same meaning as `call no_input_task`.
+>>>>>>> f31dc7c2d1297289d44e7f986bced1c83caffc90
 
 Each variable mapping in the call inputs block maps input parameters in the task to expressions from the workflow.  These expressions usually reference outputs of other tasks, but they can be arbitrary expressions.
 
