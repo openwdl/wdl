@@ -803,10 +803,10 @@ Some examples of correct import resolution:
 
 | Root Workflow Location                                | Imported Path                      | Resolved Path                                           |
 |-------------------------------------------------------|------------------------------------|---------------------------------------------------------|
-| file://foo/bar/baz/qux.wdl                            | some/task.wdl                      | file://foo/bar/baz/some/task.wdl                        |
-| `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` | subworkflow.wdl                    | `http://www.github.com/openwdl/coolwdls/subworkflow.wdl`  |
-| `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` | /openwdl/otherwdls/subworkflow.wdl | `http://www.github.com/openwdl/otherwdls/subworkflow.wdl` |
-| file://some/path/hello.wdl                            | /another/path/world.wdl            | file:///another/path/world.wdl                          |
+| `file://foo/bar/baz/qux.wdl`                            | `some/task.wdl`                      | `file://foo/bar/baz/some/task.wdl`                        |
+| `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` | `subworkflow.wdl`                    | `http://www.github.com/openwdl/coolwdls/subworkflow.wdl`  |
+| `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` | `/openwdl/otherwdls/subworkflow.wdl` | `http://www.github.com/openwdl/otherwdls/subworkflow.wdl` |
+| `file://some/path/hello.wdl`                            | `/another/path/world.wdl`            | `file:///another/path/world.wdl`                          |
 
 ## Task Definition
 
