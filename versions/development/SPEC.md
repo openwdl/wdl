@@ -23,6 +23,7 @@
     * [Map Literals](#map-literals)
     * [Pair Literals](#pair-literals)
     * [Optional Literals](#optional-literals)
+    * [Keywords](#keywords)
   * [Versioning](#versioning)
   * [Import Statements](#import-statements)
   * [Task Definition](#task-definition)
@@ -89,7 +90,8 @@
 * [Computing Inputs](#computing-inputs)
   * [Computing Task Inputs](#computing-task-inputs)
   * [Computing Workflow Inputs](#computing-workflow-inputs)
-  * [Specifying Workflow Inputs in JSON](#specifying-workflow-inputs-in-json)
+  * [Specifying Workflow Inputs](#specifying-workflow-inputs)
+    * [Cromwell-style inputs](#cromwell-style-inputs)
   * [Optional Inputs](#optional-inputs)
   * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
     * [Optional Inputs with Defaults](#optional-inputs-with-defaults)
@@ -121,7 +123,7 @@
   * [Map\[X,Y\] as_map(Array\[Pair(X,Y)\])](#mapxy-as_maparraypairxy)
   * [Array\[X\] keys(Map\[X,Y\])](#arrayx-keysmapxy)
   * [Map\[X,Array\[Y\]\] collect_by_key(Array\[Pair(X,Y)\])](#mapxarrayy-collect_by_keyarraypairxy)
-  * [Integer length(Array\[X\])](#integer-lengtharrayx)
+  * [Int length(Array\[X\])](#int-lengtharrayx)
   * [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
   * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
   * [X select_first(Array\[X?\])](#x-select_firstarrayx)
@@ -247,6 +249,7 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 * An escape sequence starting with `\u` followed by 4 hexadecimal characters or `\U` followed by 8 hexadecimal characters `0-9a-fA-F`.  This specifies a unicode code point.
 
 |Escape Sequence|Meaning|\x Equivalent|
+|-|-|-|
 |`\\`|`\`|`\x5C`|
 |`\n`|newline|`\x0A`|
 |`\t`|tab|`\x09`|
@@ -285,7 +288,7 @@ task test {
 
 workflow wf {
   input {
-    Integer number  #This comment comes after a variable declaration
+    Int number  #This comment comes after a variable declaration
   }
 
   #You can have comments anywhere in the workflow
@@ -741,6 +744,18 @@ Boolean test_is_none = maybe_five_but_is_not == None # Evaluates to true, same a
 Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false, same as defined(maybe_five_but_is_not )
 ```
 
+### Keywords
+
+The following language keywords cannot be used as the names of values, calls, tasks, workflows, import namespaces, or struct types & aliases.
+
+```
+Array Float Int Map None Pair String
+alias as call command else false if
+import input left meta object output
+parameter_meta right runtime scatter
+struct task then true workflow
+```
+
 ## Versioning
 
 For portability purposes it is critical that WDL documents be versioned so an engine knows how to process it. From `draft-3` forward, the first non-comment statement of all WDL files must be a `version` statement, for example
@@ -1029,7 +1044,7 @@ task heredoc {
 
   command<<<
   python <<CODE
-    with open("${in}") as fp:
+    with open("~{in}") as fp:
       for line in fp:
         if not line.startswith('#'):
           print(line.strip())
@@ -1038,7 +1053,7 @@ task heredoc {
 }
 ```
 
-Parsing of this command should be the same as the prior section describes.
+Parsing of this command should be the same as the prior section describes.  As noted earlier in the [Expression Placeholders](#command-parts) section, it is important to remember that string interpolation within `<<<`...`>>>` blocks must be done using the syntax `~{expression}`.
 
 #### Stripping Leading Whitespace
 
@@ -1199,7 +1214,7 @@ task example {
 }
 ```
 
-Any `${expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
+Any `${expression}` or `~{expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
 
 Different types for the expression are formatted in different ways.
 `String` is substituted directly.
@@ -1739,9 +1754,7 @@ workflow wf {
 }
 ```
 
-The call inputs block (eg `{ input: x=a, y=b, z=c }`) is optional and specifies how to satisfy a subset of the the task or workflow's input parameters.
 The call inputs block (eg `{ input: x=a, y=b, z=c } `) is optional and specifies how to satisfy a subset of the the task or workflow's input parameters. An empty call inputs block of the form `call no_input_task { }` is valid and has the same meaning as `call no_input_task`.
->>>>>>> f31dc7c2d1297289d44e7f986bced1c83caffc90
 
 Each variable mapping in the call inputs block maps input parameters in the task to expressions from the workflow.  These expressions usually reference outputs of other tasks, but they can be arbitrary expressions.
 
@@ -2332,7 +2345,7 @@ workflow wf {
 
 [Types](#types) can be optionally suffixed with a `?` or `+` in certain cases.
 
-* `?` means that the parameter is optional.  A user does not need to specify a value for the parameter in order to satisfy all the inputs to the workflow.
+* `?` means that the parameter is optional, potentially `None` at runtime. A user does not need to specify a value for the parameter in order to satisfy all the inputs to the workflow.
 * `+` applies only to `Array` types and it represents a constraint that the `Array` value must contain one-or-more elements.
 
 ```wdl
@@ -2394,9 +2407,15 @@ Then the command would be instantiated as:
 /bin/mycmd /path/to/c.txt
 ```
 
-## Prepending a String to an Optional Parameter
+It's invalid (a static validation error) to supply an expression of optional type `T?` for a non-optional input or variable of type `T`, as the latter cannot accept `None`. (The idiom `select_first([expr, default])` coerces `expr : T?` to `T` by substituting `default : T` when `expr` is undefined; if `default` is omitted, then the coercion fails at runtime.) This constraint propagates into compound types, so for example an `Array[T?]` expression doesn't satisfy an `Array[T]` input. It also applies to function arguments, with exceptions for string concatenation, described below, and the equality/inequality operators `==` and `!=`, which can compare two values of types differing only in their quantifiers, considering `None` equal to itself but no other value.
 
-Sometimes, optional parameters need a string prefix.  Consider this task:
+The nonempty array quantifier `Array[T]+` isn't statically validated in the same way, but rather as a runtime assertion: binding an empty array to an `Array[T]+` input or function argument is a runtime error. An array type can be both non-empty and optional, `Array[T]+?`, such that the value can be `None` or a non-empty array, but not the empty array.
+
+## Interpolating and concatenating optional strings
+
+Interpolations with `~{}` and `${}` accept optional string expressions and substitute the empty string for `None` at runtime.
+
+Within interpolations, string concatenation with the `+` operator has special typing properties to facilitate formulation of command-line flags. When applied to two non-optional operands, the result is a non-optional `String`. However, if either operand has an optional type, then the concatenation has type `String?`, and the runtime result is `None` if either operand is `None`. To illustrate how this can be used, consider this task:
 
 ```wdl
 task test {
@@ -2426,6 +2445,8 @@ The latter case is very likely an error case, and this `--val=` part should be l
 ```sh
 python script.py ${"--val=" + val}
 ```
+
+The `+` operator cannot accept optional operands outside of interpolations.
 
 # Scatter / Gather
 
@@ -2666,9 +2687,13 @@ The inputs to `wf` would be:
 
 Note that because some call inputs are left unsatisfied, this workflow could not be used as a sub-workflow. To fix that, additional workflow inputs could be added to pass-through `t1.s` and `t2.s`.
 
-## Specifying Workflow Inputs in JSON
+## Specifying Workflow Inputs
 
-Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow.  Workflow inputs are specified as key/value pairs. The mapping from JSON or YAML values to WDL values is codified in the [serialization of task inputs](#serialization-of-task-inputs) section.
+Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow. The format of workflow inputs is implementation specific.
+
+### Cromwell-style Inputs:
+
+The "Cromwell-style" input format is widely supported by WDL implementations and recommended for portability purposes. In the Cromwell-style format, workflow inputs are specified as key/value pairs in JSON or YAML. The mapping to WDL values is codified in the [serialization of task inputs](#serialization-of-task-inputs) section.
 
 In JSON, the inputs to the workflow in the previous section might be:
 
@@ -2678,7 +2703,12 @@ In JSON, the inputs to the workflow in the previous section might be:
   "wf.t2.s": "some_string",
   "wf.int_val": 3,
   "wf.my_ints": [5,6,7,8],
-  "wf.ref_file": "/path/to/file.txt"
+  "wf.ref_file": "/path/to/file.txt",
+  "wf.some_struct": {
+    "fieldA": "some_string",
+    "fieldB": 42,
+    "fieldC": "/path/to/file.txt"
+  }
 }
 ```
 
@@ -3044,7 +3074,7 @@ Given an integer argument, the `range` function creates an array of integers of 
 
 ## Array[Array[X]] transpose(Array[Array[X]])
 
-Given a two dimensional array argument, the `transpose` function transposes the two dimensional array according to the standard matrix transpose rules. For example `transpose( ((0, 1, 2), (3, 4, 5)) )` will return the rotated two-dimensional array: `((0, 3), (1, 4), (2, 5))`.
+Given a two dimensional array argument, the `transpose` function transposes the two dimensional array according to the standard matrix transpose rules. For example `transpose( [[0, 1, 2], [3, 4, 5]] )` will return the rotated two-dimensional array: `[[0, 3], [1, 4], [2, 5]]`.
 
 ## Array[Pair[X,Y]] zip(Array[X], Array[Y])
 
@@ -3124,18 +3154,18 @@ Map[String,Array[Int]] xmap = as_map(x) # {"a": [1, 3], "b": [2]}
 Map[String,Array[Pair[File,File]]] ymap = as_map(y) # {"a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], "b": [("b.bam", "b.bai")]}
 ```
 
-## Integer length(Array[X])
+## Int length(Array[X])
 
-Given an Array, the `length` function returns the number of elements in the Array as an Integer.
+Given an Array, the `length` function returns the number of elements in the Array as an Int.
 
 ```wdl
 Array[Int] xs = [ 1, 2, 3 ]
 Array[String] ys = [ "a", "b", "c" ]
 Array[String] zs = [ ]
 
-Integer xlen = length(xs) # 3
-Integer ylen = length(ys) # 3
-Integer zlen = length(zs) # 0
+Int xlen = length(xs) # 3
+Int ylen = length(ys) # 3
+Int zlen = length(zs) # 0
 ```
 
 ## Array[X] flatten(Array[Array[X]])
@@ -3147,8 +3177,8 @@ flattened twice (or more) to get down to an unnested `Array[X]`.
 For example:
 
 ```wdl
-Array[Array[Integer]] ai2D = [[1, 2, 3], [1], [21, 22]]
-Array[Integer] ai = flatten(ai2D)   # [1, 2, 3, 1, 21, 22]
+Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
+Array[Int] ai = flatten(ai2D)   # [1, 2, 3, 1, 21, 22]
 
 Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
 Array[File] af = flatten(af2D)   # ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
@@ -3169,7 +3199,7 @@ of each element of the input array prefixed by the specified prefix string.  For
 Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
 Array[String] env_param = prefix("-e ", env) # ["-e key1=value1", "-e key2=value2", "-e key3=value3"]
 
-Array[Integer] env2 = [1, 2, 3]
+Array[Int] env2 = [1, 2, 3]
 Array[String] env2_param = prefix("-f ", env2) # ["-f 1", "-f 2", "-f 3"]
 ```
 
@@ -3188,6 +3218,7 @@ workflow SelectFirst {
   Int five = select_first([maybe_five, maybe_four_but_is_not, maybe_three]) # This evaluates to 5
   Int five = select_first([maybe_four_but_is_not, maybe_five, maybe_three]) # This also evaluates to 5
 }
+```
 
 ## Array[X] select_all(Array[X?])
 
@@ -3203,6 +3234,7 @@ workflow SelectFirst {
   }
   Array[Int] fivethree = select_all([maybe_five, maybe_four_but_is_not, maybe_three]) # This evaluates to [5, 3]
 }
+```
 
 ## Boolean defined(X?)
 
