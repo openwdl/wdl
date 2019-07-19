@@ -88,7 +88,7 @@ Once tasks are defined, WDL allows you to construct a workflow of these tasks.  
 
 WDL also lets you define more advanced structures, like the ability to call a task in parallel (referred to as 'scattering').  In the example below, the `wc` task is being called n-times where n is the length of the `Array[String] str_array` variable.  Each element of the `str_array` is used as the value of the `str` parameter in the call to the `wc` task.
 
-```
+```wdl
 task wc {
   String str
   command {
@@ -140,7 +140,7 @@ workflow test {
 
 Create a parameter file as well, `hello.json`:
 
-```
+```json
 {
   "test.hello.name": "World"
 }
@@ -174,7 +174,7 @@ workflow test {
 
 Now when this is run, we get the string output for `test.hello.response`:
 
-```
+```json
 {
   "test.hello.response": "Hello World!"
 }
@@ -205,7 +205,7 @@ workflow test {
 
 Now when this is run, we get the string output for `test.hello.response`:
 
-```
+```json
 {
   "test.hello.response": "Hello World!"
 }
@@ -239,7 +239,7 @@ workflow test {
 Now when this is run, the `outFiles` output array will contain all files
 found by evaluating the specified glob.
 
-```
+```json
 {
   "test.globber.outFiles": ["/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-3/3.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-5/5.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-2/2.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-4/4.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-1/1.txt"]
 }
@@ -292,7 +292,7 @@ workflow test {
 
 Now, we need to specify a value for `test.hello2.name` in the hello.json file:
 
-```
+```json
 {
   "test.hello.name": "World",
   "test.hello2.name": "Boston"
@@ -301,7 +301,7 @@ Now, we need to specify a value for `test.hello2.name` in the hello.json file:
 
 Running this workflow now produces two outputs:
 
-```
+```json
 {
   "test.hello.response": "Hello World!",
   "test.hello2.response": "Hello Boston!"
@@ -335,7 +335,7 @@ workflow test {
 
 Now, the `hello.json` would require three inputs:
 
-```
+```json
 {
   "test.hello.name": "World",
   "test.hello2.name": "Boston",
@@ -345,7 +345,7 @@ Now, the `hello.json` would require three inputs:
 
 Running this workflow still gives us the two greetings we expect:
 
-```
+```json
 {
   "test.hello.response": "Greetings World!",
   "test.hello2.response": "Hello Boston!"
@@ -382,7 +382,7 @@ workflow test {
 
 The inputs required to run this would be:
 
-```
+```json
 {
   "test.hello.name": "World",
   "test.hello2.name": "Boston",
@@ -392,7 +392,7 @@ The inputs required to run this would be:
 
 And this would produce the following outputs when run
 
-```
+```json
 {
   "test.hello.response": "Hello, World!",
   "test.hello2.response": "Hello and nice to meet you, Boston!"
@@ -433,7 +433,7 @@ quux
 
 And then the inputs JSON file would be:
 
-```
+```json
 {
   "test.grep.file": "test_file"
 }
@@ -441,7 +441,7 @@ And then the inputs JSON file would be:
 
 The result of running this would be:
 
-```
+```json
 {
   "test.grep.count": 3
 }
@@ -492,7 +492,7 @@ workflow example {
 
 This example calls the `analysis` task once for each element in the array that the `prepare` task outputs.  The resulting outputs of this workflow would be:
 
-```
+```json
 {
   "example.analysis.out": ["_one_", "_two_", "_three_", "_four_"],
   "example.gather.str": "_one_ _two_ _three_ _four_",
