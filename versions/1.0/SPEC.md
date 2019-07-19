@@ -560,12 +560,12 @@ This is an operator that takes three arguments, a condition expression, an if-tr
 
 Examples:
  - Choose whether to say "good morning" or "good afternoon":
-```
+```wdl
 Boolean morning = ...
 String greeting = "good " + if morning then "morning" else "afternoon"
 ```
 - Choose how much memory to use for a task:
-```
+```wdl
 Int array_length = length(array)
 runtime {
   memory: if array_length > 100 then "16GB" else "8GB"
@@ -639,7 +639,7 @@ In this current iteration of the spec, users cannot define their own functions.
 
 Arrays values can be specified using Python-like syntax, as follows:
 
-```
+```wdl
 Array[String] a = ["a", "b", "c"]
 Array[Int] b = [0,1,2]
 ```
@@ -648,7 +648,7 @@ Array[Int] b = [0,1,2]
 
 Maps values can be specified using a similar Python-like sytntax:
 
-```
+```wdl
 Map[Int, Int] = {1: 10, 2: 11}
 Map[String, Int] = {"a": 1, "b": 2}
 ```
@@ -695,12 +695,12 @@ Object map_coercion = {
 
 Pair values can be specified inside of a WDL using another Python-like syntax, as follows:
 
-```
+```wdl
 Pair[Int, String] twenty_threes = (23, "twenty-three")
 ```
 
 Pair values can also be specified within the [workflow inputs JSON](https://github.com/openwdl/wdl/blob/develop/SPEC.md#specifying-workflow-inputs-in-json) with a `Left` and `Right` value specified using JSON style syntax. For example, given a workflow `wf_hello` and workflow-level variable `twenty_threes`, it could be declared in the workflow inputs JSON as follows:
-```
+```json
 {
   "wf_hello.twenty_threes": { "Left": 23, "Right": "twenty-three" }
 }
@@ -945,7 +945,7 @@ Both `true` and `false` cases are required. If one case should insert no value t
 
 This specifies the default value if no other value is specified for this parameter.
 
-```
+```wdl
 task default_test {
   input {
     String? s
@@ -990,7 +990,7 @@ Parsing of this command should be the same as the prior section describes.
 
 Any text inside of the `command` section, after instantiated, should have all *common leading whitespace* removed.  In the `task heredoc` example in the previous section, if the user specifies a value of `/path/to/file` as the value for `File in`, then the command should be:
 
-```
+```python
 python <<CODE
   with open("/path/to/file") as fp:
     for line in fp:
@@ -1009,7 +1009,7 @@ The outputs section defines which values should be exposed as outputs after a su
 
 For example a task's output section might looks like this:
 
-```
+```wdl
 output {
   Int threshold = read_int("threshold.txt")
 }
@@ -1019,7 +1019,7 @@ The task is expecting that a file called "threshold.txt" will exist in the curre
 
 As with other string literals in a task definition, Strings in the output section may contain interpolations (see the [String Interpolation](#string-interpolation) section below for more details). Here's an example:
 
-```
+```wdl
 output {
   Array[String] quality_scores = read_lines("${sample_id}.scores.txt")
 }
@@ -1029,7 +1029,7 @@ Note that for this to work, `sample_id` must be declared as an input to the task
 
 As with inputs, the outputs can reference previous outputs in the same block. The only requirement is that the output being referenced must be specified *before* the output which uses it.
 
-```
+```wdl
 output {
   String a = "a"
   String ab = a + "b"
@@ -1040,7 +1040,7 @@ output {
 
 Globs can be used to define outputs which might contain zero, one, or many files. The glob function therefore returns an array of File outputs:
 
-```
+```wdl
 output {
   Array[File] output_bams = glob("*.bam")
 }
@@ -1644,7 +1644,7 @@ workflow foo {
 Workflows can also be called inside of workflows.
 
 `main.wdl`
-```
+```wdl
 import "sub_wdl.wdl" as sub
 
 workflow main_workflow {
@@ -1658,7 +1658,7 @@ workflow main_workflow {
 ```
 
 `sub_wdl.wdl`
-```
+```wdl
 task hello {
   input {
     String addressee
@@ -1707,7 +1707,7 @@ The `$scatter_body` defines a set of scopes that will execute in the context of 
 
 For example, if `$expression` is an array of integers of size 3, then the body of the scatter clause can be executed 3-times in parallel.  `$identifier` would refer to each integer in the array.
 
-```
+```wdl
 scatter(i in integers) {
   call task1{input: num=i}
   call task2{input: num=task1.output}
@@ -1802,7 +1802,7 @@ This purely optional section contains key/value pairs where the keys are names o
 > *Additional requirement*: Any key in this section MUST correspond to a workflow input or output.
 
 As an example:
-```
+```wdl
   parameter_meta {
     memory_mb: "Amount of memory to allocate to the JVM"
     param: "Some arbitrary parameter"
@@ -1820,7 +1820,7 @@ $wf_meta_kv = $identifier $ws* '=' $ws* $meta_value
 This purely optional section contains key/value pairs for any additional meta data that should be stored with the workflow.  For example, perhaps author or contact email.
 
 As an example:
-```
+```wdl
   meta {
     author: "Joe Somebody"
     email: "joe@company.org"
@@ -1834,7 +1834,7 @@ Each `workflow` definition can specify an `output` section.  This section lists 
 Workflow outputs also follow the same syntax rules as task outputs. They are expressions which can reference all call outputs, workflow inputs, intermediate values and previous workflow outputs.
 e.g:
 
-```
+```wdl
 task t {
   input {
     Int i
@@ -1869,7 +1869,7 @@ Note that they can't reference call inputs (eg we cannot use `Int i = t.i` as a 
 When declaring a workflow output that points to a call inside a scatter, the aggregated call is used, just like any expression that references it from outside the scatter.
 e.g:
 
-```
+```wdl
 task t {
   command {
     # do something
@@ -2071,7 +2071,7 @@ aliased name.
 Import statements can be used to pull in tasks/workflows from other locations as well as to create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the specified namespace.  For example:
 
 tasks.wdl
-```
+```wdl
 task x {
   command { python script.py }
 }
@@ -2081,7 +2081,7 @@ task y {
 ```
 
 workflow.wdl
-```
+```wdl
 import "tasks.wdl" as pyTasks
 
 workflow wf {
@@ -2093,7 +2093,7 @@ workflow wf {
 Tasks `x` and `y` are inside the namespace `pyTasks`, which is different from the `wf` namespace belonging to the primary workflow.  However, if no namespace is specified for tasks.wdl:
 
 workflow.wdl
-```
+```wdl
 import "tasks.wdl"
 
 workflow wf {
@@ -2491,7 +2491,7 @@ Once workflow inputs are computed (see previous section), the value for each of 
 
 In JSON, the inputs to the workflow in the previous section might be:
 
-```
+```json
 {
   "wf.t1.s": "some_string",
   "wf.t2.s": "some_string",
@@ -2841,7 +2841,7 @@ key2\tvalue2
 
 Given any `Object`, this will write out a 2-row, n-column TSV file with the object's attributes and values.
 
-```
+```wdl
 task test {
   Object input
   command <<<
@@ -3031,7 +3031,7 @@ Given a two dimensional array argument, the `transpose` function transposes the 
 
 Given any two Object types, the `zip` function returns the dot product of those Object types in the form of a Pair object.
 
-```
+```wdl
 Pair[Int, String] p = (0, "z")
 Array[Int] xs = [ 1, 2, 3 ]
 Array[String] ys = [ "a", "b", "c" ]
@@ -3044,7 +3044,7 @@ Array[Pair[Int, String]] zipped = zip(xs, ys)     # i.e.  zipped = [ (1, "a"), (
 
 Given any two Object types, the `cross` function returns the cross product of those Object types in the form of a Pair object.
 
-```
+```wdl
 Pair[Int, String] p = (0, "z")
 Array[Int] xs = [ 1, 2, 3 ]
 Array[String] ys = [ "a", "b", "c" ]
@@ -3057,7 +3057,7 @@ Array[Pair[Int, String]] crossed = cross(xs, zs) # i.e. crossed = [ (1, "d"), (1
 
 Given an Array, the `length` function returns the number of elements in the Array as an Integer.
 
-```
+```wdl
 Array[Int] xs = [ 1, 2, 3 ]
 Array[String] ys = [ "a", "b", "c" ]
 Array[String] zs = [ ]
@@ -3094,7 +3094,7 @@ The last example (`aap2D`) is useful because `Map[X, Y]` can be coerced to `Arra
 Given a String and an Array[X] where X is a primitive type, the `prefix` function returns an array of strings comprised
 of each element of the input array prefixed by the specified prefix string.  For example:
 
-```
+```wdl
 Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
 Array[String] env_param = prefix("-e ", env) # ["-e key1=value1", "-e key2=value2", "-e key3=value3"]
 
@@ -3317,7 +3317,7 @@ sh script.sh /jobs/564758/bams.json
 
 Where `/jobs/564758/bams.json` would contain:
 
-```
+```json
 [
   "/path/to/1.bam",
   "/path/to/2.bam",
@@ -3397,7 +3397,7 @@ sh script.sh /jobs/564757/sample_quality_scores.json
 
 Where `/jobs/564757/sample_quality_scores.json` would contain:
 
-```
+```json
 {
   "sample1": 98,
   "sample2": 95,
@@ -3474,7 +3474,7 @@ perl script.pl /jobs/564759/sample.json
 
 Where `/jobs/564759/sample.json` would contain:
 
-```
+```json
 {
   "attr1": "value1",
   "attr2": "value2",
@@ -3564,7 +3564,7 @@ perl script.pl /jobs/564759/sample.json
 
 Where `/jobs/564759/sample.json` would contain:
 
-```
+```json
 [
   {
     "attr1": "value1",
