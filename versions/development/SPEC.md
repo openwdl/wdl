@@ -99,6 +99,8 @@ Table of Contents
   * [Computing Task Inputs](#computing-task-inputs)
   * [Computing Workflow Inputs](#computing-workflow-inputs)
   * [Specifying Workflow Inputs in JSON](#specifying-workflow-inputs-in-json)
+  * [Specifying / Overriding runtime attributes in JSON](#specifying--overriding-runtime-attributes-in-json)
+  * [Specifying / Overriding hints in JSON](#specifying--overriding-hints-in-json)
   * [Optional Inputs](#optional-inputs)
   * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
     * [Optional Inputs with Defaults](#optional-inputs-with-defaults)
@@ -1313,7 +1315,7 @@ task multiple_image_test {
 
 #### cpu (**Optional**)
 
-The `cpu` key defines the _minimum_ CPU required for this task, which must be available prior to the engine starting execution. The engine does not need to provide the exact amount of CPU requested (depending on the underlying infrastructure restrictions), however it may ONLY provision more CPU than requested and not less. For example if the wdl requested `cpu: 0.5`, but only discrete values were supported, then the engine might choose to provision `1.0` cpu instead.  Values are expected to be a `Float` or an `Int`
+The `cpu` key defines the _minimum_ CPU required for this task, which must be available prior to the engine starting execution. The engine does not need to provide the exact amount of CPU requested (depending on the underlying infrastructure restrictions), however it may ONLY provision more CPU than requested and not less. For example if the wdl requested `cpu: 0.5`, but only discrete values were supported, then the engine might choose to provision `1.0` cpu instead.  Values must be be a `Float` or an `Int`
 
 
 ##### Default Value
@@ -3023,6 +3025,39 @@ In JSON, the inputs to the workflow in the previous section might be:
 ```
 
 It's important to note that the type in JSON must be coercible to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "three"`, this coercion from string to integer is not valid and would result in a coercion error.  See the section on [Type Coercion](#type-coercion) for more details.
+
+## Specifying / Overriding Runtime Attributes in JSON
+
+Workflow runtime attributes may additionally be specified as key/value pairs as part of the [workflow inputs](#specifying-workflow-inputs-in-json). To differentiate runtime attributes from the inputs for a call, the format shall include the `runtime` keyword as follows:
+
+```json
+{
+  "wf.t1.runtime.memory": "16 GB",
+  "wf.t2.runtime.cpu": 2,
+  "wf.t2.runtime.disks": "100",
+  "wf.t2.runtime.container": "mycontainer:latest"
+}
+```
+
+Permissible values for the runtime section are defined [here](#runtime-section). It is the user's responsibility to ensure they provide the correct coercible type for the attribute they are targeting. An input value should not be coerced to an expression, hence these values should not be evaluated. See the section on [Type Coercion](#type-coercion) for more details.
+
+Runtime values provided as inputs always supercede values supplied directly in the WDL
+
+## Specifying / Overriding Hints in JSON
+
+Workflow hints may additionally be specified as key/value pairs as part of the [workflow inputs](#specifying-workflow-inputs-in-json). To differentiate hints from the inputs for a call, the format shall include the `hints` keyword as follows:
+
+```json
+{
+  "wf.t1.hints.maxMemory": "32 GB",
+  "wf.t2.hints.maxCpu": 4,
+  "wf.t3.hints.arbitrary_key": ["arbitrary", "value"]
+}
+```
+
+As the hints section consists of key/value pairs, it is the user's responsibility to ensure they provide the correct coercible type for the backend they are targeting. An input value should not be coerced to an expression, hence these values should not be evaluated. See the section on [Type Coercion](#type-coercion) for more details.
+
+Hints values provided as inputs always supercede values supplied directly in the WDL
 
 # Type Coercion
 
