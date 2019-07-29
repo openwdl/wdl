@@ -1327,7 +1327,7 @@ task wc {
   Boolean l = false
   String? region
   parameter_meta {
-    f : { help: "Count the number of lines in this file" },
+    f : { help: "Count the number of lines in this file" }
     l : { help: "Count only lines" }
     region: {help: "Cloud region",
              suggestions: ["us-west", "us-east", "asia-pacific", "europe-central"]}
