@@ -748,7 +748,7 @@ Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false, same
 
 The following language keywords cannot be used as the names of values, calls, tasks, workflows, import namespaces, or struct types & aliases.
 
-```
+```txt
 Array Float Int Map None Pair String
 alias as call command else false if
 import input left meta object output
@@ -1340,7 +1340,7 @@ task wc {
   Boolean l = false
   String? region
   parameter_meta {
-    f : { help: "Count the number of lines in this file" },
+    f : { help: "Count the number of lines in this file" }
     l : { help: "Count only lines" }
     region: {help: "Cloud region",
              suggestions: ["us-west", "us-east", "asia-pacific", "europe-central"]}
@@ -2691,7 +2691,7 @@ Note that because some call inputs are left unsatisfied, this workflow could not
 
 Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow. The format of workflow inputs is implementation specific.
 
-### Cromwell-style Inputs:
+### Cromwell-style Inputs
 
 The "Cromwell-style" input format is widely supported by WDL implementations and recommended for portability purposes. In the Cromwell-style format, workflow inputs are specified as key/value pairs in JSON or YAML. The mapping to WDL values is codified in the [serialization of task inputs](#serialization-of-task-inputs) section.
 
@@ -3557,10 +3557,12 @@ task process_person {
 
 If `p` is provided as:
 
-```txt
-name = "John"
-age = 5
-friends = ["James", "Jim"]
+```json
+{
+  "name", "John"
+  "age", 5
+  "friends": ["James", "Jim"]
+}
 ```
 
 Then, the resulting command line might look like:

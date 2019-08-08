@@ -16,13 +16,13 @@ Current core team members are:
 
 | Name               | Organization            | github                  |
 |:-------------------|:-------------|:------------------
-| Brad Chapman       | Harvard School of Public Health | [chapmanb](https://github.com/chapmanb) |
 | Jeff Gentry        | Broad Institute                 | [geoffjentry](https://github.com/geoffjentry) |
 | Mike Lin           | DNAnexus                        | [mlin](https://github.com/mlin) |
 | Patrick Magee      | DNAstack                        | [patmagee](https://github.com/patmagee) |
 | Brian O'Connor     | University of California, Santa Cruz | [briandoconnor](https://github.com/briandoconnor) |
-| Abirami Prabhakaran| Intel | [aprabhak2](https://github.com/aprabhak2) |
 | Geraldine Van der Auwera | Broad Institute | [vdauwera](https://github.com/vdauwera) |
+| Christopher Llanwarne | Broad Institute | [cjllanwarne](https://github.com/cjllanwarne) |
+| Ohad Rodeh | DNAnexus | [orodeh](https://github.com/orodeh) |
 
 
 At the core group's discretion a new member may be added by a majority vote. This addition will be done to recognize **significant** contributions to the community. *Contributions* include such things as:
