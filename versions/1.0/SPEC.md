@@ -1048,7 +1048,7 @@ File somefile = "my/path/to/something.txt"
 All file outputs are required to exist, otherwise the task will fail.
 
 However, outputs may be annotated as `Optional` types (including within arrays as `Array[File?]`)
-in which case they will be null if files do not exist.
+in which case they will be `None` if files do not exist.
 
 E.g., in this example task:
 
