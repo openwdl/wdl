@@ -1039,8 +1039,7 @@ output {
 
 #### Files and Optional Outputs
 
-File outputs are described as string paths relative to the initial working
-directory.
+File outputs are represented as string paths. Relative paths are interpreted relative to the execution directory; whereas absolute paths are defined in a container-dependent way.
 
 ```
 File somefile = "my/path/to/something.txt"
@@ -1048,7 +1047,7 @@ File somefile = "my/path/to/something.txt"
 
 All file outputs are required to exist, otherwise the task will fail.
 
-However, outputs may be annotated as `Optional` types (including array types),
+However, outputs may be annotated as `Optional` types (including within arrays as `Array[File?]`)
 in which case they will be null if files do not exist.
 
 E.g., in this example task:
@@ -1070,8 +1069,8 @@ task optional_output {
 If run, will generate the following outputs:
 
 * `optional_output.example_exists` will resolve to a File
-* `optional_output.example_optional` will resolve to `null`
-* `optional_output.array_optional` will resolve to `[<File>, null]`
+* `optional_output.example_optional` will resolve to `None`
+* `optional_output.array_optional` will resolve to `[<File>, None]`
 
 #### Globs
 
