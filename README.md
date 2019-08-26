@@ -1,501 +1,69 @@
-# Workflow Description Language (WDL)
-
-WDL is a workflow language meant to be read and written by humans. Broader documentation is provided
-by the [WDL website](https://software.broadinstitute.org/wdl/). Any questions or issues can be discussed at
-our [support forum](http://gatkforums.broadinstitute.org/wdl).
-
-* [Official Language Specification](https://github.com/openwdl/wdl/blob/master/versions/1.0/SPEC.md) 
-* [Developmental Language Specification](https://github.com/openwdl/wdl/blob/master/versions/development/SPEC.md) 
-
-
-Library and engine support is provided by
-
-* [Java parser](parsers/java) which provides only a parser to convert a WDL string into an AST
-* [wdl4s](http://github.com/broadinstitute/wdl4s) provides Scala bindings for WDL and uses the above Java parser
-* [PyWDL](https://github.com/broadinstitute/pywdl) provides Python bindings for WDL
-* [Cromwell](http://github.com/broadinstitute/cromwell) is an engine for running WDL workflows.  This uses [wdl4s](http://github.com/broadinstitute/wdl4s)
-
-# Table of Contents
-
-<!---toc start-->
-
-* [Workflow Description Language (WDL)](#workflow-description-language-wdl)
-* [Overview](#overview)
-* [Getting Started with WDL](#getting-started-with-wdl)
-  * [Hello World WDL](#hello-world-wdl)
-  * [Modifying Task Outputs](#modifying-task-outputs)
-  * [Referencing Files on Disk](#referencing-files-on-disk)
-  * [Using Globs to Specify Output](#using-globs-to-specify-output)
-  * [Using String Interpolation](#using-string-interpolation)
-  * [Aliasing Calls](#aliasing-calls)
-  * [Specifying Inputs and Using Declarations](#specifying-inputs-and-using-declarations)
-  * [Using Files as Inputs](#using-files-as-inputs)
-  * [Scatter/Gather](#scattergather)
-
-<!---toc end-->
-
-# Overview
-
-The Workflow Description Language is a domain specific language for describing tasks and workflows.
-
-An example WDL file that describes three tasks to run UNIX commands (in this case, `ps`, `grep`, and `wc`) and then link them together in a workflow would look like this:
-
-```wdl
-task ps {
-  command {
-    ps
-  }
-  output {
-    File procs = stdout()
-  }
-}
-
-task cgrep {
-  String pattern
-  File in_file
-  command {
-    grep '${pattern}' ${in_file} | wc -l
-  }
-  output {
-    Int count = read_int(stdout())
-  }
-}
-
-task wc {
-  File in_file
-  command {
-    cat ${in_file} | wc -l
-  }
-  output {
-    Int count = read_int(stdout())
-  }
-}
-
-workflow three_step {
-  call ps
-  call cgrep {
-    input: in_file=ps.procs
-  }
-  call wc {
-    input: in_file=ps.procs
-  }
-}
-```
-
-WDL aims to be able to describe tasks with abstract commands which have inputs.  Abstract commands are a template with parts of the command left for the user to provide a value for.  In the example above, the `task wc` declaration defines a task with one input (`in_file` of type file) and one output (`count` of type int).
-
-Once tasks are defined, WDL allows you to construct a workflow of these tasks.  Since each task defines its inputs and outputs explicitly, you can wire together one task's output to be another task's input and create a dependency graph.  An execution engine can then collect the set of inputs it needs from the user to run each task in the workflow up front and then run the tasks in the right order.
-
-WDL also lets you define more advanced structures, like the ability to call a task in parallel (referred to as 'scattering').  In the example below, the `wc` task is being called n-times where n is the length of the `Array[String] str_array` variable.  Each element of the `str_array` is used as the value of the `str` parameter in the call to the `wc` task.
-
-```wdl
-task wc {
-  String str
-  command {
-    echo "${str}" | wc -c
-  }
-  output {
-    Int count = read_int(stdout()) - 1
-  }
-}
-
-workflow wf {
-  Array[String] str_array
-  scatter(s in str_array) {
-    call wc {
-      input: str=s
-    }
-  }
-}
-```
+Workflow Description Language (WDL)
+========================================
 
-# Getting Started with WDL
+The **Workflow Description Language (WDL)** is a way to specify data processing workflows with a human-readable and writeable syntax. WDL makes it straightforward to define complex analysis tasks, chain them together in workflows, and parallelize their execution. The language makes common patterns simple to express, while also admitting uncommon or complicated behavior; and strives to achieve portability not only across execution platforms, but also different types of users. Whether one is an analyst, a programmer, an operator of a production system, or any other sort of user, WDL should be accessible and understandable.
 
-We'll use [Cromwell](https://github.com/broadinstitute/cromwell) and [wdltool](https://github.com/broadinstitute/wdltool) to run these examples but you can use any WDL engine of your choice.
+# Language Specifications:
 
-If you don't already have a reference to the Cromwell JAR file, one can be [downloaded](https://github.com/broadinstitute/cromwell/releases)
+The current version of the WDL language is **1.0**. The [1.0 specification](https://github.com/openwdl/wdl/blob/master/versions/1.0/SPEC.md) contains all relevant information for users, developers, and engine developers. Upcoming features which have previously been accepted can be viewed as part of the [development spec](https://github.com/openwdl/wdl/blob/master/versions/development/SPEC.md). 
 
-If you don't already have a reference to the wdltool JAR file, one can be [downloaded](https://github.com/broadinstitute/wdltool/releases)
+There are a number of draft versions (draft 1 - 3) which correspond to our initial efforts at creating WDL. While these are functional specifications, they should not be considered feature complete and contain many bugs and irregularities. Unless absolutely necessary, we would recommend that users should start with the current version of the language.
 
-## Hello World WDL
 
-Create a WDL simple file and save it as `hello.wdl`, for example:
+# Community and Support
 
-```wdl
-task hello {
-  String name
+There are a number of places to ask questions and get involved within the WDL community. Our community thrives the more you get involved and we encourage you to ask questions, provide answers, and make contributions.
 
-  command {
-    echo 'Hello ${name}!'
-  }
-  output {
-    File response = stdout()
-  }
-}
 
-workflow test {
-  call hello
-}
-```
+- [Mailing list](https://groups.google.com/a/openwdl.org/forum/#!forum/community) - Joining our google group allows you to stay up to date with recent developments, be informed when new PR's are ready for voting, and participate in broader discussions about the language.
+- [Issues](https://github.com/OpenWDL/wdl/issues) - Any bugs, ambiguity, or problems with the specification you encounter should be reported here. You can also create issues which are feature requests, however the most likely way to get a feature into the spec is by creating a PR yourself.
+- [Gitter Channel](https://gitter.im/openwdl/wdl) - Live chat with WDL users
+- [Support Forum](http://gatkforums.broadinstitute.org/wdl) - (hosted by the Broad) View Previously answered questions about WDL or pose new questions. 
+- [User Guide](https://software.broadinstitute.org/wdl/) (hosted by the Broad) View a general user guide and simple how-to for WDL
 
-Create a parameter file as well, `hello.json`:
+# Published Workflows 
 
-```json
-{
-  "test.hello.name": "World"
-}
-```
+There are many WDL's that have previously been published which provide a good starting point to extend or use as is to fit your workflow needs. While many of these workflows are scattered across the web and in many different repositories, you can find a great selection of high quality, published WDL's available at [Dockstore](https://dockstore.org/search?_type=workflow&descriptorType=wdl&searchMode=files) as well as a large number of workflows and tasks at [BioWDL](https://github.com/biowdl).
 
-WDL has a concept of fully-qualified names.  In the above output, `test.hello.name` is a fully-qualified name which should be read as: the `name` input on the `hello` call within workflow `test`.  Fully-qualified names are used to unambiguously refer to specific elements of a workflow.  All inputs are specified by fully-qualified names and all outputs are returned as fully-qualified names.
+Additionally, you can view and test out a number of different workflow's using [Terra](https://app.terra.bio). Please note, that you have to register with Terra in order to view the workflows.
 
-Since the `hello` task returns a `File`, when you run `hello.wdl` with `hello.json` by any of WDL engines, the result is a file that contains the string "Hello World!" in it.
 
-## Modifying Task Outputs
+# Software and Tools
 
-Currently the `hello` task returns a `File` with the greeting in it, but what if we wanted to return a `String` instead?
- This can be done by utilizing the `read_string()` function:
+### Execution Engines
 
-```wdl
-task hello {
-  String name
+WDL is not executable in and of itself, but requires an execution engine to run. Compliant executions engines should support the features of a specific version of the WDL specification. Please see the corresponding engine documentation for information on available execution options and support. 
 
-  command {
-    echo 'Hello ${name}!'
-  }
-  output {
-    String response = read_string(stdout())
-  }
-}
+- [Cromwell](https://github.com/broadinstitute/cromwell)
+- [MiniWDL](https://github.com/chanzuckerberg/miniwdl)
 
-workflow test {
-  call hello
-}
-```
 
-Now when this is run, we get the string output for `test.hello.response`:
+### Parsers and Language Support
 
-```json
-{
-  "test.hello.response": "Hello World!"
-}
-```
+- Basic parsers and their grammar definitions (based on hermes) can be found in the `parsers/` directory for each respective version. Currently there is support for java, python and javascript. We believe these parsers work, however have not validated these claims.
+- [MiniWDL](https://github.com/chanzuckerberg/miniwdl)] - MiniWDL provides python bindings for WDL as well as command line validation. It is light weight and easy to use.
+- [wdl4s](https://github.com/broadinstitute/cromwell) - scala bindings for WDL. This has been folded into the broader cromwell codebase
+- [WOMTool](https://cromwell.readthedocs.io/en/stable/WOMtool/) - a standalone tool for parsing, validating, linting, and generating a graph of a WDL.
+- [wdl-aid](https://github.com/biowdl/wdl-aid) - generate documentation for the inputs of WDL workflows, based on the parameter_meta information defined in the WDL file.	
 
-`read_string` is a function in the [standard library](https://github.com/openwdl/wdl/blob/master/versions/draft-3/SPEC.md#standard-library), which provides other useful functions for converting outputs to WDL data types.
+### IDE Support
 
-## Referencing Files on Disk
-
-So far we've only been dealing with the standard output of a command, but what if it writes a file to disk?  Consider this example:
+- Visual Studio Code: [WDL Syntax Highlighter](https://marketplace.visualstudio.com/items?itemName=broadinstitute.wdl)
+- JetBrains IDE's: [Winstanly](https://plugins.jetbrains.com/plugin/8154-winstanley-wdl)
+- Atom: [Language-WDL](https://atom.io/packages/language-wdl)
+- Vim: [vim-wdl](https://github.com/broadinstitute/vim-wdl)
 
-```wdl
-task hello {
-  String name
-
-  command {
-    echo 'Hello ${name}!' > test.out
-  }
-  output {
-    String response = read_string("test.out")
-  }
-}
-
-workflow test {
-  call hello
-}
-```
 
-Now when this is run, we get the string output for `test.hello.response`:
-
-```json
-{
-  "test.hello.response": "Hello World!"
-}
-```
+# Contributing
 
-`read_string` is a function in the [standard library](https://github.com/openwdl/wdl/blob/master/versions/draft-3/SPEC.md#standard-library), which provides other useful functions for converting outputs to WDL data types.
+WDL only advances through community contributions. While submitting an issue is a great way to report a bug in the spec, or create disscussion around current or new features, it will ultimately not translate into an actual change in the spec. The best way to make changes is by submitting a PR. For more information on how you can contribute, please see the [Contributing](CONTRIBUTING.md) readme. 
 
-## Using Globs to Specify Output
+Additionally, once a PR has been submitted, it will be subjected to our [RFC Process](RFC.md).
 
-We can use the glob() function to read multiple files at once:
-
-```wdl
-task globber {
-  command <<<
-    for i in `seq 1 5`
-    do
-      mkdir out-$i
-      echo "globbing is my number $i best hobby" > out-$i/$i.txt
-    done
-  >>>
-  output {
-    Array[File] outFiles = glob("out-*/*.txt")
-  }
-}
-
-workflow test {
-  call globber
-}
-```
-
-Now when this is run, the `outFiles` output array will contain all files
-found by evaluating the specified glob.
-
-```json
-{
-  "test.globber.outFiles": ["/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-3/3.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-5/5.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-2/2.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-4/4.txt", "/home/user/test/dee60566-267b-4f33-a1dd-0b199e6292b8/call-globber/out-1/1.txt"]
-}
-```
-
-## Using String Interpolation
-
-Sometimes, an output file is named as a function of one of its inputs.
-
-```wdl
-task hello {
-  String name
-
-  command {
-    echo 'Hello ${name}!' > ${name}.txt
-  }
-  output {
-    String response = read_string("${name}.txt")
-  }
-}
-
-workflow test {
-  call hello
-}
-```
-
-Here the inputs and outputs are exactly the same as previous examples, however the intermediate output file name of this task is named differently for every invocation.
-
-## Aliasing Calls
-
-Say we wanted to call the `hello` task twice.  Simply adding two `call hello` statements to the body of `workflow test` would result in non-unique fully-qualified names.  To resolve this issue, `call` statements can be aliased using an `as` clause:
-
-```wdl
-task hello {
-  String name
-
-  command {
-    echo 'Hello ${name}!'
-  }
-  output {
-    String response = read_string(stdout())
-  }
-}
-
-workflow test {
-  call hello
-  call hello as hello2
-}
-```
-
-Now, we need to specify a value for `test.hello2.name` in the hello.json file:
-
-```json
-{
-  "test.hello.name": "World",
-  "test.hello2.name": "Boston"
-}
-```
-
-Running this workflow now produces two outputs:
-
-```json
-{
-  "test.hello.response": "Hello World!",
-  "test.hello2.response": "Hello Boston!"
-}
-```
-
-## Specifying Inputs and Using Declarations
-
-A `call` can have an optional section to define inputs.  As seen below, the key/value pairs represent the name of the input on the left-hand side and the expression for the input's value on the right-hand side:
-
-```wdl
-task hello {
-  String name
-  String salutation
-
-  command {
-    echo '${salutation} ${name}!'
-  }
-  output {
-    String response = read_string(stdout())
-  }
-}
-
-workflow test {
-  call hello {
-    input: salutation="Greetings"
-  }
-  call hello as hello2
-}
-```
-
-Now, the `hello.json` would require three inputs:
-
-```json
-{
-  "test.hello.name": "World",
-  "test.hello2.name": "Boston",
-  "test.hello2.salutation": "Hello"
-}
-```
-
-Running this workflow still gives us the two greetings we expect:
-
-```json
-{
-  "test.hello.response": "Greetings World!",
-  "test.hello2.response": "Hello Boston!"
-}
-```
-
-What if we wanted to parameterize the greeting and make it used for all invocations of task `hello`?  In this situation, a declaration can be used:
-
-```wdl
-task hello {
-  String salutation
-  String name
-
-  command {
-    echo '${salutation}, ${name}!'
-  }
-  output {
-    String response = read_string(stdout())
-  }
-}
-
-workflow test {
-  String greeting
-  call hello {
-    input: salutation=greeting
-  }
-  call hello as hello2 {
-    input: salutation=greeting + " and nice to meet you"
-  }
-}
-```
-
-`String greeting` is referenced to satisfy the "salutation" parameter to both invocations of the `hello` task.
-
-The inputs required to run this would be:
-
-```json
-{
-  "test.hello.name": "World",
-  "test.hello2.name": "Boston",
-  "test.greeting": "Hello"
-}
-```
-
-And this would produce the following outputs when run
-
-```json
-{
-  "test.hello.response": "Hello, World!",
-  "test.hello2.response": "Hello and nice to meet you, Boston!"
-}
-```
-
-## Using Files as Inputs
-
-So far every example has used the default type of `String` for every input.  Passing files along to tasks is simply a matter of defining the input type as `File`:
-
-```wdl
-task grep {
-  File file
-
-  command {
-    grep -c '^...$' ${file}
-  }
-  output {
-    Int count = read_int(stdout())
-  }
-}
-
-workflow test {
-  call grep
-}
-```
-
-The `read_int()` function here would read the contents of its parameter, and interpret the first line as an integer and return that value as a WDL `Int` type.
-
-If I specified a file called `test_file` with the contents of:
-
-```
-foo
-bar
-baz
-quux
-```
-
-And then the inputs JSON file would be:
-
-```json
-{
-  "test.grep.file": "test_file"
-}
-```
-
-The result of running this would be:
-
-```json
-{
-  "test.grep.count": 3
-}
-```
-
-## Scatter/Gather
-
-Scatter blocks can be used to run the same call multiple times but only varying a specific parameter on each invocation.  Consider the following example:
-
-```wdl
-task prepare {
-  command <<<
-    python -c "print('one\ntwo\nthree\nfour')"
-  >>>
-  output {
-    Array[String] array = read_lines(stdout())
-  }
-}
-
-task analysis {
-  String str
-  command <<<
-    python -c "print('_${str}_')"
-  >>>
-  output {
-    String out = read_string(stdout())
-  }
-}
-
-task gather {
-  Array[String] array
-  command <<<
-    echo ${sep=' ' array}
-  >>>
-  output {
-    String str = read_string(stdout())
-  }
-}
-
-workflow example {
-  call prepare
-  scatter (x in prepare.array) {
-    call analysis {input: str=x}
-  }
-  call gather {input: array=analysis.out}
-}
-```
-
-This example calls the `analysis` task once for each element in the array that the `prepare` task outputs.  The resulting outputs of this workflow would be:
-
-```json
-{
-  "example.analysis.out": ["_one_", "_two_", "_three_", "_four_"],
-  "example.gather.str": "_one_ _two_ _three_ _four_",
-  "example.prepare.array": ["one", "two", "three", "four"]
-}
-```
+# Governance
+
+The WDL specification is entirely community driven, however it is overseen by a governance committee. For more information please see the [Governance](GOVERNANCE.md) documentation.
+
+# RFC Process
+
+Any changes submitted to the WDL Specification are subject to the [RFC Process](RFC.md). Please review and familiarize yourself with the process if you would like to see changes submitted to the specification.
