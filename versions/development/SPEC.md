@@ -296,11 +296,11 @@ workflow wf {
 
   #You can have comments anywhere in the workflow
   call test
-  
+
   output { #You can also put comments after braces
     String result = test.result
   }
-  
+
 }
 ```
 
@@ -1700,7 +1700,7 @@ All `call` statements must be uniquely identifiable.  By default, the call's uni
 
 A `call` statement may reference a workflow too (e.g. `call other_workflow`).  In this case, the inputs section specifies the workflow's inputs by name.
 
-Calls can be run as soon as their inputs are available. If `call x`'s inputs are based on `call y`'s outputs, this means that `call x` can be run as soon as `call y` has completed. 
+Calls can be run as soon as their inputs are available. If `call x`'s inputs are based on `call y`'s outputs, this means that `call x` can be run as soon as `call y` has completed.
 
 To add a dependency from x to y that isn't based on outputs, you can use the `after` keyword, such as `call x after y after z`. But note that this is only required if `x` doesn't already depend on an output from `y`.
 
@@ -2437,7 +2437,7 @@ workflow wf {
 }
 ```
 
-Running this workflow (which needs no inputs), would yield a value of `[2,3,4,5,6]` for `wf.inc`.  While `task inc` itself returns an `Int`, when it is called inside a scatter block, that type becomes an `Array[Int]`.
+Running this workflow (which needs no inputs), would yield a value of `[2,3,4,5,6]` for `wf.inc.incremented`.  While `task inc` itself returns an `Int`, when it is called inside a scatter block, that type becomes an `Array[Int]`.
 
 Any task that's downstream from the call to `inc` and outside the scatter block must accept an `Array[Int]`:
 
@@ -2474,7 +2474,7 @@ workflow wf {
   scatter (i in integers) {
     call inc {input: i=i}
   }
-  call sum {input: ints = inc.increment}
+  call sum {input: ints = inc.incremented}
 }
 ```
 
@@ -2491,7 +2491,7 @@ workflow wf {
     call inc {input: i=i}
     call inc as inc2 {input: i=inc.incremented}
   }
-  call sum {input: ints = inc2.increment}
+  call sum {input: ints = inc2.incremented}
 }
 ```
 
@@ -2619,7 +2619,6 @@ task t3 {
 workflow wf {
   input {
     Int int_val
-    Int int_val2 = 10
     Array[Int] my_ints
     File ref_file
   }
@@ -3567,7 +3566,7 @@ task output_example {
 }
 ```
 
-Both files `file_with_int` and `file_with_uri` should contain one line with the value on that line.  This value is then validated against the type of the variable.  If `file_with_int` contains a line with the text "foobar", the workflow must fail this task with an error.
+Both files `int_file` and `str_file` should contain one line with the value on that line.  This value is then validated against the type of the variable.  If `int_file` contains a line with the text "foobar", the workflow must fail this task with an error.
 
 ### Compound Types
 
@@ -3672,4 +3671,3 @@ task test {
 This task would assign the one key-value pair map in the echo statement to `my_map`.
 
 If the echo statement was instead `echo '["foo", "bar"]'`, the engine MUST fail the task for a type mismatch.
-
