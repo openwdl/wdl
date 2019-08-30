@@ -261,25 +261,7 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 
 ### String Interpolation
 
-Any string literal can use string interpolation to access the value of any of a task or workflow's inputs.  The most obvious example of this is being able to define an output file which is named as function of its input.  For example:
-
-```wdl
-task example {
-  input {
-    String prefix
-    File bam
-  }
-  command {
-    python analysis.py --prefix=${prefix} ${bam}
-  }
-  output {
-    File analyzed = "${prefix}.out"
-    File bam_sibling = "${bam}.suffix"
-  }
-}
-```
-
-However you can also use it in the context of a workflow as well. For example:
+Any string literal can use string interpolation. String interpolation can be used to evaluate any valid expression within a WDL string, using the value returned from the expression in place of the interpolated section. An example of this would be to access the value of a task or workflow's inputs.  
 
 
 ```wdl
@@ -289,19 +271,38 @@ workflow example {
 		String person
 		String directory
 	}	
-	String literal = "${directory}/file-${person}.txt"
 	
+	String literal = "${directory}/file-${person}.txt"	
 }
+
+```
+
+In the example above, if `directory` was set to `/my-directory` and `person` was set to `joe` then the resolved string would be `/my-directory/file-person.txt`. Expressions are not limited to variable substitution but can be any WDL expression so long as the returend valued can be coerced into a string (see below for valid return types). A more complex example is given below:
+
+```wdl
+workflow example {
+	
+	input {
+		Int x
+		Int y
+		File someFile
+	}	
+	
+	String sum = "the sum of x and y is ${x + y}"
+	String totalSize = "the size of file ${someFile} is ${size(someFile)}
+}
+
 ```
 
 Any `${expression}` or `~{expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
 
-Different types for the expression are formatted in different ways.
+Different return types for the expression are formatted in different ways.
 `String` is substituted directly.
 `File` is substituted as if it were a `String`.
 `Int` is formatted without leading zeros (unless the value is `0`), with a leading `-` if the value is negative.
 `Float` is printed in the style `[-]ddd.ddd`, with 6 digits after the decimal point.
-The expression cannot have the value of any other type.
+`Boolean` is substituted as if it were a string
+The return value of the expression cannot have the value of any other type.
 
 ```
 "${"abc"}" == "abc"
