@@ -9,6 +9,11 @@ Table of Contents
   * [Global Grammar Rules](#global-grammar-rules)
     * [Whitespace, Strings, Identifiers, Constants](#whitespace-strings-identifiers-constants)
     * [String Interpolation](#string-interpolation)
+      * [Interpolating and concatenating optional strings](#interpolating-and-concatenating-optional-strings)
+      * [String Interpolation Options](#string-interpolation-options)
+        * [Sep](#sep)
+        * [True and False](#true-and-false)
+        * [Default](#default)
     * [Comments](#comments)
     * [Types](#types)
       * [Custom  Types](#custom--types)
@@ -83,7 +88,6 @@ Table of Contents
 * [Namespaces](#namespaces)
 * [Scope](#scope)
 * [Optional Parameters &amp; Type Constraints](#optional-parameters--type-constraints)
-  * [Prepending a String to an Optional Parameter](#prepending-a-string-to-an-optional-parameter)
 * [Scatter / Gather](#scatter--gather)
 * [Variable Resolution](#variable-resolution)
   * [Task-Level Resolution](#task-level-resolution)
@@ -169,7 +173,7 @@ task hello {
   }
 
   command {
-    egrep '${pattern}' '${in}'
+    egrep '~{pattern}' '~{in}'
   }
 
   runtime {
@@ -272,7 +276,7 @@ workflow example {
 		String directory
 	}	
 	
-	String literal = "${directory}/file-${person}.txt"	
+	String literal = "~{directory}/file-~{person}.txt"	
 }
 
 ```
@@ -288,13 +292,13 @@ workflow example {
 		File someFile
 	}	
 	
-	String sum = "the sum of x and y is ${x + y}"
-	String totalSize = "the size of file ${someFile} is ${size(someFile)}
+	String sum = "the sum of x and y is ~{x + y}"
+	String totalSize = "the size of file ~{someFile} is ~{size(someFile)}
 }
 
 ```
 
-Any `${expression}` or `~{expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
+Any `~{expression}` or `~{expression}` inside of a string literal must be replaced with the value of the expression.  If `filename` were specified as `"foobar"`, then `"~{filename}.out"` would be evaluated to `"foobar.out"`.
 
 Different return types for the expression are formatted in different ways.
 `String` is substituted directly.
@@ -305,17 +309,122 @@ Different return types for the expression are formatted in different ways.
 The return value of the expression cannot have the value of any other type.
 
 ```
-"${"abc"}" == "abc"
+"~{"abc"}" == "abc"
 
 File def = "hij"
-"${def}" == "hij"
+"~{def}" == "hij"
 
-"${5}" == "5"
+"~{5}" == "5"
 
-"${3.141}" == "3.141000"
-"${3.141 * 1E-10}" == "0.000000"
-"${3.141 * 1E10}" == "31410000000.000000"
+"~{3.141}" == "3.141000"
+"~{3.141 * 1E-10}" == "0.000000"
+"~{3.141 * 1E10}" == "31410000000.000000"
 ```
+
+
+#### Interpolating and concatenating optional strings
+
+Interpolations with `~{}` and `~{}` accept optional string expressions and substitute the empty string for `None` at runtime.
+
+Within interpolations, string concatenation with the `+` operator has special typing properties to facilitate formulation of command-line flags. When applied to two non-optional operands, the result is a non-optional `String`. However, if either operand has an optional type, then the concatenation has type `String?`, and the runtime result is `None` if either operand is `None`. To illustrate how this can be used, consider this task:
+
+```wdl
+task test {
+  input {
+    String? val
+  }
+  command {
+    python script.py --val=~{val}
+  }
+}
+```
+
+Since `val` is optional, this command line can be instantiated in two ways:
+
+```
+python script.py --val=foobar
+```
+
+Or
+
+```
+python script.py --val=
+```
+
+The latter case is very likely an error case, and this `--val=` part should be left off if a value for `val` is omitted.  To solve this problem, modify the expression inside the template tag as follows:
+
+```
+python script.py ~{"--val=" + val}
+```
+
+The `+` operator cannot accept optional operands outside of interpolations.
+
+
+
+#### String Interpolation Options
+
+String interpolation options are `option="value"` pairs that precede the expression in an expression command part and customize the interpolation of the WDL expression into the string being built. The following options are available:
+
+* `sep` - eg `~{sep=", " array_value}`
+* `true` and `false` - eg `~{true="--yes" false="--no" boolean_value}`
+* `default` - eg `~{default="foo" optional_value}`
+
+Additional explanation for these command part options follows:
+
+##### sep
+
+'sep' is interpreted as the separator string used to join multiple parameters together.  `sep` is only valid if the expression evaluates to an `Array`.
+
+For example, if there were a declaration `Array[Int] ints = [1,2,3]`, the command `"python script.py ~{sep=',' numbers}"` would yield the string line:
+
+```
+"python script.py 1,2,3"
+```
+
+Alternatively, if the command were `"python script.py ~{sep=' ' numbers}"` it would parse to:
+
+```
+"python script.py 1 2 3"
+```
+
+> *Additional Requirements*:
+>
+> 1.  sep MUST accept only a string as its value
+
+##### True and False
+
+'true' and 'false' are available for expressions which evaluate to `Boolean`s. They specify a string literal to insert into the string when the result of the expression is true or false respectively.
+
+For example, `~{true='--enable-foo' false='--disable-foo' allow_foo}` would evaluate the expression `allow_foo` as a variable lookup and depending on its value would either insert the string `--enable-foo` or `--disable-foo` into the string.
+
+Both `true` and `false` cases are required. If one case should insert no value then an empty string literal should be used, eg `~{true='--enable-foo' false='' allow_foo}`
+
+> 1.  `true` and `false` values MUST be string literals.
+> 2.  `true` and `false` are only allowed if the type is `Boolean`
+> 3.  Both `true` and `false` cases are required.
+> 4.  Consider using the expression `~{if allow_foo then "--enable-foo" else "--disable-foo"}` as a more readable alternative which allows full expressions (rather than string literals) for the true and false cases.
+
+##### Default
+
+This specifies the default value if no other value is specified for this parameter and provides a mechanism to handle optional expressions or values within a string interpolation block
+
+```wdl
+task default_test {
+  input {
+    String? s
+  }
+  command {
+    ./my_cmd ~{default="foobar" s}
+  }
+}
+```
+
+This task takes an optional `String` parameter and if a value is not specified, then the value of `foobar` will be used instead.
+
+> *Additional Requirements*:
+>
+> 1.  The type of the expression must match the type of the parameter
+> 2.  If 'default' is specified, the variable MUST be an optional type
 
 ### Comments
 
@@ -438,7 +547,7 @@ task foobar {
     File in
   }
   command {
-    sh setup.sh ${in}
+    sh setup.sh ~{in}
   }
   output {
     File results = stdout()
@@ -453,7 +562,7 @@ import "other.wdl" as other
 task test {
   String my_var
   command {
-    ./script ${my_var}
+    ./script ~{my_var}
   }
   output {
     File results = stdout()
@@ -532,7 +641,7 @@ task test {
     String var
   }
   command {
-    ./script ${var}
+    ./script ~{var}
   }
   output {
     String value = read_string(stdout())
@@ -544,7 +653,7 @@ task test2 {
     Array[String] array
   }
   command {
-    ./script ${write_lines(array)}
+    ./script ~{write_lines(array)}
   }
   output {
     Int value = read_int(stdout())
@@ -957,132 +1066,17 @@ task t {
 
 The `command` section is the *task section* that starts with the keyword 'command', and is enclosed in either curly braces `{ ... }` or triple angle braces `<<< ... >>>`.
 It defines a shell command which will be run in the execution environment after all of the inputs are staged and before the outputs are evaluated.
-The body of the command also allows placeholders for the parts of the command line that need to be filled in.
+The body of the command is treated as an [interpolated string](#string-interpolation) and allows expression placeholders to be used.
 
-Expression placeholders are denoted by `${...}` or `~{...}` depending on whether they appear in a `command { }` or `command <<< >>>` body styles.
-
-#### Expression Placeholders
-
-Expression placeholders differ depending on the command section style:
+Expression placeholders are denoted by `~{...}` or `~{...}` depending on whether they appear in a `command { }` or `command <<< >>>` body styles. This is the major 
+difference with normal interpolated strings which elsewhere and is defined below. The internal syntax within an expression placeholder is the exact same as the syntax within an interpolated string expression.
 
 |Command Body Style|Placeholder Style|
 |---|---|
-|`command { ... }`|`~{}` (preferred) or `${}`|
+|`command { ... }`|`~{}` (preferred) or `~{}`|
 |`command <<< >>>`|`~{}` only|
 
-These placeholders contain a single expression which will be evaluated using inputs or declarations available in the task.
-The placeholders are then replaced in the command script with the result of the evaluation.
 
-For example a command might reference an input to the task, like this:
-
-```wdl
-task test {
-  input {
-    String flags
-  }
-  command {
-    ps ~{flags}
-  }
-}
-```
-
-In this case `flags` within the `${...}` is a variable lookup expression referencing the `flags` input string.
-The expression can also be more complex, like a function call: `write_lines(some_array_value)`
-
-Here is the same example using the `command <<<` style:
-```wdl
-task test {
-  String flags
-  command <<<
-    ps ~{flags}
-  >>>
-}
-```
-
-> **NOTE**: the expression result must ultimately be converted to a string in order to take the place of the placeholder in the command script.
-This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Struct`).
-To place an array into the command block a separator character must be specified using `sep` (eg `${sep=", " int_array}`).
-
-
-As another example, consider how the parser would parse the following command:
-
-```
-grep '${start}...${end}' ${input}
-```
-
-This command would be parsed as:
-
-* `grep '` - literal string
-* `${start}` - lookup expression to the variable `start`
-* `...` - literal string
-* `${end}` - lookup expression to the variable `end`
-* `' ` - literal string
-* `${input}` - lookup expression to the variable `input`
-
-#### Expression Placeholder Options
-
-Expression placeholder options are `option="value"` pairs that precede the expression in an expression command part and customize the interpolation of the WDL value into the command string being built. The following options are available:
-
-* `sep` - eg `${sep=", " array_value}`
-* `true` and `false` - eg `${true="--yes" false="--no" boolean_value}`
-* `default` - eg `${default="foo" optional_value}`
-
-Additional explanation for these command part options follows:
-
-##### sep
-
-'sep' is interpreted as the separator string used to join multiple parameters together.  `sep` is only valid if the expression evaluates to an `Array`.
-
-For example, if there were a declaration `Array[Int] ints = [1,2,3]`, the command `python script.py ${sep=',' numbers}` would yield the command line:
-
-```
-python script.py 1,2,3
-```
-
-Alternatively, if the command were `python script.py ${sep=' ' numbers}` it would parse to:
-
-```
-python script.py 1 2 3
-```
-
-> *Additional Requirements*:
->
-> 1.  sep MUST accept only a string as its value
-
-##### true and false
-
-'true' and 'false' are available for expressions which evaluate to `Boolean`s. They specify a string literal to insert into the command block when the result is true or false respectively.
-
-For example, `${true='--enable-foo' false='--disable-foo' allow_foo}` would evaluate the expression `allow_foo` as a variable lookup and depending on its value would either insert the string `--enable-foo` or `--disable-foo` into the command.
-
-Both `true` and `false` cases are required. If one case should insert no value then an empty string literal should be used, eg `${true='--enable-foo' false='' allow_foo}`
-
-> 1.  `true` and `false` values MUST be string literals.
-> 2.  `true` and `false` are only allowed if the type is `Boolean`
-> 3.  Both `true` and `false` cases are required.
-> 4.  Consider using the expression `${if allow_foo then "--enable-foo" else "--disable-foo"}` as a more readable alternative which allows full expressions (rather than string literals) for the true and false cases.
-
-##### default
-
-This specifies the default value if no other value is specified for this parameter.
-
-```wdl
-task default_test {
-  input {
-    String? s
-  }
-  command {
-    ./my_cmd ${default="foobar" s}
-  }
-}
-```
-
-This task takes an optional `String` parameter and if a value is not specified, then the value of `foobar` will be used instead.
-
-> *Additional Requirements*:
->
-> 1.  The type of the expression must match the type of the parameter
-> 2.  If 'default' is specified, the `$type_postfix_quantifier` for the variable's type MUST be `?`
 
 #### Alternative heredoc syntax
 
@@ -1142,7 +1136,7 @@ As with other string literals in a task definition, Strings in the output sectio
 
 ```wdl
 output {
-  Array[String] quality_scores = read_lines("${sample_id}.scores.txt")
+  Array[String] quality_scores = read_lines("~{sample_id}.scores.txt")
 }
 ```
 
@@ -1294,7 +1288,7 @@ task docker_test {
     String arg
   }
   command {
-    python process.py ${arg}
+    python process.py ~{arg}
   }
   runtime {
     docker: "ubuntu:latest"
@@ -1316,7 +1310,7 @@ task memory_test {
   }
 
   command {
-    python process.py ${arg}
+    python process.py ~{arg}
   }
   runtime {
     memory: "2GB"
@@ -1351,7 +1345,7 @@ task wc {
              suggestions: ["us-west", "us-east", "asia-pacific", "europe-central"]}
   }
   command {
-    wc ${true="-l", false=' ' l} ${f}
+    wc ~{true="-l", false=' ' l} ~{f}
   }
   output {
      String retval = stdout()
@@ -1387,7 +1381,7 @@ task one_and_one {
     File infile
   }
   command {
-    grep ${pattern} ${infile}
+    grep ~{pattern} ~{infile}
   }
   output {
     File filtered = stdout()
@@ -1406,10 +1400,10 @@ task runtime_meta {
     String sample_id
   }
   command {
-    java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
+    java -Xmx~{memory_mb}M -jar task.jar -id ~{sample_id} -param ~{param} -out ~{sample_id}.out
   }
   output {
-    File results = "${sample_id}.out"
+    File results = "~{sample_id}.out"
   }
   runtime {
     docker: "broadinstitute/baseimg"
@@ -1438,11 +1432,11 @@ task bwa_mem_tool {
     File reads
   }
   command {
-    bwa mem -t ${threads} \
-            -k ${min_seed_length} \
-            -I ${sep=',' min_std_max_min+} \
-            ${reference} \
-            ${sep=' ' reads+} > output.sam
+    bwa mem -t ~{threads} \
+            -k ~{min_seed_length} \
+            -I ~{sep=',' min_std_max_min+} \
+            ~{reference} \
+            ~{sep=' ' reads+} > output.sam
   }
   output {
     File sam = "output.sam"
@@ -1453,7 +1447,7 @@ task bwa_mem_tool {
 }
 ```
 
-Notable pieces in this example is `${sep=',' min_std_max_min+}` which specifies that min_std_max_min can be one or more integers (the `+` after the variable name indicates that it can be one or more).  If an `Array[Int]` is passed into this parameter, then it's flattened by combining the elements with the separator character (`sep=','`).
+Notable pieces in this example is `~{sep=',' min_std_max_min+}` which specifies that min_std_max_min can be one or more integers (the `+` after the variable name indicates that it can be one or more).  If an `Array[Int]` is passed into this parameter, then it's flattened by combining the elements with the separator character (`sep=','`).
 
 This task also defines that it exports one file, called 'sam', which is the stdout of the execution of bwa mem.
 
@@ -1467,7 +1461,7 @@ task wc2_tool {
     File file1
   }
   command {
-    wc ${file1}
+    wc ~{file1}
   }
   output {
     Int count = read_int(stdout())
@@ -1512,7 +1506,7 @@ task tmap_tool {
     File reads
   }
   command {
-    tmap mapall ${sep=' ' stages} < ${reads} > output.sam
+    tmap mapall ~{sep=' ' stages} < ~{reads} > output.sam
   }
   output {
     File sam = "output.sam"
@@ -1520,7 +1514,7 @@ task tmap_tool {
 }
 ```
 
-For this particular case where the command line is *itself* a mini DSL, The best option at that point is to allow the user to type in the rest of the command line, which is what `${sep=' ' stages+}` is for.  This allows the user to specify an array of strings as the value for `stages` and then it concatenates them together with a space character
+For this particular case where the command line is *itself* a mini DSL, The best option at that point is to allow the user to type in the rest of the command line, which is what `~{sep=' ' stages+}` is for.  This allows the user to specify an array of strings as the value for `stages` and then it concatenates them together with a space character
 
 |Variable|Value|
 |--------|-----|
@@ -1765,7 +1759,7 @@ task task2 {
     File foobar
   }
   command {
-    python do_stuff2.py ${foobar}
+    python do_stuff2.py ~{foobar}
   }
   output {
     File results = stdout()
@@ -1824,7 +1818,7 @@ task hello {
     String addressee
   }
   command {
-    echo "Hello ${addressee}!"
+    echo "Hello ~{addressee}!"
   }
   runtime {
       docker: "ubuntu:latest"
@@ -2300,7 +2294,7 @@ task my_task {
     File f
   }
   command {
-    my_cmd --integer=${var} ${f}
+    my_cmd --integer=~{var} ~{f}
   }
 }
 
@@ -2338,9 +2332,9 @@ task test {
     Array[File]+? e  # An optional array that, if defined, must contain at least one element
   }
   command {
-    /bin/mycmd ${sep=" " a}
-    /bin/mycmd ${sep="," b}
-    /bin/mycmd ${write_lines(c)}
+    /bin/mycmd ~{sep=" " a}
+    /bin/mycmd ~{sep="," b}
+    /bin/mycmd ~{write_lines(c)}
   }
 }
 
@@ -2391,42 +2385,7 @@ It's invalid (a static validation error) to supply an expression of optional typ
 
 The nonempty array quantifier `Array[T]+` isn't statically validated in the same way, but rather as a runtime assertion: binding an empty array to an `Array[T]+` input or function argument is a runtime error. An array type can be both non-empty and optional, `Array[T]+?`, such that the value can be `None` or a non-empty array, but not the empty array.
 
-## Interpolating and concatenating optional strings
 
-Interpolations with `~{}` and `${}` accept optional string expressions and substitute the empty string for `None` at runtime.
-
-Within interpolations, string concatenation with the `+` operator has special typing properties to facilitate formulation of command-line flags. When applied to two non-optional operands, the result is a non-optional `String`. However, if either operand has an optional type, then the concatenation has type `String?`, and the runtime result is `None` if either operand is `None`. To illustrate how this can be used, consider this task:
-
-```wdl
-task test {
-  input {
-    String? val
-  }
-  command {
-    python script.py --val=${val}
-  }
-}
-```
-
-Since `val` is optional, this command line can be instantiated in two ways:
-
-```
-python script.py --val=foobar
-```
-
-Or
-
-```
-python script.py --val=
-```
-
-The latter case is very likely an error case, and this `--val=` part should be left off if a value for `val` is omitted.  To solve this problem, modify the expression inside the template tag as follows:
-
-```
-python script.py ${"--val=" + val}
-```
-
-The `+` operator cannot accept optional operands outside of interpolations.
 
 # Scatter / Gather
 
@@ -2529,7 +2488,7 @@ task my_task {
     Array[String] strings
   }
   command {
-    python analyze.py --strings-file=${write_lines(strings)}
+    python analyze.py --strings-file=~{write_lines(strings)}
   }
 }
 ```
@@ -2569,10 +2528,10 @@ task test {
     Int i
     Float f
   }
-  String s = "${i}"
+  String s = "~{i}"
 
   command {
-    ./script.sh -i ${s} -f ${f}
+    ./script.sh -i ~{s} -f ~{f}
   }
 }
 ```
@@ -2598,7 +2557,7 @@ task t1 {
   }
 
   command {
-    ./script --action=${s} -x${x}
+    ./script --action=~{s} -x~{x}
   }
   output {
     Int count = read_int(stdout())
@@ -2613,7 +2572,7 @@ task t2 {
   }
 
   command {
-    ./script2 --action=${s} -x${x} --other=${t}
+    ./script2 --action=~{s} -x~{x} --other=~{t}
   }
   output {
     Int count = read_int(stdout())
@@ -2627,7 +2586,7 @@ task t3 {
   }
 
   command {
-    python -c "print(${y} + 1)"
+    python -c "print(~{y} + 1)"
   }
   output {
     Int incr = read_int(stdout())
@@ -2747,7 +2706,7 @@ task do_stuff {
     File file
   }
   command {
-    grep '${pattern}' ${file}
+    grep '~{pattern}' ~{file}
   }
   output {
     Array[String] matches = read_lines(stdout())
@@ -2771,7 +2730,7 @@ task do_stuff {
     File file
   }
   command {
-    python do_stuff.py ${file}
+    python do_stuff.py ~{file}
   }
   output {
     Array[Array[String]] output_table = read_tsv("./results/file_list.tsv")
@@ -2798,7 +2757,7 @@ task do_stuff {
     File file
   }
   command {
-    ./script --flags=${flags} ${file}
+    ./script --flags=~{flags} ~{file}
   }
   output {
     Map[String, String] mapping = read_map(stdout())
@@ -2831,7 +2790,7 @@ task do_stuff {
     File file
   }
   command {
-    python do_stuff.py ${file}
+    python do_stuff.py ~{file}
   }
   output {
     Map[String, String] output_table = read_json("./results/file_list.json")
@@ -2878,7 +2837,7 @@ Given something that's compatible with `Array[String]`, this writes each element
 task example {
   Array[String] array = ["first", "second", "third"]
   command {
-    ./script --file-list=${write_lines(array)}
+    ./script --file-list=~{write_lines(array)}
   }
 }
 ```
@@ -2905,7 +2864,7 @@ Given something that's compatible with `Array[Array[String]]`, this writes a TSV
 task example {
   Array[String] array = [["one", "two", "three"], ["un", "deux", "trois"]]
   command {
-    ./script --tsv=${write_tsv(array)}
+    ./script --tsv=~{write_tsv(array)}
   }
 }
 ```
@@ -2931,7 +2890,7 @@ Given something that's compatible with `Map[String, String]`, this writes a TSV 
 task example {
   Map[String, String] map = {"key1": "value1", "key2": "value2"}
   command {
-    ./script --map=${write_map(map)}
+    ./script --map=~{write_map(map)}
   }
 }
 ```
@@ -2959,7 +2918,7 @@ task example {
     Map[String, String] map = {"key1": "value1", "key2": "value2"}
   }
   command {
-    ./script --map=${write_json(map)}
+    ./script --map=~{write_json(map)}
   }
 }
 ```
@@ -3038,7 +2997,7 @@ task example {
     String output_file_name = sub(input_file, "\\.bam$", ".index") # my_input_file.index
   }
   command {
-    echo "I want an index instead" > ${output_file_name}
+    echo "I want an index instead" > ~{output_file_name}
   }
 
   output {
@@ -3250,7 +3209,7 @@ Compound Types:
 * Pair
 * Struct
 
-When a WDL workflow engine instantiates a command specified in the `command` section of a `task`, it must serialize all `${...}` tags in the command into primitive types.
+When a WDL workflow engine instantiates a command specified in the `command` section of a `task`, it must serialize all `~{...}` tags in the command into primitive types.
 
 For example, if I'm writing a tool that operates on a list of FASTQ files, there are a variety of ways that this list can be passed to that task:
 
@@ -3272,7 +3231,7 @@ task test {
     Array[File] files
   }
   command {
-    Rscript analysis.R --files=${sep=',' files}
+    Rscript analysis.R --files=~{sep=',' files}
   }
   output {
     Array[String] strs = read_lines(stdout())
@@ -3299,7 +3258,7 @@ task output_example {
   }
 
   command {
-    python do_work.py ${s} ${i} ${f}
+    python do_work.py ~{s} ~{i} ~{f}
   }
 }
 ```
@@ -3331,7 +3290,7 @@ Arrays can be serialized in two ways:
 
 ##### Array serialization by expansion
 
-The array flattening approach can be done if a parameter is specified as `${sep=' ' my_param}`.  `my_param` must be declared as an `Array` of primitive types.  When the value of `my_param` is specified, then the values are joined together with the separator character (a space in this case).  For example:
+The array flattening approach can be done if a parameter is specified as `~{sep=' ' my_param}`.  `my_param` must be declared as an `Array` of primitive types.  When the value of `my_param` is specified, then the values are joined together with the separator character (a space in this case).  For example:
 
 ```wdl
 task test {
@@ -3339,7 +3298,7 @@ task test {
     Array[File] bams
   }
   command {
-    python script.py --bams=${sep=',' bams}
+    python script.py --bams=~{sep=',' bams}
   }
 }
 ```
@@ -3364,7 +3323,7 @@ task test {
     Array[File] bams
   }
   command {
-    sh script.sh ${write_lines(bams)}
+    sh script.sh ~{write_lines(bams)}
   }
 }
 ```
@@ -3401,7 +3360,7 @@ task test {
     Array[File] bams
   }
   command {
-    sh script.sh ${write_json(bams)}
+    sh script.sh ~{write_json(bams)}
   }
 }
 ```
@@ -3444,7 +3403,7 @@ task test {
     Map[String, Float] sample_quality_scores
   }
   command {
-    sh script.sh ${write_map(sample_quality_scores)}
+    sh script.sh ~{write_map(sample_quality_scores)}
   }
 }
 ```
@@ -3481,7 +3440,7 @@ task test {
     Map[String, Float] sample_quality_scores
   }
   command {
-    sh script.sh ${write_json(sample_quality_scores)}
+    sh script.sh ~{write_json(sample_quality_scores)}
   }
 }
 ```
@@ -3575,7 +3534,7 @@ task output_example {
     String param2
   }
   command {
-    python do_work.py ${param1} ${param2} --out1=int_file --out2=str_file
+    python do_work.py ~{param1} ~{param2} --out1=int_file --out2=str_file
   }
   output {
     Int my_int = read_int("int_file")
