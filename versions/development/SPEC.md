@@ -8,6 +8,7 @@ Table of Contents
 * [Language Specification](#language-specification)
   * [Global Grammar Rules](#global-grammar-rules)
     * [Whitespace, Strings, Identifiers, Constants](#whitespace-strings-identifiers-constants)
+    * [String Interpolation](#string-interpolation)
     * [Comments](#comments)
     * [Types](#types)
       * [Custom  Types](#custom--types)
@@ -45,7 +46,6 @@ Table of Contents
     * [Outputs Section](#outputs-section)
       * [Globs](#globs)
         * [Task portability and non-standard BaSH](#task-portability-and-non-standard-bash)
-    * [String Interpolation](#string-interpolation)
     * [Runtime Section](#runtime-section)
       * [docker](#docker)
       * [memory](#memory)
@@ -258,6 +258,63 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 |`\t`|tab|`\x09`|
 |`\'`|single quote|`\x22`|
 |`\"`|double quote|`\x27`|
+
+### String Interpolation
+
+Any string literal can use string interpolation to access the value of any of a task or workflow's inputs.  The most obvious example of this is being able to define an output file which is named as function of its input.  For example:
+
+```wdl
+task example {
+  input {
+    String prefix
+    File bam
+  }
+  command {
+    python analysis.py --prefix=${prefix} ${bam}
+  }
+  output {
+    File analyzed = "${prefix}.out"
+    File bam_sibling = "${bam}.suffix"
+  }
+}
+```
+
+However you can also use it in the context of a workflow as well. For example:
+
+
+```wdl
+workflow example {
+	
+	input {
+		String person
+		String directory
+	}	
+	String literal = "${directory}/file-${person}.txt"
+	
+}
+```
+
+Any `${expression}` or `~{expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
+
+Different types for the expression are formatted in different ways.
+`String` is substituted directly.
+`File` is substituted as if it were a `String`.
+`Int` is formatted without leading zeros (unless the value is `0`), with a leading `-` if the value is negative.
+`Float` is printed in the style `[-]ddd.ddd`, with 6 digits after the decimal point.
+The expression cannot have the value of any other type.
+
+```
+"${"abc"}" == "abc"
+
+File def = "hij"
+"${def}" == "hij"
+
+"${5}" == "5"
+
+"${3.141}" == "3.141000"
+"${3.141 * 1E-10}" == "0.000000"
+"${3.141 * 1E10}" == "31410000000.000000"
+```
 
 ### Comments
 
@@ -1080,7 +1137,7 @@ output {
 
 The task is expecting that a file called "threshold.txt" will exist in the current working directory after the command is executed. Inside that file must be one line that contains only an integer and whitespace.  See the [Data Types & Serialization](#data-types--serialization) section for more details.
 
-As with other string literals in a task definition, Strings in the output section may contain interpolations (see the [String Interpolation](#string-interpolation) section below for more details). Here's an example:
+As with other string literals in a task definition, Strings in the output section may contain interpolations (see the [String Interpolation](#string-interpolation) section for more details). Here's an example:
 
 ```wdl
 output {
@@ -1181,47 +1238,7 @@ Note that some specialized docker images may include a non-standard bash shell w
 
 Therefore to ensure that a WDL is portable when using `glob()`, a docker image should be provided and the WDL author should remember that `glob()` results depend on coordination with the bash implementation installed on that docker image.
 
-### String Interpolation
 
-Within tasks, any string literal can use string interpolation to access the value of any of the task's inputs.  The most obvious example of this is being able to define an output file which is named as function of its input.  For example:
-
-```wdl
-task example {
-  input {
-    String prefix
-    File bam
-  }
-  command {
-    python analysis.py --prefix=${prefix} ${bam}
-  }
-  output {
-    File analyzed = "${prefix}.out"
-    File bam_sibling = "${bam}.suffix"
-  }
-}
-```
-
-Any `${expression}` or `~{expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
-
-Different types for the expression are formatted in different ways.
-`String` is substituted directly.
-`File` is substituted as if it were a `String`.
-`Int` is formatted without leading zeros (unless the value is `0`), with a leading `-` if the value is negative.
-`Float` is printed in the style `[-]ddd.ddd`, with 6 digits after the decimal point.
-The expression cannot have the value of any other type.
-
-```
-"${"abc"}" == "abc"
-
-File def = "hij"
-"${def}" == "hij"
-
-"${5}" == "5"
-
-"${3.141}" == "3.141000"
-"${3.141 * 1E-10}" == "0.000000"
-"${3.141 * 1E10}" == "31410000000.000000"
-```
 
 
 ### Runtime Section
