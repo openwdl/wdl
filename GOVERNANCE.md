@@ -8,7 +8,7 @@ Current core team members are:
 
 | Name               | Organization            | github                  |
 |:-------------------|:-------------|:------------------
-| Jeff Gentry        | Broad Institute                 | [geoffjentry](https://github.com/geoffjentry) |
+| Jeff Gentry        | Foundation Medicine                 | [geoffjentry](https://github.com/geoffjentry) |
 | Mike Lin           | DNAnexus                        | [mlin](https://github.com/mlin) |
 | Patrick Magee      | DNAstack                        | [patmagee](https://github.com/patmagee) |
 | Brian O'Connor     | University of California, Santa Cruz | [briandoconnor](https://github.com/briandoconnor) |
