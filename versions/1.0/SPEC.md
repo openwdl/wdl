@@ -762,6 +762,7 @@ Engines should at the very least support the following protocols for import URIs
 * `file://`
 * no protocol (which should be interpreted as `file://`
 
+For `file://` URIs, the path to the file to be imported must either be fully qualified or be relatve to the current WDL file that is importing it.
 
 ## Task Definition
 
