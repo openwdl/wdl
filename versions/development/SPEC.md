@@ -442,7 +442,7 @@ The following fully-qualified names would exist within `workflow wf` in main.wdl
 * `wf.otherWorkflow.bool` - References the `Boolean` input of the first call to subworkflow `other.otherWorkflow`
 * `wf.otherWorkflow.foobar.results` - References the `File` output of the call to `foobar` inside the first call to subworkflow `other.otherWorkflow`
 * `wf.otherWorkflow.foobar.input` - References the `File` input of the call to `foobar` inside the first call to subworkflow `other.otherWorkflow`
-* `wf.otherWorkflow2` - References the second call to subworkflow `other.otherWorkflow` (alias as otherWorkflow2)
+* `wf.otherWorkflow2` - References the second call to subworkflow `other.otherWorkflow` (aliased as otherWorkflow2)
 * `wf.otherWorkflow2.bool` - References the `Boolean` input of the second call to subworkflow `other.otherWorkflow`
 * `wf.otherWorkflow2.foobar.results` - References the `File` output of the call to `foobar` inside the second call to subworkflow `other.otherWorkflow`
 * `wf.otherWorkflow2.foobar.input` - References the `File` input of the call to `foobar` inside the second call to subworkflow `other.otherWorkflow`
