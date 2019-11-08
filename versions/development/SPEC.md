@@ -185,7 +185,7 @@ workflow wf {
 
 This describes a task, called 'hello', which has two parameters (`String pattern` and `File in`).  A `task` definition is a way of **encapsulating a UNIX command and environment and presenting them as functions**.  Tasks have both inputs and outputs.  Inputs are declared as declarations at the top of the `task` definition, while outputs are defined in the `output` section.
 
-The user must provide a value for these two parameters in order for this task to be runnable.  Implementations of WDL should accept their [inputs as JSON format](#specifying-workflow-inputs-in-json).  For example, the above task needs values for two parameters: `String pattern` and `File in`:
+The user must provide a value for these two parameters in order for this task to be runnable.  Implementations of WDL should accept their [inputs as JSON format](#specifying-workflow-inputs-in-json). The inputs described in such a JSON file should be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example, the above task needs values for two parameters: `String pattern` and `File in`:
 
 |Variable           |Value    |
 |-------------------|---------|
@@ -384,6 +384,13 @@ task foobar {
     File results = stdout()
   }
 }
+
+workflow otherWorkflow {
+    input {
+        Boolean bool
+    }
+    call foobar
+}
 ```
 
 main.wdl
@@ -406,6 +413,8 @@ workflow wf {
   call test
   call test as test2
   call other.foobar
+  call other.otherWorkflow
+  call other.otherWorkflow as otherWorkflow2
   output {
     test.results
     foobar.results
@@ -429,6 +438,14 @@ The following fully-qualified names would exist within `workflow wf` in main.wdl
 * `wf.test2.results` - References the `File` output of second call to task `test`
 * `wf.foobar.results` - References the `File` output of the call to `other.foobar`
 * `wf.foobar.input` - References the `File` input of the call to `other.foobar`
+* `wf.otherWorkflow` - References the first call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow.bool` - References the `Boolean` input of the first call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow.foobar.results` - References the `File` output of the call to `foobar` inside the first call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow.foobar.input` - References the `File` input of the call to `foobar` inside the first call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow2` - References the second call to subworkflow `other.otherWorkflow` (alias as otherWorkflow2)
+* `wf.otherWorkflow2.bool` - References the `Boolean` input of the second call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow2.foobar.results` - References the `File` output of the call to `foobar` inside the second call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow2.foobar.input` - References the `File` input of the call to `foobar` inside the second call to subworkflow `other.otherWorkflow`
 * `wf.arr` - References the `Array[String]` declaration on the workflow
 * `wf.scattered_test` - References the scattered version of `call test`
 * `wf.scattered_test.my_var` - References an `Array[String]` for each element used as `my_var` when running the scattered version of `call test`.
