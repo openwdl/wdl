@@ -368,7 +368,15 @@ $fully_qualified_name = $identifier ('.' $identifier)*
 $namespaced_identifier = $identifier ('.' $identifier)*
 ```
 
-A fully qualified name is the unique identifier of any particular `call` or call input or output.  For example:
+A fully qualified name is the unique identifier of any particular call, input or output. These follow the following structure:
+* For calls: `<parent namespace>.<call alias>`
+  * For calls to workflows the following structure is also permitted and is considered an alias to the above mentioned structure:  
+    `<parent namespace>.<call alias>.<workflow name>`. Using this structure is not recommended as it will likely be deprecated in the future.
+* For inputs and outputs: `<parent namespace>.<input or output name>`
+
+The `parent namespace` here will equal the fully qualified name of the call containing the call, input or output. For the top-level workflow this is equal to the workflow name, as it lacks a call alias.
+
+For example:
 
 other.wdl
 
