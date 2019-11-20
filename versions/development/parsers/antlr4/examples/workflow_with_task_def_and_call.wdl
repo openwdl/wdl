@@ -42,18 +42,18 @@ workflow workflow_with_task_def_and_call {
 
   scatter ( i in scatters) {
 	  call foo as bar {
-		inputs:
+		input:
 			inp = inp
 	  }
 
 	  if ( i % 2 == 0 ) {
 	  	call foo as biz {
-	  		inputs:
+	  		input:
 	  			inp = "Even"
 	  	}
 
 	  	call other.that_workflow as baz {
-	  		inputs:
+	  		input:
 	  			test = i
 
 	  	}

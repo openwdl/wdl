@@ -15,7 +15,6 @@ TASK: 'task';
 STRUCT: 'struct';
 SCATTER: 'scatter';
 CALL: 'call';
-INPUTS: 'inputs';
 IF: 'if';
 THEN: 'then';
 ELSE: 'else';
