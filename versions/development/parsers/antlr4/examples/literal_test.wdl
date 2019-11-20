@@ -23,7 +23,8 @@ workflow string_interpolation {
   Array[String] strings = ["foo","bar","biz","baz"]
   Pair[String,Int] pair = ("foo",10)
   Map[String,String] map = {"foo":"bar"}
-  LiteralStruct literal_strict = LiteralStruct { "foo":"bar","bar": 1 }
+  Map[String,String] map_with_expression = {strings[0]:"bar"}
+  LiteralStruct literal_strict = LiteralStruct {foo: "bar", bar: 1 }
 
 
 }

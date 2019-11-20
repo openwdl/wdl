@@ -122,7 +122,7 @@ expr_core
 	| primitive_literal #primitives
 	| LBRACK (expr (COMMA expr)*)* RBRACK #array_literal
 	| LPAREN expr COMMA expr RPAREN #pair_literal
-	| LBRACE (primitive_literal COLON expr (COMMA primitive_literal COLON expr)*)* RBRACE #map_literal
+	| LBRACE (expr COLON expr (COMMA expr COLON expr)*)* RBRACE #map_literal
 	| Identifier LBRACE (primitive_literal COLON expr (COMMA primitive_literal COLON expr)*)* RBRACE #struct_literal
 	| NOT expr #negate
 	| expr_core LBRACK expr RBRACK #at
