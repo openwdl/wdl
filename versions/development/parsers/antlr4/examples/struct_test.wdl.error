@@ -1,0 +1,12 @@
+version development
+
+
+#EXPECTED_ERROR line:6 msg:"Only unbound declarations are allowed"
+struct FooStruct {
+  Int p = 100
+}
+
+#EXPECTED_ERROR line:10 msg:"Struct names must be an identifier"
+struct 8_IllegalName {
+  Int p
+}

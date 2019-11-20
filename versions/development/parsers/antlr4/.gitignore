@@ -1,0 +1,16 @@
+*.interp
+*.tokens
+WdlLexer.py
+WdlParser.py
+WdlParserListener.py
+WdlParserVisitor.py
+WdlLexer.js
+WdlParser.js
+WdlParserListener.js
+WdlParserVisitor.js
+WdlLexerPython.py
+target/
+.idea/
+*.jar
+node_modules/
+build/
