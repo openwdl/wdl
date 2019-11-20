@@ -238,7 +238,7 @@ call_afters
 	;
 
 call
-	: CALL Identifier (call_afters)* call_alias? call_body?
+	: CALL Identifier call_alias? (call_afters)*  call_body?
 	;
 
 
