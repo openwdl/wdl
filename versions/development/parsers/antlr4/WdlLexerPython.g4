@@ -40,11 +40,13 @@ INT: 'Int';
 FLOAT: 'Float';
 STRING: 'String';
 FILE: 'File';
+DIRECTORY: 'Directory';
 ARRAY: 'Array';
 MAP: 'Map';
 PAIR: 'Pair';
 LEFT: 'left';
 RIGHT: 'right';
+AFTER: 'after';
 
 // Symbols
 LPAREN: '(';

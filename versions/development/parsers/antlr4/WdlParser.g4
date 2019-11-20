@@ -20,7 +20,7 @@ type_base
 	: array_type
 	| map_type
 	| pair_type
-	| (STRING | FILE | BOOLEAN | INT | FLOAT | Identifier)
+	| (STRING | FILE | DIRECTORY | BOOLEAN | INT | FLOAT | Identifier)
 	;
 
 wdl_type
@@ -233,8 +233,12 @@ call_body
 	: LBRACE call_inputs? RBRACE
 	;
 
+call_afters
+	: AFTER Identifier
+	;
+
 call
-	: CALL Identifier call_alias? call_body?
+	: CALL Identifier (call_afters)* call_alias? call_body?
 	;
 
 
