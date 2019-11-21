@@ -26,6 +26,7 @@ public abstract class WDLBaseLexer extends Lexer {
     @Override
     public Token nextToken() {
         CommonToken token = (CommonToken) super.nextToken();
+
         int currentType = token.getType();
         if (_mode == WdlLexer.SquoteInterpolatedString) {
             if (token.getType() == WdlLexer.SQuoteUnicodeEscape) {
@@ -98,7 +99,6 @@ public abstract class WDLBaseLexer extends Lexer {
     public void PopModeOnCurlBracketClose() {
         if (!curlyStack.empty()) {
             if (curlyStack.pop()) {
-                _channel = WdlLexer.SkipChannel;
                 popMode();
             }
         }
@@ -115,14 +115,6 @@ public abstract class WDLBaseLexer extends Lexer {
 
     public void PushCurlBrackOnEnter(int shouldPop) {
         curlyStack.push(shouldPop == 1);
-    }
-
-    public boolean IsInterpolationStart() {
-        return _input.LA(-2) == '~';
-    }
-
-    public boolean IsAnyInterpolationStart() {
-        return _input.LA(-2) == '$' || _input.LA(-2) == '~';
     }
 
     private String unescape(String text) {

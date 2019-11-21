@@ -87,7 +87,6 @@ WDLBaseLexer.prototype.IsCommand = function () {
 WDLBaseLexer.prototype.PopModeOnCurlBracketClose = function () {
     if (this.curlyStack.length > 0) {
         if (this.curlyStack.pop()) {
-            this._channel = wdlLexer.WdlLexer.SkipChannel;
             this.popMode();
         }
     }
@@ -104,22 +103,6 @@ WDLBaseLexer.prototype.PushCommandAndBrackEnter = function () {
 
 WDLBaseLexer.prototype.PushCurlBrackOnEnter = function (shouldPop) {
     this.curlyStack.push(shouldPop === 1);
-};
-
-/**
- * @return {boolean}
- */
-WDLBaseLexer.prototype.IsInterpolationStart = function () {
-    let previousChar = this._input.LA(-2);
-    return previousChar === "~".charCodeAt(0);
-};
-
-/**
- * @return {boolean}
- */
-WDLBaseLexer.prototype.IsAnyInterpolationStart = function () {
-    let previousChar = this._input.LA(-2);
-    return previousChar === '$'.charCodeAt(0) || previousChar === '~'.charCodeAt(0);
 };
 
 exports.WDLBaseLexer = WDLBaseLexer;

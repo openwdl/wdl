@@ -75,7 +75,6 @@ class WDLBaseLexer(Lexer):
     def PopModeOnCurlBracketClose(self):
         if len(self.curlyStack) > 0:
             if self.curlyStack.pop():
-                self._channel = self.SkipChannel
                 self.popMode()
 
     def PopCurlBrackOnClose(self):
@@ -87,11 +86,3 @@ class WDLBaseLexer(Lexer):
 
     def PushCurlBrackOnEnter(self, shouldPop):
         self.curlyStack.append(shouldPop == 1)
-
-    def IsInterpolationStart(self):
-        previousChar = chr(self._input.LA(-2))
-        return previousChar == "~"
-
-    def IsAnyInterpolationStart(self):
-        previousChar = chr(self._input.LA(-2))
-        return previousChar == "$" or previousChar == "~"

@@ -10,10 +10,25 @@ import org.antlr.v4.runtime.Recognizer;
 public class WdlParserTestErrorListener extends BaseErrorListener {
 
     private List<SyntaxError> errors = new ArrayList<>();
+    private final boolean assertNoErrors;
+
+    public WdlParserTestErrorListener() {
+        this(false);
+    }
+
+    public WdlParserTestErrorListener(boolean assertNoErrors) {
+        this.assertNoErrors = assertNoErrors;
+    }
 
     @Override
     public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
-        errors.add(new SyntaxError(offendingSymbol, line, charPositionInLine, msg));
+        System.out.println(offendingSymbol);
+        SyntaxError error = new SyntaxError(offendingSymbol, line, charPositionInLine, msg);
+        if (!assertNoErrors) {
+            errors.add(error);
+        } else {
+            throw new AssertionError("No errors expected: " + error.toString());
+        }
     }
 
 
@@ -27,7 +42,7 @@ public class WdlParserTestErrorListener extends BaseErrorListener {
 
 
     public String getErrorString() {
-        return "\n" + String.join("\n",errors.stream().map(SyntaxError::toString).collect(Collectors.toList()));
+        return "\n" + String.join("\n", errors.stream().map(SyntaxError::toString).collect(Collectors.toList()));
     }
 
     public static class SyntaxError {
@@ -60,7 +75,7 @@ public class WdlParserTestErrorListener extends BaseErrorListener {
             return message;
         }
 
-        public AssertionError getAssertionError(){
+        public AssertionError getAssertionError() {
             return new AssertionError(toString());
         }
 
