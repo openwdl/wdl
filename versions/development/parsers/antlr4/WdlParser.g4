@@ -48,13 +48,12 @@ number
 
 
 //Literals
-
 dquote_string
-  : DQUOTE DQuoteStringPart? (DQuoteStringPart? expr DQuoteStringPart?)*  DQuoteStringPart? DQUOTE
+  : DQUOTE DQuoteStringPart* (DQuoteStringPart* DQuoteCommandStart expr RBRACE DQuoteStringPart*)* DQUOTE
   ;
 
 squote_string
-  : SQUOTE SQuoteStringPart? (SQuoteStringPart? expr SQuoteStringPart?)* SQuoteStringPart? SQUOTE
+  : SQUOTE SQuoteStringPart* (SQuoteStringPart* SQuoteCommandStart expr RBRACE SQuoteStringPart*)* SQUOTE
   ;
 
 
@@ -190,9 +189,20 @@ task_output
 	: OUTPUT LBRACE (bound_decls)* RBRACE
 	;
 
+
+
+task_curly_command
+  :  COMMAND LBRACE CommandStringPart* (CommandStringPart* CommandCurlyStringCommand expr RBRACE CommandStringPart* )* EndCommand
+  ;
+
+task_heredoc_command
+  :  COMMAND HEREDOCSTART HereDocStringPart* (HereDocStringPart* HereDocCurlyStringCommand expr RBRACE HereDocStringPart*)* EndHereDocCommand
+  ;
+
+
 task_command
-  : COMMAND HEREDOCSTART HereDocStringPart? (HereDocStringPart? expr HereDocStringPart?)* EndHereDocCommand
-  | COMMAND LBRACE CommandStringPart? (CommandStringPart? expr CommandStringPart? )* EndCommand
+  : task_curly_command
+  | task_heredoc_command
 	;
 
 task_element

@@ -114,34 +114,35 @@ Identifier: CompleteIdentifier ( DOT CompleteIdentifier)*;
 
 mode SquoteInterpolatedString;
 
-SQuoteTildeString: '~' -> type(SQuoteStringPart);
-SQuoteDollarString: '$'  -> type(SQuoteStringPart);
-SQuoteCurlyStringCommand: '{' {self.IsAnyInterpolationStart()}? {self.PushCurlBrackOnEnter(1);} -> channel(SkipChannel), pushMode(DEFAULT_MODE);
-SQuoteCurlyString: '{' -> type(SQuoteStringPart);
-SQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
+
 SQuoteEscapedChar: '\\' . -> type(SQuoteStringPart);
+SQuoteDollarString: '$'  -> type(SQuoteStringPart);
+SQuoteTildeString: '~' -> type(SQuoteStringPart);
+SQuoteCurlyString: '{' -> type(SQuoteStringPart);
+SQuoteCommandStart: ('${' | '~{' ) {self.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
+SQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 EndSquote: '\'' {self.FinishSQuoteInterpolatedString();} ->  type(SQUOTE);
 SQuoteStringPart: ~[$~{\r\n']+;
 
 mode DquoteInterpolatedString;
 
+DQuoteEscapedChar: '\\' . -> type(DQuoteStringPart);
 DQuoteTildeString: '~' -> type(DQuoteStringPart);
 DQuoteDollarString: '$' -> type(DQuoteStringPart);
-DQuoteCurlyStringCommand: '{' {self.IsAnyInterpolationStart()}? {self.PushCurlBrackOnEnter(1);} -> channel(SkipChannel), pushMode(DEFAULT_MODE);
 DQUoteCurlString: '{' -> type(DQuoteStringPart);
+DQuoteCommandStart: ('${' | '~{' ) {self.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
 DQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
-DQuoteEscapedChar: '\\' . -> type(DQuoteStringPart);
 EndDQuote: '"' {self.FinishDQuoteInterpolatedString();}->  type(DQUOTE);
 DQuoteStringPart: ~[$~{\r\n"]+;
 
 
 mode HereDocCommand;
 
-HereDocTildeString: '~' -> type(HereDocStringPart);
-HereDocCurlyStringCommand: '{' {self.IsInterpolationStart()}? {self.PushCurlBrackOnEnter(1);} -> channel(SkipChannel), pushMode(DEFAULT_MODE);
-HereDocCurlyString: '{' -> type(HereDocStringPart);
 HereDocUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 HereDocEscapedChar: '\\' . -> type(HereDocStringPart);
+HereDocTildeString: '~' -> type(HereDocStringPart);
+HereDocCurlyString: '{' -> type(HereDocStringPart);
+HereDocCurlyStringCommand: ('${' | '~{' ) {self.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
 HereDocEscapedEnd: '\\>>>' -> type(HereDocStringPart);
 EndHereDocCommand: '>>>' -> popMode;
 HereDocEscape: ( '>' | '>>' | '>>>>' '>'*) -> type(HereDocStringPart);
@@ -149,13 +150,13 @@ HereDocStringPart: ~[~{>]+;
 
 mode Command;
 
+CommandEscapedChar: '\\' . -> type(CommandStringPart);
+CommandUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 CommandTildeString: '~'  -> type(CommandStringPart);
 CommandDollarString: '$' -> type(CommandStringPart);
-CommandCurlyStringCommand: '{' {self.IsAnyInterpolationStart()}? {self.PushCurlBrackOnEnter(1);} -> channel(SkipChannel), pushMode(DEFAULT_MODE);
 CommandCurlyString: '{' -> type(CommandStringPart);
+CommandCurlyStringCommand:  ('${' | '~{' ) {self.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
 EndCommand: '}' {self.PopCurlBrackOnClose();} -> popMode;
-CommandUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
-CommandEscapedChar: '\\' . -> type(CommandStringPart);
 CommandStringPart: ~[$~{}]+;
 
 
