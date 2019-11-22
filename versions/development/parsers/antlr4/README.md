@@ -16,7 +16,7 @@ ANTLR is written in java, but has a variety of other runtime libraries that enab
 - Java(7+)
 - antlr4
 
-- Python2/3 if you plan on building the python targets
+- Python3 if you plan on building the python targets
 - Node.js (0.12.7) if you plan on building the JavaScript targets
 - The [runtimes](https://github.com/antlr/antlr4/blob/master/doc/targets.md) for each target you wish to build.
 
@@ -44,7 +44,7 @@ It is important that the lexers only differ in terms of their actions, and the a
 ## Parsers
 
 The grammars themselves cannot be used to parse a WDL as is, they first must be converted into a parser in one of the supported target languages. Currently
-Java, Python3, Python2, and JavaScript are supported. For Python and JavaScript you can use the `antlr4` command line tool to generate the required code that is used in the Parsers. For the java target, the easiest way to generate the code is to use the `mvn` plugin defined directly within the `pom.xml`. 
+Java, Python3, and JavaScript are supported. For Python and JavaScript you can use the `antlr4` command line tool to generate the required code that is used in the Parsers. For the java target, the easiest way to generate the code is to use the `mvn` plugin defined directly within the `pom.xml`. 
 
 For each language please refer to the corresponding directory for build instructions
 

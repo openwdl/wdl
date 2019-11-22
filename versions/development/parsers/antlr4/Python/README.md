@@ -1,4 +1,4 @@
-# WDL Python2 Parser
+# WDL Python3 Parser
 
 This directory provides a parser implemented in Python3. The parser is built on top of the Base [WDLBaseLexer.py](WdlParser/WDLBaseLexer.py)
 
@@ -8,7 +8,7 @@ This directory provides a parser implemented in Python3. The parser is built on 
 # Installing the runtime
 
 ```bash
-pip install antlr4-python2-runtime
+pip install antlr4-python3-runtime
 ```
 
 # Building
