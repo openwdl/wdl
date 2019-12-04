@@ -2285,47 +2285,23 @@ aliased name.
 
 # Namespaces
 
-Import statements can be used to pull in tasks/workflows from other locations as well as to create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the specified namespace.  For example:
+The following namespaces exist:
+* A WDL file: When imported the name equals that of the basename of the file by default, but may be aliased using the `as identifier` syntax.
+  * May contain namespaces, tasks, structs (please see the notes at [Importing Structs](#importing-structs)) and at most one workflow.
+* A call (of a task or workflow): The name equals that of the called task or workflow by default, but may be aliased using the `as identifier` syntax.
+  * May contain inputs, outputs, runtime_attributes (if the call is to a task), variables (accessibility limited by [scope](#scope)) and calls (if the call is to a workflow).
+* A struct instance: The name equals that of the variable name of the struct instance.
+  * May contain variables.
 
-tasks.wdl
+Accessing a member of a namespace can be done using the following syntax: `namespace.member`.
 
-```wdl
-task x {
-  command { python script.py }
-}
-task y {
-  command { python script2.py }
-}
-```
+All members of a namespace (ie. inputs, outputs, variables, tasks, workflows, structs, imported namespaces and calls) must be unique within that namespace.
+A namespace can also not contain a member with the same name as the namespace itself (as to accommodate the alternative naming scheme for workflows described in
+[Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)).
 
-workflow.wdl
-
-```wdl
-import "tasks.wdl" as pyTasks
-
-workflow wf {
-  call pyTasks.x
-  call pyTasks.y
-}
-```
-
-Tasks `x` and `y` are inside the namespace `pyTasks`, which is different from the `wf` namespace belonging to the primary workflow.  However, if no namespace is specified for tasks.wdl:
-
-workflow.wdl
-
-```wdl
-import "tasks.wdl"
-
-workflow wf {
-  call tasks.x
-  call tasks.y
-}
-```
-
-Now everything inside of `tasks.wdl` must be accessed through the default namespace `tasks`.
-
-Each namespace may contain namespaces, tasks, and at most one workflow.  The names of the contained namespaces, tasks, and workflow need to be unique within that namespace. For example, one cannot import two workflows while they have the same namespace identifier. Additionally, a workflow and a namespace both named `foo` cannot exist inside a common namespace. Similarly there cannot be a call `foo` in a workflow also named `foo`.
-However, you can import two workflows with different namespace identifiers that have identically named tasks. For example, you can import namespaces `foo` and `bar`, both of which contain a task `baz`, and you can call `foo.baz` and `bar.baz` from the same primary workflow.
+For example, one cannot import two workflows while they have the same namespace identifier. Additionally, a workflow and a namespace both named `foo` cannot exist inside a common namespace.
+Similarly there cannot be a call `foo` in a workflow also named `foo`. However, you can import two workflows with different namespace identifiers that have identically named tasks.
+For example, you can import namespaces `foo` and `bar`, both of which contain a task `baz`, and you can call `foo.baz` and `bar.baz` from the same primary workflow.
 
 # Scope
 
