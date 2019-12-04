@@ -2293,8 +2293,6 @@ The following namespaces exist:
 * A struct instance: The name equals that of the variable name of the struct instance.
   * May contain variables.
 
-Accessing a member of a namespace can be done using the following syntax: `namespace.member`.
-
 All members of a namespace (ie. inputs, outputs, variables, tasks, workflows, structs, imported namespaces and calls) must be unique within that namespace.
 A namespace can also not contain a member with the same name as the namespace itself (as to accommodate the alternative naming scheme for workflows described in
 [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)).
