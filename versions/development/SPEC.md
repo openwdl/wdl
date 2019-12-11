@@ -2602,8 +2602,12 @@ In this example, `i`, and `f` are inputs to this task even though `i` is not dir
 
 Workflows have inputs that must be satisfied to run them, just like tasks. Inputs to the workflow are provided as a key/value map where the key is of the form `workflow_name.input_name`.
 
-* If a workflow is to be used as a sub-workflow it must ensure that all of the inputs to its calls are satisfied.
-* If a workflow will only ever be submitted as a top-level workflow, it may optionally leave its tasks' inputs unsatisfied. This then forces the engine to additionally supply those inputs at run time. In this case, the inputs' names must be qualified in the inputs as `workflow_name.task_name.input_name`.
+* Workflows may optionally leave its tasks' required inputs unsatisfied. This then forces the engine to additionally supply those inputs at run time. In this case, the inputs' names must be qualified in the inputs as `workflow_name.task_name.input_name`.
+* Optional inputs (or required inputs with defaults) for  tasks are not required to be
+  satisfied.
+* Inputs should be fully qualified. For example `workflow_name.workflow_input`,
+  `workflow_name.some_task.task_input`, `workflow_name.subworkflow_name.subwf_task.input_name`
+  ,`workflow_name.subworkflow_name.another_subworkflow.yet_another_sub_wf.subwf_input` etc.
 
 Any declaration that appears outside the `input` section is considered an intermediate value and **not** a workflow input. Any declaration can always be moved inside the `input` block to make it overridable.
 
