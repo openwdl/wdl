@@ -809,7 +809,6 @@ workflow wf {
 Engines should at the very least support the following protocols for import URIs:
 
 * `http://` and `https://`
-* `file://`
 * No protocol (see below)
 
 In the event that there is no protocol the import is resolved **relative** to the location of the current document. If a protocol-less import starts with `/` it will be interpreted as starting from the root of the host in the resolved URL. It is up to the implementation to provide a mechanism which allows these imports to be resolved correctly.
@@ -818,10 +817,10 @@ Some examples of correct import resolution:
 
 | Root Workflow Location                                | Imported Path                      | Resolved Path                                           |
 |-------------------------------------------------------|------------------------------------|---------------------------------------------------------|
-| `file://foo/bar/baz/qux.wdl`                            | `some/task.wdl`                      | `file://foo/bar/baz/some/task.wdl`                        |
+| `/foo/bar/baz/qux.wdl`                                  | `some/task.wdl`                      | `/foo/bar/baz/some/task.wdl`                        |
 | `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` | `subworkflow.wdl`                    | `http://www.github.com/openwdl/coolwdls/subworkflow.wdl`  |
 | `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` | `/openwdl/otherwdls/subworkflow.wdl` | `http://www.github.com/openwdl/otherwdls/subworkflow.wdl` |
-| `file://some/path/hello.wdl`                            | `/another/path/world.wdl`            | `file:///another/path/world.wdl`                          |
+| `/some/path/hello.wdl`                                  | `/another/path/world.wdl`            | `/another/path/world.wdl`                          |
 
 ## Task Definition
 
