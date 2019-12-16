@@ -20,10 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 
 version 2.0.0
 ---------------------------
-+ Added `CHANGELOG.md` to keep track of changes from version 1.0 onwards.
 
 + The input specification has been clarified.
-  [PR 314](https://github.com/openwdl/wdl/pull/) by @geoffjentry.
+  [PR 314](https://github.com/openwdl/wdl/pull/314) by @geoffjentry.
 
 + Added a list of keywords that can not be used as identifiers.
   [PR 307](https://github.com/openwdl/wdl/pull/307) by @mlin.
