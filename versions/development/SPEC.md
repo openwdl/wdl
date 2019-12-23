@@ -234,7 +234,7 @@ These are common among many of the following sections
 
 ```txt
 $ws = (0x20 | 0x09 | 0x0D | 0x0A)+
-$identifier = [a-zA-Z][a-zA-Z0-9_]+
+$identifier = [a-zA-Z][a-zA-Z0-9_]*
 $boolean = 'true' | 'false'
 $integer = [1-9][0-9]*|0[xX][0-9a-fA-F]+|0[0-7]*
 $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
