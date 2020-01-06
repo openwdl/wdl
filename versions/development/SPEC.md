@@ -185,7 +185,7 @@ workflow wf {
 
 This describes a task, called 'hello', which has two parameters (`String pattern` and `File in`).  A `task` definition is a way of **encapsulating a UNIX command and environment and presenting them as functions**.  Tasks have both inputs and outputs.  Inputs are declared as declarations at the top of the `task` definition, while outputs are defined in the `output` section.
 
-The user must provide a value for these two parameters in order for this task to be runnable.  Implementations of WDL should accept their [inputs as JSON format](#specifying-workflow-inputs-in-json). The inputs described in such a JSON file should be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example, the above task needs values for two parameters: `String pattern` and `File in`:
+The user must provide a value for these two parameters in order for this task to be runnable. Implementations of WDL should accept their [inputs as JSON format](#specifying-workflow-inputs-in-json). The inputs described in such a JSON file should be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example, the above task needs values for two parameters: `String pattern` and `File in`:
 
 |Variable           |Value    |
 |-------------------|---------|
@@ -370,8 +370,6 @@ $namespaced_identifier = $identifier ('.' $identifier)*
 
 A fully qualified name is the unique identifier of any particular call, input or output. These follow the following structure:
 * For calls: `<parent namespace>.<call alias>`
-  * For calls to workflows the following structure is also permitted and is considered an alias to the above mentioned structure:  
-    `<parent namespace>.<call alias>.<workflow name>`. Using this structure is not recommended as it will likely be deprecated in the future.
 * For inputs and outputs: `<parent namespace>.<input or output name>`
 
 The `parent namespace` here will equal the fully qualified name of the call containing the call, input or output. For the top-level workflow this is equal to the workflow name, as it lacks a call alias.
@@ -2294,8 +2292,6 @@ The following namespaces exist:
   * May contain variables.
 
 All members of a namespace (ie. inputs, outputs, variables, tasks, workflows, structs, imported namespaces and calls) must be unique within that namespace.
-A namespace can also not contain a member with the same name as the namespace itself (as to accommodate the alternative naming scheme for workflows described in
-[Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)).
 
 For example, one cannot import two workflows while they have the same namespace identifier. Additionally, a workflow and a namespace both named `foo` cannot exist inside a common namespace.
 Similarly there cannot be a call `foo` in a workflow also named `foo`. However, you can import two workflows with different namespace identifiers that have identically named tasks.
