@@ -41,7 +41,7 @@ WDL is not executable in and of itself, but requires an execution engine to run.
 ### Parsers and Language Support
 
 - Basic parsers and their grammar definitions (based on hermes) can be found in the `parsers/` directory for each respective version. Currently there is support for java, python and javascript. We believe these parsers work, however have not validated these claims.
-- [MiniWDL](https://github.com/chanzuckerberg/miniwdl)] - MiniWDL provides python bindings for WDL as well as command line validation. It is light weight and easy to use.
+- [MiniWDL](https://github.com/chanzuckerberg/miniwdl) - MiniWDL provides python bindings for WDL as well as command line validation. It is light weight and easy to use.
 - [wdl4s](https://github.com/broadinstitute/cromwell) - scala bindings for WDL. This has been folded into the broader cromwell codebase
 - [WOMTool](https://cromwell.readthedocs.io/en/stable/WOMtool/) - a standalone tool for parsing, validating, linting, and generating a graph of a WDL.
 - [wdl-aid](https://github.com/biowdl/wdl-aid) - generate documentation for the inputs of WDL workflows, based on the parameter_meta information defined in the WDL file.	
