@@ -3,112 +3,153 @@ grammar {
     partials {
       r'[a-zA-Z]' -> _identifier_start
       r'[a-zA-Z0-9_]' -> _identifier_follow
-      r'(Array|Map|Object|Pair|Boolean|Int|Float|Uri|File|String)(?!{%_identifier_follow%})' -> _type
+      r'(Array|Map|Pair|Boolean|Int|Float|File|Directory|String)(?!{%_identifier_follow%})' -> _type
       r'{%_identifier_start%}({%_identifier_follow%})*' -> _identifier
     }
 
-    r'\s+' -> null
-
-    enum {
-      python: r'/\*(.*?)\*/' (DOTALL)
-      c: r'/\*(.*?)\*/' (PCRE_DOTALL)
-      java: r'/\*(.*?)\*/' (DOTALL)
-      javascript: r'/\*(.*?)\*/' (m)
-    } -> null
-
     r'#.*' -> null
-    r'version\s+' -> :version @awaiting_version_name
-    r'task(?!{%_identifier_follow%})' -> task(:task)
-    r'(call)\s+' -> :call[1] @task_fqn
-    r'workflow(?!{%_identifier_follow%})' -> workflow(:workflow)
-    r'struct(?!{%_identifier_follow%})' -> :struct
-    r'import(?!{%_identifier_follow%})' -> :import
-    r'alias(?!{%_identifier_follow%})' -> :alias
-    r'input(?!{%_identifier_follow%})' -> :input
-    r'output(?!{%_identifier_follow%})' -> :output
-    r'as(?!{%_identifier_follow%})' -> :as
-    r'if(?!{%_identifier_follow%})' -> :if
-    r'then(?!{%_identifier_follow%})' -> :then
-    r'else(?!{%_identifier_follow%})' -> :else
-    r'while(?!{%_identifier_follow%})' -> :while
-    r'runtime(?!{%_identifier_follow%})' -> :runtime
-    r'scatter(?!{%_identifier_follow%})' -> :scatter @scatter
-    r'command\s*(?=<<<)' -> :raw_command  @raw_command2
-    r'command\s*(?=\{)' -> :raw_command  @raw_command
-    r'parameter_meta(?!{%_identifier_follow%})' -> :parameter_meta
-    r'meta(?!{%_identifier_follow%})' -> :meta
-    r'(true|false)(?!{%_identifier_follow%})' -> :boolean
-    r'(object)\s*(\{)' -> :object :lbrace
-    r'{%_type%}(?!{%_identifier_follow%})' -> :type
-    r'{%_identifier%}' -> :identifier
-    r'null' -> :null
+    r'\s+' -> null
+    r'^version(?!{%_identifier_follow%})' -> :version @awaiting_version_name
 
-    r':' -> :colon
-    r',' -> :comma
-    r'==' -> :double_equal
-    r'\|\|' -> :double_pipe
-    r'\&\&' -> :double_ampersand
-    r'!=' -> :not_equal
-    r'=' -> :equal
-    r'\.' -> :dot
-    r'\{' -> :lbrace
-    r'\}' -> :rbrace
-    r'\(' -> :lparen
-    r'\)' -> :rparen
-    r'\[' -> :lsquare
-    r'\]' -> :rsquare
-    r'\+' -> :plus
-    r'\*' -> :asterisk
-    r'-' -> :dash
-    r'/' -> :slash
-    r'%' -> :percent
-    r'<=' -> :lteq
-    r'<' -> :lt
-    r'>=' -> :gteq
-    r'>' -> :gt
-    r'!' -> :not
-    enum {
-      python: r'\"'
-      java: "\""
-      javascript:"\""
-    } -> :quote @dquote_string
-    r'\'' -> :quote @squote_string
-    enum {
-      python: r'\?'
-      java: "\\?"
-      javascript: "\\?"
-    } -> :qmark
-    r'-?[0-9]+\.[0-9]+' -> :float
-    r'[0-9]+' -> :integer
+    mode<main> {
+
+      r'\s+' -> null
+
+      enum {
+        python: r'/\*(.*?)\*/' (DOTALL)
+        c: r'/\*(.*?)\*/' (PCRE_DOTALL)
+        java: r'/\*(.*?)\*/' (DOTALL)
+        javascript: r'/\*(.*?)\*/' (m)
+      } -> null
+
+      r'#.*' -> null
+      r'task(?!{%_identifier_follow%})' -> task(:task)
+      r'(call)\s+' -> :call[1] @task_fqn
+      r'after(?!{%_identifier_follow%})' -> :after
+      r'workflow(?!{%_identifier_follow%})' -> workflow(:workflow)
+      r'struct(?!{%_identifier_follow%})' -> :struct
+      r'import(?!{%_identifier_follow%})' -> :import
+      r'alias(?!{%_identifier_follow%})' -> :alias
+      r'input(?!{%_identifier_follow%})' -> :input
+      r'output(?!{%_identifier_follow%})' -> :output
+      r'as(?!{%_identifier_follow%})' -> :as
+      r'if(?!{%_identifier_follow%})' -> :if
+      r'then(?!{%_identifier_follow%})' -> :then
+      r'else(?!{%_identifier_follow%})' -> :else
+      r'runtime(?!{%_identifier_follow%})' -> :runtime
+      r'scatter(?!{%_identifier_follow%})' -> :scatter @scatter
+      r'command\s*(?=<<<)' -> :raw_command  @raw_command2
+      r'command\s*(?=\{)' -> :raw_command  @raw_command
+      r'parameter_meta(?!{%_identifier_follow%})' -> :parameter_meta
+      r'meta(?!{%_identifier_follow%})' -> :meta
+      r'(true|false)(?!{%_identifier_follow%})' -> :boolean
+      r'(object)\s*(\{)' -> :object :lbrace
+      r'{%_type%}(?!{%_identifier_follow%})' -> :type
+      r'None' -> :none
+      r'{%_identifier%}' -> :identifier
+      r'null' -> :null
+
+      r':' -> :colon
+      r',' -> :comma
+      r'==' -> :double_equal
+      r'\|\|' -> :double_pipe
+      r'\&\&' -> :double_ampersand
+      r'!=' -> :not_equal
+      r'=' -> :equal
+      r'\.' -> :dot
+      r'\{' -> :lbrace
+      r'\}' -> :rbrace
+      r'\(' -> :lparen
+      r'\)' -> :rparen
+      r'\[' -> :lsquare
+      r'\]' -> :rsquare
+      r'\+' -> :plus
+      r'\*' -> :asterisk
+      r'-' -> :dash
+      r'/' -> :slash
+      r'%' -> :percent
+      r'<=' -> :lteq
+      r'<' -> :lt
+      r'>=' -> :gteq
+      r'>' -> :gt
+      r'!' -> :not
+
+      enum {
+        python: r'\"'
+        java: "\""
+        javascript:"\""
+      } -> :quote @dquote_string
+      r'\'' -> :quote @squote_string
+      enum {
+        python: r'\?'
+        java: "\\?"
+        javascript: "\\?"
+      } -> :qmark
+      r'-?[0-9]+\.[0-9]+' -> :float
+      r'[0-9]+' -> :integer
+    }
 
     mode<dquote_string> {
+      # String ends immediately (empty)
       enum {
         python: r'\"'
         java: "\""
         javascript:"\""
       } -> :quote %pop
+
+      # String is an expression placeholder
       r'\$\{' -> :expression_placeholder_start @expression_placeholder
       r'~\{' -> :expression_placeholder_start @expression_placeholder
+
+      # Escape sequences
+      r'\\[0-7][0-7][0-7]' -> :escape
+      r'\\x[0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+      r'\\u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+      r'\\U[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+
       enum {
-        python: r'[^\"\n(\$\{)(~\{)]*'
-        java: "(.*?)(?=\\$\\{|~\\{|\")"
-        javascript: "[^\"\\n(${)(~{)]*"
+        python: r'\\.'
+        java: "\\\\."
+        javascript: "\\."
+      } -> :escape
+
+      # String with ordinary contents
+      enum {
+        python: r'[^\\\"\n(\$\{)(~\{)]*'
+        java: "(.*?)(?=\\\\|\\$\\{|~\\{|\")"
+        javascript: "[^\\\"\\n(${)(~{)]*"
       } -> :string
     }
 
     mode<squote_string> {
+      # String ends immediately (empty)
       r'\'' -> :quote %pop
       r'\$\{' -> :expression_placeholder_start @expression_placeholder
       r'~\{' -> :expression_placeholder_start @expression_placeholder
+
+      # Escape sequences
+      r'\\[0-7][0-7][0-7]' -> :escape
+      r'\\x[0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+      r'\\u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+      r'\\U[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]' -> :escape
+
       enum {
-        python: r'[^\'\n(\$\{)(~\{)]*'
-        java: "(.*?)(?=\\$\\{|~\\{|')"
-        javascript: "[^'\\n(${)(~{)]*"
+        python: r'\\.'
+        java: "\\\\."
+        javascript: "\\."
+      } -> :escape
+
+      # String with ordinary contents
+      enum {
+        python: r'[^\\\'\n(\$\{)(~\{)]*'
+        java: "(.*?)(?=\\\\|\\$\\{|~\\{|\')"
+        javascript: "[^\\\'\\n(${)(~{)]*"
       } -> :string
     }
 
     mode<awaiting_version_name> {
-      r'1.1-draft' -> :version_name %pop
+      r'\s+' -> null
+      r'development' -> :version_name @main
     }
     mode<task_fqn> {
       r'\s+' -> null
@@ -162,6 +203,7 @@ grammar {
       r'{%_identifier%}(?=\s*=)' -> :cmd_attr_hint[] :identifier
       r'(true|false)(?!{%_identifier_follow%})' -> :boolean
       r'{%_type%}(?!{%_identifier_follow%})' -> :type
+      r'None' -> :none
       r'{%_identifier%}' -> :identifier
 
       # Expression tokens
@@ -232,17 +274,6 @@ grammar {
         if ctx.user_context['context'] == 'workflow':
             ctx.stack.append('wf_output')
         default_action(ctx, terminal, source_string, line, col)
-    def wdl_unescape(ctx, terminal, source_string, line, col):
-
-        for regex, c in ctx.user_context['replacements'].items():
-            source_string = regex.sub(chr(c), source_string)
-
-        source_string = source_string.replace("\u005C\u005C", "\u005C")
-
-        for regex, base in ctx.user_context['escapes'].items():
-            for escape_sequence, number in regex.findall(source_string):
-                source_string = source_string.replace(escape_sequence, chr(int(number, base)))
-        default_action(ctx, terminal, source_string[1:-1], line, col)
     PYTHON
 
     code<java> << JAVA
@@ -267,9 +298,6 @@ grammar {
         }
         default_action(ctx, terminal, source_string, line, col);
     }
-    public void wdl_unescape(LexerContext ctx, TerminalIdentifier terminal, String source_string, int line, int col) {
-        default_action(ctx, terminal, StringEscapeUtils.unescapeJava(source_string.substring(1, source_string.length() - 1)), line, col);
-    }
     JAVA
 
     code<javascript> << JAVASCRIPT
@@ -291,32 +319,6 @@ grammar {
             }
             default_action(ctx, terminal, source_string, line, col);
         }
-        function wdl_unescape(ctx, terminal, source_string, line, col) {
-            var strip_slashes = function(str) {
-               return str
-                   .replace(/\\(.?)/g, function (s, n1) {
-                     var escapes = {
-                         '\\': '\\',
-                         '0' : '\u0000',
-                         ''  : '',
-                         'n' : '\n',
-                         'r' : '\r',
-                         'b' : '\b',
-                         't' : '\t',
-                         'f' : '\f',
-                         'a' : '\a',
-                         'v' : '\v'};
-
-                     var symbol = escapes[n1];
-                     if (symbol !== undefined) {
-                         return symbol;
-                     }
-                     return n1;
-                   });
-            }
-            var repl_str = strip_slashes(source_string.substring(1, source_string.length - 1));
-            default_action(ctx, terminal, repl_str, line, col);
-        }
         JAVASCRIPT
   }
   parser {
@@ -330,9 +332,10 @@ grammar {
     $struct = :struct :identifier :lbrace list($struct_declaration) :rbrace -> Struct(name=$1, entries=$3)
     $struct_declaration = $type_e :identifier -> StructEntry(type=$0, name=$1)
 
-    $static_string = :quote :string :quote -> $1
+    $static_string = :quote list($static_string_piece) :quote -> StaticString(value=$1)
     $string_literal = :quote list($string_piece) :quote -> StringLiteral(pieces=$1)
-    $string_piece = :string | $expression_placeholder
+    $static_string_piece = :string | :escape
+    $string_piece = $static_string_piece | $expression_placeholder
 
     # Import Statements: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#import-statements
     $import = :import $static_string optional($import_namespace) list($import_alias) -> Import(uri=$1, namespace=$2, aliases=$3)
@@ -412,6 +415,7 @@ grammar {
       $e = :boolean
       $e = :integer
       $e = :float
+      $e = :none
     }
     $map_kv = $e :colon $e -> MapLiteralKv(key=$0, value=$2)
 
@@ -421,13 +425,14 @@ grammar {
 
     # Workflows: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#workflow-definition
     $workflow = :workflow :identifier :lbrace list($wf_body_element) :rbrace -> Workflow(name=$1, body=$3)
-    $wf_body_element = $call | $declaration | $while_loop | $if_stmt | $scatter | $inputs | $outputs | $wf_parameter_meta | $wf_meta
-    $call = :call :fqn optional($alias) optional($call_body) -> Call(task=$1, alias=$2, body=$3)
-    $call_body = :lbrace :input :colon list($input_kv, :comma) :rbrace -> CallBody(inputs=$3)
+    $wf_body_element = $call | $declaration | $if_stmt | $scatter | $inputs | $outputs | $wf_parameter_meta | $wf_meta
+    $call = :call :fqn optional($alias) list($call_after) optional($call_brace_block) -> Call(task=$1, alias=$2, after=$3, body=$4)
+    $call_brace_block = :lbrace optional($call_body) :rbrace -> $1
+    $call_body = :input :colon list($input_kv, :comma) -> CallBody(inputs=$2)
     $alias = :as :identifier -> $1
+    $call_after = :after :identifier -> $1
     $wf_parameter_meta = :parameter_meta $meta_map -> ParameterMeta(map=$1)
     $wf_meta = :meta $meta_map -> Meta(map=$1)
-    $while_loop = :while :lparen $e :rparen :lbrace list($wf_body_element) :rbrace -> WhileLoop(expression=$2, body=$5)
     $if_stmt = :if :lparen $e :rparen :lbrace list($wf_body_element) :rbrace -> If(expression=$2, body=$5)
 
     $scatter = :scatter :lparen :identifier :in $e :rparen :lbrace list($wf_body_element) :rbrace

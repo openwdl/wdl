@@ -7,108 +7,122 @@ grammar {
       r'{%_identifier_start%}({%_identifier_follow%})*' -> _identifier
     }
 
-    r'\s+' -> null
-
-    enum {
-      python: r'/\*(.*?)\*/' (DOTALL)
-      c: r'/\*(.*?)\*/' (PCRE_DOTALL)
-      java: r'/\*(.*?)\*/' (DOTALL)
-      javascript: r'/\*(.*?)\*/' (m)
-    } -> null
-
     r'#.*' -> null
-    r'version\s+' -> :version @awaiting_version_name
-    r'task(?!{%_identifier_follow%})' -> task(:task)
-    r'(call)\s+' -> :call[1] @task_fqn
-    r'workflow(?!{%_identifier_follow%})' -> workflow(:workflow)
-    r'struct(?!{%_identifier_follow%})' -> :struct
-    r'import(?!{%_identifier_follow%})' -> :import
-    r'alias(?!{%_identifier_follow%})' -> :alias
-    r'input(?!{%_identifier_follow%})' -> :input
-    r'output(?!{%_identifier_follow%})' -> :output
-    r'as(?!{%_identifier_follow%})' -> :as
-    r'if(?!{%_identifier_follow%})' -> :if
-    r'then(?!{%_identifier_follow%})' -> :then
-    r'else(?!{%_identifier_follow%})' -> :else
-    r'while(?!{%_identifier_follow%})' -> :while
-    r'runtime(?!{%_identifier_follow%})' -> :runtime
-    r'scatter(?!{%_identifier_follow%})' -> :scatter @scatter
-    r'command\s*(?=<<<)' -> :raw_command  @raw_command2
-    r'command\s*(?=\{)' -> :raw_command  @raw_command
-    r'parameter_meta(?!{%_identifier_follow%})' -> :parameter_meta
-    r'meta(?!{%_identifier_follow%})' -> :meta
-    r'(true|false)(?!{%_identifier_follow%})' -> :boolean
-    r'(object)\s*(\{)' -> :object :lbrace
-    r'{%_type%}(?!{%_identifier_follow%})' -> :type
-    r'{%_identifier%}' -> :identifier
-    r'null' -> :null
+    r'\s+' -> null
+    r'^version(?!{%_identifier_follow%})' -> :version @awaiting_version_name
 
-    r':' -> :colon
-    r',' -> :comma
-    r'==' -> :double_equal
-    r'\|\|' -> :double_pipe
-    r'\&\&' -> :double_ampersand
-    r'!=' -> :not_equal
-    r'=' -> :equal
-    r'\.' -> :dot
-    r'\{' -> :lbrace
-    r'\}' -> :rbrace
-    r'\(' -> :lparen
-    r'\)' -> :rparen
-    r'\[' -> :lsquare
-    r'\]' -> :rsquare
-    r'\+' -> :plus
-    r'\*' -> :asterisk
-    r'-' -> :dash
-    r'/' -> :slash
-    r'%' -> :percent
-    r'<=' -> :lteq
-    r'<' -> :lt
-    r'>=' -> :gteq
-    r'>' -> :gt
-    r'!' -> :not
-    enum {
-      python: r'\"'
-      java: "\""
-      javascript:"\""
-    } -> :quote @dquote_string
-    r'\'' -> :quote @squote_string
-    enum {
-      python: r'\?'
-      java: "\\?"
-      javascript: "\\?"
-    } -> :qmark
-    r'-?[0-9]+\.[0-9]+' -> :float
-    r'[0-9]+' -> :integer
+    mode<main> {
+
+      r'\s+' -> null
+
+      enum {
+        python: r'/\*(.*?)\*/' (DOTALL)
+        c: r'/\*(.*?)\*/' (PCRE_DOTALL)
+        java: r'/\*(.*?)\*/' (DOTALL)
+        javascript: r'/\*(.*?)\*/' (m)
+      } -> null
+
+      r'#.*' -> null
+      r'task(?!{%_identifier_follow%})' -> task(:task)
+      r'(call)\s+' -> :call[1] @task_fqn
+      r'workflow(?!{%_identifier_follow%})' -> workflow(:workflow)
+      r'struct(?!{%_identifier_follow%})' -> :struct
+      r'import(?!{%_identifier_follow%})' -> :import
+      r'alias(?!{%_identifier_follow%})' -> :alias
+      r'input(?!{%_identifier_follow%})' -> :input
+      r'output(?!{%_identifier_follow%})' -> :output
+      r'as(?!{%_identifier_follow%})' -> :as
+      r'if(?!{%_identifier_follow%})' -> :if
+      r'then(?!{%_identifier_follow%})' -> :then
+      r'else(?!{%_identifier_follow%})' -> :else
+      r'runtime(?!{%_identifier_follow%})' -> :runtime
+      r'scatter(?!{%_identifier_follow%})' -> :scatter @scatter
+      r'command\s*(?=<<<)' -> :raw_command  @raw_command2
+      r'command\s*(?=\{)' -> :raw_command  @raw_command
+      r'parameter_meta(?!{%_identifier_follow%})' -> :parameter_meta
+      r'meta(?!{%_identifier_follow%})' -> :meta
+      r'(true|false)(?!{%_identifier_follow%})' -> :boolean
+      r'(object)\s*(\{)' -> :object :lbrace
+      r'{%_type%}(?!{%_identifier_follow%})' -> :type
+      r'{%_identifier%}' -> :identifier
+      r'null' -> :null
+
+      r':' -> :colon
+      r',' -> :comma
+      r'==' -> :double_equal
+      r'\|\|' -> :double_pipe
+      r'\&\&' -> :double_ampersand
+      r'!=' -> :not_equal
+      r'=' -> :equal
+      r'\.' -> :dot
+      r'\{' -> :lbrace
+      r'\}' -> :rbrace
+      r'\(' -> :lparen
+      r'\)' -> :rparen
+      r'\[' -> :lsquare
+      r'\]' -> :rsquare
+      r'\+' -> :plus
+      r'\*' -> :asterisk
+      r'-' -> :dash
+      r'/' -> :slash
+      r'%' -> :percent
+      r'<=' -> :lteq
+      r'<' -> :lt
+      r'>=' -> :gteq
+      r'>' -> :gt
+      r'!' -> :not
+      enum {
+        python: r'\"'
+        java: "\""
+        javascript:"\""
+      } -> :quote @dquote_string
+      r'\'' -> :quote @squote_string
+      enum {
+        python: r'\?'
+        java: "\\?"
+        javascript: "\\?"
+      } -> :qmark
+      r'-?[0-9]+\.[0-9]+' -> :float
+      r'[0-9]+' -> :integer
+    }
 
     mode<dquote_string> {
+      # String ends immediately (empty)
       enum {
         python: r'\"'
         java: "\""
         javascript:"\""
       } -> :quote %pop
+
+      # String is an expression placeholder
       r'\$\{' -> :expression_placeholder_start @expression_placeholder
       r'~\{' -> :expression_placeholder_start @expression_placeholder
+
+      # String with ordinary contents
       enum {
         python: r'[^\"\n(\$\{)(~\{)]*'
-        java: "(.*?)(?=\\$\\{|~\\{|\")"
+        java: "(.*?)(?=\\$\\{|~\\{|(?<!\\\\)\")"
         javascript: "[^\"\\n(${)(~{)]*"
-      } -> :string
+      } -> wdl_unescape(:string)
     }
 
     mode<squote_string> {
+      # String ends immediately (empty)
       r'\'' -> :quote %pop
       r'\$\{' -> :expression_placeholder_start @expression_placeholder
       r'~\{' -> :expression_placeholder_start @expression_placeholder
+
+      # String with ordinary contents
       enum {
         python: r'[^\'\n(\$\{)(~\{)]*'
-        java: "(.*?)(?=\\$\\{|~\\{|')"
+        java: "(.*?)(?=\\$\\{|~\\{|(?<!\\\\)')"
         javascript: "[^'\\n(${)(~{)]*"
-      } -> :string
+      } -> wdl_unescape(:string)
     }
 
     mode<awaiting_version_name> {
-      r'1.0' -> :version_name %pop
+      r'\s+' -> null
+      r'1.0' -> :version_name @main
     }
     mode<task_fqn> {
       r'\s+' -> null
@@ -242,7 +256,7 @@ grammar {
         for regex, base in ctx.user_context['escapes'].items():
             for escape_sequence, number in regex.findall(source_string):
                 source_string = source_string.replace(escape_sequence, chr(int(number, base)))
-        default_action(ctx, terminal, source_string[1:-1], line, col)
+        default_action(ctx, terminal, source_string, line, col)
     PYTHON
 
     code<java> << JAVA
@@ -268,7 +282,8 @@ grammar {
         default_action(ctx, terminal, source_string, line, col);
     }
     public void wdl_unescape(LexerContext ctx, TerminalIdentifier terminal, String source_string, int line, int col) {
-        default_action(ctx, terminal, StringEscapeUtils.unescapeJava(source_string.substring(1, source_string.length() - 1)), line, col);
+        // As distinct from draft-2, the enclosing quotes are not included in `source_string` so no substring needed
+        default_action(ctx, terminal, StringEscapeUtils.unescapeJava(source_string), line, col);
     }
     JAVA
 
@@ -314,7 +329,7 @@ grammar {
                      return n1;
                    });
             }
-            var repl_str = strip_slashes(source_string.substring(1, source_string.length - 1));
+            var repl_str = strip_slashes(source_string);
             default_action(ctx, terminal, repl_str, line, col);
         }
         JAVASCRIPT
@@ -330,7 +345,7 @@ grammar {
     $struct = :struct :identifier :lbrace list($struct_declaration) :rbrace -> Struct(name=$1, entries=$3)
     $struct_declaration = $type_e :identifier -> StructEntry(type=$0, name=$1)
 
-    $static_string = :quote :string :quote -> $1
+    $static_string = :quote optional(:string) :quote -> StaticString(value=$1)
     $string_literal = :quote list($string_piece) :quote -> StringLiteral(pieces=$1)
     $string_piece = :string | $expression_placeholder
 
@@ -422,8 +437,9 @@ grammar {
     # Workflows: https://github.com/broadinstitute/wdl/blob/wdl2/SPEC.md#workflow-definition
     $workflow = :workflow :identifier :lbrace list($wf_body_element) :rbrace -> Workflow(name=$1, body=$3)
     $wf_body_element = $call | $declaration | $while_loop | $if_stmt | $scatter | $inputs | $outputs | $wf_parameter_meta | $wf_meta
-    $call = :call :fqn optional($alias) optional($call_body) -> Call(task=$1, alias=$2, body=$3)
-    $call_body = :lbrace :input :colon list($input_kv, :comma) :rbrace -> CallBody(inputs=$3)
+    $call = :call :fqn optional($alias) optional($call_brace_block) -> Call(task=$1, alias=$2, body=$3)
+    $call_brace_block = :lbrace optional($call_body) :rbrace -> $1
+    $call_body = :input :colon list($input_kv, :comma) -> CallBody(inputs=$2)
     $alias = :as :identifier -> $1
     $wf_parameter_meta = :parameter_meta $meta_map -> ParameterMeta(map=$1)
     $wf_meta = :meta $meta_map -> Meta(map=$1)

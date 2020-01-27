@@ -22,5 +22,9 @@ We welcome any contribution to the WDL [Github repository](https://github.com/br
     git clone git@github.com:your-username/wdl.git
     
 Make your change and then push your changes to the fork and [submit a pull request](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)
+
+## RFC Process
+
+Any changes submitted to the WDL Specification are subject to the [RFC Process](RFC.md). Please review and familiarize yourself with the process if you would like to see changes submitted to the specification.
     
    
