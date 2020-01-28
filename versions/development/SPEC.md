@@ -2608,6 +2608,8 @@ in by the calling workflow, or left empty for the user to fill in. The rules for
 * Inputs should be fully qualified. For example `workflow_name.workflow_input`,
   `workflow_name.some_task.task_input`, `workflow_name.subworkflow_name.subwf_task.input_name`
   ,`workflow_name.subworkflow_name.another_subworkflow.yet_another_sub_wf.subwf_input` etc.
+  For more information checkout
+  [the section on fully qualified names](#fully-qualified-names--namespaced-identifiers).
 * *Optional* inputs (or required inputs with defaults) for  tasks are not required to be
   satisfied.
 * It is good practice for workflows to provide the *required* inputs for its tasks. If this is
@@ -2615,7 +2617,7 @@ in by the calling workflow, or left empty for the user to fill in. The rules for
   not allow namespaced inputs. Also, if a workflow does not fill its tasks' required options then these should be supplied by the user, while not being listed in the workflow `input` section. This can cause confusion and make the workflow harder to use.
   Engines may optionally enforce the good behavior of supplying all tasks' required inputs by the
   calling workflow.
-
+  
 Any declaration that appears outside the `input` section is considered an intermediate value and **not** a workflow input. Any declaration can always be moved inside the `input` block to make it overridable.
 
 Consider the following workflow:
