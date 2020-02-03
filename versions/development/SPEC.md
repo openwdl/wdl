@@ -3681,7 +3681,7 @@ task test {
   command <<<
     python <<CODE
     for i in range(3):
-      print("key_{idx}\t{idx}".format(idx=i)
+      print("key_{idx}\t{idx}".format(idx=i))
     CODE
   >>>
   output {
