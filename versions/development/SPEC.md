@@ -2619,9 +2619,11 @@ form `workflow_name.input_name`.
       `{ inputs: my_task.my_task_input=... }`
 * All **required** inputs which bubble up like this must ultimately be provided
   in the inputs set before the top-level workflow can be run.
- * An engine must allow these optional bubbled-up inputs to be filled in by end 
-   users. However, it is up to the engine how many layers of nesting it chooses
-   to expose in the UI.
+* An engine must allow **optional** bubbled-up inputs to be filled in by end 
+  users. These inputs are not required to be filled. 
+* Showing all optional inputs which are deeply nested in the workflow can lead 
+  to a very large number of inputs. Therefore, it is up to the engine how many 
+  layers of nesting it chooses to make visible in the UI.
  
 Any declaration that appears outside the `input` section is considered an intermediate value and **not** a workflow input. Any declaration can always be moved inside the `input` block to make it overridable.
 
