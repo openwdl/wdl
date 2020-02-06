@@ -2600,24 +2600,30 @@ In this example, `i`, and `f` are inputs to this task even though `i` is not dir
 
 ## Computing Workflow Inputs
 
-Workflows have inputs that must be satisfied to run them, just like tasks. Inputs to the workflow are provided as a key/value map where the key is of the form `workflow_name.input_name`.
+Workflows have inputs that must be satisfied to run them, just like tasks. 
+Inputs to the workflow are provided as a key/value map where the key is of the 
+form `workflow_name.input_name`.
 
-Workflows call tasks (and subworkflows) that have inputs as well. These inputs can be filled
-in by the calling workflow, or left empty for the user to fill in. The rules for defining inputs are as follows:
+* A task usually has its inputs supplied when called by a workflow. 
+    * Example: `call my_task { input: my_task_input=... }`
+* A workflow is allowd not to specify all inputs in this block. In this case,
+  the inputs bubble up to become an input to the workflow instaead.
+    * Example: an unsupplied input might have the fully-qualified name 
+      `my_workflow.my_task.my_task_input.`
 
-* Inputs should be fully qualified. For example `workflow_name.workflow_input`,
-  `workflow_name.some_task.task_input`, `workflow_name.subworkflow_name.subwf_task.input_name`
-  ,`workflow_name.subworkflow_name.another_subworkflow.yet_another_sub_wf.subwf_input` etc.
-  For more information checkout
-  [the section on fully qualified names](#fully-qualified-names--namespaced-identifiers).
-* *Optional* inputs (or required inputs with defaults) for  tasks are not required to be
-  satisfied.
-* It is good practice for workflows to provide the *required* inputs for its tasks. If this is
-  not done the workflow cannot be called as a subworkflow as the call `input:` section does
-  not allow namespaced inputs. Also, if a workflow does not fill its tasks' required options then these should be supplied by the user, while not being listed in the workflow `input` section. This can cause confusion and make the workflow harder to use.
-  Engines may optionally enforce the good behavior of supplying all tasks' required inputs by the
-  calling workflow.
-  
+* If that workflow is used as a subworkflow, the input is allowed to bubble up 
+  again with a further-qualified name.
+    * Example: my_outer_workflow.my_workflow.my_task.my_task_input.
+* There is currently no way to supply a bubbled-up input in an outer workflow's 
+  call block.
+    * Example: one cannot say call my_workflow as subworkflow 
+      `{ inputs: my_task.my_task_input=... }`
+* All **required** inputs which bubble up like this must ultimately be provided
+  in the inputs set before the top-level workflow can be run.
+ * An engine must allow these optional bubbled-up inputs to be filled in by end 
+   users. However, it is up to the engine how many layers of nesting it chooses
+   to expose in the UI.
+ 
 Any declaration that appears outside the `input` section is considered an intermediate value and **not** a workflow input. Any declaration can always be moved inside the `input` block to make it overridable.
 
 Consider the following workflow:
