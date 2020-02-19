@@ -10,7 +10,6 @@ WdlParserErrorListener.prototype = Object.create(ErrorListener.prototype);
 WdlParserErrorListener.prototype.constructor = WdlParserErrorListener;
 WdlParserErrorListener.INSTANCE = new WdlParserErrorListener();
 WdlParserErrorListener.prototype.syntaxError = function (recognizer, offendingSymbol, line, column, msg, e) {
-    console.log(line+":"+column + " - " + msg);
     this.errors.push({"line": line, "position": column, "message": msg});
 };
 

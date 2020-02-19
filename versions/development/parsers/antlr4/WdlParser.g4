@@ -132,7 +132,7 @@ expr_core
 	;
 
 version
-	: VERSION CURRENT_VERSION
+	: VERSION
 	;
 
 import_alias

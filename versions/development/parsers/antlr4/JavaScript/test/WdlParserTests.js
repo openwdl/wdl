@@ -6,34 +6,40 @@ const ReportingErrorListener = require("./utils").WdlParserErrorListener;
 const WdlLexer = require("../src/WdlLexer").WdlLexer;
 const WdlParser = require("../src/WdlParser").WdlParser;
 
+
 describe("WdlParseTests", function () {
 
-    let error_files = [];
-    let success_files = [];
+    var errorFiles = [];
+    var successFiles = [];
 
-    before(function () {
-        let currentDir = __dirname;
-        let examplesDir = path.join(currentDir, "../../examples");
-        fs.readdir(examplesDir, function (err, files) {
-            if (err) {
-                throw new Error("Could not local example files - " + err)
-            }
+    let currentDir = __dirname;
+    let examplesDir = path.join(currentDir, "../../examples");
 
-            files.forEach(function (f) {
-                if (f.endsWith(".error")) {
-                    error_files.push(path.join(examplesDir, f));
-                } else {
-                    success_files.push(path.join(examplesDir, f));
-                }
-            });
+    fs.readdirSync(examplesDir).forEach(function (f) {
+        if (f.endsWith(".error")) {
+            errorFiles.push(path.join(examplesDir, f));
+        } else {
+            successFiles.push(path.join(examplesDir, f));
+        }
+    });
+
+
+    successFiles.forEach(function (wdlFile) {
+        it(wdlFile + " Should parse wdl files successfully", function () {
+            var charStream = antlr4.CharStreams.fromPathSync(wdlFile, "utf-8");
+            let lexer = new WdlLexer(charStream);
+            let s = new antlr4.CommonTokenStream(lexer);
+            let parser = new WdlParser(input = s);
+            let errorListener = new ReportingErrorListener();
+            parser.removeErrorListeners();
+            parser.addErrorListener(errorListener);
+            parser.document();
+            assert.equal(errorListener.hasError(), false,JSON.stringify(errorListener.errors) );
         });
     });
 
-    it("Should parse wdl files successfully", function () {
-
-        for (let i = 0; i < success_files.length; i++) {
-            let wdlFile = success_files[i];
-            console.log(wdlFile + " - Should Succeed");
+    errorFiles.forEach(function (wdlFile) {
+        it(wdlFile + " should fail to parse error files", function () {
             var charStream = antlr4.CharStreams.fromPathSync(wdlFile, "utf-8");
             let lexer = new WdlLexer(charStream);
             let s = new antlr4.CommonTokenStream(lexer);
@@ -42,26 +48,7 @@ describe("WdlParseTests", function () {
             parser.removeErrorListeners();
             parser.addErrorListener(errorListener);
             parser.document();
-            assert.equal(errorListener.hasError(),false);
-        }
-
+            assert.equal(errorListener.hasError(), true);
+        })
     });
-
-    it("Should fail to parse error files", function () {
-        for (let i = 0; i < error_files.length; i++) {
-            let wdlFile = error_files[i];
-            console.log(wdlFile + " - Should Fail");
-            var charStream = antlr4.CharStreams.fromPathSync(wdlFile, "utf-8");
-            let lexer = new WdlLexer(charStream);
-            let s = new antlr4.CommonTokenStream(lexer);
-            let parser = new WdlParser(input = s);
-            let errorListener = new ReportingErrorListener();
-            parser.removeErrorListeners();
-            parser.addErrorListener(errorListener);
-            parser.document();
-            assert.equal(errorListener.hasError(),true);
-        }
-
-    })
-
 });

@@ -7,8 +7,7 @@ options {
 }
 
 // Keywords
-VERSION: 'version';
-CURRENT_VERSION: ('development' | '2.0');
+VERSION: 'version' ' '+ 'development';
 IMPORT: 'import';
 WORKFLOW: 'workflow';
 TASK: 'task';
@@ -82,8 +81,8 @@ TILDE: '~';
 DIVIDE: '/';
 MOD: '%';
 HEREDOCSTART: '<<<' -> pushMode(HereDocCommand);
-SQUOTE: '\'' {this.StartSQuoteInterpolatedString();};
-DQUOTE: '"' {this.StartDQuoteInterpolatedString();};
+SQUOTE: '\'' -> pushMode(SquoteInterpolatedString);
+DQUOTE: '"' -> pushMode(DquoteInterpolatedString);
 
 // Primitive Literals
 NONELITERAL: 'None';
@@ -121,7 +120,7 @@ SQuoteTildeString: '~' -> type(SQuoteStringPart);
 SQuoteCurlyString: '{' -> type(SQuoteStringPart);
 SQuoteCommandStart: ('${' | '~{' ) {this.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
 SQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
-EndSquote: '\'' {this.FinishSQuoteInterpolatedString();} ->  type(SQUOTE);
+EndSquote: '\'' ->  popMode, type(SQUOTE);
 SQuoteStringPart: ~[$~{\r\n']+;
 
 mode DquoteInterpolatedString;
@@ -132,7 +131,7 @@ DQuoteDollarString: '$' -> type(DQuoteStringPart);
 DQUoteCurlString: '{' -> type(DQuoteStringPart);
 DQuoteCommandStart: ('${' | '~{' ) {this.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
 DQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
-EndDQuote: '"' {this.FinishDQuoteInterpolatedString();}->  type(DQUOTE);
+EndDQuote: '"' ->  popMode, type(DQUOTE);
 DQuoteStringPart: ~[$~{\r\n"]+;
 
 

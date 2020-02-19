@@ -12,8 +12,6 @@ public abstract class WDLBaseLexer extends Lexer {
 
     private Stack<Boolean> curlyStack;
     private int _previousTokenType;
-    private boolean _withinSQuote = false;
-    private boolean _withinDQuote = false;
 
     public WDLBaseLexer self;
 
@@ -60,34 +58,19 @@ public abstract class WDLBaseLexer extends Lexer {
 
 
     public void StartSQuoteInterpolatedString() {
-
-        if (!_withinSQuote) {
-            _withinSQuote = true;
-            pushMode(WdlLexer.SquoteInterpolatedString);
-        } else {
-            throw new LexerNoViableAltException(this, _input, _input.index(), null);
-        }
-
+        pushMode(WdlLexer.SquoteInterpolatedString);
     }
 
     public void StartDQuoteInterpolatedString() {
-        if (!_withinDQuote) {
-            _withinDQuote = true;
-            pushMode(WdlLexer.DquoteInterpolatedString);
-        } else {
-            throw new LexerNoViableAltException(this, _input, _input.index(), null);
-        }
-
+        pushMode(WdlLexer.DquoteInterpolatedString);
     }
 
     public void FinishSQuoteInterpolatedString() {
-        _withinSQuote = false;
         popMode();
     }
 
 
     public void FinishDQuoteInterpolatedString() {
-        _withinDQuote = false;
         popMode();
     }
 

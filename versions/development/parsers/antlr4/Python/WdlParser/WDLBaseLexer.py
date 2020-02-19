@@ -13,8 +13,6 @@ class WDLBaseLexer(Lexer):
         super().__init__(input, output)
         self.curlyStack = list()
         self._previousTokenType = None
-        self._withinSQuote = False
-        self._withinDQuote = False
         WDLBaseLexer.this = self
 
     def nextToken(self) -> Token:
@@ -45,27 +43,15 @@ class WDLBaseLexer(Lexer):
         return text.encode().decode("unicode_escape")
 
     def StartSQuoteInterpolatedString(self):
-        if not self._withinSQuote:
-            self._withinSQuote = True
-            self.pushMode(self.SquoteInterpolatedString)
-        else:
-            raise LexerNoViableAltException(lexer=self, input=self._input, startIndex=self._input.index,
-                                            deadEndConfigs=None)
+        self.pushMode(self.SquoteInterpolatedString)
 
     def StartDQuoteInterpolatedString(self):
-        if not self._withinDQuote:
-            self._withinDQuote = True
-            self.pushMode(self.DquoteInterpolatedString)
-        else:
-            raise LexerNoViableAltException(lexer=self, input=self._input, startIndex=self._input.index,
-                                            deadEndConfigs=None)
+        self.pushMode(self.DquoteInterpolatedString)
 
     def FinishSQuoteInterpolatedString(self):
-        self._withinSQuote = False
         self.popMode()
 
     def FinishDQuoteInterpolatedString(self):
-        self._withinDQuote = False
         self.popMode()
 
     def IsCommand(self):

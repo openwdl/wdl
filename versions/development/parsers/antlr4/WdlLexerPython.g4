@@ -7,8 +7,7 @@ options {
 }
 
 // Keywords
-VERSION: 'version';
-CURRENT_VERSION: ('development' | '2.0');
+VERSION: 'version' ' '+ 'development';
 IMPORT: 'import';
 WORKFLOW: 'workflow';
 TASK: 'task';
@@ -52,10 +51,10 @@ AFTER: 'after';
 LPAREN: '(';
 RPAREN: ')';
 LBRACE
-  : '{' {self.IsCommand()}? {self.PushCommandAndBrackEnter();}
-  | '{' {self.PushCurlBrackOnEnter(0);}
+  : '{' {this.IsCommand()}? {this.PushCommandAndBrackEnter();}
+  | '{' {this.PushCurlBrackOnEnter(0);}
   ;
-RBRACE: '}' {self.PopModeOnCurlBracketClose();};
+RBRACE: '}' {this.PopModeOnCurlBracketClose();};
 LBRACK: '[';
 RBRACK: ']';
 ESC: '\\';
@@ -82,8 +81,8 @@ TILDE: '~';
 DIVIDE: '/';
 MOD: '%';
 HEREDOCSTART: '<<<' -> pushMode(HereDocCommand);
-SQUOTE: '\'' {self.StartSQuoteInterpolatedString();};
-DQUOTE: '"' {self.StartDQuoteInterpolatedString();};
+SQUOTE: '\'' -> pushMode(SquoteInterpolatedString);
+DQUOTE: '"' -> pushMode(DquoteInterpolatedString);
 
 // Primitive Literals
 NONELITERAL: 'None';
@@ -119,9 +118,9 @@ SQuoteEscapedChar: '\\' . -> type(SQuoteStringPart);
 SQuoteDollarString: '$'  -> type(SQuoteStringPart);
 SQuoteTildeString: '~' -> type(SQuoteStringPart);
 SQuoteCurlyString: '{' -> type(SQuoteStringPart);
-SQuoteCommandStart: ('${' | '~{' ) {self.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
+SQuoteCommandStart: ('${' | '~{' ) {this.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
 SQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
-EndSquote: '\'' {self.FinishSQuoteInterpolatedString();} ->  type(SQUOTE);
+EndSquote: '\'' ->  popMode, type(SQUOTE);
 SQuoteStringPart: ~[$~{\r\n']+;
 
 mode DquoteInterpolatedString;
@@ -130,9 +129,9 @@ DQuoteEscapedChar: '\\' . -> type(DQuoteStringPart);
 DQuoteTildeString: '~' -> type(DQuoteStringPart);
 DQuoteDollarString: '$' -> type(DQuoteStringPart);
 DQUoteCurlString: '{' -> type(DQuoteStringPart);
-DQuoteCommandStart: ('${' | '~{' ) {self.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
+DQuoteCommandStart: ('${' | '~{' ) {this.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
 DQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
-EndDQuote: '"' {self.FinishDQuoteInterpolatedString();}->  type(DQUOTE);
+EndDQuote: '"' ->  popMode, type(DQUOTE);
 DQuoteStringPart: ~[$~{\r\n"]+;
 
 
@@ -142,7 +141,7 @@ HereDocUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 HereDocEscapedChar: '\\' . -> type(HereDocStringPart);
 HereDocTildeString: '~' -> type(HereDocStringPart);
 HereDocCurlyString: '{' -> type(HereDocStringPart);
-HereDocCurlyStringCommand: ('${' | '~{' ) {self.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
+HereDocCurlyStringCommand: ('${' | '~{' ) {this.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
 HereDocEscapedEnd: '\\>>>' -> type(HereDocStringPart);
 EndHereDocCommand: '>>>' -> popMode;
 HereDocEscape: ( '>' | '>>' | '>>>>' '>'*) -> type(HereDocStringPart);
@@ -155,8 +154,8 @@ CommandUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 CommandTildeString: '~'  -> type(CommandStringPart);
 CommandDollarString: '$' -> type(CommandStringPart);
 CommandCurlyString: '{' -> type(CommandStringPart);
-CommandCurlyStringCommand:  ('${' | '~{' ) {self.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
-EndCommand: '}' {self.PopCurlBrackOnClose();} -> popMode;
+CommandCurlyStringCommand:  ('${' | '~{' ) {this.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
+EndCommand: '}' {this.PopCurlBrackOnClose();} -> popMode;
 CommandStringPart: ~[$~{}]+;
 
 

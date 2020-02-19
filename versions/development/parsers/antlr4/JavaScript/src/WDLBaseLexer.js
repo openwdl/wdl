@@ -1,5 +1,4 @@
 const antlr4 = require("antlr4/index");
-const LexerNoViableAltException = require("antlr4/error/Errors").LexerNoViableAltException;
 const CommonToken = require("antlr4/Token").CommonToken;
 const wdlLexer = require("./WdlLexer");
 const uunescape = require("unescape-unicode");
@@ -9,8 +8,6 @@ function WDLBaseLexer(input) {
     antlr4.Lexer.call(this, input);
     this.curlyStack = [];
     this._previousTokenType = null;
-    this._withinSQuote = false;
-    this._withinDQuote = false;
     return this;
 }
 
@@ -47,34 +44,6 @@ WDLBaseLexer.prototype.nextToken = function () {
 
 WDLBaseLexer.prototype.unescape = function (text) {
     return uunescape(text);
-};
-
-WDLBaseLexer.prototype.StartSQuoteInterpolatedString = function () {
-    if (!this._withinSQuote) {
-        this._withinSQuote = true;
-        this.pushMode(wdlLexer.WdlLexer.SquoteInterpolatedString);
-    } else {
-        throw new LexerNoViableAltException(lexer = this, input = this._input, startIndex = this._index, deadEndConfigs = null);
-    }
-};
-
-WDLBaseLexer.prototype.StartDQuoteInterpolatedString = function () {
-    if (!this._withinDQuote) {
-        this._withinDQuote = true;
-        this.pushMode(wdlLexer.WdlLexer.DquoteInterpolatedString);
-    } else {
-        throw new LexerNoViableAltException(lexer = this, input = this._input, startIndex = this._index, deadEndConfigs = null);
-    }
-};
-
-WDLBaseLexer.prototype.FinishSQuoteInterpolatedString = function () {
-    this._withinSQuote = false;
-    this.popMode();
-};
-
-WDLBaseLexer.prototype.FinishDQuoteInterpolatedString = function () {
-    this._withinDQuote = false;
-    this.popMode();
 };
 
 /**

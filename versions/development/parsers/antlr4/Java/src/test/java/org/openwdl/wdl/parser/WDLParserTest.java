@@ -1,5 +1,15 @@
 package org.openwdl.wdl.parser;
 
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.openwdl.wdl.parser.WdlParser.*;
+import org.openwdl.wdl.parser.WdlParserTestErrorListener.SyntaxError;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,40 +20,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import org.antlr.v4.runtime.CodePointBuffer;
-import org.antlr.v4.runtime.CodePointCharStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ConsoleErrorListener;
-import org.antlr.v4.runtime.TokenSource;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.openwdl.wdl.parser.WdlParser.AddContext;
-import org.openwdl.wdl.parser.WdlParser.DocumentContext;
-import org.openwdl.wdl.parser.WdlParser.Document_elementContext;
-import org.openwdl.wdl.parser.WdlParser.Dquote_stringContext;
-import org.openwdl.wdl.parser.WdlParser.ExprContext;
-import org.openwdl.wdl.parser.WdlParser.Expr_infix1Context;
-import org.openwdl.wdl.parser.WdlParser.Expr_infix3Context;
-import org.openwdl.wdl.parser.WdlParser.Expr_infixContext;
-import org.openwdl.wdl.parser.WdlParser.Import_docContext;
-import org.openwdl.wdl.parser.WdlParser.Infix1Context;
-import org.openwdl.wdl.parser.WdlParser.Infix2Context;
-import org.openwdl.wdl.parser.WdlParser.Infix3Context;
-import org.openwdl.wdl.parser.WdlParser.Squote_stringContext;
-import org.openwdl.wdl.parser.WdlParser.StringContext;
-import org.openwdl.wdl.parser.WdlParser.StructContext;
-import org.openwdl.wdl.parser.WdlParser.TaskContext;
-import org.openwdl.wdl.parser.WdlParser.Task_commandContext;
-import org.openwdl.wdl.parser.WdlParser.Task_curly_commandContext;
-import org.openwdl.wdl.parser.WdlParser.Task_heredoc_commandContext;
-import org.openwdl.wdl.parser.WdlParser.VersionContext;
-import org.openwdl.wdl.parser.WdlParser.WorkflowContext;
-import org.openwdl.wdl.parser.WdlParserTestErrorListener.SyntaxError;
 
 public class WDLParserTest {
 
@@ -193,6 +169,49 @@ public class WDLParserTest {
     }
 
     @Test
+    public void testSquoteStringInterpolationInfiniteRecursion(){
+        String interpolation = "'some string part ~{ident + 'hello ${ident}' + ident} some string part after'";
+        WdlParser parser = getParser(interpolation);
+        WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
+        parser.addErrorListener(errorListener);
+
+        StringContext stringContext = parser.string();
+        Assertions.assertFalse(errorListener.hasErrors());
+        Squote_stringContext squoteStringContext = stringContext.squote_string();
+        Assertions.assertNotNull(squoteStringContext);
+        Assertions.assertEquals(2,squoteStringContext.SQuoteStringPart().size());
+        Assertions.assertEquals("some string part ",squoteStringContext.getChild(1).getText());
+        Assertions.assertEquals(" some string part after",squoteStringContext.getChild(5).getText());
+        ParseTree exprTree =  squoteStringContext.getChild(3);
+        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
+        Assertions.assertEquals("ident+'hello ${ident}'+ident",squoteStringContext.getChild(3).getText());
+        Expr_infixContext exprContext = ((ExprContext) exprTree).expr_infix();
+        Infix1Context infix1Context = (Infix1Context) exprContext.getChild(0);
+        Infix2Context infix2Context = (Infix2Context) infix1Context.getChild(0);
+        Infix3Context infix3Context = (Infix3Context) infix2Context.getChild(0);
+        AddContext addContext = (AddContext) infix3Context.getChild(0);
+        Assertions.assertEquals("ident+'hello ${ident}'", addContext.expr_infix3().getText());
+        Assertions.assertEquals("ident", addContext.expr_infix4().getText());
+        Infix5Context infix5Context = (Infix5Context) addContext.expr_infix3().getChild(2);
+
+        ParseTree tree = infix5Context.getChild(0).getChild(0);
+        Assertions.assertEquals(tree.getClass(),PrimitivesContext.class);
+        tree = tree.getChild(0);
+        Assertions.assertEquals(tree.getClass(),Primitive_literalContext.class);
+        tree = tree.getChild(0);
+        Assertions.assertEquals(tree.getClass(),StringContext.class);
+        StringContext innerStringContext = (StringContext) tree;
+        Squote_stringContext innersquoteStringContext = innerStringContext.squote_string();
+        Assertions.assertNotNull(innersquoteStringContext);
+        Assertions.assertEquals(1,innersquoteStringContext.SQuoteStringPart().size());
+        Assertions.assertEquals("hello ",innersquoteStringContext.getChild(1).getText());
+        ParseTree innerExprTree = innerStringContext.getChild(3);
+        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
+        Assertions.assertEquals("ident",innersquoteStringContext.getChild(3).getText());
+
+    }
+
+    @Test
     public void testCommandStringInterpolation(){
         String interpolation = "command { some string part\necho ~{ident + ident}\nsome string part after }";
         WdlParser parser = getParser(interpolation);
@@ -274,8 +293,7 @@ public class WDLParserTest {
         Assertions.assertNotNull(documentContext);
         VersionContext versionContext = documentContext.version();
         Assertions.assertNotNull(versionContext);
-        Assertions.assertEquals(versionContext.VERSION().getSymbol().getText(), "version");
-        Assertions.assertEquals(versionContext.CURRENT_VERSION().getSymbol().getText(), "development");
+        Assertions.assertEquals(versionContext.VERSION().getSymbol().getText(), "version development");
     }
 
     @Test
@@ -286,7 +304,6 @@ public class WDLParserTest {
         parser.addErrorListener(errorListener);
 
         VersionContext versionContext = parser.version();
-        Assertions.assertNull(versionContext.CURRENT_VERSION());
         Assertions.assertTrue(errorListener.hasErrors());
     }
 
