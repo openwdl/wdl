@@ -6,7 +6,7 @@
   <groupId>org.openwdl</groupId>
   <artifactId>wdl</artifactId>
   <name>WDL Grammar</name>
-  <version>2.0</version>
+  <version>1.0</version>
   <packaging>jar</packaging>
 
   <properties>
