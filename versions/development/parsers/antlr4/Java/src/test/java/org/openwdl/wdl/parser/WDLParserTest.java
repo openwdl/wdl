@@ -358,7 +358,27 @@ public class WDLParserTest {
         Assertions.assertEquals(WorkflowContext.class.getName(),elementContexts.get(2).getChild(0).getClass().getName());
 
 
+    }
 
+    @Test
+    public void testWorkflowName(){
+        String document = "version development"
+                          + "\nstruct foo {"
+                          + " File f"
+                          + "}"
+                          + "\ntask bar {"
+                          + " input { foo inp } command <<< echo ~{inp.f} >>>"
+                          + "}"
+                          + "\nworkflow biz {"
+                          + " input { foo inp } "
+                          + "\n call bar as boz { input: inp = inp }"
+                          + "\n}";
+
+        WdlParser parser = getParser(document);
+        WdlWorkflowNameListener nameListener = new WdlWorkflowNameListener();
+        parser.addParseListener(nameListener);
+        parser.document();
+        System.out.println(nameListener.workflowName);
     }
 
 
