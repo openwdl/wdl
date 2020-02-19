@@ -2995,7 +2995,7 @@ The Common WDL output JSON could look like this:
 {
     "example.foo": "bar",
     "example.analysis_results": "/path/to/my/analysis/results.txt",
-    "example.read_count": 50157187
+    "example.read_count": 50157187,
     "example.kessel_run_parsecs": 11.98,
     "example.sample_swap_detected": false,
     "example.sample_variants": ["/data/patient1.vcf", "/data/patient2.vcf"],
