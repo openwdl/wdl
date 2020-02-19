@@ -2896,10 +2896,13 @@ Note that because some call inputs are left unsatisfied, this workflow could not
 
 Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow. The format of workflow inputs is implementation specific.
 
-### Common WDL JSON Inputs
+### Common WDL JSON Input Format
 
 The Common WDL JSON input format is an input format that is required to be 
-accepted by any workflow engine. In this common format, workflow inputs are 
+accepted by any workflow engine. It is the input format that is used for 
+performing language compliance tests on the engine.
+
+In this common format, workflow inputs are 
 specified as key/value pairs in JSON. The mapping to WDL values is codified in 
 the [serialization of task inputs](#serialization-of-task-inputs) section.
 
@@ -2935,7 +2938,74 @@ workflow inputs across the WDL ecosystem.
 
 # Computing outputs
 
+## Computing workflow outputs
 
+Every engine should have an option to provide the outputs. Either as a file,
+an API, or as stdout. The output format should be composed according to the 
+following rules:
+
+* Workflow outputs are defined in the output section of the workflow. 
+* A workflow without an output section has no outputs.
+* An engine may optionally provide outputs not listed in the output section
+  (i.e. task and subworkflow outputs) for debugging purposes, if explicitly
+  requested by the user.
+
+The above rules only apply to output formats delivered by the engine. Listing
+subworkflow and task outputs in logs is not covered by these rules.
+
+## Output formats
+
+### Common WDL JSON Output Format
+
+Every workflow engine should provide an option to provide the Common WDL JSON
+output format. This output will be used for performing language compliance tests
+on the engine.
+
+In Common WDL JSON output format the outputs are specified as key/value pairs in
+JSON. Only outputs from the workflow are provided. Sub-workflow and task outputs
+are not provided.
+
+The output value will be fully qualified. Check the [chapter on fully qualified 
+names](#fully-qualified-names--namespaced-identifiers) for more details.
+
+WDL values will be coerced to their corresponding JSON types as described in 
+the chapter on [type coercion](#type-coercion). 
+
+Example for the following workflow:
+
+
+```WDL
+workflow example {
+    ...
+
+    output {
+        String foo = cafetaria.inn
+        File analysis_results = analysis.results
+        Int read_count = readcounter.result
+        Float kessel_run_parsecs = trip_to_space.distance
+        Boolean sample_swap_detected = array_concordance.concordant
+        Array[File] sample_variants = variant_calling.vcfs 
+        Map[String, Int] droids = escape_pod.cargo
+    }
+}
+```
+
+The Common WDL output JSON could look like this:
+```JSON
+{
+    "example.foo": "bar",
+    "example.analysis_results": "/path/to/my/analysis/results.txt",
+    "example.read_count": 50157187
+    "example.kessel_run_parsecs": 11.98,
+    "example.sample_swap_detected": false,
+    "example.sample_variants": ["/data/patient1.vcf", "/data/patient2.vcf"]
+    "example.droids": {"C": 3, "D": 2, "P": 0, "R": 2}
+}
+```
+
+### Other output formats
+
+Any other output formats may be supported by engines.
 
 # Type Coercion
 
