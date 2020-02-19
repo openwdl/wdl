@@ -2896,9 +2896,12 @@ Note that because some call inputs are left unsatisfied, this workflow could not
 
 Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow. The format of workflow inputs is implementation specific.
 
-### Cromwell-style Inputs
+### Common WDL JSON Inputs
 
-The "Cromwell-style" input format is widely supported by WDL implementations and recommended for portability purposes. In the Cromwell-style format, workflow inputs are specified as key/value pairs in JSON or YAML. The mapping to WDL values is codified in the [serialization of task inputs](#serialization-of-task-inputs) section.
+The Common WDL JSON input format is an input format that is required to be 
+accepted by any workflow engine. In this common format, workflow inputs are 
+specified as key/value pairs in JSON. The mapping to WDL values is codified in 
+the [serialization of task inputs](#serialization-of-task-inputs) section.
 
 In JSON, the inputs to the workflow in the previous section might be:
 
@@ -2917,7 +2920,22 @@ In JSON, the inputs to the workflow in the previous section might be:
 }
 ```
 
-It's important to note that the type in JSON must be coercible to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "three"`, this coercion from string to integer is not valid and would result in a coercion error.  See the section on [Type Coercion](#type-coercion) for more details.
+It's important to note that the type in JSON must be coercible to the WDL type. 
+For example `wf.int_val` expects an integer, but if we specified it in JSON as 
+`"wf.int_val": "three"`, this coercion from string to integer is not valid and 
+would result in a coercion error.  See the section on 
+[Type Coercion](#type-coercion) for more details.
+
+### Other input formats
+
+Next to the Common WDL JSON input format, engines can support any other format.
+The only requirement is that they provide a tool or documentation to convert 
+these custom formats into Common WDL JSON input format, so users can share their
+workflow inputs across the WDL ecosystem.
+
+# Computing outputs
+
+
 
 # Type Coercion
 
