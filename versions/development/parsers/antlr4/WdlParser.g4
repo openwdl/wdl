@@ -124,8 +124,7 @@ expr_core
 	| LBRACE (expr COLON expr (COMMA expr COLON expr)*)* RBRACE #map_literal
 	| Identifier LBRACE (primitive_literal COLON expr (COMMA primitive_literal COLON expr)*)* RBRACE #struct_literal
 	| NOT expr #negate
-	| PLUS Identifier #uniraryplus
-	| MINUS Identifier #uniraryminus
+	| (PLUS | MINUS) Identifier #unirarysigned
 	| expr_core LBRACK expr RBRACK #at
 	| IF expr THEN expr ELSE expr #ifthenelse
 	| Identifier LPAREN (expr (COMMA expr)*)? RPAREN #apply
