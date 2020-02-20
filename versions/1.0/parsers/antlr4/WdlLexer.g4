@@ -33,13 +33,26 @@ FILE: 'File';
 ARRAY: 'Array';
 MAP: 'Map';
 PAIR: 'Pair';
-LEFT: 'left';
-RIGHT: 'right';
 OBJECT: 'Object';
 OBJECT_LITERAL: 'object';
 
 SEP: 'sep';
 DEFAULT: 'default';
+
+
+// Primitive Literals
+IntLiteral
+	: Digits
+	| SignedDigits
+	;
+FloatLiteral
+	: SignedFloatFragment
+	| FloatFragment
+	;
+BoolLiteral
+	: 'true'
+	| 'false'
+	;
 
 // Symbols
 LPAREN: '(';
@@ -73,21 +86,6 @@ DIVIDE: '/';
 MOD: '%';
 SQUOTE: '\'' -> pushMode(SquoteInterpolatedString);
 DQUOTE: '"' -> pushMode(DquoteInterpolatedString);
-
-// Primitive Literals
-IntLiteral
-	: Digits
-	| SignedDigits
-	;
-FloatLiteral
-	: FloatFragment
-	| SignedFloatFragment
-	;
-BoolLiteral
-	: 'true'
-	| 'false'
-	;
-
 
 WHITESPACE
 	: [ \t\r\n]+ -> channel(HIDDEN)
@@ -143,7 +141,7 @@ CommandUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 CommandTildeString: '~'  -> type(CommandStringPart);
 CommandDollarString: '$' -> type(CommandStringPart);
 CommandCurlyString: '{' -> type(CommandStringPart);
-StringCommandStart:  ('${' | '~{' )  -> pushMode(DEFAULT_MODE);
+StringCommandStart:  ('${' | '~{' ) -> pushMode(DEFAULT_MODE);
 EndCommand: '}' -> popMode;
 CommandStringPart: ~[$~{}]+;
 

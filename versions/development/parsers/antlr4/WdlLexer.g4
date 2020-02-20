@@ -38,12 +38,26 @@ DIRECTORY: 'Directory';
 ARRAY: 'Array';
 MAP: 'Map';
 PAIR: 'Pair';
-LEFT: 'left';
-RIGHT: 'right';
 AFTER: 'after';
 
 HEREDOC_COMMAND: 'command' ' '* '<<<' -> pushMode(HereDocCommand);
 COMMAND: 'command' ' '* '{' -> pushMode(Command);
+
+
+// Primitive Literals
+NONELITERAL: 'None';
+IntLiteral
+	: Digits
+	| SignedDigits
+	;
+FloatLiteral
+	: SignedFloatFragment
+	| FloatFragment
+	;
+BoolLiteral
+	: 'true'
+	| 'false'
+	;
 
 // Symbols
 LPAREN: '(';
@@ -77,22 +91,6 @@ DIVIDE: '/';
 MOD: '%';
 SQUOTE: '\'' -> pushMode(SquoteInterpolatedString);
 DQUOTE: '"' -> pushMode(DquoteInterpolatedString);
-
-// Primitive Literals
-NONELITERAL: 'None';
-IntLiteral
-	: Digits
-	| SignedDigits
-	;
-FloatLiteral
-	: FloatFragment
-	| SignedFloatFragment
-	;
-BoolLiteral
-	: 'true'
-	| 'false'
-	;
-
 
 WHITESPACE
 	: [ \t\r\n]+ -> channel(HIDDEN)
@@ -135,7 +133,7 @@ HereDocUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 HereDocEscapedChar: '\\' . -> type(CommandStringPart);
 HereDocTildeString: '~' -> type(CommandStringPart);
 HereDocCurlyString: '{' -> type(CommandStringPart);
-HereDocCurlyStringCommand:  '~{' -> pushMode(DEFAULT_MODE), type(StringCommandStart);
+HereDocCurlyStringCommand: '~{' -> pushMode(DEFAULT_MODE), type(StringCommandStart);
 HereDocEscapedEnd: '\\>>>' -> type(CommandStringPart);
 EndHereDocCommand: '>>>' -> popMode, type(EndCommand);
 HereDocEscape: ( '>' | '>>' | '>>>>' '>'*) -> type(CommandStringPart);
