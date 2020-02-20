@@ -14,3 +14,7 @@ target/
 *.jar
 node_modules/
 build/
+wdl_parser.egg-info/
+dist/
+gen/
+wdl.iml

@@ -191,19 +191,11 @@ task_output
 
 
 
-task_curly_command
-  :  COMMAND LBRACE CommandStringPart* (CommandStringPart* CommandCurlyStringCommand expr RBRACE CommandStringPart* )* EndCommand
-  ;
-
-task_heredoc_command
-  :  COMMAND HEREDOCSTART HereDocStringPart* (HereDocStringPart* HereDocCurlyStringCommand expr RBRACE HereDocStringPart*)* EndHereDocCommand
-  ;
-
-
 task_command
-  : task_curly_command
-  | task_heredoc_command
-	;
+  : COMMAND CommandStringPart* (CommandStringPart* StringCommandStart expr RBRACE CommandStringPart* )* EndCommand
+  | HEREDOC_COMMAND CommandStringPart* (CommandStringPart* StringCommandStart expr RBRACE CommandStringPart* )* EndCommand
+  ;
+
 
 task_element
 	: task_input

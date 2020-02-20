@@ -220,14 +220,14 @@ public class WDLParserTest {
 
         Task_commandContext commandContext = parser.task_command();
         Assertions.assertFalse(errorListener.hasErrors());
-        Task_curly_commandContext curlCommandContext = commandContext.task_curly_command();
+        Task_commandContext curlCommandContext = commandContext;
         Assertions.assertNotNull(curlCommandContext);
         Assertions.assertEquals(2,curlCommandContext.CommandStringPart().size());
-        Assertions.assertEquals(" some string part\necho ",curlCommandContext.getChild(2).getText());
-        Assertions.assertEquals("\nsome string part after ",curlCommandContext.getChild(6).getText());
-        ParseTree exprTree =  curlCommandContext.getChild(4);
+        Assertions.assertEquals(" some string part\necho ",curlCommandContext.getChild(1).getText());
+        Assertions.assertEquals("\nsome string part after ",curlCommandContext.getChild(5).getText());
+        ParseTree exprTree =  curlCommandContext.getChild(3);
         Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+ident",curlCommandContext.getChild(4).getText());
+        Assertions.assertEquals("ident+ident",curlCommandContext.getChild(3).getText());
         Expr_infixContext exprContext = ((ExprContext) exprTree).expr_infix();
         Infix1Context infix1Context = (Infix1Context) exprContext.getChild(0);
         Infix2Context infix2Context = (Infix2Context) infix1Context.getChild(0);
@@ -247,14 +247,14 @@ public class WDLParserTest {
 
         Task_commandContext commandContext = parser.task_command();
         Assertions.assertFalse(errorListener.hasErrors());
-        Task_heredoc_commandContext heredocCommandContext = commandContext.task_heredoc_command();
+        Task_commandContext heredocCommandContext = commandContext;
         Assertions.assertNotNull(heredocCommandContext);
-        Assertions.assertEquals(2,heredocCommandContext.HereDocStringPart().size());
-        Assertions.assertEquals(" some string part\necho ",heredocCommandContext.getChild(2).getText());
-        Assertions.assertEquals("\nsome string part after ",heredocCommandContext.getChild(6).getText());
-        ParseTree exprTree =  heredocCommandContext.getChild(4);
+        Assertions.assertEquals(2,heredocCommandContext.CommandStringPart().size());
+        Assertions.assertEquals(" some string part\necho ",heredocCommandContext.getChild(1).getText());
+        Assertions.assertEquals("\nsome string part after ",heredocCommandContext.getChild(5).getText());
+        ParseTree exprTree =  heredocCommandContext.getChild(3);
         Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+ident",heredocCommandContext.getChild(4).getText());
+        Assertions.assertEquals("ident+ident",heredocCommandContext.getChild(3).getText());
         Expr_infixContext exprContext = ((ExprContext) exprTree).expr_infix();
         Infix1Context infix1Context = (Infix1Context) exprContext.getChild(0);
         Infix2Context infix2Context = (Infix2Context) infix1Context.getChild(0);
@@ -262,8 +262,9 @@ public class WDLParserTest {
         AddContext addContext = (AddContext) infix3Context.getChild(0);
         Assertions.assertEquals("ident", addContext.expr_infix3().getText());
         Assertions.assertEquals("ident", addContext.expr_infix4().getText());
-
     }
+
+
     @Test
     public void testHeredocCommandInterpolation_OnlyRecognizesTilde(){
         String interpolation = "command <<< ${somevar} ~{ident + ident} >>>";
@@ -273,14 +274,14 @@ public class WDLParserTest {
 
         Task_commandContext commandContext = parser.task_command();
         Assertions.assertFalse(errorListener.hasErrors());
-        Task_heredoc_commandContext heredocCommandContext = commandContext.task_heredoc_command();
+        Task_commandContext heredocCommandContext = commandContext;
         Assertions.assertNotNull(heredocCommandContext);
-        Assertions.assertEquals(" $",heredocCommandContext.getChild(2).getText());
-        Assertions.assertEquals("{",heredocCommandContext.getChild(3).getText());
-        Assertions.assertEquals("somevar} ",heredocCommandContext.getChild(4).getText());
-        ParseTree exprTree =  heredocCommandContext.getChild(6);
+        Assertions.assertEquals(" $",heredocCommandContext.getChild(1).getText());
+        Assertions.assertEquals("{",heredocCommandContext.getChild(2).getText());
+        Assertions.assertEquals("somevar} ",heredocCommandContext.getChild(3).getText());
+        ParseTree exprTree =  heredocCommandContext.getChild(5);
         Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+ident",heredocCommandContext.getChild(6).getText());
+        Assertions.assertEquals("ident+ident",heredocCommandContext.getChild(5).getText());
     }
 
 
@@ -377,8 +378,13 @@ public class WDLParserTest {
         WdlParser parser = getParser(document);
         WdlWorkflowNameListener nameListener = new WdlWorkflowNameListener();
         parser.addParseListener(nameListener);
-        parser.document();
-        System.out.println(nameListener.workflowName);
+
+
+        WdlParserWorkflowNameVisitor visitor = new WdlParserWorkflowNameVisitor();
+        String workflowName = visitor.visit(parser.document());
+
+
+        System.out.println(" + " + workflowName);
     }
 
 

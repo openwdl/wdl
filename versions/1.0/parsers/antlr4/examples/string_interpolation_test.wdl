@@ -1,7 +1,5 @@
 version 1.0
 
-
-
 workflow string_interpolation {
 
   input {

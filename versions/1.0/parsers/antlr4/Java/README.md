@@ -1,6 +1,6 @@
 # WDL Java Parser
 
-This directory provides a parser implemented in java. The parser is built on top of the Base [WDLBaseLexer.java](src/main/java/org/openwdl/wdl/parser/WDLBaseLexer.java)
+This directory provides a parser implemented in java. 
 
 # Requirements
 - Java 7+

@@ -1,12 +1,35 @@
 import sys
+import os
+import re
 from typing import TextIO
 
 from antlr4 import *
 from antlr4.error.ErrorListener import ErrorListener
-from WdlParser.WdlLexerPython import WdlLexerPython
+from wdl_parser.WdlLexer import WdlLexer
+
+DEFAULT_EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../examples")
+
+PATTERN = re.compile(r"#EXPECTED_ERROR\s+line:(?P<linenum>[0-9]+)\s(msg:(?P<msg>\s(\"[^\n\r]+\"|'[^\n\r]+')))?.*?")
 
 
-class CommentAggregatingTokenSource(WdlLexerPython):
+def get_example_files(error: bool):
+    example_dir = os.environ.get("WDL_TEXT_EXAMPLES", DEFAULT_EXAMPLE_DIR)
+    print(example_dir)
+    files = [f for f in os.listdir(example_dir) if
+             os.path.isfile(os.path.join(example_dir, f))]
+    parameters = []
+    for file in files:
+        if error:
+            if file.endswith(".error"):
+                parameters.append((FileStream(os.path.join(example_dir, file), "utf-8"), file))
+        else:
+            if not file.endswith(".error"):
+                parameters.append((FileStream(os.path.join(example_dir, file), "utf-8"), file))
+
+    return parameters
+
+
+class CommentAggregatingTokenSource(WdlLexer):
 
     def __init__(self, input=None, output: TextIO = sys.stdout):
         super().__init__(input, output)

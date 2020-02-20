@@ -1,6 +1,6 @@
 # WDL JavaScript Parser
 
-This directory provides a parser implemented in javascript. The parser is built on top of the Base [WDLBaseLexer.js](src/WDLBaseLexer.js)
+This directory provides a parser implemented in javascript.
 
 # Requirements
 - Node.js

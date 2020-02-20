@@ -2,10 +2,6 @@ lexer grammar WdlLexer;
 
 channels { WdlComments, SkipChannel }
 
-options {
-  superClass = WDLBaseLexer;
-}
-
 // Keywords
 VERSION: 'version' ' '+ 'development';
 IMPORT: 'import';
@@ -24,7 +20,6 @@ INPUT: 'input';
 OUTPUT: 'output';
 PARAMETERMETA: 'parameter_meta';
 META: 'meta';
-COMMAND: 'command';
 HINTS: 'hints';
 RUNTIME: 'runtime';
 RUNTIMECPU: 'cpu';
@@ -47,14 +42,14 @@ LEFT: 'left';
 RIGHT: 'right';
 AFTER: 'after';
 
+HEREDOC_COMMAND: 'command' ' '* '<<<' -> pushMode(HereDocCommand);
+COMMAND: 'command' ' '* '{' -> pushMode(Command);
+
 // Symbols
 LPAREN: '(';
 RPAREN: ')';
-LBRACE
-  : '{' {this.IsCommand()}? {this.PushCommandAndBrackEnter();}
-  | '{' {this.PushCurlBrackOnEnter(0);}
-  ;
-RBRACE: '}' {this.PopModeOnCurlBracketClose();};
+LBRACE: '{' -> pushMode(DEFAULT_MODE);
+RBRACE: '}' -> popMode;
 LBRACK: '[';
 RBRACK: ']';
 ESC: '\\';
@@ -80,7 +75,6 @@ NOT: '!';
 TILDE: '~';
 DIVIDE: '/';
 MOD: '%';
-HEREDOCSTART: '<<<' -> pushMode(HereDocCommand);
 SQUOTE: '\'' -> pushMode(SquoteInterpolatedString);
 DQUOTE: '"' -> pushMode(DquoteInterpolatedString);
 
@@ -118,7 +112,7 @@ SQuoteEscapedChar: '\\' . -> type(SQuoteStringPart);
 SQuoteDollarString: '$'  -> type(SQuoteStringPart);
 SQuoteTildeString: '~' -> type(SQuoteStringPart);
 SQuoteCurlyString: '{' -> type(SQuoteStringPart);
-SQuoteCommandStart: ('${' | '~{' ) {this.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
+SQuoteCommandStart: ('${' | '~{' ) -> pushMode(DEFAULT_MODE);
 SQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 EndSquote: '\'' ->  popMode, type(SQUOTE);
 SQuoteStringPart: ~[$~{\r\n']+;
@@ -129,7 +123,7 @@ DQuoteEscapedChar: '\\' . -> type(DQuoteStringPart);
 DQuoteTildeString: '~' -> type(DQuoteStringPart);
 DQuoteDollarString: '$' -> type(DQuoteStringPart);
 DQUoteCurlString: '{' -> type(DQuoteStringPart);
-DQuoteCommandStart: ('${' | '~{' ) {this.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
+DQuoteCommandStart: ('${' | '~{' ) -> pushMode(DEFAULT_MODE);
 DQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 EndDQuote: '"' ->  popMode, type(DQUOTE);
 DQuoteStringPart: ~[$~{\r\n"]+;
@@ -138,14 +132,14 @@ DQuoteStringPart: ~[$~{\r\n"]+;
 mode HereDocCommand;
 
 HereDocUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
-HereDocEscapedChar: '\\' . -> type(HereDocStringPart);
-HereDocTildeString: '~' -> type(HereDocStringPart);
-HereDocCurlyString: '{' -> type(HereDocStringPart);
-HereDocCurlyStringCommand: ('${' | '~{' ) {this.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
-HereDocEscapedEnd: '\\>>>' -> type(HereDocStringPart);
-EndHereDocCommand: '>>>' -> popMode;
-HereDocEscape: ( '>' | '>>' | '>>>>' '>'*) -> type(HereDocStringPart);
-HereDocStringPart: ~[~{>]+;
+HereDocEscapedChar: '\\' . -> type(CommandStringPart);
+HereDocTildeString: '~' -> type(CommandStringPart);
+HereDocCurlyString: '{' -> type(CommandStringPart);
+HereDocCurlyStringCommand:  '~{' -> pushMode(DEFAULT_MODE), type(StringCommandStart);
+HereDocEscapedEnd: '\\>>>' -> type(CommandStringPart);
+EndHereDocCommand: '>>>' -> popMode, type(EndCommand);
+HereDocEscape: ( '>' | '>>' | '>>>>' '>'*) -> type(CommandStringPart);
+HereDocStringPart: ~[~{>]+ -> type(CommandStringPart);
 
 mode Command;
 
@@ -154,8 +148,8 @@ CommandUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 CommandTildeString: '~'  -> type(CommandStringPart);
 CommandDollarString: '$' -> type(CommandStringPart);
 CommandCurlyString: '{' -> type(CommandStringPart);
-CommandCurlyStringCommand:  ('${' | '~{' ) {this.PushCurlBrackOnEnter(1);} -> pushMode(DEFAULT_MODE);
-EndCommand: '}' {this.PopCurlBrackOnClose();} -> popMode;
+StringCommandStart:  ('${' | '~{' ) -> pushMode(DEFAULT_MODE);
+EndCommand: '}' -> popMode;
 CommandStringPart: ~[$~{}]+;
 
 
