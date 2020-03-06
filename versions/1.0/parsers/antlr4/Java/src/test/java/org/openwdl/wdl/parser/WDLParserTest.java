@@ -25,9 +25,8 @@ public class WDLParserTest {
 
     private static String examplesDirectory;
 
-    private static Pattern expectedErrorPattern = Pattern
-        .compile("#EXPECTED_ERROR\\s+line:(?<linenum>[0-9]+)\\s+(?<msg>msg:(\\\"[^\\n\\r]+\\\"|'[^\\n\\r]))?.*");
-
+    private static Pattern expectedErrorPattern = Pattern.compile(
+            "#EXPECTED_ERROR\\s+line:(?<linenum>[0-9]+)\\s+(?<msg>msg:(\\\"[^\\n\\r]+\\\"|'[^\\n\\r]))?.*");
 
     @BeforeAll
     public static void setup() {
@@ -62,7 +61,7 @@ public class WDLParserTest {
         DocumentContext context = parser.document();
 
         Assertions.assertAll("Input WDL should not have any errors",
-            () -> Assertions.assertFalse(errorListener.hasErrors(), errorListener::getErrorString));
+                             () -> Assertions.assertFalse(errorListener.hasErrors(), errorListener::getErrorString));
 
         System.out.println("Successfully parsed input");
 
@@ -87,8 +86,8 @@ public class WDLParserTest {
         System.out.println("Testing WDL File: " + fileName + " should fail to parse");
         WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
         CodePointBuffer codePointBuffer = CodePointBuffer.withBytes(ByteBuffer.wrap(fileBytes));
-        CommentAggregatingTokenSource tokenSource = new CommentAggregatingTokenSource(CodePointCharStream
-            .fromBuffer(codePointBuffer));
+        CommentAggregatingTokenSource tokenSource = new CommentAggregatingTokenSource(CodePointCharStream.fromBuffer(
+                codePointBuffer));
         WdlParser parser = new WdlParser(new CommonTokenStream(tokenSource));
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
@@ -106,16 +105,15 @@ public class WDLParserTest {
                     int line = Integer.parseInt(matcher.group("linenum"));
                     String message = matcher.group("msg");
                     Assertions.assertTrue(errors.stream().anyMatch(error -> error.getLine() == line),
-                        message != null ? message : "Expecting an error at line: " + line);
+                                          message != null ? message : "Expecting an error at line: " + line);
                 }
             }
         }
 
     }
 
-
     @Test
-    public void testDquoteStringInterpolation(){
+    public void testDquoteStringInterpolation() {
         String interpolation = "\"some string part ~{ident + ident} some string part after\"";
         WdlParser parser = getParser(interpolation);
         WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
@@ -125,12 +123,12 @@ public class WDLParserTest {
         Assertions.assertFalse(errorListener.hasErrors());
         Dquote_stringContext dquoteStringContext = stringContext.dquote_string();
         Assertions.assertNotNull(dquoteStringContext);
-        Assertions.assertEquals(2,dquoteStringContext.DQuoteStringPart().size());
-        Assertions.assertEquals("some string part ",dquoteStringContext.getChild(1).getText());
-        Assertions.assertEquals(" some string part after",dquoteStringContext.getChild(5).getText());
-        ParseTree exprTree =  dquoteStringContext.getChild(3);
-        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+ident",dquoteStringContext.getChild(3).getText());
+        Assertions.assertEquals(2, dquoteStringContext.DQuoteStringPart().size());
+        Assertions.assertEquals("some string part ", dquoteStringContext.getChild(1).getText());
+        Assertions.assertEquals(" some string part after", dquoteStringContext.getChild(5).getText());
+        ParseTree exprTree = dquoteStringContext.getChild(3);
+        Assertions.assertEquals(exprTree.getClass().getName(), ExprContext.class.getName());
+        Assertions.assertEquals("ident+ident", dquoteStringContext.getChild(3).getText());
         Expr_infixContext exprContext = ((ExprContext) exprTree).expr_infix();
         Infix1Context infix1Context = (Infix1Context) exprContext.getChild(0);
         Infix2Context infix2Context = (Infix2Context) infix1Context.getChild(0);
@@ -142,7 +140,7 @@ public class WDLParserTest {
     }
 
     @Test
-    public void testSquoteStringInterpolation(){
+    public void testSquoteStringInterpolation() {
         String interpolation = "'some string part ~{ident + ident} some string part after'";
         WdlParser parser = getParser(interpolation);
         WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
@@ -152,12 +150,12 @@ public class WDLParserTest {
         Assertions.assertFalse(errorListener.hasErrors());
         Squote_stringContext squoteStringContext = stringContext.squote_string();
         Assertions.assertNotNull(squoteStringContext);
-        Assertions.assertEquals(2,squoteStringContext.SQuoteStringPart().size());
-        Assertions.assertEquals("some string part ",squoteStringContext.getChild(1).getText());
-        Assertions.assertEquals(" some string part after",squoteStringContext.getChild(5).getText());
-        ParseTree exprTree =  squoteStringContext.getChild(3);
-        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+ident",squoteStringContext.getChild(3).getText());
+        Assertions.assertEquals(2, squoteStringContext.SQuoteStringPart().size());
+        Assertions.assertEquals("some string part ", squoteStringContext.getChild(1).getText());
+        Assertions.assertEquals(" some string part after", squoteStringContext.getChild(5).getText());
+        ParseTree exprTree = squoteStringContext.getChild(3);
+        Assertions.assertEquals(exprTree.getClass().getName(), ExprContext.class.getName());
+        Assertions.assertEquals("ident+ident", squoteStringContext.getChild(3).getText());
         Expr_infixContext exprContext = ((ExprContext) exprTree).expr_infix();
         Infix1Context infix1Context = (Infix1Context) exprContext.getChild(0);
         Infix2Context infix2Context = (Infix2Context) infix1Context.getChild(0);
@@ -169,7 +167,7 @@ public class WDLParserTest {
     }
 
     @Test
-    public void testSquoteStringInterpolationInfiniteRecursion(){
+    public void testSquoteStringInterpolationInfiniteRecursion() {
         String interpolation = "'some string part ~{ident + 'hello ${ident}' + ident} some string part after'";
         WdlParser parser = getParser(interpolation);
         WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
@@ -179,12 +177,12 @@ public class WDLParserTest {
         Assertions.assertFalse(errorListener.hasErrors());
         Squote_stringContext squoteStringContext = stringContext.squote_string();
         Assertions.assertNotNull(squoteStringContext);
-        Assertions.assertEquals(2,squoteStringContext.SQuoteStringPart().size());
-        Assertions.assertEquals("some string part ",squoteStringContext.getChild(1).getText());
-        Assertions.assertEquals(" some string part after",squoteStringContext.getChild(5).getText());
-        ParseTree exprTree =  squoteStringContext.getChild(3);
-        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+'hello ${ident}'+ident",squoteStringContext.getChild(3).getText());
+        Assertions.assertEquals(2, squoteStringContext.SQuoteStringPart().size());
+        Assertions.assertEquals("some string part ", squoteStringContext.getChild(1).getText());
+        Assertions.assertEquals(" some string part after", squoteStringContext.getChild(5).getText());
+        ParseTree exprTree = squoteStringContext.getChild(3);
+        Assertions.assertEquals(exprTree.getClass().getName(), ExprContext.class.getName());
+        Assertions.assertEquals("ident+'hello ${ident}'+ident", squoteStringContext.getChild(3).getText());
         Expr_infixContext exprContext = ((ExprContext) exprTree).expr_infix();
         Infix1Context infix1Context = (Infix1Context) exprContext.getChild(0);
         Infix2Context infix2Context = (Infix2Context) infix1Context.getChild(0);
@@ -195,24 +193,24 @@ public class WDLParserTest {
         Infix5Context infix5Context = (Infix5Context) addContext.expr_infix3().getChild(2);
 
         ParseTree tree = infix5Context.getChild(0).getChild(0);
-        Assertions.assertEquals(tree.getClass(),PrimitivesContext.class);
+        Assertions.assertEquals(tree.getClass(), PrimitivesContext.class);
         tree = tree.getChild(0);
-        Assertions.assertEquals(tree.getClass(),Primitive_literalContext.class);
+        Assertions.assertEquals(tree.getClass(), Primitive_literalContext.class);
         tree = tree.getChild(0);
-        Assertions.assertEquals(tree.getClass(),StringContext.class);
+        Assertions.assertEquals(tree.getClass(), StringContext.class);
         StringContext innerStringContext = (StringContext) tree;
         Squote_stringContext innersquoteStringContext = innerStringContext.squote_string();
         Assertions.assertNotNull(innersquoteStringContext);
-        Assertions.assertEquals(1,innersquoteStringContext.SQuoteStringPart().size());
-        Assertions.assertEquals("hello ",innersquoteStringContext.getChild(1).getText());
+        Assertions.assertEquals(1, innersquoteStringContext.SQuoteStringPart().size());
+        Assertions.assertEquals("hello ", innersquoteStringContext.getChild(1).getText());
         ParseTree innerExprTree = innerStringContext.getChild(3);
-        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident",innersquoteStringContext.getChild(3).getText());
+        Assertions.assertEquals(exprTree.getClass().getName(), ExprContext.class.getName());
+        Assertions.assertEquals("ident", innersquoteStringContext.getChild(3).getText());
 
     }
 
     @Test
-    public void testCommandStringInterpolation(){
+    public void testCommandStringInterpolation() {
         String interpolation = "command { some string part\necho ~{ident + ident}\nsome string part after }";
         WdlParser parser = getParser(interpolation);
         WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
@@ -220,15 +218,16 @@ public class WDLParserTest {
 
         Task_commandContext commandContext = parser.task_command();
         Assertions.assertFalse(errorListener.hasErrors());
-        Task_commandContext curlCommandContext = commandContext;
-        Assertions.assertNotNull(curlCommandContext);
-        Assertions.assertEquals(2,curlCommandContext.CommandStringPart().size());
-        Assertions.assertEquals(" some string part\necho ",curlCommandContext.getChild(1).getText());
-        Assertions.assertEquals("\nsome string part after ",curlCommandContext.getChild(5).getText());
-        ParseTree exprTree =  curlCommandContext.getChild(3);
-        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+ident",curlCommandContext.getChild(3).getText());
-        Expr_infixContext exprContext = ((ExprContext) exprTree).expr_infix();
+        Assertions.assertNotNull(commandContext);
+        Assertions.assertEquals(" some string part\necho ", commandContext.task_command_string_part().getText());
+        List<Task_command_expr_with_stringContext> exprWithStringContexts = commandContext.task_command_expr_with_string();
+        Assertions.assertEquals(exprWithStringContexts.size(), 1);
+        Task_command_expr_with_stringContext exprWithStringContext = exprWithStringContexts.get(0);
+        Assertions.assertEquals("\nsome string part after ",
+                                exprWithStringContext.task_command_string_part().getText());
+        ExprContext exprTree = exprWithStringContext.task_command_expr_part().expr();
+        Assertions.assertEquals("ident+ident", exprTree.getText());
+        Expr_infixContext exprContext = (exprTree).expr_infix();
         Infix1Context infix1Context = (Infix1Context) exprContext.getChild(0);
         Infix2Context infix2Context = (Infix2Context) infix1Context.getChild(0);
         Infix3Context infix3Context = (Infix3Context) infix2Context.getChild(0);
@@ -239,7 +238,7 @@ public class WDLParserTest {
     }
 
     @Test
-    public void testHeredocCommandInterpolation(){
+    public void testHeredocCommandInterpolation() {
         String interpolation = "command <<< some string part\necho ~{ident + ident}\nsome string part after >>>";
         WdlParser parser = getParser(interpolation);
         WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
@@ -247,15 +246,16 @@ public class WDLParserTest {
 
         Task_commandContext commandContext = parser.task_command();
         Assertions.assertFalse(errorListener.hasErrors());
-        Task_commandContext heredocCommandContext = commandContext;
-        Assertions.assertNotNull(heredocCommandContext);
-        Assertions.assertEquals(2,heredocCommandContext.CommandStringPart().size());
-        Assertions.assertEquals(" some string part\necho ",heredocCommandContext.getChild(1).getText());
-        Assertions.assertEquals("\nsome string part after ",heredocCommandContext.getChild(5).getText());
-        ParseTree exprTree =  heredocCommandContext.getChild(3);
-        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+ident",heredocCommandContext.getChild(3).getText());
-        Expr_infixContext exprContext = ((ExprContext) exprTree).expr_infix();
+        Assertions.assertNotNull(commandContext);
+        Assertions.assertEquals(" some string part\necho ", commandContext.task_command_string_part().getText());
+        List<Task_command_expr_with_stringContext> exprWithStringContexts = commandContext.task_command_expr_with_string();
+        Assertions.assertEquals(exprWithStringContexts.size(), 1);
+        Task_command_expr_with_stringContext exprWithStringContext = exprWithStringContexts.get(0);
+        Assertions.assertEquals("\nsome string part after ",
+                                exprWithStringContext.task_command_string_part().getText());
+        ExprContext exprTree = exprWithStringContext.task_command_expr_part().expr();
+        Assertions.assertEquals("ident+ident", exprTree.getText());
+        Expr_infixContext exprContext = (exprTree).expr_infix();
         Infix1Context infix1Context = (Infix1Context) exprContext.getChild(0);
         Infix2Context infix2Context = (Infix2Context) infix1Context.getChild(0);
         Infix3Context infix3Context = (Infix3Context) infix2Context.getChild(0);
@@ -264,8 +264,9 @@ public class WDLParserTest {
         Assertions.assertEquals("ident", addContext.expr_infix4().getText());
 
     }
+
     @Test
-    public void testHeredocCommandInterpolation_OnlyRecognizesTilde(){
+    public void testHeredocCommandInterpolation_OnlyRecognizesTilde() {
         String interpolation = "command <<< ${somevar} ~{ident + ident} >>>";
         WdlParser parser = getParser(interpolation);
         WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
@@ -273,16 +274,11 @@ public class WDLParserTest {
 
         Task_commandContext commandContext = parser.task_command();
         Assertions.assertFalse(errorListener.hasErrors());
-        Task_commandContext heredocCommandContext = commandContext;
-        Assertions.assertNotNull(heredocCommandContext);
-        Assertions.assertEquals(" $",heredocCommandContext.getChild(1).getText());
-        Assertions.assertEquals("{",heredocCommandContext.getChild(2).getText());
-        Assertions.assertEquals("somevar} ",heredocCommandContext.getChild(3).getText());
-        ParseTree exprTree =  heredocCommandContext.getChild(5);
-        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+ident",heredocCommandContext.getChild(5).getText());
+        Assertions.assertNotNull(commandContext);
+        Assertions.assertEquals(" ${somevar} ", commandContext.task_command_string_part().getText());
+        ExprContext exprTree = commandContext.task_command_expr_with_string(0).task_command_expr_part().expr();
+        Assertions.assertEquals("ident+ident",exprTree.getText());
     }
-
 
     @Test
     public void testVersionString() {
@@ -318,31 +314,21 @@ public class WDLParserTest {
 
         Assertions.assertNotNull(importDocContext.IMPORT());
         Assertions.assertNotNull(importDocContext.string());
-        Assertions.assertEquals("some-url.com/foo.wdl", importDocContext.string().dquote_string().DQuoteStringPart(0)
-            .getSymbol().getText());
+        Assertions.assertEquals("some-url.com/foo.wdl",
+                                importDocContext.string().dquote_string().DQuoteStringPart(0).getSymbol().getText());
         Assertions.assertNotNull(importDocContext.AS());
         Assertions.assertNotNull(importDocContext.Identifier());
         Assertions.assertNotNull(importDocContext.import_alias());
-        Assertions.assertEquals(2,importDocContext.import_alias().size());
-        Assertions.assertEquals("Bar",importDocContext.import_alias().get(0).Identifier(0).getSymbol().getText());
-        Assertions.assertEquals("Biz",importDocContext.import_alias().get(0).Identifier(1).getSymbol().getText());
+        Assertions.assertEquals(2, importDocContext.import_alias().size());
+        Assertions.assertEquals("Bar", importDocContext.import_alias().get(0).Identifier(0).getSymbol().getText());
+        Assertions.assertEquals("Biz", importDocContext.import_alias().get(0).Identifier(1).getSymbol().getText());
         Assertions.assertEquals("Foo", importDocContext.Identifier().getSymbol().getText());
     }
 
     @Test
     public void testDocumentHasAppropriateChildren() {
 
-        String document = "version 1.0"
-            + "\nstruct foo {"
-            + " File f"
-            + "}"
-            + "\ntask bar {"
-            + " input { foo inp } command <<< echo ~{inp.f} >>>"
-            + "}"
-            + "\nworkflow biz {"
-            + " input { foo inp } "
-            + "\n call bar as boz { input: inp = inp }"
-            + "\n}";
+        String document = "version 1.0" + "\nstruct foo {" + " File f" + "}" + "\ntask bar {" + " input { foo inp } command <<< echo ~{inp.f} >>>" + "}" + "\nworkflow biz {" + " input { foo inp } " + "\n call bar as boz { input: inp = inp }" + "\n}";
 
         WdlParser parser = getParser(document);
         WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
@@ -351,16 +337,14 @@ public class WDLParserTest {
         DocumentContext documentContext = parser.document();
         Assertions.assertFalse(errorListener.hasErrors());
         Assertions.assertNotNull(documentContext.version());
-        Assertions.assertEquals(3,documentContext.document_element().size());
+        Assertions.assertEquals(3, documentContext.document_element().size());
         List<Document_elementContext> elementContexts = documentContext.document_element();
-        Assertions.assertEquals(StructContext.class.getName(),elementContexts.get(0).getChild(0).getClass().getName());
-        Assertions.assertEquals(TaskContext.class.getName(),elementContexts.get(1).getChild(0).getClass().getName());
-        Assertions.assertEquals(WorkflowContext.class.getName(),elementContexts.get(2).getChild(0).getClass().getName());
-
-
+        Assertions.assertEquals(StructContext.class.getName(), elementContexts.get(0).getChild(0).getClass().getName());
+        Assertions.assertEquals(TaskContext.class.getName(), elementContexts.get(1).getChild(0).getClass().getName());
+        Assertions.assertEquals(WorkflowContext.class.getName(),
+                                elementContexts.get(2).getChild(0).getClass().getName());
 
     }
-
 
     private WdlParser getParser(String inp) {
         CodePointBuffer codePointBuffer = CodePointBuffer.withBytes(ByteBuffer.wrap(inp.getBytes()));

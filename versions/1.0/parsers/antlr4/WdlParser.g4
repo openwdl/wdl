@@ -179,9 +179,21 @@ task_output
 	;
 
 task_command
-  : COMMAND CommandStringPart* (CommandStringPart* StringCommandStart expr RBRACE CommandStringPart* )* EndCommand
-  | HEREDOC_COMMAND CommandStringPart* (CommandStringPart* StringCommandStart expr RBRACE CommandStringPart* )* EndCommand
+  : COMMAND task_command_string_part task_command_expr_with_string* EndCommand
+  | HEREDOC_COMMAND task_command_string_part task_command_expr_with_string* EndCommand
   ;
+
+task_command_string_part
+    : CommandStringPart*
+    ;
+
+task_command_expr_part
+    : StringCommandStart expr RBRACE
+    ;
+
+task_command_expr_with_string
+    : task_command_expr_part task_command_string_part
+    ;
 
 task_element
 	: task_input
