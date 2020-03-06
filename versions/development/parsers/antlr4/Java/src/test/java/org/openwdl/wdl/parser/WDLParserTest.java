@@ -123,15 +123,13 @@ public class WDLParserTest {
 
         StringContext stringContext = parser.string();
         Assertions.assertFalse(errorListener.hasErrors());
-        Dquote_stringContext dquoteStringContext = stringContext.dquote_string();
-        Assertions.assertNotNull(dquoteStringContext);
-        Assertions.assertEquals(2,dquoteStringContext.DQuoteStringPart().size());
-        Assertions.assertEquals("some string part ",dquoteStringContext.getChild(1).getText());
-        Assertions.assertEquals(" some string part after",dquoteStringContext.getChild(5).getText());
-        ParseTree exprTree =  dquoteStringContext.getChild(3);
-        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+ident",dquoteStringContext.getChild(3).getText());
-        Expr_infixContext exprContext = ((ExprContext) exprTree).expr_infix();
+        Assertions.assertNotNull(stringContext);
+        Assertions.assertEquals("some string part ", stringContext.string_part().getText());
+        String_expr_with_string_partContext exprWithStringPartContext = stringContext.string_expr_with_string_part(0);
+        Assertions.assertEquals(" some string part after", exprWithStringPartContext.string_part().getText());
+        ExprContext exprTree = exprWithStringPartContext.string_expr_part().expr();
+        Assertions.assertEquals("ident+ident", exprTree.getText());
+        Expr_infixContext exprContext = exprTree.expr_infix();
         Infix1Context infix1Context = (Infix1Context) exprContext.getChild(0);
         Infix2Context infix2Context = (Infix2Context) infix1Context.getChild(0);
         Infix3Context infix3Context = (Infix3Context) infix2Context.getChild(0);
@@ -150,15 +148,13 @@ public class WDLParserTest {
 
         StringContext stringContext = parser.string();
         Assertions.assertFalse(errorListener.hasErrors());
-        Squote_stringContext squoteStringContext = stringContext.squote_string();
-        Assertions.assertNotNull(squoteStringContext);
-        Assertions.assertEquals(2,squoteStringContext.SQuoteStringPart().size());
-        Assertions.assertEquals("some string part ",squoteStringContext.getChild(1).getText());
-        Assertions.assertEquals(" some string part after",squoteStringContext.getChild(5).getText());
-        ParseTree exprTree =  squoteStringContext.getChild(3);
-        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+ident",squoteStringContext.getChild(3).getText());
-        Expr_infixContext exprContext = ((ExprContext) exprTree).expr_infix();
+        Assertions.assertNotNull(stringContext);
+        Assertions.assertEquals("some string part ", stringContext.string_part().getText());
+        String_expr_with_string_partContext exprWithStringPartContext = stringContext.string_expr_with_string_part(0);
+        Assertions.assertEquals(" some string part after", exprWithStringPartContext.string_part().getText());
+        ExprContext exprTree = exprWithStringPartContext.string_expr_part().expr();
+        Assertions.assertEquals("ident+ident", exprTree.getText());
+        Expr_infixContext exprContext = exprTree.expr_infix();
         Infix1Context infix1Context = (Infix1Context) exprContext.getChild(0);
         Infix2Context infix2Context = (Infix2Context) infix1Context.getChild(0);
         Infix3Context infix3Context = (Infix3Context) infix2Context.getChild(0);
@@ -177,15 +173,13 @@ public class WDLParserTest {
 
         StringContext stringContext = parser.string();
         Assertions.assertFalse(errorListener.hasErrors());
-        Squote_stringContext squoteStringContext = stringContext.squote_string();
-        Assertions.assertNotNull(squoteStringContext);
-        Assertions.assertEquals(2,squoteStringContext.SQuoteStringPart().size());
-        Assertions.assertEquals("some string part ",squoteStringContext.getChild(1).getText());
-        Assertions.assertEquals(" some string part after",squoteStringContext.getChild(5).getText());
-        ParseTree exprTree =  squoteStringContext.getChild(3);
-        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident+'hello ${ident}'+ident",squoteStringContext.getChild(3).getText());
-        Expr_infixContext exprContext = ((ExprContext) exprTree).expr_infix();
+        Assertions.assertNotNull(stringContext);
+        Assertions.assertEquals("some string part ", stringContext.string_part().getText());
+        String_expr_with_string_partContext exprWithStringPartContext = stringContext.string_expr_with_string_part(0);
+        Assertions.assertEquals(" some string part after", exprWithStringPartContext.string_part().getText());
+        ExprContext exprTree = exprWithStringPartContext.string_expr_part().expr();
+        Assertions.assertEquals("ident+'hello ${ident}'+ident", exprTree.getText());
+        Expr_infixContext exprContext = exprTree.expr_infix();
         Infix1Context infix1Context = (Infix1Context) exprContext.getChild(0);
         Infix2Context infix2Context = (Infix2Context) infix1Context.getChild(0);
         Infix3Context infix3Context = (Infix3Context) infix2Context.getChild(0);
@@ -195,19 +189,18 @@ public class WDLParserTest {
         Infix5Context infix5Context = (Infix5Context) addContext.expr_infix3().getChild(2);
 
         ParseTree tree = infix5Context.getChild(0).getChild(0);
-        Assertions.assertEquals(tree.getClass(),PrimitivesContext.class);
+        Assertions.assertEquals(tree.getClass(), PrimitivesContext.class);
         tree = tree.getChild(0);
-        Assertions.assertEquals(tree.getClass(),Primitive_literalContext.class);
+        Assertions.assertEquals(tree.getClass(), Primitive_literalContext.class);
         tree = tree.getChild(0);
-        Assertions.assertEquals(tree.getClass(),StringContext.class);
+        Assertions.assertEquals(tree.getClass(), StringContext.class);
         StringContext innerStringContext = (StringContext) tree;
-        Squote_stringContext innersquoteStringContext = innerStringContext.squote_string();
+        String_partContext innersquoteStringContext = innerStringContext.string_part();
         Assertions.assertNotNull(innersquoteStringContext);
-        Assertions.assertEquals(1,innersquoteStringContext.SQuoteStringPart().size());
-        Assertions.assertEquals("hello ",innersquoteStringContext.getChild(1).getText());
-        ParseTree innerExprTree = innerStringContext.getChild(3);
-        Assertions.assertEquals(exprTree.getClass().getName(),ExprContext.class.getName());
-        Assertions.assertEquals("ident",innersquoteStringContext.getChild(3).getText());
+        Assertions.assertEquals("hello ", innersquoteStringContext.getText());
+        ParseTree innerExprTree = innerStringContext.string_expr_with_string_part(0).string_expr_part().expr();
+        Assertions.assertEquals(exprTree.getClass().getName(), ExprContext.class.getName());
+        Assertions.assertEquals("ident", innerExprTree.getText());
 
     }
 
@@ -317,8 +310,8 @@ public class WDLParserTest {
 
         Assertions.assertNotNull(importDocContext.IMPORT());
         Assertions.assertNotNull(importDocContext.string());
-        Assertions.assertEquals("some-url.com/foo.wdl", importDocContext.string().dquote_string().DQuoteStringPart(0)
-            .getSymbol().getText());
+        Assertions.assertEquals("some-url.com/foo.wdl",
+                                importDocContext.string().string_part().getText());
         Assertions.assertNotNull(importDocContext.AS());
         Assertions.assertNotNull(importDocContext.Identifier());
         Assertions.assertNotNull(importDocContext.import_alias());

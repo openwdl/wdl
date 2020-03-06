@@ -101,25 +101,25 @@ Identifier: CompleteIdentifier ( DOT CompleteIdentifier)*;
 mode SquoteInterpolatedString;
 
 
-SQuoteEscapedChar: '\\' . -> type(SQuoteStringPart);
-SQuoteDollarString: '$'  -> type(SQuoteStringPart);
-SQuoteTildeString: '~' -> type(SQuoteStringPart);
-SQuoteCurlyString: '{' -> type(SQuoteStringPart);
-SQuoteCommandStart: ('${' | '~{' ) -> pushMode(DEFAULT_MODE);
-SQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
+SQuoteEscapedChar: '\\' . -> type(StringPart);
+SQuoteDollarString: '$'  -> type(StringPart);
+SQuoteTildeString: '~' -> type(StringPart);
+SQuoteCurlyString: '{' -> type(StringPart);
+SQuoteCommandStart: ('${' | '~{' ) -> pushMode(DEFAULT_MODE) , type(StringCommandStart);
+SQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)? -> type(StringPart);
 EndSquote: '\'' ->  popMode, type(SQUOTE);
-SQuoteStringPart: ~[$~{\r\n']+;
+StringPart: ~[$~{\r\n']+;
 
 mode DquoteInterpolatedString;
 
-DQuoteEscapedChar: '\\' . -> type(DQuoteStringPart);
-DQuoteTildeString: '~' -> type(DQuoteStringPart);
-DQuoteDollarString: '$' -> type(DQuoteStringPart);
-DQUoteCurlString: '{' -> type(DQuoteStringPart);
-DQuoteCommandStart: ('${' | '~{' ) -> pushMode(DEFAULT_MODE);
-DQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
+DQuoteEscapedChar: '\\' . -> type(StringPart);
+DQuoteTildeString: '~' -> type(StringPart);
+DQuoteDollarString: '$' -> type(StringPart);
+DQUoteCurlString: '{' -> type(StringPart);
+DQuoteCommandStart: ('${' | '~{' ) -> pushMode(DEFAULT_MODE), type(StringCommandStart);
+DQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?) -> type(StringPart);
 EndDQuote: '"' ->  popMode, type(DQUOTE);
-DQuoteStringPart: ~[$~{\r\n"]+;
+DQuoteStringPart: ~[$~{\r\n"]+ -> type(StringPart);
 
 
 mode HereDocCommand;

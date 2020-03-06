@@ -51,21 +51,24 @@ expression_placeholder_option
   | DEFAULT EQUAL (string | number)
   | SEP EQUAL (string | number)
   ;
-//Literals
-dquote_string
-  : DQUOTE DQuoteStringPart* (DQuoteStringPart* DQuoteCommandStart (expression_placeholder_option)* expr RBRACE DQuoteStringPart*)* DQUOTE
+
+
+string_part
+  : StringPart*
   ;
 
-squote_string
-  : SQUOTE SQuoteStringPart* (SQuoteStringPart* SQuoteCommandStart (expression_placeholder_option)* expr RBRACE SQuoteStringPart*)* SQUOTE
+string_expr_part
+  : StringCommandStart (expression_placeholder_option)* expr RBRACE
   ;
 
+string_expr_with_string_part
+  : string_expr_part string_part
+  ;
 
 string
-  : dquote_string
-  | squote_string
+  : DQUOTE string_part string_expr_with_string_part* DQUOTE
+  | SQUOTE string_part string_expr_with_string_part* SQUOTE
   ;
-
 
 primitive_literal
 	: BoolLiteral
@@ -178,22 +181,23 @@ task_output
 	: OUTPUT LBRACE (bound_decls)* RBRACE
 	;
 
-task_command
-  : COMMAND task_command_string_part task_command_expr_with_string* EndCommand
-  | HEREDOC_COMMAND task_command_string_part task_command_expr_with_string* EndCommand
-  ;
-
 task_command_string_part
     : CommandStringPart*
     ;
 
 task_command_expr_part
-    : StringCommandStart expr RBRACE
+    : StringCommandStart  (expression_placeholder_option)* expr RBRACE
     ;
 
 task_command_expr_with_string
     : task_command_expr_part task_command_string_part
     ;
+
+task_command
+  : COMMAND task_command_string_part task_command_expr_with_string* EndCommand
+  | HEREDOC_COMMAND task_command_string_part task_command_expr_with_string* EndCommand
+  ;
+
 
 task_element
 	: task_input
