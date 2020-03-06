@@ -2640,25 +2640,31 @@ task t1 {
   }
 
   command {
-    ./script --action=${s} -x${x}
+    ./script --action=~{s} -x~{x}
   }
   output {
     Int count = read_int(stdout())
+  }
+  runtime {
+    docker: "openwdl/examplescript:v1.1.3"
   }
 }
 
 task t2 {
   input {
     String s
-    Int t
+    Int? t
     Int x
   }
 
   command {
-    ./script2 --action=${s} -x${x} --other=${t}
+    ./script2 --action=~{s} -x~{x} ~{"--other=" + t}
   }
   output {
     Int count = read_int(stdout())
+  }
+  runtime {
+    docker: "openwdl/examplescript2:v1.0.1"
   }
 }
 
@@ -2669,10 +2675,13 @@ task t3 {
   }
 
   command {
-    python -c "print(${y} + 1)"
+    python -c "print(~{y} + 1)"
   }
   output {
     Int incr = read_int(stdout())
+  }
+  runtime {
+    docker: "python:3.7-slim"
   }
 }
 
@@ -2681,15 +2690,21 @@ workflow wf {
     Int int_val
     Array[Int] my_ints
     File ref_file
+    String t1s
+    String t2s
   }
 
   String not_an_input = "hello"
 
   call t1 {
-    input: x = int_val
+    input: 
+        x = int_val,
+        s = t1s
   }
   call t2 {
-    input: x = int_val, t=t1.count
+    input: 
+        x = t1.count,
+        s = t2s
   }
   scatter(i in my_ints) {
     call t3 {
@@ -2701,13 +2716,15 @@ workflow wf {
 
 The inputs to `wf` would be:
 
-* `wf.t1.s` as a `String`
-* `wf.t2.s` as a `String`
+* `wf.t1s` as a `String`
+* `wf.t2s` as a `String`
 * `wf.int_val` as an `Int`
 * `wf.my_ints` as an `Array[Int]`
 * `wf.ref_file` as a `File`
 
-Note that because some call inputs are left unsatisfied, this workflow could not be used as a sub-workflow. To fix that, additional workflow inputs could be added to pass-through `t1.s` and `t2.s`.
+Note that the optional `t` input for task `t2` is left unsatisfied, this 
+option could be passed as `wf.t2.t` if the engine has bubbled-up optional 
+inputs enabled.
 
 ## Specifying Workflow Inputs
 
