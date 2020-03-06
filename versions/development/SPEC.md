@@ -2604,10 +2604,12 @@ Workflows have inputs that must be satisfied to run them, just like tasks.
 Inputs to the workflow are provided as a key/value map where the key is of the 
 form `workflow_name.input_name`.
 
-* A task usually has its inputs supplied when called by a workflow. 
+* A task has its inputs supplied when called by a workflow. 
     * Example: `call my_task { input: my_task_input=... }`
-* A workflow is allowd not to specify all inputs in this block. In this case,
-  the inputs bubble up to become an input to the workflow instaead.
+* All required task inputs which do not have defaults should be filled by the 
+  calling workflow.
+* A workflow is allowed not to specify optional inputs in a task's input block. 
+  In this case, the inputs bubble up to become an input to the workflow instead.
     * Example: an unsupplied input might have the fully-qualified name 
       `my_workflow.my_task.my_task_input.`
 * If that workflow is used as a subworkflow, the input is allowed to bubble up 
@@ -2617,15 +2619,16 @@ form `workflow_name.input_name`.
   call block.
     * Example: one cannot say call my_workflow as subworkflow 
       `{ inputs: my_task.my_task_input=... }`
-* All **required** inputs which bubble up like this must ultimately be provided
-  in the inputs set before the top-level workflow can be run.
-* An engine must allow **optional** bubbled-up inputs to be filled in by end 
-  users. These inputs are not required to be filled. 
-* Showing all optional inputs which are deeply nested in the workflow can lead 
-  to a very large number of inputs. Therefore, it is up to the engine how many 
-  layers of nesting it chooses to make visible in the UI.
- 
-Any declaration that appears outside the `input` section is considered an intermediate value and **not** a workflow input. Any declaration can always be moved inside the `input` block to make it overridable.
+* By default an engine only allows inputs that are specified in the input
+  section of the top-level workflow.
+* An engine may optionally support supplying bubbled-up optional inputs, but
+  this has to be explicitly enabled on the engine (via configuration, command
+  line flags or otherwise).
+
+Any declaration that appears outside the `input` section is considered an 
+intermediate value and **not** a workflow input. 
+Any declaration can always be moved inside the `input` block to make it 
+overridable.
 
 Consider the following workflow:
 
