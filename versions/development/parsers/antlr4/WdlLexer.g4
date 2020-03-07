@@ -3,7 +3,7 @@ lexer grammar WdlLexer;
 channels { WdlComments, SkipChannel }
 
 // Keywords
-VERSION: 'version' ' '+ 'development';
+VERSION: 'version' -> pushMode(Version);
 IMPORT: 'import';
 WORKFLOW: 'workflow';
 TASK: 'task';
@@ -149,6 +149,13 @@ CommandCurlyString: '{' -> type(CommandStringPart);
 StringCommandStart:  ('${' | '~{' ) -> pushMode(DEFAULT_MODE);
 EndCommand: '}' -> popMode;
 CommandStringPart: ~[$~{}]+;
+
+mode Version;
+
+VERSION_WHITESPACE
+	: [ \t]+ -> channel(HIDDEN)
+	;
+RELEASE_VERSION: [a-zA-Z0-9.-]+ -> popMode;
 
 
 // Fragments

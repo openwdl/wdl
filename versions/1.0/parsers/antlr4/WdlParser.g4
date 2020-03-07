@@ -28,7 +28,7 @@ wdl_type
   ;
 
 
-unboud_decls
+unbound_decls
 	: wdl_type Identifier
 	;
 
@@ -37,7 +37,7 @@ bound_decls
 	;
 
 any_decls
-	: unboud_decls
+	: unbound_decls
 	| bound_decls
 	;
 
@@ -139,7 +139,7 @@ expr_core
 	;
 
 version
-	: VERSION
+	: VERSION RELEASE_VERSION
 	;
 
 import_alias
@@ -151,7 +151,7 @@ import_doc
 	;
 
 struct
-	: STRUCT Identifier LBRACE (unboud_decls)* RBRACE
+	: STRUCT Identifier LBRACE (unbound_decls)* RBRACE
 	;
 
 meta_kv

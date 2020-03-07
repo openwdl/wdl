@@ -285,19 +285,9 @@ public class WDLParserTest {
         Assertions.assertNotNull(documentContext);
         VersionContext versionContext = documentContext.version();
         Assertions.assertNotNull(versionContext);
-        Assertions.assertEquals(versionContext.VERSION().getSymbol().getText(), "version development");
+        Assertions.assertEquals(versionContext.RELEASE_VERSION().getSymbol().getText(), "development");
     }
 
-    @Test
-    public void testInvalidVersionString() {
-        String version = "version invalid";
-        WdlParser parser = getParser(version);
-        WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
-        parser.addErrorListener(errorListener);
-
-        VersionContext versionContext = parser.version();
-        Assertions.assertTrue(errorListener.hasErrors());
-    }
 
     @Test
     public void testImportStatementWithAlias() {
