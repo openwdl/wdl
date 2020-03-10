@@ -65,7 +65,6 @@ string
   | SQUOTE string_part string_expr_with_string_part* SQUOTE
   ;
 
-
 primitive_literal
 	: BoolLiteral
 	| number
@@ -125,7 +124,7 @@ expr_core
 	| LBRACK (expr (COMMA expr)*)* RBRACK #array_literal
 	| LPAREN expr COMMA expr RPAREN #pair_literal
 	| LBRACE (expr COLON expr (COMMA expr COLON expr)*)* RBRACE #map_literal
-	| Identifier LBRACE (primitive_literal COLON expr (COMMA primitive_literal COLON expr)*)* RBRACE #struct_literal
+	| Identifier LBRACE (Identifier COLON expr (COMMA Identifier COLON expr)*)* RBRACE #struct_literal
 	| NOT expr #negate
 	| (PLUS | MINUS) Identifier #unirarysigned
 	| expr_core LBRACK expr RBRACK #at
@@ -156,12 +155,13 @@ meta_kv
 	;
 
 
-
-meta_obj
-	: PARAMETERMETA LBRACE meta_kv* RBRACE #parameter_meta
-	| META LBRACE meta_kv* RBRACE #meta
+parameter_meta
+	: PARAMETERMETA LBRACE meta_kv* RBRACE
 	;
 
+meta
+    :  META LBRACE meta_kv* RBRACE
+    ;
 
 task_runtime_kv
 	: RUNTIMECPU COLON expr
@@ -220,7 +220,8 @@ task_element
 	| task_runtime
 	| task_hints
 	| bound_decls
-	| meta_obj
+	| parameter_meta
+	| meta
 	;
 
 task
@@ -281,7 +282,8 @@ workflow_element
 	: workflow_input #input
 	| workflow_output #output
 	| inner_workflow_element #inner_element
-	| meta_obj #meta_element
+	| parameter_meta #parameter_meta_element
+	| meta #meta_element
 	;
 
 workflow
@@ -297,5 +299,5 @@ document_element
 	;
 
 document
-	: version document_element*
+	: version document_element* (workflow document_element*)?
 	;

@@ -128,9 +128,9 @@ expr_core
 	| LBRACK (expr (COMMA expr)*)* RBRACK #array_literal
 	| LPAREN expr COMMA expr RPAREN #pair_literal
 	| LBRACE (expr COLON expr (COMMA expr COLON expr)*)* RBRACE #map_literal
-	| OBJECT_LITERAL LBRACE (primitive_literal COLON expr (COMMA primitive_literal COLON expr)*)* RBRACE #object_literal
+	| OBJECT_LITERAL LBRACE (Identifier COLON expr (COMMA Identifier COLON expr)*)* RBRACE #object_literal
 	| NOT expr #negate
-	| (PLUS | MINUS) Identifier #unirarysigned
+	| (PLUS | MINUS) expr #unirarysigned
 	| expr_core LBRACK expr RBRACK #at
 	| IF expr THEN expr ELSE expr #ifthenelse
 	| Identifier LPAREN (expr (COMMA expr)*)? RPAREN #apply
@@ -159,11 +159,13 @@ meta_kv
 	;
 
 
-meta_obj
-	: PARAMETERMETA LBRACE meta_kv* RBRACE #parameter_meta
-	| META LBRACE meta_kv* RBRACE #meta
+parameter_meta
+	: PARAMETERMETA LBRACE meta_kv* RBRACE
 	;
 
+meta
+    :  META LBRACE meta_kv* RBRACE
+    ;
 
 task_runtime_kv
     : Identifier COLON expr
@@ -205,7 +207,8 @@ task_element
 	| task_command
 	| task_runtime
 	| bound_decls
-	| meta_obj
+	| parameter_meta
+	| meta
 	;
 
 task
@@ -262,7 +265,8 @@ workflow_element
 	: workflow_input #input
 	| workflow_output #output
 	| inner_workflow_element #inner_element
-	| meta_obj #meta_element
+	| parameter_meta #parameter_meta_element
+	| meta #meta_element
 	;
 
 workflow
@@ -274,9 +278,8 @@ document_element
 	: import_doc
 	| struct
 	| task
-	| workflow
 	;
 
 document
-	: version document_element*
+	: version document_element* (workflow document_element*)?
 	;

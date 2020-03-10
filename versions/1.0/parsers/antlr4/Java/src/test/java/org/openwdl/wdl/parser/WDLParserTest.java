@@ -82,7 +82,7 @@ public class WDLParserTest {
 
     @ParameterizedTest
     @MethodSource("failingWdlFiles")
-    public void testWdlFiles_shouldFailParings(byte[] fileBytes, String fileName) {
+    public void testWdlFiles_shouldFailParsing(byte[] fileBytes, String fileName) {
         System.out.println("Testing WDL File: " + fileName + " should fail to parse");
         WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
         CodePointBuffer codePointBuffer = CodePointBuffer.withBytes(ByteBuffer.wrap(fileBytes));
@@ -308,6 +308,18 @@ public class WDLParserTest {
         Assertions.assertEquals("Foo", importDocContext.Identifier().getSymbol().getText());
     }
 
+
+    @Test
+    public void testExpressionPlaceHolder() {
+        String document = "version 1.0\n" + "\n" + "task foo {\n" + "  input {\n" + "    Int min_std_max_min\n" + "    String prefix\n" + "  }\n" + "  command {\n" + "    echo ${prefix}\n" + "    echo ${sep=',' min_std_max_min}\n" + "  }\n" + "}";
+        WdlParser parser = getParser(document);
+        WdlParserTestErrorListener errorListener = new WdlParserTestErrorListener();
+        parser.addErrorListener(ConsoleErrorListener.INSTANCE);
+        parser.addErrorListener(errorListener);
+        DocumentContext documentContext = parser.document();
+        Assertions.assertFalse(errorListener.hasErrors());
+    }
+
     @Test
     public void testDocumentHasAppropriateChildren() {
 
@@ -320,12 +332,12 @@ public class WDLParserTest {
         DocumentContext documentContext = parser.document();
         Assertions.assertFalse(errorListener.hasErrors());
         Assertions.assertNotNull(documentContext.version());
-        Assertions.assertEquals(3, documentContext.document_element().size());
+        Assertions.assertEquals(2, documentContext.document_element().size());
         List<Document_elementContext> elementContexts = documentContext.document_element();
         Assertions.assertEquals(StructContext.class.getName(), elementContexts.get(0).getChild(0).getClass().getName());
         Assertions.assertEquals(TaskContext.class.getName(), elementContexts.get(1).getChild(0).getClass().getName());
         Assertions.assertEquals(WorkflowContext.class.getName(),
-                                elementContexts.get(2).getChild(0).getClass().getName());
+                                documentContext.workflow().getClass().getName());
 
     }
 
