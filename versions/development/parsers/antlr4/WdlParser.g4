@@ -142,8 +142,12 @@ import_alias
 	: ALIAS Identifier AS Identifier
 	;
 
+import_as
+    : AS Identifier
+    ;
+
 import_doc
-	: IMPORT string AS Identifier (import_alias)*
+	: IMPORT string import_as? (import_alias)*
 	;
 
 struct

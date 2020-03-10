@@ -146,10 +146,13 @@ import_alias
 	: ALIAS Identifier AS Identifier
 	;
 
-import_doc
-	: IMPORT string AS Identifier (import_alias)*
-	;
+import_as
+    : AS Identifier
+    ;
 
+import_doc
+	: IMPORT string import_as? (import_alias)*
+	;
 struct
 	: STRUCT Identifier LBRACE (unbound_decls)* RBRACE
 	;
