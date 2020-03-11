@@ -2604,11 +2604,11 @@ Workflows have inputs that must be satisfied to run them, just like tasks.
 Inputs to the workflow are provided as a key/value map where the key is of the 
 form `workflow_name.input_name`.
 
-* A task has its inputs supplied when called by a workflow. 
+* A call has its inputs supplied when called by a workflow. 
     * Example: `call my_task { input: my_task_input=... }`
-* All required task inputs which do not have defaults should be filled by the 
+* All required call inputs which do not have defaults should be filled by the 
   calling workflow.
-* A workflow is allowed not to specify optional inputs in a task's input block. 
+* A workflow is allowed not to specify optional inputs in a call's input block. 
   In this case, the inputs bubble up to become an input to the workflow instead.
     * Example: an unsupplied input might have the fully-qualified name 
       `my_workflow.my_task.my_task_input.`
@@ -2617,7 +2617,7 @@ form `workflow_name.input_name`.
     * Example: my_outer_workflow.my_workflow.my_task.my_task_input.
 * There is currently no way to supply a bubbled-up input in an outer workflow's 
   call block.
-    * Example: one cannot say call my_workflow as subworkflow 
+    * Example: the following inputs would not be valid for a call to a subworkflow
       `{ inputs: my_task.my_task_input=... }`
 * By default an engine only allows inputs that are specified in the input
   section of the top-level workflow.
