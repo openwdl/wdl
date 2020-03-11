@@ -303,5 +303,5 @@ document_element
 	;
 
 document
-	: version document_element* (workflow document_element*)?
+	: version document_element* (workflow document_element*)? EOF
 	;
