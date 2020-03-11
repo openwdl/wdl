@@ -95,7 +95,7 @@ COMMENT
 	: '#' ~[\r\n]* -> channel(HIDDEN)
 	;
 
-Identifier: CompleteIdentifier ( DOT CompleteIdentifier)*;
+Identifier: CompleteIdentifier;
 
 
 mode SquoteInterpolatedString;
