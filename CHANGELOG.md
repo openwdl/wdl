@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 
 version 2.0.0
 ---------------------------
++ Added a required input and output format for workflow engines.
+  [PR 357](https://github.com/openwdl/wdl/pull/357)
 
 + The input specification has been clarified.
   [PR 314](https://github.com/openwdl/wdl/pull/314) by @geoffjentry.
