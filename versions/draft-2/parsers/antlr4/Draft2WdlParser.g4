@@ -171,6 +171,10 @@ task_runtime
 	: RUNTIME LBRACE (task_runtime_kv)* RBRACE
 	;
 
+task_input
+	: (any_decls)*
+	;
+
 task_output
 	: OUTPUT LBRACE (bound_decls)* RBRACE
 	;
@@ -192,18 +196,17 @@ task_command
   | HEREDOC_COMMAND task_command_string_part task_command_expr_with_string* EndCommand
   ;
 
-
 task_element
-	: any_decls
-	| task_output
-	| task_command
-	| task_runtime
-	| parameter_meta
-	| meta
-	;
+  : task_output
+  | task_command
+  | task_runtime
+  | parameter_meta
+  | meta
+  | any_decls
+  ;
 
 task
-	: TASK Identifier LBRACE (task_element)+ RBRACE
+	: TASK Identifier LBRACE task_input (task_element)+ RBRACE
 	;
 
 
@@ -243,22 +246,24 @@ conditional
 	: IF LPAREN expr RPAREN LBRACE inner_workflow_element* RBRACE
 	;
 
+workflow_input
+	: (any_decls)*
+	;
+
 workflow_output
 	: OUTPUT LBRACE (bound_decls)* RBRACE
 	;
 
 workflow_element
-	: any_decls #input
-	| workflow_output #output
-	| inner_workflow_element #inner_element
-	| parameter_meta #parameter_meta_element
-	| meta #meta_element
-	;
+  : workflow_output #output
+  | inner_workflow_element #inner_element
+  | parameter_meta #parameter_meta_element
+  | meta #meta_element
+  ;
 
 workflow
-	: WORKFLOW Identifier LBRACE workflow_element* RBRACE
+	: WORKFLOW Identifier LBRACE workflow_input workflow_element* RBRACE
 	;
-
 
 document_element
 	: import_doc
