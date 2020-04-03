@@ -127,6 +127,8 @@
   * [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
   * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
   * [Array\[String\] suffix(String, Array\[X\])](#arraystring-suffixstring-arrayx)
+  * [Array\[String\] quote(Array\[X\])](#arraystring-quotearrayx)
+  * [Array\[String\] squote(Array\[X\])](#arraystring-squotearrayx)
   * [X select_first(Array\[X?\])](#x-select_firstarrayx)
   * [Array\[X\] select_all(Array\[X?\])](#arrayx-select_allarrayx)
   * [Boolean defined(X?)](#boolean-definedx)
@@ -3509,6 +3511,34 @@ Array[String] env_param = suffix(".txt ", env) # ["key1=value1.txt", "key2=value
 Array[Int] env2 = [1, 2, 3]
 Array[String] env2_param = suffix(".0", env2) # ["1.0", "2.0", "3.0"]
 ```
+
+## Array[String] quote(Array[X])
+
+Given an `Array[X]` where `X` is a primitive type, the `quote` function returns an array of strings comprised of each
+element of the input array being wrapped in double quotes. This is functionally equivalent to `prefix("\"",suffix("\"" X))`.
+For example:
+
+```wdl
+Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
+Array[String] env_quoted = quote(env) # ["\"key1=value1\"", "\"key2=value2\"", "\"key3=value3\""]
+
+Array[Int] env2 = [1, 2, 3]
+Array[String] env2_quoted = quote(env2) # ["\"1\"", "\"2\"", "\"3\""]
+``` 
+
+## Array[String] squote(Array[X])
+
+Given an `Array[X]` where `X` is a primitive type, the `squote` function returns an array of strings comprised of each
+element of the input array being wrapped in single quotes. This is functionally equivalent to `prefix("'",suffix("'" X))`.
+For example:
+
+```wdl
+Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
+Array[String] env_quoted =  squote(env) # ["'key1=value1'", "'key2=value2'", "'key3=value3'"]
+
+Array[Int] env2 = [1, 2, 3]
+Array[String] env2_quoted = squote(env2) # ["'1'", "'2'", "'3'"]
+``` 
 
 ## X select_first(Array[X?])
 
