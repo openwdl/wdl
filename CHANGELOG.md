@@ -20,7 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 
 version 2.0.0
 ---------------------------
-+ Added an engine function for adding a suffix to an array of primitives
++ Added an engine function for adding a suffix to an array of primitives as well
+  as well as `quote` and `squote` engine functions.
   [PR 362](https://github.com/openwdl/wdl/pull/362) @patmagee
 
 + Added a required input and output format for workflow engines.
