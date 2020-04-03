@@ -126,6 +126,7 @@
   * [Int length(Array\[X\])](#int-lengtharrayx)
   * [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
   * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
+  * [Array\[String\] suffix(String, Array\[X\])](#arraystring-suffixstring-arrayx)
   * [X select_first(Array\[X?\])](#x-select_firstarrayx)
   * [Array\[X\] select_all(Array\[X?\])](#arrayx-select_allarrayx)
   * [Boolean defined(X?)](#boolean-definedx)
@@ -3494,6 +3495,19 @@ Array[String] env_param = prefix("-e ", env) # ["-e key1=value1", "-e key2=value
 
 Array[Int] env2 = [1, 2, 3]
 Array[String] env2_param = prefix("-f ", env2) # ["-f 1", "-f 2", "-f 3"]
+```
+
+## Array[String] suffix(String, Array[X])
+
+Given a String and an Array[X] where X is a primitive type, the `suffix` function returns an array of strings comprised
+of each element of the input array suffixed by the specified suffix string.  For example:
+
+```wdl
+Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
+Array[String] env_param = suffix(".txt ", env) # ["key1=value1.txt", "key2=value2.txt", "key3=value3.txt"]
+
+Array[Int] env2 = [1, 2, 3]
+Array[String] env2_param = suffix(".0", env2) # ["1.0", "2.0", "3.0"]
 ```
 
 ## X select_first(Array[X?])
