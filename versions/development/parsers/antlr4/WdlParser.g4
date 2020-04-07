@@ -260,8 +260,12 @@ call_afters
 	: AFTER Identifier
 	;
 
+call_name
+    : Identifier (DOT Identifier)*
+    ;
+
 call
-	: CALL Identifier call_alias? (call_afters)*  call_body?
+	: CALL call_name call_alias? (call_afters)*  call_body?
 	;
 
 
