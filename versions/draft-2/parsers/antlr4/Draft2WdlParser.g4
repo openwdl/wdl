@@ -233,10 +233,13 @@ call_body
 	: LBRACE call_inputs? RBRACE
 	;
 
-call
-	: CALL Identifier call_alias?  call_body?
-	;
+call_name
+        : Identifier (DOT Identifier)*
+        ;
 
+call
+	: CALL call_name call_alias?  call_body?
+	;
 
 scatter
 	: SCATTER LPAREN Identifier In expr RPAREN LBRACE inner_workflow_element* RBRACE

@@ -1,6 +1,9 @@
 lexer grammar Draft2WdlLexer;
 
-channels { WdlComments, SkipChannel }
+channels { COMMENTS }
+
+// Comments
+LINE_COMMENT: '#' ~[\r\n]* -> channel(COMMENTS);
 
 // Keywords
 IMPORT: 'import';
