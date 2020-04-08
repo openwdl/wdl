@@ -1,4 +1,4 @@
-lexer grammar WdlLexer;
+lexer grammar V10WdlLexer;
 
 channels { COMMENTS }
 
@@ -165,18 +165,18 @@ fragment IdentifierFollow
 	;
 
 fragment EscapeSequence
-    : '\\' [btnfr"'\\]
-    | '\\' ([0-3]? [0-7])? [0-7]
-    | '\\' UnicodeEsc
-    ;
+	: '\\' [btnfr"'\\]
+	| '\\' ([0-3]? [0-7])? [0-7]
+	| '\\' UnicodeEsc
+	;
 
 fragment UnicodeEsc
-   : 'u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?
-   ;
+	: 'u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?
+	;
 
 fragment HexDigit
-   : [0-9a-fA-F]
-   ;
+	: [0-9a-fA-F]
+	;
 
 fragment Digit
 	: [0-9]
