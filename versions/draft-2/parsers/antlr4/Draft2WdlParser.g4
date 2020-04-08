@@ -75,6 +75,7 @@ primitive_literal
 	| number
 	| string
 	| Identifier
+	| Null
 	;
 
 expr
