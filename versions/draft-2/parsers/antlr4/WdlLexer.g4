@@ -1,4 +1,4 @@
-lexer grammar Draft2WdlLexer;
+lexer grammar WdlLexer;
 
 channels { COMMENTS }
 
@@ -40,7 +40,6 @@ OBJECT_LITERAL: 'object';
 SEP: 'sep';
 DEFAULT: 'default';
 
-
 // Primitive Literals
 IntLiteral
 	: Digits
@@ -54,7 +53,6 @@ BoolLiteral
 	: 'true'
 	| 'false'
 	;
-Null: 'null';
 
 // Symbols
 LPAREN: '(';
@@ -98,9 +96,7 @@ COMMENT
 
 Identifier: CompleteIdentifier;
 
-
 mode SquoteInterpolatedString;
-
 
 SQuoteEscapedChar: '\\' . -> type(StringPart);
 SQuoteDollarString: '$'  -> type(StringPart);
@@ -119,7 +115,6 @@ DQuoteCommandStart: ('${') -> pushMode(DEFAULT_MODE), type(StringCommandStart);
 DQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?) -> type(StringPart);
 EndDQuote: '"' ->  popMode, type(DQUOTE);
 DQuoteStringPart: ~[${\r\n"]+ -> type(StringPart);
-
 
 mode HereDocCommand;
 
@@ -156,18 +151,18 @@ fragment IdentifierFollow
 	;
 
 fragment EscapeSequence
-    : '\\' [btnfr"'\\]
-    | '\\' ([0-3]? [0-7])? [0-7]
-    | '\\' UnicodeEsc
-    ;
+	: '\\' [btnfr"'\\]
+	| '\\' ([0-3]? [0-7])? [0-7]
+	| '\\' UnicodeEsc
+	;
 
 fragment UnicodeEsc
-   : 'u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?
-   ;
+	: 'u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?
+	;
 
 fragment HexDigit
-   : [0-9a-fA-F]
-   ;
+	: [0-9a-fA-F]
+	;
 
 fragment Digit
 	: [0-9]
