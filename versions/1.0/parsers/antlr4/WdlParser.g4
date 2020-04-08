@@ -243,9 +243,10 @@ call_body
 	: LBRACE call_inputs? RBRACE
 	;
 
+
 call_name
-        : Identifier (DOT Identifier)*
-        ;
+   : Identifier (DOT Identifier)*
+   ;
 
 call
 	: CALL call_name call_alias?  call_body?
