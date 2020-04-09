@@ -1,7 +1,7 @@
 parser grammar WdlV1Parser;
 
 
-options { tokenVocab=WdlV10Lexer; }
+options { tokenVocab=WdlV1Lexer; }
 
 
 map_type
