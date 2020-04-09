@@ -1,4 +1,4 @@
-lexer grammar WdlLexer;
+lexer grammar WdlDraft2Lexer;
 
 channels { COMMENTS }
 
