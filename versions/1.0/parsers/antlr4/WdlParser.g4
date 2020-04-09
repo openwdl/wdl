@@ -1,4 +1,4 @@
-parser grammar WdlV10Parser;
+parser grammar WdlV1Parser;
 
 
 options { tokenVocab=WdlV10Lexer; }
