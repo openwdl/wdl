@@ -1,4 +1,4 @@
-lexer grammar WdlV10Lexer;
+lexer grammar WdlV1Lexer;
 
 channels { COMMENTS }
 
