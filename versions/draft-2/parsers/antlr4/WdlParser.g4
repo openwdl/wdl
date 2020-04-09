@@ -134,16 +134,12 @@ expr_core
 	| expr_core DOT Identifier #get_name
 	;
 
-import_alias
-	: ALIAS Identifier AS Identifier
-	;
-
 import_as
 	: AS Identifier
 	;
 
 import_doc
-	: IMPORT string import_as? (import_alias)*
+	: IMPORT string import_as?
 	;
 
 meta_kv
