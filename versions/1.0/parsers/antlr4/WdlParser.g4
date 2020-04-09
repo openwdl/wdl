@@ -157,13 +157,8 @@ struct
 	: STRUCT Identifier LBRACE (unbound_decls)* RBRACE
 	;
 
-meta_expr
-	: expr
-	| Null
-	;
-
 meta_kv
-	: Identifier COLON meta_expr
+	: Identifier COLON expr
 	;
 
 parameter_meta
