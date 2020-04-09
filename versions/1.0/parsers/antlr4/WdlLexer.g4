@@ -56,7 +56,6 @@ BoolLiteral
 	: 'true'
 	| 'false'
 	;
-Null: 'null';
 
 // Symbols
 LPAREN: '(';
