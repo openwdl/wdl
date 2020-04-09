@@ -1,4 +1,4 @@
-parser grammar WdlParser;
+parser grammar WdlDraft2Parser;
 
 options { tokenVocab=WdlLexer; }
 
