@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 
 version 2.0.0
 ---------------------------
++ Write a specification for unsatisfied task inputs and nested optional inputs.
+  [PR 359](https://github.com/openwdl/wdl/pull/359) by @rhpvorderman.
+
 + Added a required input and output format for workflow engines.
   [PR 357](https://github.com/openwdl/wdl/pull/357)
 
