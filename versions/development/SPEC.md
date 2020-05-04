@@ -2810,12 +2810,13 @@ Workflows have inputs that must be satisfied to run them, just like tasks.
 Inputs to the workflow are provided as a key/value map where the key is of the 
 form `workflow_name.input_name`.
 
-* A task has its inputs supplied when called by a workflow. 
+* A call has its inputs supplied when called by a workflow. 
     * Example: `call my_task { input: my_task_input=... }`
-* All required task inputs which do not have defaults should be filled by the 
+* All required call inputs which do not have defaults should be filled by the 
   calling workflow.
-* A workflow is allowed not to specify optional inputs in a task's input block. 
-  In this case, the inputs bubble up to become an input to the workflow instead.
+* A workflow is allowed not to specify optional inputs in a call's input block. 
+  In this case, the inputs bubble up to become a nested input to the workflow 
+  instead.
     * Example: an unsupplied input might have the fully-qualified name 
       `my_workflow.my_task.my_task_input.`
 * If that workflow is used as a subworkflow, the input is allowed to bubble up 
@@ -2823,13 +2824,19 @@ form `workflow_name.input_name`.
     * Example: my_outer_workflow.my_workflow.my_task.my_task_input.
 * There is currently no way to supply a bubbled-up input in an outer workflow's 
   call block.
-    * Example: one cannot say call my_workflow as subworkflow 
+    * Example: the following inputs would not be valid for a call to a subworkflow
       `{ inputs: my_task.my_task_input=... }`
 * By default an engine only allows inputs that are specified in the input
   section of the top-level workflow.
-* An engine may optionally support supplying bubbled-up optional inputs, but
-  this has to be explicitly enabled on the engine (via configuration, command
-  line flags or otherwise).
+* If a workflow is suitable for use with nested inputs it should be explicitly
+  stated. This is done by setting `allowNestedInputs` to `true` in the meta
+  section of the workflow. For example:
+
+```WDL
+meta {
+    allowNestedInputs: true
+}
+```
 
 Any declaration that appears outside the `input` section is considered an 
 intermediate value and **not** a workflow input. 
@@ -2899,6 +2906,9 @@ workflow wf {
     String t1s
     String t2s
   }
+  meta {
+    allowNestedInputs: true
+  }
 
   String not_an_input = "hello"
 
@@ -2927,10 +2937,11 @@ The inputs to `wf` would be:
 * `wf.int_val` as an `Int`
 * `wf.my_ints` as an `Array[Int]`
 * `wf.ref_file` as a `File`
+* `wf.t2.t` as a a `Int?`
 
 Note that the optional `t` input for task `t2` is left unsatisfied, this 
-option could be passed as `wf.t2.t` if the engine has bubbled-up optional 
-inputs enabled.
+option can be passed as `wf.t2.t` because `allowNestedInputs` is set to true
+if it were set to `false` this input would not be available. 
 
 ## Specifying Workflow Inputs
 
