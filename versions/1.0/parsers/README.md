@@ -1,8 +1,10 @@
-# Parsers for WDL
+# Grammars and Parsers
 
-This directory contains pregenerated parsers for WDL in a variety of languages. Except for the Java parser, all of these are provided *as-is*. We believe that they work but do not have the resources to validate that claim. However if you're willing to help us fix any issues you come across we'll work with you to do so."
+At the moment, WDL is transitioning away from `Hermes` as its primary grammar definition and parser generation tool and moving
+towards [Antlr4](https://www.antlr.org/). The motivation for this transition was to provide a grammar language which would 
+be more familiar to more people as well as employing a well supported and actively developed tool for generating the parsers.
+Antlr4 grammars are written as an EBNF and the tool itself supports 9 different target languages currently. 
 
-# How to rebuild
-
-Typing `make` in this directory will trigger builds for all of the languages and produce the appropriate files. This requires you to have [Hermes](https://github.com/scottfrazer/hermes) installed on your system. To do this you might need to use a virtualenv, e.g. ``mkvirtualenv py3 -p `which python3` ``
+Please note that hermes grammars will be removed from the specification at some point in the future, and this feature should
+be considered deprecated.
 
