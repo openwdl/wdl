@@ -117,7 +117,9 @@ mode HereDocCommand;
 
 HereDocUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 HereDocEscapedChar: '\\' . -> type(CommandStringPart);
+HereDocDollarString: '$' -> type(CommandStringPart);
 HereDocCurlyString: '{' -> type(CommandStringPart);
+HereDocCurlyStringCommand: '${' -> pushMode(DEFAULT_MODE), type(StringCommandStart);
 HereDocEscapedEnd: '\\>>>' -> type(CommandStringPart);
 EndHereDocCommand: '>>>' -> mode(DEFAULT_MODE), type(EndCommand);
 HereDocEscape: ( '>' | '>>' | '>>>>' '>'*) -> type(CommandStringPart);
