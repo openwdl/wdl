@@ -1,6 +1,6 @@
 parser grammar WdlDraft2Parser;
 
-options { tokenVocab=WdlLexer; }
+options { tokenVocab=WdlDraft2Lexer; }
 
 map_type
 	: MAP LBRACK wdl_type COMMA wdl_type RBRACK
@@ -119,20 +119,20 @@ expr_infix5
 	;
 
 expr_core
-	: LPAREN expr RPAREN #expression_group
-	| primitive_literal #primitives
-	| LBRACK (expr (COMMA expr)*)* RBRACK #array_literal
-	| LPAREN expr COMMA expr RPAREN #pair_literal
-	| LBRACE (expr COLON expr (COMMA expr COLON expr)*)* RBRACE #map_literal
-	| OBJECT_LITERAL LBRACE (Identifier COLON expr (COMMA Identifier COLON expr)*)* RBRACE #object_literal
-	| NOT expr #negate
-	| (PLUS | MINUS) expr #unirarysigned
-	| expr_core LBRACK expr RBRACK #at
-	| IF expr THEN expr ELSE expr #ifthenelse
-	| Identifier LPAREN (expr (COMMA expr)*)? RPAREN #apply
-	| Identifier #left_name
-	| expr_core DOT Identifier #get_name
-	;
+        : Identifier LPAREN (expr (COMMA expr)*)? RPAREN #apply
+        | LBRACK (expr (COMMA expr)*)* RBRACK #array_literal
+        | LPAREN expr COMMA expr RPAREN #pair_literal
+        | LBRACE (expr COLON expr (COMMA expr COLON expr)*)* RBRACE #map_literal
+        | OBJECT_LITERAL LBRACE (Identifier COLON expr (COMMA Identifier COLON expr)*)* RBRACE #object_literal
+        | IF expr THEN expr ELSE expr #ifthenelse
+        | LPAREN expr RPAREN #expression_group
+        | expr_core LBRACK expr RBRACK #at
+        | expr_core DOT Identifier #get_name
+        | NOT expr #negate
+        | (PLUS | MINUS) expr #unirarysigned
+        | primitive_literal #primitives
+        | Identifier #left_name
+        ;
 
 import_as
 	: AS Identifier
@@ -183,17 +183,16 @@ task_command_expr_with_string
 	;
 
 task_command
-	: COMMAND task_command_string_part task_command_expr_with_string* EndCommand
-	| HEREDOC_COMMAND task_command_string_part task_command_expr_with_string* EndCommand
+	: COMMAND BeginLBrace task_command_string_part task_command_expr_with_string* EndCommand
+	| COMMAND BeginHereDoc task_command_string_part task_command_expr_with_string* EndCommand
 	;
 
 task_element
-	: task_output
-	| task_command
-	| task_runtime
-	| parameter_meta
-	| meta
-	| any_decls
+	: task_output #task_output_element
+	| task_command #task_command_element
+	| task_runtime #task_runtime_element
+	| parameter_meta #task_parameter_meta_element
+	| meta #task_meta_element
 	;
 
 task
@@ -216,7 +215,7 @@ call_input
 	;
 
 call_inputs
-	: INPUT COLON (call_input (COMMA call_input)*)
+	: INPUT COLON (call_input (COMMA call_input)*) COMMA?
 	;
 
 call_body
@@ -239,23 +238,20 @@ conditional
 	: IF LPAREN expr RPAREN LBRACE inner_workflow_element* RBRACE
 	;
 
-workflow_input
-	: (any_decls)*
-	;
-
 workflow_output
 	: OUTPUT LBRACE (bound_decls)* RBRACE
 	;
 
 workflow_element
-	: workflow_output #output
-	| inner_workflow_element #inner_element
-	| parameter_meta #parameter_meta_element
-	| meta #meta_element
+	: unbound_decls #wf_decl_element
+	| workflow_output #wf_output_element
+	| inner_workflow_element #wf_inner_element
+	| parameter_meta #wf_parameter_meta_element
+	| meta #wf_meta_element
 	;
 
 workflow
-	: WORKFLOW Identifier LBRACE workflow_input workflow_element* RBRACE
+	: WORKFLOW Identifier LBRACE workflow_element* RBRACE
 	;
 
 document_element
@@ -266,3 +262,4 @@ document_element
 document
 	: document_element* (workflow document_element*)? EOF
 	;
+
