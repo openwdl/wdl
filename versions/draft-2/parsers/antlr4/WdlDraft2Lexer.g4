@@ -123,7 +123,7 @@ HereDocCurlyStringCommand: ('${') -> pushMode(DEFAULT_MODE), type(StringCommandS
 HereDocEscapedEnd: '\\>>>' -> type(CommandStringPart);
 EndHereDocCommand: '>>>' -> mode(DEFAULT_MODE), type(EndCommand);
 HereDocEscape: ( '>' | '>>' | '>>>>' '>'*) -> type(CommandStringPart);
-HereDocStringPart: ~[{>]+ -> type(CommandStringPart);
+HereDocStringPart: ~[${>]+ -> type(CommandStringPart);
 
 mode CurlyCommand;
 
