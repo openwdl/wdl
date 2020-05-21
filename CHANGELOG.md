@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 
 version 2.0.0
 ---------------------------
++ Abbreviated syntax for call inputs bound to workflow-scoped values by name: `{input: x, y=b, z}` is shorthand for `{input: x=x, y=b, z=z}`
+  [PR 365](https://github.com/openwdl/wdl/pull/365) by @mlin
+
 + Added an engine function for adding a suffix to an array of primitives as well
   as well as `quote` and `squote` engine functions.
   [PR 362](https://github.com/openwdl/wdl/pull/362) @patmagee

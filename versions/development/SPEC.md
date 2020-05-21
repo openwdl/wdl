@@ -1794,7 +1794,7 @@ workflow wf {
 }
 ```
 
-Within the list of call input bindings, the name of an input may be provided by itself (without an expression) to implicitly bind a workflow-scoped value with the same name: `{input: x, y=b, z}` is equivalent to `{input: x=x, y=b, z=z}`.
+Within the list of call input bindings, the name of an input may appear alone (without an expression) to implicitly bind the workflow-scoped value with the same name: `{input: x, y=b, z}` is equivalent to `{input: x=x, y=b, z=z}`.
 
 #### Call Input Blocks
 
