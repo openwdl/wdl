@@ -1794,6 +1794,8 @@ workflow wf {
 }
 ```
 
+Within the list of call input bindings, the name of an input may be provided by itself (without an expression) to implicitly bind a workflow-scoped value with the same name: `{input: x, y=b, z}` is equivalent to `{input: x=x, y=b, z=z}`.
+
 #### Call Input Blocks
 
 As mentioned above, call inputs should be provided via call inputs (`call my_task { input: x = 5 }`), or else they will become workflow inputs (`"my_workflow.my_task.x": 5`) and prevent the workflow from being composed as a subworkflow.
