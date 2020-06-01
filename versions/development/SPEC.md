@@ -582,9 +582,6 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Int`|`>=`|`Int`|`Boolean`||
 |`Int`|`<`|`Int`|`Boolean`||
 |`Int`|`<=`|`Int`|`Boolean`||
-|`Int`|`+`|`String`|`String`||
-|`String`|`+`|`Float`|`String`||
-|`String`|`+`|`Int`|`String`||
 |`String`|`+`|`String`|`String`|Concatenation|
 |`String`|`+`|`File`|`File`||
 |`String`|`==`|`String`|`Boolean`||
