@@ -459,7 +459,7 @@ Declarations are declared at the top of any [scope](#scope).
 
 In a [task definition](#task-definition), declarations are interpreted as inputs to the task that are not part of the command line itself.
 
-If a declaration does not have an initialization, then the value is expected to be provided by the user before the workflow or task is run.
+If a non-optional declaration does not have an initialization, then the value must be provided by the user before the workflow or task is run.
 
 Some examples of declarations:
 
@@ -522,15 +522,16 @@ $expression = $expression '/' $expression
 $expression = $expression '+' $expression
 $expression = $expression '-' $expression
 $expression = $expression '<' $expression
-$expression = $expression '=<' $expression
+$expression = $expression '<=' $expression
 $expression = $expression '>' $expression
 $expression = $expression '>=' $expression
 $expression = $expression '==' $expression
 $expression = $expression '!=' $expression
 $expression = $expression '&&' $expression
 $expression = $expression '||' $expression
-$expression = '{' ($expression ':' $expression)* '}'
-$expression = '[' $expression* ']'
+$expression = '{' ($expression ':' $expression (',' $expression ':' $expression )*)? '}'
+$expression = object '{' (($string | $identifier) ':' $expression (',' ($string | $identifier) ':' $expression )*)? '}'
+$expression = '[' ($expression (',' $expression)*)? ']'
 $expression = $string | $integer | $float | $boolean | $identifier
 ```
 
@@ -581,7 +582,11 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Int`|`>=`|`Int`|`Boolean`||
 |`Int`|`<`|`Int`|`Boolean`||
 |`Int`|`<=`|`Int`|`Boolean`||
+|`Int`|`+`|`String`|`String`||
+|`String`|`+`|`Float`|`String`||
+|`String`|`+`|`Int`|`String`||
 |`String`|`+`|`String`|`String`|Concatenation|
+|`String`|`+`|`File`|`File`||
 |`String`|`==`|`String`|`Boolean`||
 |`String`|`!=`|`String`|`Boolean`||
 |`String`|`>`|`String`|`Boolean`||
@@ -645,7 +650,7 @@ runtime {
 
 ### Member Access
 
-The syntax `x.y` refers to member access. `x` must be a task in a workflow, or struct. A Task can be thought of as a struct where the attributes are the outputs of the task.
+The syntax `x.y` refers to member access. `x` must be a task in a workflow, or instance of a struct. A task can be thought of as a struct where the attributes are the outputs of the task.
 
 ```wdl
 call foo
@@ -667,7 +672,7 @@ Given a Pair `x`, the left and right elements of that type can be accessed using
 
 Function calls, in the form of `func(p1, p2, p3, ...)`, are either [standard library functions](#standard-library) or engine-defined functions.
 
-In this current iteration of the spec, users cannot define their own functions.
+Users cannot define their own functions.
 
 ### Array Literals
 
@@ -908,10 +913,7 @@ task t {
 ### Command Section
 
 The `command` section is the *task section* that starts with the keyword 'command', and is enclosed in either curly braces `{ ... }` or triple angle braces `<<< ... >>>`.
-It defines a shell command which will be run in the execution environment after all of the inputs are staged and before the outputs are evaluated.
-The body of the command also allows placeholders for the parts of the command line that need to be filled in.
-
-Expression placeholders are denoted by `${...}` or `~{...}` depending on whether they appear in a `command { }` or `command <<< >>>` body styles.
+It defines a bash shell script which will be run in the execution environment after all of the inputs are staged and before the outputs are evaluated.
 
 #### Expression Placeholders
 
@@ -922,7 +924,7 @@ Expression placeholders differ depending on the command section style:
 |`command { ... }`|`~{}` (preferred) or `${}`|
 |`command <<< >>>`|`~{}` only|
 
-These placeholders contain a single expression which will be evaluated using inputs or declarations available in the task.
+These placeholders are the mechanism for using task inputs and variables to construct a command. They contain a single expression which will be evaluated using inputs or declarations available in the task.
 The placeholders are then replaced in the command script with the result of the evaluation.
 
 For example a command might reference an input to the task, like this:
@@ -932,127 +934,44 @@ task test {
   input {
     String flags
   }
-  command {
-    ps ~{flags}
-  }
-}
-```
-
-In this case `flags` within the `${...}` is a variable lookup expression referencing the `flags` input string.
-The expression can also be more complex, like a function call: `write_lines(some_array_value)`
-
-Here is the same example using the `command <<<` style:
-
-```wdl
-task test {
-  String flags
   command <<<
     ps ~{flags}
   >>>
 }
 ```
 
+In this case `flags` within the `~{...}` is a variable lookup expression referencing the `flags` input string.
+The expression can also be more complex, like a function call: `write_lines(some_array_value)`
+
 > **NOTE**: the expression result must ultimately be converted to a string in order to take the place of the placeholder in the command script.
-This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Struct`).
-To place an array into the command block a separator character must be specified using `sep` (eg `${sep=", " int_array}`).
 
 As another example, consider how the parser would parse the following command:
 
 ```sh
-grep '${start}...${end}' ${input}
+grep '~{start}...~{end}' ~{input}
 ```
 
 This command would be parsed as:
 
 * `grep '` - literal string
-* `${start}` - lookup expression to the variable `start`
+* `~{start}` - lookup expression to the variable `start`
 * `...` - literal string
-* `${end}` - lookup expression to the variable `end`
+* `~{end}` - lookup expression to the variable `end`
 * `' ` - literal string
-* `${input}` - lookup expression to the variable `input`
+* `~{input}` - lookup expression to the variable `input`
 
-#### Expression Placeholder Options
-
-Expression placeholder options are `option="value"` pairs that precede the expression in an expression command part and customize the interpolation of the WDL value into the command string being built. The following options are available:
-
-* `sep` - eg `${sep=", " array_value}`
-* `true` and `false` - eg `${true="--yes" false="--no" boolean_value}`
-* `default` - eg `${default="foo" optional_value}`
-
-Additional explanation for these command part options follows:
-
-##### sep
-
-'sep' is interpreted as the separator string used to join multiple parameters together.  `sep` is only valid if the expression evaluates to an `Array`.
-
-For example, if there were a declaration `Array[Int] ints = [1,2,3]`, the command `python script.py ${sep=',' numbers}` would yield the command line:
-
-```sh
-python script.py 1,2,3
+Finally, some common patterns for commands:
 ```
-
-Alternatively, if the command were `python script.py ${sep=' ' numbers}` it would parse to:
-
-```sh
-python script.py 1 2 3
-```
-
-> *Additional requirements*: sep MUST accept only a string as its value
-
-##### true and false
-
-'true' and 'false' are available for expressions which evaluate to `Boolean`s. They specify a string literal to insert into the command block when the result is true or false respectively.
-
-For example, `${true='--enable-foo' false='--disable-foo' allow_foo}` would evaluate the expression `allow_foo` as a variable lookup and depending on its value would either insert the string `--enable-foo` or `--disable-foo` into the command.
-
-Both `true` and `false` cases are required. If one case should insert no value then an empty string literal should be used, eg `${true='--enable-foo' false='' allow_foo}`
-
-1. `true` and `false` values MUST be string literals.
-2. `true` and `false` are only allowed if the type is `Boolean`
-3. Both `true` and `false` cases are required.
-4. Consider using the expression `${if allow_foo then "--enable-foo" else "--disable-foo"}` as a more readable alternative which allows full expressions (rather than string literals) for the true and false cases.
-
-##### default
-
-This specifies the default value if no other value is specified for this parameter.
-
-```wdl
-task default_test {
-  input {
-    String? s
-  }
-  command {
-    ./my_cmd ${default="foobar" s}
-  }
+inputs {
+    File? opt
+    Boolean flag
+    Array[Int] values
 }
-```
-
-This task takes an optional `String` parameter and if a value is not specified, then the value of `foobar` will be used instead.
-
-> *Additional requirements*:
->
-> 1. The type of the expression must match the type of the parameter
-> 2. If 'default' is specified, the `$type_postfix_quantifier` for the variable's type MUST be `?`
-
-#### Alternative heredoc syntax
-
-Sometimes a command is sufficiently long enough or might use `{` characters that using a different set of delimiters would make it more clear.  In this case, enclose the command in `<<<`...`>>>`, as follows:
-
-```wdl
-task heredoc {
-  input {
-    File in
-  }
-
-  command<<<
-  python <<CODE
-    with open("~{in}") as fp:
-      for line in fp:
-        if not line.startswith('#'):
-          print(line.strip())
-  CODE
-  >>>
-}
+command <<<
+    command ~{if defined(opt) then "-a " + opt else ""}
+    command ~{if flag then "-b" else "-c"}
+    command ~{sep(' ', prefix("-i ", values))}
+>>>
 ```
 
 Parsing of this command should be the same as the prior section describes.  As noted earlier in the [Expression Placeholders](#command-parts) section, it is important to remember that string interpolation within `<<<`...`>>>` blocks must be done using the syntax `~{expression}`.
@@ -1090,7 +1009,7 @@ output {
 
 The task is expecting that a file called "threshold.txt" will exist in the current working directory after the command is executed. Inside that file must be one line that contains only an integer and whitespace.  See the [Data Types & Serialization](#data-types--serialization) section for more details.
 
-As with other string literals in a task definition, Strings in the output section may contain interpolations (see the [String Interpolation](#string-interpolation) section below for more details). Here's an example:
+As with other string literals in a task or workflow, Strings in the output section may contain interpolations (see the [String Interpolation](#string-interpolation) section below for more details). Here's an example:
 
 ```wdl
 output {
@@ -1098,7 +1017,7 @@ output {
 }
 ```
 
-Note that for this to work, `sample_id` must be declared as an input to the task.
+Note that for this to work, `sample_id` must be declared within the task.
 
 As with inputs, the outputs can reference previous outputs in the same block, or any other visible value.
 Out-of-order definition (ie forward references) are possible, since evaluation follows the same can-evaluate-when-available rule
@@ -1202,7 +1121,7 @@ Therefore to ensure that a WDL is portable when using `glob()`, a docker image s
 
 ### String Interpolation
 
-Within tasks, any string literal can use string interpolation to access the value of any of the task's inputs.  The most obvious example of this is being able to define an output file which is named as function of its input.  For example:
+Any string literal can use string interpolation to access the value of any expression. The most obvious example of this is being able to define an output file which is named as function of its input. This uses the same syntax and semantics as expression placeholders in the command section of a task. For example:
 
 ```wdl
 task example {
@@ -1220,27 +1139,7 @@ task example {
 }
 ```
 
-Any `${expression}` or `~{expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
-
-Different types for the expression are formatted in different ways.
-`String` is substituted directly.
-`File` is substituted as if it were a `String`.
-`Int` is formatted without leading zeros (unless the value is `0`), with a leading `-` if the value is negative.
-`Float` is printed in the style `[-]ddd.ddd`, with 6 digits after the decimal point.
-The expression cannot have the value of any other type.
-
-```wdl
-"${"abc"}" == "abc"
-
-File def = "hij"
-"${def}" == "hij"
-
-"${5}" == "5"
-
-"${3.141}" == "3.141000"
-"${3.141 * 1E-10}" == "0.000000"
-"${3.141 * 1E10}" == "31410000000.000000"
-```
+Any `${expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
 
 ### Runtime Section
 
@@ -3588,6 +3487,20 @@ This function will return `false` if the argument is an unset optional value. It
   * floor: Round **down** to the next lower integer
   * ceil: Round **up** to the next higher integer
   * round: Round to the nearest integer based on standard rounding rules
+
+## String sep(String, Array[String])
+
+- Return the strings in the array concatenated, with the first parameter
+  between each.
+
+```
+sep(' ', ["a", "b", "c"])
+> "a b c"
+
+A = ["file_1", "file_2"]
+sep(' ', prefix('-i ', A))
+> "-i file_1 -i file_2"
+```
 
 # Data Types & Serialization
 
