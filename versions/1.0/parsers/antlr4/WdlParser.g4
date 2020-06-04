@@ -157,10 +157,27 @@ struct
 	: STRUCT Identifier LBRACE (unbound_decls)* RBRACE
 	;
 
-meta_kv
-	: Identifier COLON expr
-	;
+meta_value
+  : BoolLiteral
+  | number
+  | meta_string
+  | meta_object
+  | meta_array
+  | NULL_LITERAL
+  ;
 
+meta_string
+  : DQUOTE string_part DQUOTE
+  | SQUOTE string_part SQUOTE
+  ;
+
+meta_array: LBRACK (meta_value (COMMA meta_value)*)* RBRACK;
+
+meta_object: LBRACE (meta_kv (COMMA meta_kv)*)* RBRACE;
+
+meta_kv
+  : Identifier COLON meta_value
+  ;
 
 parameter_meta
 	: PARAMETERMETA LBRACE meta_kv* RBRACE
