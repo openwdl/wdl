@@ -35,7 +35,7 @@ MAP: 'Map';
 PAIR: 'Pair';
 OBJECT: 'Object';
 OBJECT_LITERAL: 'object';
-
+NULL_LITERAL: 'null'
 SEP: 'sep';
 DEFAULT: 'default';
 
