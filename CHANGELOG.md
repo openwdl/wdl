@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 
 version 2.0.0
 ---------------------------
++ Removes string interpolator options and adds an engine function for joining arrays of strings. 
+  [PR 229](https://github.com/openwdl/wdl/pull/229) and [PR 368](https://github.com/openwdl/wdl/pull/366) 
+  by @EvanTheB and @illusional. 
+
 + Added an engine function for adding a suffix to an array of primitives as well
   as well as `quote` and `squote` engine functions.
   [PR 362](https://github.com/openwdl/wdl/pull/362) @patmagee
