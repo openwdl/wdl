@@ -2443,7 +2443,7 @@ workflow my_workflow {
   }
   scatter(b in bs) {
     Array[Int] x_b = x_a
-    Int x_b = b
+    Int y_b = b
   }
 
   output {
@@ -2472,7 +2472,7 @@ workflow my_workflow {
   }
   scatter(b in bs) {
     Array[Int] x_b = x_a
-    Int x_b = b
+    Int y_b = b
   }
   scatter(a2 in as) {
     Array[Int] y_a = y_b
@@ -3336,14 +3336,14 @@ Array[String] ymap = keys(y) # ["a", "b"]
 
 ## Map[X,Array[Y]] collect_by_key(Array[Pair[X,Y]])
 
-Given an Array consisting of Pairs, the `collect_by_key` function returns a Map in which the left elements of the Pairs are the keys and the right elements the values. The left element of the Pairs passed to `as_map` must be a primitive type. The values will be placed in an Array to allow for multiple Pairs to produce the same key. The order of the keys in the Map is the same as the order in the Array based on their first occurence. The order of the elements in the resulting Arrays is the same as their occurence in the given Array of Pairs.
+Given an Array consisting of Pairs, the `collect_by_key` function returns a Map in which the left elements of the Pairs are the keys and the right elements the values. The left element of the Pairs passed to `collect_by_key` must be a primitive type. The values will be placed in an Array to allow for multiple Pairs to produce the same key. The order of the keys in the Map is the same as the order in the Array based on their first occurence. The order of the elements in the resulting Arrays is the same as their occurence in the given Array of Pairs.
 
 ```wdl
 Array[Pair[String,Int]] x = [("a", 1), ("b", 2), ("a", 3)]
 Array[Pair[String,Pair[File,File]]] y = [("a", ("a_1.bam", "a_1.bai")), ("b", ("b.bam", "b.bai")), ("a", ("a_2.bam", "a_2.bai"))]
 
-Map[String,Array[Int]] xmap = as_map(x) # {"a": [1, 3], "b": [2]}
-Map[String,Array[Pair[File,File]]] ymap = as_map(y) # {"a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], "b": [("b.bam", "b.bai")]}
+Map[String,Array[Int]] xmap = collect_by_key(x) # {"a": [1, 3], "b": [2]}
+Map[String,Array[Pair[File,File]]] ymap = collect_by_key(y) # {"a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], "b": [("b.bam", "b.bai")]}
 ```
 
 ## Int length(Array[X])
