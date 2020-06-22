@@ -39,15 +39,15 @@ DEFAULT: 'default';
 
 // Primitive Literals
 IntLiteral
-    : Digits
-    ;
+  : Digits
+  ;
 FloatLiteral
-    : FloatFragment
-    ;
+  : FloatFragment
+  ;
 BoolLiteral
-    : 'true'
-    | 'false'
-    ;
+  : 'true'
+  | 'false'
+  ;
 
 // Symbols
 LPAREN: '(';
@@ -136,56 +136,56 @@ CommandStringPart: ~[${}]+;
 // Fragments
 
 fragment CompleteIdentifier
-    : IdentifierStart IdentifierFollow*
-    ;
+  : IdentifierStart IdentifierFollow*
+  ;
 
 fragment IdentifierStart
-    : [a-zA-Z]
-    ;
+  : [a-zA-Z]
+  ;
 
 fragment IdentifierFollow
-    : [a-zA-Z0-9_]+
-    ;
+  : [a-zA-Z0-9_]+
+  ;
 
 fragment EscapeSequence
-    : '\\' [btnfr"'\\]
-    | '\\' ([0-3]? [0-7])? [0-7]
-    | '\\' UnicodeEsc
-    ;
+  : '\\' [btnfr"'\\]
+  | '\\' ([0-3]? [0-7])? [0-7]
+  | '\\' UnicodeEsc
+  ;
 
 fragment UnicodeEsc
-    : 'u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?
-    ;
+  : 'u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?
+  ;
 
 fragment HexDigit
-    : [0-9a-fA-F]
-    ;
+  : [0-9a-fA-F]
+  ;
 
 fragment Digit
-    : [0-9]
-    ;
+  : [0-9]
+  ;
 
 fragment Digits
-    : Digit+
-    ;
+  : Digit+
+  ;
 
 fragment Decimals
-    : Digits '.' Digits? | '.' Digits
-    ;
+  : Digits '.' Digits? | '.' Digits
+  ;
 
 fragment SignedDigits
-    : ('+' | '-' ) Digits
-    ;
+  : ('+' | '-' ) Digits
+  ;
 
 fragment FloatFragment
-    : Digits EXP?
-    | Decimals EXP?
-    ;
+  : Digits EXP?
+  | Decimals EXP?
+  ;
 
 fragment SignedFloatFragment
-    : ('+' |'e') FloatFragment
-    ;
+  : ('+' |'e') FloatFragment
+  ;
 
 fragment EXP
-    : ('e'|'E') SignedDigits
-    ;
+  : ('e'|'E') SignedDigits
+  ;
