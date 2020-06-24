@@ -95,7 +95,24 @@ This is not implemented yet.
 + Add an `after` keyword to run a task after other tasks.
   [PR 162](https://github.com/openwdl/wdl/pull/162) by @cjllanwarne.
 
+
+version 1.0.0
+---------------------------
++ Rename lexer to `WdlV1Lexer`
++ Rename parser to `WdlV1Parser`
++ Rename `WdlComments` channel to `COMMENTS`
++ Remove `SkipChannel`
++ Rename `COMMENT` -> `LINE_COMMENT`, emit comments to `COMMENTS` channel
++ Add `Meta` mode for parsing meta sections
++ Parse whitespace between `command` and opening `{`/`<<<` within `Command` mode, so that it is emitted to the `HIDDEN` channel
++ Ignore trailing commas
++ Formatting -
+    * use two spaces always for indentation
+    * always wrap statements (i.e. always put opening ':' and closing ';' on newlines)
+    * always use PascalCase for tokens within lexer modes
+
 draft-2
 ---------------------------
 
 + Added ANTLR4 grammar
+
