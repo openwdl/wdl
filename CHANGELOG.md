@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 
 version 2.0.0
 ---------------------------
++ Updates ANTLR4 grammar - all the updates in 1.0.0 plus
+  + Handle hints section identically to meta sections
+  + Add object literal (as per PR 368)
+
 + Removes string interpolator options and adds an engine function for joining arrays of strings. 
   [PR 229](https://github.com/openwdl/wdl/pull/229) and [PR 368](https://github.com/openwdl/wdl/pull/366) 
   by @EvanTheB and @illusional. 
@@ -95,7 +99,6 @@ This is not implemented yet.
 + Add an `after` keyword to run a task after other tasks.
   [PR 162](https://github.com/openwdl/wdl/pull/162) by @cjllanwarne.
 
-
 version 1.0.0
 ---------------------------
 + Rename lexer to `WdlV1Lexer`
@@ -103,6 +106,7 @@ version 1.0.0
 + Rename `WdlComments` channel to `COMMENTS`
 + Remove `SkipChannel`
 + Rename `COMMENT` -> `LINE_COMMENT`, emit comments to `COMMENTS` channel
++ Object literal keys can be strings or identifiers
 + Add `Meta` mode for parsing meta sections
 + Parse whitespace between `command` and opening `{`/`<<<` within `Command` mode, so that it is emitted to the `HIDDEN` channel
 + Ignore trailing commas
@@ -115,4 +119,3 @@ draft-2
 ---------------------------
 
 + Added ANTLR4 grammar
-

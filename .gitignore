@@ -4,3 +4,4 @@ target
 .artifactory
 .DS_Store
 gen/
+*.tokens

@@ -32,7 +32,6 @@ ARRAY: 'Array';
 MAP: 'Map';
 PAIR: 'Pair';
 OBJECT: 'Object';
-OBJECT_LITERAL: 'object';
 
 SEP: 'sep';
 DEFAULT: 'default';
