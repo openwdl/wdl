@@ -95,6 +95,7 @@ This is not implemented yet.
 + Add an `after` keyword to run a task after other tasks.
   [PR 162](https://github.com/openwdl/wdl/pull/162) by @cjllanwarne.
 
+
 version 1.0.0
 ---------------------------
 + Rename lexer to `WdlV1Lexer`
@@ -109,3 +110,9 @@ version 1.0.0
     * use two spaces always for indentation
     * always wrap statements (i.e. always put opening ':' and closing ';' on newlines)
     * always use PascalCase for tokens within lexer modes
+
+draft-2
+---------------------------
+
++ Added ANTLR4 grammar
+
