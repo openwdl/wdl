@@ -118,11 +118,17 @@ expr_infix5
   : expr_core
   ;
 
+object_literal_key
+  : Identifier
+  | string
+  ;
+
 expr_core
     : Identifier LPAREN (expr (COMMA expr)* COMMA?)? RPAREN #apply
     | LBRACK (expr (COMMA expr)* COMMA?)* RBRACK #array_literal
     | LPAREN expr COMMA expr RPAREN #pair_literal
     | LBRACE (expr COLON expr (COMMA expr COLON expr)* COMMA?)* RBRACE #map_literal
+    | OBJECTLITERAL LBRACE (object_literal_key COLON expr (COMMA object_literal_key COLON expr)* COMMA?)* RBRACE #object_literal
     | IF expr THEN expr ELSE expr #ifthenelse
     | LPAREN expr RPAREN #expression_group
     | expr_core LBRACK expr RBRACK #at
