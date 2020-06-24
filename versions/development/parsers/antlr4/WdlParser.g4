@@ -119,19 +119,19 @@ expr_infix5
 	;
 
 expr_core
-	: LPAREN expr RPAREN #expression_group
-	| primitive_literal #primitives
+	: Identifier LPAREN (expr (COMMA expr)*)? RPAREN #apply
 	| LBRACK (expr (COMMA expr)*)* RBRACK #array_literal
 	| LPAREN expr COMMA expr RPAREN #pair_literal
 	| LBRACE (expr COLON expr (COMMA expr COLON expr)*)* RBRACE #map_literal
 	| Identifier LBRACE (Identifier COLON expr (COMMA Identifier COLON expr)*)* RBRACE #struct_literal
-	| NOT expr #negate
-	| (PLUS | MINUS) Identifier #unirarysigned
-	| expr_core LBRACK expr RBRACK #at
 	| IF expr THEN expr ELSE expr #ifthenelse
-	| Identifier LPAREN (expr (COMMA expr)*)? RPAREN #apply
+    | LPAREN expr RPAREN #expression_group
+	| expr_core LBRACK expr RBRACK #at
+    | expr_core DOT Identifier #get_name
+    | NOT expr #negate
+    | (PLUS | MINUS) expr #unirarysigned
+	| primitive_literal #primitives
 	| Identifier #left_name
-	| expr_core DOT Identifier #get_name
 	;
 
 version
@@ -260,8 +260,12 @@ call_afters
 	: AFTER Identifier
 	;
 
+call_name
+    : Identifier (DOT Identifier)*
+    ;
+
 call
-	: CALL Identifier call_alias? (call_afters)*  call_body?
+	: CALL call_name call_alias? (call_afters)*  call_body?
 	;
 
 
