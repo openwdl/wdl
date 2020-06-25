@@ -22,7 +22,11 @@ version 2.0.0
 ---------------------------
 
 + Write a specification for unsatisfied task inputs and nested optional inputs.
-  [PR 359](https://github.com/openwdl/wdl/pull/359) by @rhpvorderman.
+  [PR 359](https://github.com/openwdl/wdl/pull/359) by @rhpvorderman
+  
++ Removes string interpolator options and adds an engine function for joining arrays of strings. 
+  [PR 229](https://github.com/openwdl/wdl/pull/229) and [PR 368](https://github.com/openwdl/wdl/pull/366) 
+  by @EvanTheB and @illusional. 
 
 + Added an engine function for adding a suffix to an array of primitives as well
   as well as `quote` and `squote` engine functions.
@@ -94,3 +98,25 @@ This is not implemented yet.
 
 + Add an `after` keyword to run a task after other tasks.
   [PR 162](https://github.com/openwdl/wdl/pull/162) by @cjllanwarne.
+
+
+version 1.0.0
+---------------------------
++ Rename lexer to `WdlV1Lexer`
++ Rename parser to `WdlV1Parser`
++ Rename `WdlComments` channel to `COMMENTS`
++ Remove `SkipChannel`
++ Rename `COMMENT` -> `LINE_COMMENT`, emit comments to `COMMENTS` channel
++ Add `Meta` mode for parsing meta sections
++ Parse whitespace between `command` and opening `{`/`<<<` within `Command` mode, so that it is emitted to the `HIDDEN` channel
++ Ignore trailing commas
++ Formatting -
+    * use two spaces always for indentation
+    * always wrap statements (i.e. always put opening ':' and closing ';' on newlines)
+    * always use PascalCase for tokens within lexer modes
+
+draft-2
+---------------------------
+
++ Added ANTLR4 grammar
+

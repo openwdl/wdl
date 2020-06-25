@@ -1,13 +1,14 @@
-lexer grammar WdlLexer;
+lexer grammar WdlDraft2Lexer;
 
-channels { WdlComments, SkipChannel }
+channels { COMMENTS }
+
+// Comments
+LINE_COMMENT: '#' ~[\r\n]* -> channel(COMMENTS);
 
 // Keywords
-VERSION: 'version' -> pushMode(Version);
 IMPORT: 'import';
 WORKFLOW: 'workflow';
 TASK: 'task';
-STRUCT: 'struct';
 SCATTER: 'scatter';
 CALL: 'call';
 IF: 'if';
@@ -20,10 +21,7 @@ INPUT: 'input';
 OUTPUT: 'output';
 PARAMETERMETA: 'parameter_meta';
 META: 'meta';
-
-HEREDOC_COMMAND: 'command' ' '* '<<<' -> pushMode(HereDocCommand);
-COMMAND: 'command' ' '* '{' -> pushMode(Command);
-
+COMMAND: 'command' -> mode(Command);
 RUNTIME: 'runtime';
 BOOLEAN: 'Boolean';
 INT: 'Int';
@@ -39,20 +37,17 @@ OBJECT_LITERAL: 'object';
 SEP: 'sep';
 DEFAULT: 'default';
 
-
 // Primitive Literals
 IntLiteral
-	: Digits
-	| SignedDigits
-	;
+  : Digits
+  ;
 FloatLiteral
-	: SignedFloatFragment
-	| FloatFragment
-	;
+  : FloatFragment
+  ;
 BoolLiteral
-	: 'true'
-	| 'false'
-	;
+  : 'true'
+  | 'false'
+  ;
 
 // Symbols
 LPAREN: '(';
@@ -81,131 +76,116 @@ COMMA: ',';
 SEMI: ';';
 DOT: '.';
 NOT: '!';
-TILDE: '~';
 DIVIDE: '/';
 MOD: '%';
 SQUOTE: '\'' -> pushMode(SquoteInterpolatedString);
 DQUOTE: '"' -> pushMode(DquoteInterpolatedString);
 
-WHITESPACE
-	: [ \t\r\n]+ -> channel(HIDDEN)
-	;
-
-COMMENT
-	: '#' ~[\r\n]* -> channel(HIDDEN)
-	;
+WHITESPACE: [ \t\r\n]+ -> channel(HIDDEN);
 
 Identifier: CompleteIdentifier;
 
-
 mode SquoteInterpolatedString;
-
 
 SQuoteEscapedChar: '\\' . -> type(StringPart);
 SQuoteDollarString: '$'  -> type(StringPart);
-SQuoteTildeString: '~' -> type(StringPart);
 SQuoteCurlyString: '{' -> type(StringPart);
-SQuoteCommandStart: ('${' | '~{' ) -> pushMode(DEFAULT_MODE) , type(StringCommandStart);
+SQuoteCommandStart: ('${') -> pushMode(DEFAULT_MODE) , type(StringCommandStart);
 SQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)? -> type(StringPart);
 EndSquote: '\'' ->  popMode, type(SQUOTE);
-StringPart: ~[$~{\r\n']+;
+StringPart: ~[${\r\n']+;
 
 mode DquoteInterpolatedString;
 
 DQuoteEscapedChar: '\\' . -> type(StringPart);
-DQuoteTildeString: '~' -> type(StringPart);
 DQuoteDollarString: '$' -> type(StringPart);
 DQUoteCurlString: '{' -> type(StringPart);
-DQuoteCommandStart: ('${' | '~{' ) -> pushMode(DEFAULT_MODE), type(StringCommandStart);
+DQuoteCommandStart: ('${') -> pushMode(DEFAULT_MODE), type(StringCommandStart);
 DQuoteUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?) -> type(StringPart);
 EndDQuote: '"' ->  popMode, type(DQUOTE);
-DQuoteStringPart: ~[$~{\r\n"]+ -> type(StringPart);
+DQuoteStringPart: ~[${\r\n"]+ -> type(StringPart);
 
+mode Command;
+
+BeginWhitespace: [ \t\r\n]* -> channel(HIDDEN);
+BeginHereDoc: '<<<' -> mode(HereDocCommand);
+BeginLBrace: '{' -> mode(CurlyCommand);
 
 mode HereDocCommand;
 
 HereDocUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
 HereDocEscapedChar: '\\' . -> type(CommandStringPart);
-HereDocTildeString: '~' -> type(CommandStringPart);
+HereDocDollarString: '$' -> type(CommandStringPart);
 HereDocCurlyString: '{' -> type(CommandStringPart);
-HereDocCurlyStringCommand: '~{' -> pushMode(DEFAULT_MODE), type(StringCommandStart);
+HereDocCurlyStringCommand: ('${') -> pushMode(DEFAULT_MODE), type(StringCommandStart);
 HereDocEscapedEnd: '\\>>>' -> type(CommandStringPart);
-EndHereDocCommand: '>>>' -> popMode, type(EndCommand);
+EndHereDocCommand: '>>>' -> mode(DEFAULT_MODE), type(EndCommand);
 HereDocEscape: ( '>' | '>>' | '>>>>' '>'*) -> type(CommandStringPart);
-HereDocStringPart: ~[~{>]+ -> type(CommandStringPart);
+HereDocStringPart: ~[${>]+ -> type(CommandStringPart);
 
-mode Command;
+mode CurlyCommand;
 
 CommandEscapedChar: '\\' . -> type(CommandStringPart);
 CommandUnicodeEscape: '\\u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?;
-CommandTildeString: '~'  -> type(CommandStringPart);
 CommandDollarString: '$' -> type(CommandStringPart);
 CommandCurlyString: '{' -> type(CommandStringPart);
-StringCommandStart:  ('${' | '~{' ) -> pushMode(DEFAULT_MODE);
-EndCommand: '}' -> popMode;
-CommandStringPart: ~[$~{}]+;
-
-mode Version;
-
-VERSION_WHITESPACE
-	: [ \t]+ -> channel(HIDDEN)
-	;
-RELEASE_VERSION: [a-zA-Z0-9.-]+ -> popMode;
-
+StringCommandStart:  ('${') -> pushMode(DEFAULT_MODE);
+EndCommand: '}' -> mode(DEFAULT_MODE);
+CommandStringPart: ~[${}]+;
 
 // Fragments
 
 fragment CompleteIdentifier
-	: IdentifierStart IdentifierFollow*
-	;
+  : IdentifierStart IdentifierFollow*
+  ;
 
 fragment IdentifierStart
-	: [a-zA-Z]
-	;
+  : [a-zA-Z]
+  ;
 
 fragment IdentifierFollow
-	: [a-zA-Z0-9_]+
-	;
+  : [a-zA-Z0-9_]+
+  ;
 
 fragment EscapeSequence
-    : '\\' [btnfr"'\\]
-    | '\\' ([0-3]? [0-7])? [0-7]
-    | '\\' UnicodeEsc
-    ;
+  : '\\' [btnfr"'\\]
+  | '\\' ([0-3]? [0-7])? [0-7]
+  | '\\' UnicodeEsc
+  ;
 
 fragment UnicodeEsc
-   : 'u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?
-   ;
+  : 'u' (HexDigit (HexDigit (HexDigit HexDigit?)?)?)?
+  ;
 
 fragment HexDigit
-   : [0-9a-fA-F]
-   ;
+  : [0-9a-fA-F]
+  ;
 
 fragment Digit
-	: [0-9]
-	;
+  : [0-9]
+  ;
 
 fragment Digits
-	: Digit+
-	;
+  : Digit+
+  ;
 
 fragment Decimals
-	: Digits '.' Digits? | '.' Digits
-	;
+  : Digits '.' Digits? | '.' Digits
+  ;
 
 fragment SignedDigits
-	: ('+' | '-' ) Digits
-	;
+  : ('+' | '-' ) Digits
+  ;
 
 fragment FloatFragment
-	: Digits EXP?
-	| Decimals EXP?
-	;
+  : Digits EXP?
+  | Decimals EXP?
+  ;
 
 fragment SignedFloatFragment
-	: ('+' |'e') FloatFragment
-	;
+  : ('+' |'e') FloatFragment
+  ;
 
 fragment EXP
-	: ('e'|'E') SignedDigits
-	;
+  : ('e'|'E') SignedDigits
+  ;
