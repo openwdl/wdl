@@ -39,9 +39,9 @@ These items are ambiguous in either or both of the Draft-2 and 1.0 specs - wheth
 ## References
 
 *   Draft-2
-    *   [Specification](https://github.com/openwdl/wdl/blob/master/versions/draft-2/SPEC.md#alternative-heredoc-syntax)
-    *   [Hermes grammar](https://github.com/openwdl/wdl/blob/master/versions/draft-2/parsers/grammar.hgr)
+    *   [Specification](https://github.com/openwdl/wdl/blob/main/versions/draft-2/SPEC.md#alternative-heredoc-syntax)
+    *   [Hermes grammar](https://github.com/openwdl/wdl/blob/main/versions/draft-2/parsers/grammar.hgr)
 *   1.0
-    *   [Specification](https://github.com/openwdl/wdl/blob/master/versions/1.0/SPEC.md#command-section)
-    *   [Hermes grammar](https://github.com/openwdl/wdl/blob/master/versions/1.0/parsers/hermes/grammar.hgr)
+    *   [Specification](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#command-section)
+    *   [Hermes grammar](https://github.com/openwdl/wdl/blob/main/versions/1.0/parsers/hermes/grammar.hgr)
 *   [The diff between Draft-2 and 1.0 specs](https://github.com/jdidion/wdl/commit/35b49a815858d45e6111899296ae4beb729fe13a?short_path=22feea2#diff-22feea2e46776b17b2da5ddc2717b767)
