@@ -2836,7 +2836,7 @@ The inputs to `wf` would be:
 * `wf.int_val` as an `Int`
 * `wf.my_ints` as an `Array[Int]`
 * `wf.ref_file` as a `File`
-* `wf.t2.t` as a a `Int?`
+* `wf.t2.t` as an `Int?`
 
 Note that the optional `t` input for task `t2` is left unsatisfied, this 
 option can be passed as `wf.t2.t` because `allowNestedInputs` is set to true
