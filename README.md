@@ -5,7 +5,7 @@ The **Workflow Description Language (WDL)** is a way to specify data processing 
 
 # Language Specifications:
 
-The current version of the WDL language is **1.0**. The [1.0 specification](https://github.com/openwdl/wdl/blob/master/versions/1.0/SPEC.md) contains all relevant information for users, developers, and engine developers. Upcoming features which have previously been accepted can be viewed as part of the [development spec](https://github.com/openwdl/wdl/blob/master/versions/development/SPEC.md). 
+The current version of the WDL language is **1.0**. The [1.0 specification](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md) contains all relevant information for users, developers, and engine developers. Upcoming features which have previously been accepted can be viewed as part of the [development spec](https://github.com/openwdl/wdl/blob/main/versions/development/SPEC.md). 
 
 There are a number of draft versions (draft 1 - 3) which correspond to our initial efforts at creating WDL. While these are functional specifications, they should not be considered feature complete and contain many bugs and irregularities. Unless absolutely necessary, we would recommend that users should start with the current version of the language.
 
