@@ -119,8 +119,7 @@ expr_infix5
   ;
 
 object_literal_key
-  : Identifier
-  | string
+  : string
   ;
 
 expr_core
