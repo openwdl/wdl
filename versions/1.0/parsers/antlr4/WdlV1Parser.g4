@@ -44,9 +44,9 @@ number
   ;
 
 expression_placeholder_option
-  : BoolLiteral EQUAL (string | number)
-  | DEFAULT EQUAL (string | number)
-  | SEP EQUAL (string | number)
+  : BoolLiteral EQUAL string
+  | DEFAULT EQUAL string
+  | SEP EQUAL string
   ;
 
 string_part
