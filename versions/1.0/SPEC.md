@@ -2817,7 +2817,7 @@ Given something that's compatible with `Map[String, String]`, this writes a TSV 
 
 ```wdl
 task example {
-  Map[String, String] map = {"key1": "value1", "key2": "value2"}
+  Map[String, String] map = {"key1": "value1", "": "value2"}
   command {
     ./script --map=${write_map(map)}
   }
@@ -2946,7 +2946,7 @@ And `/local/fs/tmp/map.json` would contain:
 
 ```json
 {
-  "key1": "value1"
+  "key1": "value1",
   "key2": "value2"
 }
 ```
