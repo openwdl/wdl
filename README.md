@@ -59,6 +59,12 @@ WDL is not executable in and of itself, but requires an execution engine to run.
 code tests in case the standard simple YAML tests are not sufficient.
 - [Pytest-wdl](https://github.com/EliLillyCo/pytest-wdl) This package is a plugin for the pytest unit testing framework that enables testing of workflows written in Workflow Description Language.
 
+### Packaging
+
+- [wdl-packager](https://github.com/biowdl/wdl-packager). WDL packaging utility that uses miniwdl to find which paths are imported and packages these into a zip 
+  together with the calling workflow. The zip can be used as an imports zip package for cromwell. The utility can add non-WDL files (such as the license) to the
+  zip package and provides options to package the zip in a binary reproducible way.
+
 # Contributing
 
 WDL only advances through community contributions. While submitting an issue is a great way to report a bug in the spec, or create disscussion around current or new features, it will ultimately not translate into an actual change in the spec. The best way to make changes is by submitting a PR. For more information on how you can contribute, please see the [Contributing](CONTRIBUTING.md) readme. 
