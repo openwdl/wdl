@@ -45,7 +45,7 @@ WDL is not executable in and of itself, but requires an execution engine to run.
 - [MiniWDL](https://github.com/chanzuckerberg/miniwdl) - MiniWDL provides python bindings for WDL as well as command line validation. It is light weight and easy to use.
 - [WOMTool](https://cromwell.readthedocs.io/en/stable/WOMtool/) - a standalone tool for parsing, validating, linting, and generating a graph of a WDL.
 - [wdl-aid](https://github.com/biowdl/wdl-aid) - generate documentation for the inputs of WDL workflows, based on the parameter_meta information defined in the WDL file.	
-- [wdlTools](https://github.com/dnanexus-rnd/wdlTools) - provides 1) a parser library, based on the new [ANTLR4] grammars, for WDL draft-2, 1.0, and development, and 2) command-line tools for sytanx checking, type-checking, linting, code formatting (including upgrading from older to newer WDL versions), generating documentation, and executing WDL tasks locally.
+- [wdlTools](https://github.com/dnanexus-rnd/wdlTools) - provides 1) a parser library, based on the new [ANTLR4](https://github.com/openwdl/wdl/tree/main/versions/1.0/parsers/antlr4) grammars, for WDL draft-2, 1.0, and development, and 2) command-line tools for sytanx checking, type-checking, linting, code formatting (including upgrading from older to newer WDL versions), generating documentation, and executing WDL tasks locally.
 
 ### IDE Support
 
