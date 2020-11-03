@@ -15,8 +15,8 @@ There are a number of places to ask questions and get involved within the WDL co
 
 - [Mailing list](https://groups.google.com/a/openwdl.org/forum/#!forum/community) - Joining our google group allows you to stay up to date with recent developments, be informed when new PR's are ready for voting, and participate in broader discussions about the language.
 - [GitHub](https://github.com/openwdl/wdl)
-    - [Discussions(https://github.com/openwdl/wdl/discussions) - For discussing the specification, proposing syntax changes or additions to the standard library, and general Q&A.
-    - [Issues](https://github.com/OpenWDL/wdl/issues) - Any bugs, ambiguity, or problems with the specification you encounter should be reported here. You can also create issues which are feature requests, however the most likely way to get a feature into the spec is by [#contributing](creating a PR yourself).
+    - [Discussions](https://github.com/openwdl/wdl/discussions) - For discussing the specification, proposing syntax changes or additions to the standard library, and general Q&A.
+    - [Issues](https://github.com/OpenWDL/wdl/issues) - Any bugs, ambiguity, or problems with the specification you encounter should be reported here. You can also create issues which are feature requests, however the most likely way to get a feature into the spec is by [creating a PR yourself](#contributing).
     - [Spec changes](https://github.com/openwdl/wdl/discussions/411) - This discussion tracks all spec changes in progress. If you propose a spec change, either via Discussions or Issues, please also add a link here.
 - [Slack Channel](https://join.slack.com/t/openwdl/shared_invite/zt-ctmj4mhf-cFBNxIiZYs6SY9HgM9UAVw) - Live chat with WDL users
 - [Support Forum](https://bioinformatics.stackexchange.com/search?q=wdl) - View Previously answered questions about WDL or pose new questions. 
