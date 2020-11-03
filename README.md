@@ -9,14 +9,15 @@ The current version of the WDL language is **1.0**. The [1.0 specification](http
 
 There are a number of draft versions (draft 1 - 3) which correspond to our initial efforts at creating WDL. While these are functional specifications, they should not be considered feature complete and contain many bugs and irregularities. Unless absolutely necessary, we would recommend that users should start with the current version of the language.
 
-
 # Community and Support
 
 There are a number of places to ask questions and get involved within the WDL community. Our community thrives the more you get involved and we encourage you to ask questions, provide answers, and make contributions.
 
-
 - [Mailing list](https://groups.google.com/a/openwdl.org/forum/#!forum/community) - Joining our google group allows you to stay up to date with recent developments, be informed when new PR's are ready for voting, and participate in broader discussions about the language.
-- [Issues](https://github.com/OpenWDL/wdl/issues) - Any bugs, ambiguity, or problems with the specification you encounter should be reported here. You can also create issues which are feature requests, however the most likely way to get a feature into the spec is by creating a PR yourself.
+- [GitHub](https://github.com/openwdl/wdl)
+    - [Discussions(https://github.com/openwdl/wdl/discussions) - For discussing the specification, proposing syntax changes or additions to the standard library, and general Q&A.
+    - [Issues](https://github.com/OpenWDL/wdl/issues) - Any bugs, ambiguity, or problems with the specification you encounter should be reported here. You can also create issues which are feature requests, however the most likely way to get a feature into the spec is by [#contributing](creating a PR yourself).
+    - [Spec changes](https://github.com/openwdl/wdl/discussions/411) - This discussion tracks all spec changes in progress. If you propose a spec change, either via Discussions or Issues, please also add a link here.
 - [Slack Channel](https://join.slack.com/t/openwdl/shared_invite/zt-ctmj4mhf-cFBNxIiZYs6SY9HgM9UAVw) - Live chat with WDL users
 - [Support Forum](https://bioinformatics.stackexchange.com/search?q=wdl) - View Previously answered questions about WDL or pose new questions. 
 - [User Guide](https://support.terra.bio/hc/en-us/sections/360007274612-WDL-Documentation) (hosted by the Broad) View a general user guide and simple how-to for WDL
