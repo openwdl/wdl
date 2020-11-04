@@ -1,0 +1,6 @@
+version 1.0
+
+#EXPECTED_ERROR line:4 msg:"import must be string literal"
+import somepath/tosomeplace as ImportedWDL
+  alias FooStruct as BarStruct
+  alias BizStruct as BazStruct

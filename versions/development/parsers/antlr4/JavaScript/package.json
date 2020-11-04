@@ -1,0 +1,13 @@
+{
+  "name": "javascriptWdlParser",
+  "version": "2.0.0",
+  "scripts": {
+    "test": "mocha",
+    "postinstall": "bash -i scripts/build.sh"
+  },
+  "dependencies": {
+    "antlr4": "~4.7.2",
+    "mocha": "^6.2.3",
+    "unescape-unicode": "^0.2.0"
+  }
+}

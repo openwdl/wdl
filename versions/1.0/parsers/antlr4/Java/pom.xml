@@ -1,0 +1,107 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+
+  <groupId>org.openwdl</groupId>
+  <artifactId>wdl</artifactId>
+  <name>WDL Grammar</name>
+  <version>1.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <target.jvm>1.8</target.jvm>
+    <antlr.version>4.7.2</antlr.version>
+    <antlr-plugin.version>4.3</antlr-plugin.version>
+    <antlr4test-maven-plugin.version>1.11</antlr4test-maven-plugin.version>
+    <junit.jupiter.version>5.5.2</junit.jupiter.version>
+    <surefire.version>2.22.0</surefire.version>
+    <!-- location of java sources -->
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4-runtime</artifactId>
+      <version>${antlr.version}</version>
+      <type>jar</type>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit.jupiter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit.jupiter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <version>${junit.jupiter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-surefire-provider</artifactId>
+      <version>1.3.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-text</artifactId>
+      <version>1.8</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.0</version>
+        <configuration>
+          <source>${target.jvm}</source>
+          <target>${target.jvm}</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-maven-plugin</artifactId>
+        <version>${antlr.version}</version>
+        <configuration>
+          <outputDirectory>${project.build.directory}/generated-sources/antlr4/org/openwdl/wdl/parser</outputDirectory>
+          <arguments>
+            <argument>-package</argument>
+            <argument>org.openwdl.wdl.parser</argument>
+            <argument>-listener</argument>
+            <argument>-visitor</argument>
+          </arguments>
+          <sourceDirectory>../</sourceDirectory>
+          <includes>
+            <include>WdlLexer.g4</include>
+            <include>WdlParser.g4</include>
+          </includes>
+          <visitor>true</visitor>
+          <listener>true</listener>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>antlr4</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire.version}</version>
+        <configuration>
+          <argLine>-Dexamples-directory=${basedir}/../examples</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

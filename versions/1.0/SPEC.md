@@ -485,7 +485,7 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Boolean`|`>=`|`Boolean`|`Boolean`||
 |`Boolean`|`<`|`Boolean`|`Boolean`||
 |`Boolean`|`<=`|`Boolean`|`Boolean`||
-|`Boolean`|`||`|`Boolean`|`Boolean`||
+|`Boolean`|`\|\|`|`Boolean`|`Boolean`||
 |`Boolean`|`&&`|`Boolean`|`Boolean`||
 |`File`|`+`|`File`|`File`|Append file paths|
 |`File`|`==`|`File`|`Boolean`||
@@ -2946,7 +2946,7 @@ And `/local/fs/tmp/map.json` would contain:
 
 ```json
 {
-  "key1": "value1"
+  "key1": "value1",
   "key2": "value2"
 }
 ```

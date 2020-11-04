@@ -5,7 +5,7 @@ The **Workflow Description Language (WDL)** is a way to specify data processing 
 
 # Language Specifications:
 
-The current version of the WDL language is **1.0**. The [1.0 specification](https://github.com/openwdl/wdl/blob/master/versions/1.0/SPEC.md) contains all relevant information for users, developers, and engine developers. Upcoming features which have previously been accepted can be viewed as part of the [development spec](https://github.com/openwdl/wdl/blob/master/versions/development/SPEC.md). 
+The current version of the WDL language is **1.0**. The [1.0 specification](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md) contains all relevant information for users, developers, and engine developers. Upcoming features which have previously been accepted can be viewed as part of the [development spec](https://github.com/openwdl/wdl/blob/main/versions/development/SPEC.md). 
 
 There are a number of draft versions (draft 1 - 3) which correspond to our initial efforts at creating WDL. While these are functional specifications, they should not be considered feature complete and contain many bugs and irregularities. Unless absolutely necessary, we would recommend that users should start with the current version of the language.
 
@@ -17,9 +17,9 @@ There are a number of places to ask questions and get involved within the WDL co
 
 - [Mailing list](https://groups.google.com/a/openwdl.org/forum/#!forum/community) - Joining our google group allows you to stay up to date with recent developments, be informed when new PR's are ready for voting, and participate in broader discussions about the language.
 - [Issues](https://github.com/OpenWDL/wdl/issues) - Any bugs, ambiguity, or problems with the specification you encounter should be reported here. You can also create issues which are feature requests, however the most likely way to get a feature into the spec is by creating a PR yourself.
-- [Gitter Channel](https://gitter.im/openwdl/wdl) - Live chat with WDL users
-- [Support Forum](http://gatkforums.broadinstitute.org/wdl) - (hosted by the Broad) View Previously answered questions about WDL or pose new questions. 
-- [User Guide](https://software.broadinstitute.org/wdl/) (hosted by the Broad) View a general user guide and simple how-to for WDL
+- [Slack Channel](https://join.slack.com/t/openwdl/shared_invite/zt-ctmj4mhf-cFBNxIiZYs6SY9HgM9UAVw) - Live chat with WDL users
+- [Support Forum](https://bioinformatics.stackexchange.com/search?q=wdl) - View Previously answered questions about WDL or pose new questions. 
+- [User Guide](https://support.terra.bio/hc/en-us/sections/360007274612-WDL-Documentation) (hosted by the Broad) View a general user guide and simple how-to for WDL
 
 # Published Workflows 
 
@@ -36,15 +36,16 @@ WDL is not executable in and of itself, but requires an execution engine to run.
 
 - [Cromwell](https://github.com/broadinstitute/cromwell)
 - [MiniWDL](https://github.com/chanzuckerberg/miniwdl)
+- [dxWDL](https://github.com/dnanexus/dxWDL)
 
 
 ### Parsers and Language Support
 
 - Basic parsers and their grammar definitions (based on hermes) can be found in the `parsers/` directory for each respective version. Currently there is support for java, python and javascript. We believe these parsers work, however have not validated these claims.
-- [MiniWDL](https://github.com/chanzuckerberg/miniwdl)] - MiniWDL provides python bindings for WDL as well as command line validation. It is light weight and easy to use.
-- [wdl4s](https://github.com/broadinstitute/cromwell) - scala bindings for WDL. This has been folded into the broader cromwell codebase
+- [MiniWDL](https://github.com/chanzuckerberg/miniwdl) - MiniWDL provides python bindings for WDL as well as command line validation. It is light weight and easy to use.
 - [WOMTool](https://cromwell.readthedocs.io/en/stable/WOMtool/) - a standalone tool for parsing, validating, linting, and generating a graph of a WDL.
 - [wdl-aid](https://github.com/biowdl/wdl-aid) - generate documentation for the inputs of WDL workflows, based on the parameter_meta information defined in the WDL file.	
+- [wdlTools](https://github.com/dnanexus-rnd/wdlTools) - provides 1) a parser library, based on the new [ANTLR4](https://github.com/openwdl/wdl/tree/main/versions/1.0/parsers/antlr4) grammars, for WDL draft-2, 1.0, and development, and 2) command-line tools for sytanx checking, type-checking, linting, code formatting (including upgrading from older to newer WDL versions), generating documentation, and executing WDL tasks locally.
 
 ### IDE Support
 
@@ -53,6 +54,17 @@ WDL is not executable in and of itself, but requires an execution engine to run.
 - Atom: [Language-WDL](https://atom.io/packages/language-wdl)
 - Vim: [vim-wdl](https://github.com/broadinstitute/vim-wdl)
 
+### Test tools
+
+- [Pytest-workflow](https://github.com/LUMC/pytest-workflow) - workflow-engine agnostic workflow tester. Can be used with both Cromwell and MiniWDL. Tests are specified in YAML format. Uses pytest as underlying test framework. Allows for using python 
+code tests in case the standard simple YAML tests are not sufficient.
+- [Pytest-wdl](https://github.com/EliLillyCo/pytest-wdl) This package is a plugin for the pytest unit testing framework that enables testing of workflows written in Workflow Description Language.
+
+### Packaging
+
+- [wdl-packager](https://github.com/biowdl/wdl-packager). WDL packaging utility that uses miniwdl to find which paths are imported and packages these into a zip 
+  together with the calling workflow. The zip can be used as an imports zip package for cromwell. The utility can add non-WDL files (such as the license) to the
+  zip package and provides options to package the zip in a binary reproducible way.
 
 # Contributing
 

@@ -80,7 +80,7 @@
     * [Struct Member Access](#struct-member-access)
     * [Importing Structs](#importing-structs)
 * [Namespaces](#namespaces)
-* [Scope](#scope)
+* [Value Scopes and Visibility](#value-scopes-and-visibility)
 * [Optional Parameters &amp; Type Constraints](#optional-parameters--type-constraints)
   * [Prepending a String to an Optional Parameter](#prepending-a-string-to-an-optional-parameter)
 * [Scatter / Gather](#scatter--gather)
@@ -126,6 +126,9 @@
   * [Int length(Array\[X\])](#int-lengtharrayx)
   * [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
   * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
+  * [Array\[String\] suffix(String, Array\[X\])](#arraystring-suffixstring-arrayx)
+  * [Array\[String\] quote(Array\[X\])](#arraystring-quotearrayx)
+  * [Array\[String\] squote(Array\[X\])](#arraystring-squotearrayx)
   * [X select_first(Array\[X?\])](#x-select_firstarrayx)
   * [Array\[X\] select_all(Array\[X?\])](#arrayx-select_allarrayx)
   * [Boolean defined(X?)](#boolean-definedx)
@@ -234,7 +237,7 @@ These are common among many of the following sections
 
 ```txt
 $ws = (0x20 | 0x09 | 0x0D | 0x0A)+
-$identifier = [a-zA-Z][a-zA-Z0-9_]+
+$identifier = [a-zA-Z][a-zA-Z0-9_]*
 $boolean = 'true' | 'false'
 $integer = [1-9][0-9]*|0[xX][0-9a-fA-F]+|0[0-7]*
 $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
@@ -479,7 +482,7 @@ Declarations are declared at the top of any [scope](#scope).
 
 In a [task definition](#task-definition), declarations are interpreted as inputs to the task that are not part of the command line itself.
 
-If a declaration does not have an initialization, then the value is expected to be provided by the user before the workflow or task is run.
+If a non-optional declaration does not have an initialization, then the value must be provided by the user before the workflow or task is run.
 
 Some examples of declarations:
 
@@ -542,15 +545,16 @@ $expression = $expression '/' $expression
 $expression = $expression '+' $expression
 $expression = $expression '-' $expression
 $expression = $expression '<' $expression
-$expression = $expression '=<' $expression
+$expression = $expression '<=' $expression
 $expression = $expression '>' $expression
 $expression = $expression '>=' $expression
 $expression = $expression '==' $expression
 $expression = $expression '!=' $expression
 $expression = $expression '&&' $expression
 $expression = $expression '||' $expression
-$expression = '{' ($expression ':' $expression)* '}'
-$expression = '[' $expression* ']'
+$expression = '{' ($expression ':' $expression (',' $expression ':' $expression )*)? '}'
+$expression = object '{' (($string | $identifier) ':' $expression (',' ($string | $identifier) ':' $expression )*)? '}'
+$expression = '[' ($expression (',' $expression)*)? ']'
 $expression = $string | $integer | $float | $boolean | $identifier
 ```
 
@@ -560,7 +564,7 @@ Below are the valid results for operators on types.  Any combination not in the 
 |-----------|-----------|-----------------|---------|---------|
 |`Boolean`|`==`|`Boolean`|`Boolean`||
 |`Boolean`|`!=`|`Boolean`|`Boolean`||
-|`Boolean`|`||`|`Boolean`|`Boolean`||
+|`Boolean`|`\|\|`|`Boolean`|`Boolean`||
 |`Boolean`|`&&`|`Boolean`|`Boolean`||
 |`File`|`==`|`File`|`Boolean`||
 |`File`|`!=`|`File`|`Boolean`||
@@ -602,6 +606,7 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Int`|`<`|`Int`|`Boolean`||
 |`Int`|`<=`|`Int`|`Boolean`||
 |`String`|`+`|`String`|`String`|Concatenation|
+|`String`|`+`|`File`|`File`||
 |`String`|`==`|`String`|`Boolean`||
 |`String`|`!=`|`String`|`Boolean`||
 |`String`|`>`|`String`|`Boolean`||
@@ -665,7 +670,7 @@ runtime {
 
 ### Member Access
 
-The syntax `x.y` refers to member access. `x` must be a task in a workflow, or struct. A Task can be thought of as a struct where the attributes are the outputs of the task.
+The syntax `x.y` refers to member access. `x` must be a task in a workflow, or instance of a struct. A task can be thought of as a struct where the attributes are the outputs of the task.
 
 ```wdl
 call foo
@@ -687,7 +692,7 @@ Given a Pair `x`, the left and right elements of that type can be accessed using
 
 Function calls, in the form of `func(p1, p2, p3, ...)`, are either [standard library functions](#standard-library) or engine-defined functions.
 
-In this current iteration of the spec, users cannot define their own functions.
+Users cannot define their own functions.
 
 ### Array Literals
 
@@ -734,11 +739,10 @@ Pair values can be specified inside of a WDL using another Python-like syntax, a
 Pair[Int, String] twenty_threes = (23, "twenty-three")
 ```
 
-Pair values can also be specified within the [workflow inputs JSON](https://github.com/openwdl/wdl/blob/develop/SPEC.md#specifying-workflow-inputs-in-json) with a `Left` and `Right` value specified using JSON style syntax. For example, given a workflow `wf_hello` and workflow-level variable `twenty_threes`, it could be declared in the workflow inputs JSON as follows:
-
+Pair values can also be specified within the [workflow inputs JSON](https://github.com/openwdl/wdl/blob/develop/SPEC.md#specifying-workflow-inputs-in-json) with a `left` and `right` value specified using JSON style syntax. For example, given a workflow `wf_hello` and workflow-level variable `twenty_threes`, it could be declared in the workflow inputs JSON as follows:
 ```json
 {
-  "wf_hello.twenty_threes": { "Left": 23, "Right": "twenty-three" }
+  "wf_hello.twenty_threes": { "left": 23, "right": "twenty-three" }
 }
 ```
 
@@ -832,7 +836,6 @@ workflow wf {
 Engines should at the very least support the following protocols for import URIs:
 
 * `http://` and `https://`
-* `file://`
 * No protocol (see below)
 
 In the event that there is no protocol the import is resolved **relative** to the location of the current document. If a protocol-less import starts with `/` it will be interpreted as starting from the root of the host in the resolved URL. It is up to the implementation to provide a mechanism which allows these imports to be resolved correctly.
@@ -841,10 +844,10 @@ Some examples of correct import resolution:
 
 | Root Workflow Location                                | Imported Path                      | Resolved Path                                           |
 |-------------------------------------------------------|------------------------------------|---------------------------------------------------------|
-| `file://foo/bar/baz/qux.wdl`                            | `some/task.wdl`                      | `file://foo/bar/baz/some/task.wdl`                        |
+| `/foo/bar/baz/qux.wdl`                                  | `some/task.wdl`                      | `/foo/bar/baz/some/task.wdl`                        |
 | `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` | `subworkflow.wdl`                    | `http://www.github.com/openwdl/coolwdls/subworkflow.wdl`  |
 | `http://www.github.com/openwdl/coolwdls/myWorkflow.wdl` | `/openwdl/otherwdls/subworkflow.wdl` | `http://www.github.com/openwdl/otherwdls/subworkflow.wdl` |
-| `file://some/path/hello.wdl`                            | `/another/path/world.wdl`            | `file:///another/path/world.wdl`                          |
+| `/some/path/hello.wdl`                                  | `/another/path/world.wdl`            | `/another/path/world.wdl`                          |
 
 ## Task Definition
 
@@ -929,10 +932,7 @@ task t {
 ### Command Section
 
 The `command` section is the *task section* that starts with the keyword 'command', and is enclosed in either curly braces `{ ... }` or triple angle braces `<<< ... >>>`.
-It defines a shell command which will be run in the execution environment after all of the inputs are staged and before the outputs are evaluated.
-The body of the command also allows placeholders for the parts of the command line that need to be filled in.
-
-Expression placeholders are denoted by `${...}` or `~{...}` depending on whether they appear in a `command { }` or `command <<< >>>` body styles.
+It defines a bash shell script which will be run in the execution environment after all of the inputs are staged and before the outputs are evaluated.
 
 #### Expression Placeholders
 
@@ -943,7 +943,7 @@ Expression placeholders differ depending on the command section style:
 |`command { ... }`|`~{}` (preferred) or `${}`|
 |`command <<< >>>`|`~{}` only|
 
-These placeholders contain a single expression which will be evaluated using inputs or declarations available in the task.
+These placeholders are the mechanism for using task inputs and variables to construct a command. They contain a single expression which will be evaluated using inputs or declarations available in the task.
 The placeholders are then replaced in the command script with the result of the evaluation.
 
 For example a command might reference an input to the task, like this:
@@ -953,127 +953,44 @@ task test {
   input {
     String flags
   }
-  command {
-    ps ~{flags}
-  }
-}
-```
-
-In this case `flags` within the `${...}` is a variable lookup expression referencing the `flags` input string.
-The expression can also be more complex, like a function call: `write_lines(some_array_value)`
-
-Here is the same example using the `command <<<` style:
-
-```wdl
-task test {
-  String flags
   command <<<
     ps ~{flags}
   >>>
 }
 ```
 
+In this case `flags` within the `~{...}` is a variable lookup expression referencing the `flags` input string.
+The expression can also be more complex, like a function call: `write_lines(some_array_value)`
+
 > **NOTE**: the expression result must ultimately be converted to a string in order to take the place of the placeholder in the command script.
-This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Struct`).
-To place an array into the command block a separator character must be specified using `sep` (eg `${sep=", " int_array}`).
 
 As another example, consider how the parser would parse the following command:
 
 ```sh
-grep '${start}...${end}' ${input}
+grep '~{start}...~{end}' ~{input}
 ```
 
 This command would be parsed as:
 
 * `grep '` - literal string
-* `${start}` - lookup expression to the variable `start`
+* `~{start}` - lookup expression to the variable `start`
 * `...` - literal string
-* `${end}` - lookup expression to the variable `end`
+* `~{end}` - lookup expression to the variable `end`
 * `' ` - literal string
-* `${input}` - lookup expression to the variable `input`
+* `~{input}` - lookup expression to the variable `input`
 
-#### Expression Placeholder Options
-
-Expression placeholder options are `option="value"` pairs that precede the expression in an expression command part and customize the interpolation of the WDL value into the command string being built. The following options are available:
-
-* `sep` - eg `${sep=", " array_value}`
-* `true` and `false` - eg `${true="--yes" false="--no" boolean_value}`
-* `default` - eg `${default="foo" optional_value}`
-
-Additional explanation for these command part options follows:
-
-##### sep
-
-'sep' is interpreted as the separator string used to join multiple parameters together.  `sep` is only valid if the expression evaluates to an `Array`.
-
-For example, if there were a declaration `Array[Int] ints = [1,2,3]`, the command `python script.py ${sep=',' numbers}` would yield the command line:
-
-```sh
-python script.py 1,2,3
+Finally, some common patterns for commands:
 ```
-
-Alternatively, if the command were `python script.py ${sep=' ' numbers}` it would parse to:
-
-```sh
-python script.py 1 2 3
-```
-
-> *Additional requirements*: sep MUST accept only a string as its value
-
-##### true and false
-
-'true' and 'false' are available for expressions which evaluate to `Boolean`s. They specify a string literal to insert into the command block when the result is true or false respectively.
-
-For example, `${true='--enable-foo' false='--disable-foo' allow_foo}` would evaluate the expression `allow_foo` as a variable lookup and depending on its value would either insert the string `--enable-foo` or `--disable-foo` into the command.
-
-Both `true` and `false` cases are required. If one case should insert no value then an empty string literal should be used, eg `${true='--enable-foo' false='' allow_foo}`
-
-1. `true` and `false` values MUST be string literals.
-2. `true` and `false` are only allowed if the type is `Boolean`
-3. Both `true` and `false` cases are required.
-4. Consider using the expression `${if allow_foo then "--enable-foo" else "--disable-foo"}` as a more readable alternative which allows full expressions (rather than string literals) for the true and false cases.
-
-##### default
-
-This specifies the default value if no other value is specified for this parameter.
-
-```wdl
-task default_test {
-  input {
-    String? s
-  }
-  command {
-    ./my_cmd ${default="foobar" s}
-  }
+inputs {
+    File? opt
+    Boolean flag
+    Array[Int] values
 }
-```
-
-This task takes an optional `String` parameter and if a value is not specified, then the value of `foobar` will be used instead.
-
-> *Additional requirements*:
->
-> 1. The type of the expression must match the type of the parameter
-> 2. If 'default' is specified, the `$type_postfix_quantifier` for the variable's type MUST be `?`
-
-#### Alternative heredoc syntax
-
-Sometimes a command is sufficiently long enough or might use `{` characters that using a different set of delimiters would make it more clear.  In this case, enclose the command in `<<<`...`>>>`, as follows:
-
-```wdl
-task heredoc {
-  input {
-    File in
-  }
-
-  command<<<
-  python <<CODE
-    with open("~{in}") as fp:
-      for line in fp:
-        if not line.startswith('#'):
-          print(line.strip())
-  CODE
-  >>>
-}
+command <<<
+    command ~{if defined(opt) then "-a " + opt else ""}
+    command ~{if flag then "-b" else "-c"}
+    command ~{sep(' ', prefix("-i ", values))}
+>>>
 ```
 
 Parsing of this command should be the same as the prior section describes.  As noted earlier in the [Expression Placeholders](#command-parts) section, it is important to remember that string interpolation within `<<<`...`>>>` blocks must be done using the syntax `~{expression}`.
@@ -1097,7 +1014,9 @@ If the user mixes tabs and spaces, the behavior is undefined.  A warning is sugg
 
 ### Outputs Section
 
-The outputs section defines which values should be exposed as outputs after a successful run of the task. Outputs are declared just like task inputs or declarations in the workflow. The difference being that they are evaluated only after the command line executes and files generated by the command can be used to determine values. Note that outputs require a value expression (unlike inputs, for which an expression is optional)
+The outputs section defines which values should be exposed as outputs after a successful run of the task. Outputs are declared just like task inputs or declarations in the workflow.
+The difference being that they are evaluated only after the command line executes and files generated by the command can be used to determine values.
+Note that outputs require a value expression (unlike inputs, for which an expression is optional)
 
 For example a task's output section might looks like this:
 
@@ -1109,7 +1028,7 @@ output {
 
 The task is expecting that a file called "threshold.txt" will exist in the current working directory after the command is executed. Inside that file must be one line that contains only an integer and whitespace.  See the [Data Types & Serialization](#data-types--serialization) section for more details.
 
-As with other string literals in a task definition, Strings in the output section may contain interpolations (see the [String Interpolation](#string-interpolation) section below for more details). Here's an example:
+As with other string literals in a task or workflow, Strings in the output section may contain interpolations (see the [String Interpolation](#string-interpolation) section below for more details). Here's an example:
 
 ```wdl
 output {
@@ -1117,9 +1036,11 @@ output {
 }
 ```
 
-Note that for this to work, `sample_id` must be declared as an input to the task.
+Note that for this to work, `sample_id` must be declared within the task.
 
-As with inputs, the outputs can reference previous outputs in the same block. The only requirement is that the output being referenced must be specified *before* the output which uses it.
+As with inputs, the outputs can reference previous outputs in the same block, or any other visible value.
+Out-of-order definition (ie forward references) are possible, since evaluation follows the same can-evaluate-when-available rule
+as all other values.
 
 ```wdl
 output {
@@ -1219,7 +1140,7 @@ Therefore to ensure that a WDL is portable when using `glob()`, a docker image s
 
 ### String Interpolation
 
-Within tasks, any string literal can use string interpolation to access the value of any of the task's inputs.  The most obvious example of this is being able to define an output file which is named as function of its input.  For example:
+Any string literal can use string interpolation to access the value of any expression. The most obvious example of this is being able to define an output file which is named as function of its input. This uses the same syntax and semantics as expression placeholders in the command section of a task. For example:
 
 ```wdl
 task example {
@@ -1237,27 +1158,7 @@ task example {
 }
 ```
 
-Any `${expression}` or `~{expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
-
-Different types for the expression are formatted in different ways.
-`String` is substituted directly.
-`File` is substituted as if it were a `String`.
-`Int` is formatted without leading zeros (unless the value is `0`), with a leading `-` if the value is negative.
-`Float` is printed in the style `[-]ddd.ddd`, with 6 digits after the decimal point.
-The expression cannot have the value of any other type.
-
-```wdl
-"${"abc"}" == "abc"
-
-File def = "hij"
-"${def}" == "hij"
-
-"${5}" == "5"
-
-"${3.141}" == "3.141000"
-"${3.141 * 1E-10}" == "0.000000"
-"${3.141 * 1E10}" == "31410000000.000000"
-```
+Any `${expression}` inside of a string literal must be replaced with the value of the expression.  If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
 
 ### Runtime Section
 
@@ -2297,44 +2198,287 @@ For example, one cannot import two workflows while they have the same namespace 
 Similarly there cannot be a call `foo` in a workflow also named `foo`. However, you can import two workflows with different namespace identifiers that have identically named tasks.
 For example, you can import namespaces `foo` and `bar`, both of which contain a task `baz`, and you can call `foo.baz` and `bar.baz` from the same primary workflow.
 
-# Scope
+# Value Scopes and Visibility
 
-Scopes are defined as:
+Values can be defined within workflows and tasks. Within these, various blocks exist which can also contain value definitions, for example:
 
-* `workflow {...}` blocks
-* `call` blocks
-* `if(expr) {...}` blocks
-* `scatter(x in y) {...}` blocks
+* `input` blocks
+* `output` blocks
+* `scatter` blocks
+* `if` blocks
 
-Inside of any scope, variables may be [declared](#declarations).  The variables declared in that scope are visible to any sub-scope, recursively.  For example:
+## Types of Value
+
+Values can be defined within a `task` or `workflow` as either inputs, outputs or intermediate values.
+
+* **Inputs** are declared in the `input` block of the task or workflow.
+  * If inputs are defined at the same time, that value provides a default which can be overridden by a user's input set.
+* **Outputs** must be defined in `output` sections.
+* **Intermediate values** are not provided as inputs and are not exposed as outputs. Instead, they allow the storage of
+temporary values. Intermediate values are visible only within the task or workflow that contain them and disappear
+when the task or workflow is completed.
+
+The final type of value is a **scatter value**. Each `scatter` block provides a scoped value representing each item in the
+scatter. For example `scatter(x in ...)` makes the value `x` visible **only within the scatter's `{...}` block or nested sub-blocks**.
+
+## Evaluation Order
+
+All values in workflows can be evaluated as soon as - but not before - their expression inputs are available.
+Beyond that it is at the discretion of the engine when to evaluate each value.
+
+
+Sometimes input definition are based on intermediate values - or even task outputs. In that case, the user can provide
+an override in their inputs file, or else the value must wait until the definition expression can be evaluated.
+
+
+Within tasks the order is more defined since they interact with the running of the command itself:
+* Inputs and intermediate values must be evaluated in the order required by their definition expressions.
+  * This is true even if the intermediate value definitions follow the `command` block positionally in the file.
+* Outputs are evaluated *after* the command has been run.
+
+## Value Reachability Rules
+
+* Within a (`workflow` or `task`), each value name is unique, is immutable once set, and is visible from anywhere else in the task or workflow.
+    * Exception: `scatter` values
+        * For example the value named `x` in the line `scatter(x in ...) { ... }`
+        * Scatter values are only accessible within the scatter block and any sub-blocks.
+        * Scatter value names can be reused as scatter value names by other scatter blocks
+    * Exception: `output` values
+        * Because they must be calculated last, `output` values are *not* reachable from outside the `output` section.
+* Any value may be used as a dependency higher up in the WDL file than the location where it is defined.
+    * This is OK because evaluation order is defined by the availability of dependencies, not the order in the page.
+    * See the [Forward Reference](#forward-reference) example.
+* Despite values being reachable from outside sub-sections, the types of values may change if accessed from outside:
+    * Using a value which was declared within a `scatter` from outside that `scatter` implicitly collects the results, turning any `X` into an `Array[X]`.
+    * Using a value which was declared within a `if` from outside the `if` implicitly optionalizes the results, turning any `X` into an `X?`.
+* References must always be acyclic:
+    * If "`a` depends on `b`" then it cannot also be true that "`b` depends on `a`".
+    * Values defined inside a `scatter` or `if` block are not available to evaluate the respective `scatter` or `if` expression.  
+    * References must also not cause cyclic dependencies between sub-blocks of a task or workflow.
+      * See the [Acyclic Sub-Sections](#acyclic-sub-sections) for an example of what this means.
+
+## Examples
+
+### Task Scoping
 
 ```wdl
+version development
+
 task my_task {
   input {
     Int x
     File f
   }
-  command {
-    my_cmd --integer=${var} ${f}
-  }
-}
 
-workflow wf {
-  input {
-    Array[File] files
-    Int x = 2
+  Int y = x + 1
+
+  command {
+    my_cmd --integer1=~{x} --integer2=~{y} ~{f}
   }
-  scatter(file in files) {
-    Int x = 3
-    call my_task {
-      Int x = 4
-      input: var=x, f=file
-    }
+
+  output {
+    Int z = read_int(stdout())
+    Int z_plus_one = z + 1
   }
 }
 ```
 
-`my_task` will use `x=4` to set the value for `var` in its command line.  However, `my_task` also needs a value for `x` which is defined at the task level.  Since `my_task` has two inputs (`x` and `var`), and only one of those is set in the `call my_task` declaration, the value for `my_task.x` still needs to be provided by the user when the workflow is run.
+* `x` and `f` are `input` values which will be evaluated before the task begins.
+* `y` is an intermediate value with an upstream dependency on the input `x`.
+* The `command` section is able to access all `input`s and intermediate values. It is not able to reference `output` values.
+* `z` is an `output` value - it cannot be accessed except by the other declaration in the `output` section.
+* `z_plus_one` is another `output` value.
+
+### Workflow Scoping
+
+This workflow calls the `my_task` task from the previous example.
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    File file
+    Int x = 2
+  }
+
+  call my_task { input:
+    x = x,
+    f = file
+  }
+
+  output {
+    Int z = my_task.z
+  }
+}
+```
+
+* `file` and `x` are `input` values which will be evaluated before the workflow begins.
+* The call block provides inputs for the task values `x` and `f`.
+    * Note that `x` is used twice in the line `x = x,`
+        * First: to name the value in the task being provided. This must reference an input value in the `task` scope of the appropriate `task`.
+        * Second: as part of the input expression. This expression may reference any values in scope in the current `workflow`.
+* `z` is an output value which depends on the output from the `call` to `my_task`. It is not accessible from elsewhere in the `workflow`.
+
+### Forward Reference
+
+This example shows that forward references are alright so long as they can ultimately be processed as an acyclic graph.
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    File file
+    Int x = 2
+  }
+
+  call my_task { input:
+    x = x_modified,
+    f = file
+  }
+
+  Int x_modified = x
+
+  output {
+    Int z = my_task.z
+  }
+}
+```
+
+* The graph dependencies for this workflow would be:
+```
+file is an input
+x is an input
+x_modified depends on {x}
+my_task depends on {x_modified, file}
+z depends on {my_task}
+```
+
+* There are no cycles in this dependency graph.
+* Therefore, although not necessarily recommended for readability reasons, this workflow would processed without problem.
+
+### Referencing values within and from outside sub-sections
+
+This example scatters over the `my_task` task from the previous examples.
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    File file
+    Array[Int] xs = [1, 2, 3]
+  }
+
+  scatter (x in xs) {
+    call my_task { input:
+      x = x,
+      f = file
+    }
+
+    Int z = my_task.z
+  }
+
+  output {
+    Array[Int] zs = z
+  }
+}
+```
+
+* The expression for `Int z = ...` accesses `my_task.z` from within the same scatter.
+* The output `zs` can reference the value `z` even though it was declared in a sub-section. However because `z` is declared within a `scatter` sub-section, the type of `zs` is `Array[Int]`.
+
+### Acyclic Sub-Sections
+
+This example shows what is meant by a cyclic dependency between sub-sections.
+
+First let's sets the scene by showing that sub-sections can find and reference values in other sub-sections:
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    Array[Int] as
+    Array[Int] bs
+  }
+
+  scatter(a in as) {
+    Int x_a = a
+  }
+  scatter(b in bs) {
+    Array[Int] x_b = x_a
+  }
+
+  output {
+    Array[Array[Int]] xs_output = x_b
+  }
+}
+
+```
+
+* The declaration for `x_b` is able to access the value for `x_a` even though the declaration is in another sub-section of the `workflow`.
+* Because the declaration for `x_b` is outside the `scatter` in which `x_a` was declared, the type is `Array[Int]`
+
+This change would introduce a cyclic dependency between the scatter blocks themselves:
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    Array[Int] as
+    Array[Int] bs
+  }
+
+  scatter(a in as) {
+    Int x_a = a
+    Array[Int] y_a = y_b
+  }
+  scatter(b in bs) {
+    Array[Int] x_b = x_a
+    Int y_b = b
+  }
+
+  output {
+    Array[Array[Int]] xs_output = x_b
+    Array[Array[Int]] ys_output = y_a
+  }
+}
+
+```
+
+* Note that the dependency graph now has to criss-cross between the `scatter(a in as)` block and the `scatter(b in bs)` block.
+    * This is **not** allowed.
+* To avoid this criss-crossing between sub-sections, scatters may be split into separate `scatter` blocks over the same input array:
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    Array[Int] as
+    Array[Int] bs
+  }
+
+  scatter(a in as) {
+    Int x_a = a
+  }
+  scatter(b in bs) {
+    Array[Int] x_b = x_a
+    Int y_b = b
+  }
+  scatter(a2 in as) {
+    Array[Int] y_a = y_b
+  }
+
+  output {
+    Array[Array[Int]] xs_output = x_b
+    Array[Array[Int]] ys_output = y_a
+  }
+}
+
+```
 
 # Optional Parameters & Type Constraints
 
@@ -2529,46 +2673,6 @@ workflow wf {
 
 In this example, `inc` and `inc2` are being called in serial where the output of one is fed to another. inc2 would output the array `[3,4,5,6,7]`
 
-# Variable Resolution
-
-Inside of [expressions](#expressions), variables are resolved differently depending on if the expression is in a `task` declaration or a `workflow` declaration
-
-## Task-Level Resolution
-
-Inside a task, resolution is trivial: The variable referenced MUST be a [declaration](#declarations) of the task.  For example:
-
-```wdl
-task my_task {
-  input {
-    Array[String] strings
-  }
-  command {
-    python analyze.py --strings-file=${write_lines(strings)}
-  }
-}
-```
-
-Inside of this task, there exists only one expression: `write_lines(strings)`.  In here, when the expression evaluator tries to resolve `strings`, which must be a declaration of the task (in this case it is).
-
-## Workflow-Level Resolution
-
-In a workflow, resolution works by traversing the scope hierarchy starting from expression that references the variable.
-
-```wdl
-workflow wf {
-  input {
-    String s = "wf_s"
-    String t = "t"
-  }
-  call my_task {
-    String s = "my_task_s"
-    input: in0 = s+"-suffix", in1 = t+"-suffix"
-  }
-}
-```
-
-In this example, there are two expressions: `s+"-suffix"` and `t+"-suffix"`.  `s` is resolved as `"my_task_s"` and `t` is resolved as `"t"`.
-
 # Computing Inputs
 
 Both tasks and workflows have a typed inputs that must be satisfied in order to run.  The following sections describe how to compute inputs for `task` and `workflow` declarations.
@@ -2685,9 +2789,15 @@ Note that because some call inputs are left unsatisfied, this workflow could not
 
 Once workflow inputs are computed (see previous section), the value for each of the fully-qualified names needs to be specified per invocation of the workflow. The format of workflow inputs is implementation specific.
 
-### Cromwell-style Inputs
+### JSON Input Format
 
-The "Cromwell-style" input format is widely supported by WDL implementations and recommended for portability purposes. In the Cromwell-style format, workflow inputs are specified as key/value pairs in JSON or YAML. The mapping to WDL values is codified in the [serialization of task inputs](#serialization-of-task-inputs) section.
+The JSON input format is an input format that is required to be
+accepted by any workflow engine. It is the input format that is used for
+performing language compliance tests on the engine.
+
+In this common format, workflow inputs are 
+specified as key/value pairs in JSON. The mapping to WDL values is codified in
+the [serialization of task inputs](#serialization-of-task-inputs) section.
 
 In JSON, the inputs to the workflow in the previous section might be:
 
@@ -2706,7 +2816,89 @@ In JSON, the inputs to the workflow in the previous section might be:
 }
 ```
 
-It's important to note that the type in JSON must be coercible to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "three"`, this coercion from string to integer is not valid and would result in a coercion error.  See the section on [Type Coercion](#type-coercion) for more details.
+It's important to note that the type in JSON must be coercible to the WDL type.
+For example `wf.int_val` expects an integer, but if we specified it in JSON as
+`"wf.int_val": "three"`, this coercion from string to integer is not valid and
+would result in a coercion error.  See the section on
+[Type Coercion](#type-coercion) for more details.
+
+### Other input formats
+
+Next to the JSON input format, engines can support any other format.
+The only requirement is that they provide a tool or documentation to convert
+these custom formats into JSON input format, so users can share their
+workflow inputs across the WDL ecosystem.
+
+# Computing outputs
+
+## Computing workflow outputs
+
+Every engine should have an option to provide the outputs. Either as a file,
+an API, or as stdout. The output format should be composed according to the
+following rules:
+
+* Workflow outputs are defined in the output section of the workflow.
+* A workflow without an output section has no outputs.
+* An engine may optionally provide outputs not listed in the output section
+  (i.e. task and subworkflow outputs) for debugging purposes, if explicitly
+  requested by the user.
+
+The above rules only apply to output formats delivered by the engine. Listing
+subworkflow and task outputs in logs is not covered by these rules.
+
+## Output formats
+
+### JSON Output Format
+
+Every workflow engine should provide an option to provide the JSON
+output format. This output will be used for performing language compliance tests
+on the engine.
+
+In JSON output format the outputs are specified as key/value pairs in
+JSON. Only outputs from the workflow are provided. Sub-workflow and task outputs
+are not provided.
+
+The output value will be fully qualified. Check the [chapter on fully qualified
+names](#fully-qualified-names--namespaced-identifiers) for more details.
+
+WDL values will be coerced to their corresponding JSON types as described in
+the chapter on [type coercion](#type-coercion).
+
+Example for the following workflow:
+
+
+```WDL
+workflow example {
+    ...
+
+    output {
+        String foo = cafetaria.inn
+        File analysis_results = analysis.results
+        Int read_count = readcounter.result
+        Float kessel_run_parsecs = trip_to_space.distance
+        Boolean sample_swap_detected = array_concordance.concordant
+        Array[File] sample_variants = variant_calling.vcfs
+        Map[String, Int] droids = escape_pod.cargo
+    }
+}
+```
+
+The output JSON could look like this:
+```JSON
+{
+    "example.foo": "bar",
+    "example.analysis_results": "/path/to/my/analysis/results.txt",
+    "example.read_count": 50157187,
+    "example.kessel_run_parsecs": 11.98,
+    "example.sample_swap_detected": false,
+    "example.sample_variants": ["/data/patient1.vcf", "/data/patient2.vcf"],
+    "example.droids": {"C": 3, "D": 2, "P": 0, "R": 2}
+}
+```
+
+### Other output formats
+
+Any other output formats may be supported by engines.
 
 # Type Coercion
 
@@ -3138,14 +3330,14 @@ Array[String] ymap = keys(y) # ["a", "b"]
 
 ## Map[X,Array[Y]] collect_by_key(Array[Pair[X,Y]])
 
-Given an Array consisting of Pairs, the `collect_by_key` function returns a Map in which the left elements of the Pairs are the keys and the right elements the values. The left element of the Pairs passed to `as_map` must be a primitive type. The values will be placed in an Array to allow for multiple Pairs to produce the same key. The order of the keys in the Map is the same as the order in the Array based on their first occurence. The order of the elements in the resulting Arrays is the same as their occurence in the given Array of Pairs.
+Given an Array consisting of Pairs, the `collect_by_key` function returns a Map in which the left elements of the Pairs are the keys and the right elements the values. The left element of the Pairs passed to `collect_by_key` must be a primitive type. The values will be placed in an Array to allow for multiple Pairs to produce the same key. The order of the keys in the Map is the same as the order in the Array based on their first occurence. The order of the elements in the resulting Arrays is the same as their occurence in the given Array of Pairs.
 
 ```wdl
 Array[Pair[String,Int]] x = [("a", 1), ("b", 2), ("a", 3)]
 Array[Pair[String,Pair[File,File]]] y = [("a", ("a_1.bam", "a_1.bai")), ("b", ("b.bam", "b.bai")), ("a", ("a_2.bam", "a_2.bai"))]
 
-Map[String,Array[Int]] xmap = as_map(x) # {"a": [1, 3], "b": [2]}
-Map[String,Array[Pair[File,File]]] ymap = as_map(y) # {"a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], "b": [("b.bam", "b.bai")]}
+Map[String,Array[Int]] xmap = collect_by_key(x) # {"a": [1, 3], "b": [2]}
+Map[String,Array[Pair[File,File]]] ymap = collect_by_key(y) # {"a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], "b": [("b.bam", "b.bai")]}
 ```
 
 ## Int length(Array[X])
@@ -3197,6 +3389,47 @@ Array[Int] env2 = [1, 2, 3]
 Array[String] env2_param = prefix("-f ", env2) # ["-f 1", "-f 2", "-f 3"]
 ```
 
+## Array[String] suffix(String, Array[X])
+
+Given a String and an Array[X] where X is a primitive type, the `suffix` function returns an array of strings comprised
+of each element of the input array suffixed by the specified suffix string.  For example:
+
+```wdl
+Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
+Array[String] env_param = suffix(".txt ", env) # ["key1=value1.txt", "key2=value2.txt", "key3=value3.txt"]
+
+Array[Int] env2 = [1, 2, 3]
+Array[String] env2_param = suffix(".0", env2) # ["1.0", "2.0", "3.0"]
+```
+
+## Array[String] quote(Array[X])
+
+Given an `Array[X]` where `X` is a primitive type, the `quote` function returns an array of strings comprised of each
+element of the input array being wrapped in double quotes. This is functionally equivalent to `prefix("\"",suffix("\"" X))`.
+For example:
+
+```wdl
+Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
+Array[String] env_quoted = quote(env) # ["\"key1=value1\"", "\"key2=value2\"", "\"key3=value3\""]
+
+Array[Int] env2 = [1, 2, 3]
+Array[String] env2_quoted = quote(env2) # ["\"1\"", "\"2\"", "\"3\""]
+``` 
+
+## Array[String] squote(Array[X])
+
+Given an `Array[X]` where `X` is a primitive type, the `squote` function returns an array of strings comprised of each
+element of the input array being wrapped in single quotes. This is functionally equivalent to `prefix("'",suffix("'" X))`.
+For example:
+
+```wdl
+Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
+Array[String] env_quoted =  squote(env) # ["'key1=value1'", "'key2=value2'", "'key3=value3'"]
+
+Array[Int] env2 = [1, 2, 3]
+Array[String] env2_quoted = squote(env2) # ["'1'", "'2'", "'3'"]
+``` 
+
 ## X select_first(Array[X?])
 
 Given an array of optional values, `select_first` will select the first defined value and return it. Note that this is a runtime check and requires that at least one defined value will exist: if no defined value is found when select_first is evaluated, the workflow will fail.
@@ -3245,6 +3478,20 @@ This function will return `false` if the argument is an unset optional value. It
   * floor: Round **down** to the next lower integer
   * ceil: Round **up** to the next higher integer
   * round: Round to the nearest integer based on standard rounding rules
+
+## String sep(String, Array[String])
+
+- Return the strings in the array concatenated, with the first parameter
+  between each.
+
+```
+sep(' ', ["a", "b", "c"])
+> "a b c"
+
+A = ["file_1", "file_2"]
+sep(' ', prefix('-i ', A))
+> "-i file_1 -i file_2"
+```
 
 # Data Types & Serialization
 
@@ -3677,7 +3924,7 @@ task test {
   command <<<
     python <<CODE
     for i in range(3):
-      print("key_{idx}\t{idx}".format(idx=i)
+      print("key_{idx}\t{idx}".format(idx=i))
     CODE
   >>>
   output {
