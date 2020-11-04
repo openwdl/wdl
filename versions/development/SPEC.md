@@ -259,6 +259,27 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 |`\'`|single quote|`\x22`|
 |`\"`|double quote|`\x27`|
 
+Strings that begin and end with three adjacent single- or double-quotes may span multiple lines. By default, all whitespace between the last non-whitespace character on one line and the first non-whitespace character on the next line is replaced by a single space. For example, all four strings below are identical:
+
+```wdl
+String single_line_dquote = "this is a single-line double-quoted string"
+String multi_line_dquote = """this is a
+                              multi-line double-quoted string"""
+String single_line_squote = 'this is a single-line single-quoted string'
+String multi_line_squote = '''this is a
+                              multi-line single-quoted string'''
+```
+
+To preserve both newlines and indenting, begin each line with the '>' character. To preserve newlines, but not indenting, begin each line with the '|' character. For example, the string `newline_only` below has the value `This string has a\nsingle newline but no indent` and the string `newline_and_indent` has the value `\n   This string has\n   newlines and indents```. Note that in the second instance, the '>' character is replaced by a space.
+
+```wdl
+String newline_only = """This string has a
+                         |single newline but no indent"""
+String newline_and_indent = """
+  >This string has
+  >newlines and indents"""
+```
+
 ### Comments
 
 Comments are a useful way of providing helpful information such as workflow usage, requirements, copyright etc directly within the wdl file. Comments can be added anywhere within the `WDL` document and are used to indicate text which should be ignored by an engine implementation. The one caveat to be aware of, is that within the `command` section, *ALL* text will be included in the underlying command and any lines prepended by `#` will be included.
