@@ -188,7 +188,7 @@ workflow wf {
 
 This describes a task, called 'hello', which has two parameters (`String pattern` and `File in`).  A `task` definition is a way of **encapsulating a UNIX command and environment and presenting them as functions**.  Tasks have both inputs and outputs.  Inputs are declared as declarations at the top of the `task` definition, while outputs are defined in the `output` section.
 
-The user must provide a value for these two parameters in order for this task to be runnable. Implementations of WDL should accept their [inputs as JSON format](#specifying-workflow-inputs-in-json). The inputs described in such a JSON file should be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example, the above task needs values for two parameters: `String pattern` and `File in`:
+The user must provide a value for these two parameters in order for this task to be runnable. Implementations of WDL should accept their [inputs as JSON format](#specifying-workflow-inputs-in-json). The inputs described in such a JSON file must be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example, the above task needs values for two parameters: `String pattern` and `File in`:
 
 |Variable           |Value    |
 |-------------------|---------|
@@ -2185,11 +2185,11 @@ aliased name.
 # Namespaces
 
 The following namespaces exist:
-* A WDL file: When imported the name equals that of the basename of the file by default, but may be aliased using the `as identifier` syntax.
+* [A WDL file](#import-statements): When imported the name equals that of the basename of the file by default, but may be aliased using the `as identifier` syntax.
   * May contain namespaces, tasks, structs (please see the notes at [Importing Structs](#importing-structs)) and at most one workflow.
-* A call (of a task or workflow): The name equals that of the called task or workflow by default, but may be aliased using the `as identifier` syntax.
+* [A call (of a task or workflow)](#call-statement): The name equals that of the called task or workflow by default, but may be aliased using the `as identifier` syntax.
   * May contain inputs, outputs, runtime_attributes (if the call is to a task), variables (accessibility limited by [scope](#scope)) and calls (if the call is to a workflow).
-* A struct instance: The name equals that of the variable name of the struct instance.
+* [A struct instance](#struct-definition): The name equals that of the variable name of the struct instance.
   * May contain variables.
 
 All members of a namespace (ie. inputs, outputs, variables, tasks, workflows, structs, imported namespaces and calls) must be unique within that namespace.
