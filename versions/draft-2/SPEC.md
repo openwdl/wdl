@@ -450,7 +450,7 @@ Below are the valid results for operators on types.  Any combination not in the 
 |`Boolean`|`>=`|`Boolean`|`Boolean`||
 |`Boolean`|`<`|`Boolean`|`Boolean`||
 |`Boolean`|`<=`|`Boolean`|`Boolean`||
-|`Boolean`|`||`|`Boolean`|`Boolean`||
+|`Boolean`|`\|\|`|`Boolean`|`Boolean`||
 |`Boolean`|`&&`|`Boolean`|`Boolean`||
 |`File`|`+`|`File`|`File`|Append file paths|
 |`File`|`==`|`File`|`Boolean`||
