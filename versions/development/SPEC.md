@@ -2717,7 +2717,7 @@ form `workflow_name.input_name`.
   In this case, the inputs bubble up to become a nested input to the workflow 
   instead.
     * Example: an unsupplied input might have the fully-qualified name 
-      `my_workflow.my_task.my_task_input.`
+      `my_workflow.my_task.my_task_input`.
 * If that workflow is used as a subworkflow, the input is allowed to bubble up 
   again with a further-qualified name.
     * Example: my_outer_workflow.my_workflow.my_task.my_task_input.
