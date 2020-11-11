@@ -2,6 +2,45 @@
 
 ⚙️denotes a change that affects the parser
 
+## 1.0 to development (2.0)
+
+The next version of WDL will be 2.0 - the major version change indicates that there are breaking changes from 1.0.
+
+Note that WDL 2.0 is currently called `development` to indicate that it is under active development. New features are still being added to the specification, and existing features are being deprecated/removed. Runtime engines are not required to maintain backward compatibility, so please use the `development` version with caution and at your own risk.
+
+Adding further to the confusion is that some changes have been ratified (by vote of the [OpenWDL core team](../../GOVERNANCE.md) but not merged into the specification in the `main` branch, because they are waiting for implementation in at least one runtime engine. The list of changes below includes some of these ratified-but-unimplemented changes.
+
+Specification changes under active consideration are tracked [here](https://github.com/openwdl/wdl/discussions/411))
+
+* [Added the `Directory` type](https://github.com/openwdl/wdl/pull/241)
+* [Changes to the `runtime` section, and new `hints` section](https://github.com/openwdl/wdl/pull/315)
+    * The `runtime` section no longer accepts arbitrary keys. Instead, only a specific set of keys are allowed. Any keys not supported by the `runtime` section must go in the `hints` section instead.
+    * The `docker` key that was previously used by convention in the `runtime` section is changed to `container`.
+    * The `hints` section is created to allow non-binding hints to the execution engine, including engine-specific keys.
+    * `hint` values follow the same syntax as `meta` and `parameter_meta` - i.e. no expressions are allowed, only literal values.
+* [Options (sep, true/false, default) are no longer allowed in placeholders](https://github.com/openwdl/wdl/pull/366)
+    * The `sep` function was added to replace the behavior of the sep option
+    * The behavior of true/false and default can be replicated with the ternary operator
+        * `~{if flag then "hello" else "goodbye"}`)
+        * `~{if defined(opt) then "-foo" else ""}`)
+* `object`s should be considered deprecated. Both the `object` data type and the object literal syntax (`object {...}`) should no longer be used, and may be removed entirely from WDL 2.0 or a subsequent version.
+    * The `read_object`, `read_objects`, `write_object`, and `write_objects` functions are removed
+* [New `min` and `max` functions](https://github.com/openwdl/wdl/pull/304)
+* [New `suffix`, `quote`, and `squote` functions](https://github.com/openwdl/wdl/pull/362/files)
+* [New `keys` function](https://github.com/openwdl/wdl/pull/244)
+* [New `as_map`, `as_pairs`, and `collect-by_key` functions](https://github.com/openwdl/wdl/pull/219)
+* [Engines must minimally support a standard JSON syntax for inputs and outputs](https://github.com/openwdl/wdl/pull/357)
+* [`runtime` attributes may be overridden in task/workflow inputs](https://github.com/openwdl/wdl/pull/313)
+* [`file://` protocol no longer allowed for imports](https://github.com/openwdl/wdl/pull/349)
+* [Optional variables can be defined with `None` value](https://github.com/openwdl/wdl/pull/263)
+* Clarifications: many issues were identified as under-specified in `WDL 1.0`, and have been clarified in `development`.
+    * [The `sub` function supports POSIX Extended Regular Expressions](https://github.com/openwdl/wdl/pull/243)
+    * [New notation for struct literals](https://github.com/openwdl/wdl/pull/297)
+    * [Optional vs required file outputs](https://github.com/openwdl/wdl/pull/310)
+    * [Unsatisfied task inputs](https://github.com/openwdl/wdl/pull/359)
+        * Execution engines are not requred to allow required task inputs to go unsatisfied by the calling workflow.
+        * Execution engines may choose to recognize `allowNestedInputs` in the workflow meta section to enable overriding of unsatisfied task inputs.
+    
 ## Draft-2 to 1.0
 
 *   ⚙️Version statement required (as of draft-3)
