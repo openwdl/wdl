@@ -13,6 +13,7 @@ Adding further to the confusion is that some changes have been ratified (by vote
 Specification changes under active consideration are tracked [here](https://github.com/openwdl/wdl/discussions/411))
 
 * [Added the `Directory` type](https://github.com/openwdl/wdl/pull/241)
+* [Relative imports](https://github.com/openwdl/wdl/pull/220)
 * [Changes to the `runtime` section, and new `hints` section](https://github.com/openwdl/wdl/pull/315)
     * The `runtime` section no longer accepts arbitrary keys. Instead, only a specific set of keys are allowed. Any keys not supported by the `runtime` section must go in the `hints` section instead.
     * The `docker` key that was previously used by convention in the `runtime` section is changed to `container`.
