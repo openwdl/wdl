@@ -22,9 +22,10 @@ Specification changes under active consideration are tracked [here](https://gith
     * `hint` values follow the same syntax as `meta` and `parameter_meta` - i.e. no expressions are allowed, only literal values.
 * [Options (sep, true/false, default) are no longer allowed in placeholders](https://github.com/openwdl/wdl/pull/366)
     * The `sep` function was added to replace the behavior of the sep option
-    * The behavior of true/false and default can be replicated with the ternary operator
+    * The behavior of `true`/`false` and `default` can be replicated with the ternary operator
         * `~{if flag then "hello" else "goodbye"}`)
-        * `~{if defined(opt) then "-foo" else ""}`)
+        * `~{if defined(opt) then "-foo " + opt else ""}`)
+    * `default` can also be replaced by `select_first` if the tested variable is a String and is just being echoed: `~{select_first([opt, ""])}`
 * `object`s should be considered deprecated. Both the `object` data type and the object literal syntax (`object {...}`) should no longer be used, and may be removed entirely from WDL 2.0 or a subsequent version.
     * The `read_object`, `read_objects`, `write_object`, and `write_objects` functions are removed
 * [New `min` and `max` functions](https://github.com/openwdl/wdl/pull/304)
