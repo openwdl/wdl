@@ -2,160 +2,169 @@
 
 ## Table of Contents
 
-* [Workflow Description Language](#workflow-description-language)
-  * [Introduction](#introduction)
-* [Language Specification](#language-specification)
-  * [Global Grammar Rules](#global-grammar-rules)
-    * [Whitespace, Strings, Identifiers, Constants](#whitespace-strings-identifiers-constants)
-    * [Comments](#comments)
-    * [Types](#types)
-      * [Custom  Types](#custom--types)
-    * [Fully Qualified Names &amp; Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
-    * [Declarations](#declarations)
-    * [Expressions](#expressions)
-      * [If then else](#if-then-else)
-    * [Operator Precedence Table](#operator-precedence-table)
-    * [Member Access](#member-access)
-    * [Map and Array Indexing](#map-and-array-indexing)
-    * [Pair Indexing](#pair-indexing)
-    * [Function Calls](#function-calls)
-    * [Array Literals](#array-literals)
-    * [Map Literals](#map-literals)
-    * [Pair Literals](#pair-literals)
-    * [Optional Literals](#optional-literals)
-    * [Keywords](#keywords)
-  * [Versioning](#versioning)
-  * [Import Statements](#import-statements)
-  * [Task Definition](#task-definition)
-    * [Task Sections](#task-sections)
-    * [Task Inputs](#task-inputs)
-      * [Task Input Declaration](#task-input-declaration)
-      * [Task Input Localization](#task-input-localization)
-        * [Special Case: Versioning Filesystems](#special-case-versioning-filesystems)
-    * [Non-Input Declarations](#non-input-declarations)
-    * [Command Section](#command-section)
-      * [Expression Placeholders](#expression-placeholders)
-      * [Expression Placeholder Options](#expression-placeholder-options)
-        * [sep](#sep)
-        * [true and false](#true-and-false)
-        * [default](#default)
-      * [Alternative heredoc syntax](#alternative-heredoc-syntax)
-      * [Stripping Leading Whitespace](#stripping-leading-whitespace)
-    * [Outputs Section](#outputs-section)
-      * [Globs](#globs)
-        * [Task portability and non-standard BaSH](#task-portability-and-non-standard-bash)
-    * [String Interpolation](#string-interpolation)
-    * [Runtime Section](#runtime-section)
-      * [docker](#docker)
-      * [memory](#memory)
-    * [Parameter Metadata Section](#parameter-metadata-section)
-    * [Metadata Section](#metadata-section)
-    * [Examples](#examples)
-      * [Example 1: Simplest Task](#example-1-simplest-task)
-      * [Example 2: Inputs/Outputs](#example-2-inputsoutputs)
-      * [Example 3: Runtime/Metadata](#example-3-runtimemetadata)
-      * [Example 4: BWA mem](#example-4-bwa-mem)
-      * [Example 5: Word Count](#example-5-word-count)
-      * [Example 6: tmap](#example-6-tmap)
-  * [Workflow Definition](#workflow-definition)
-    * [Workflow Elements](#workflow-elements)
-    * [Workflow Inputs](#workflow-inputs)
-      * [Optional Inputs](#optional-inputs)
-      * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
-        * [Optional inputs with defaults](#optional-inputs-with-defaults)
-    * [Call Statement](#call-statement)
-      * [Call Input Blocks](#call-input-blocks)
-      * [Sub Workflows](#sub-workflows)
-    * [Scatter](#scatter)
-    * [Conditionals](#conditionals)
-    * [Parameter Metadata](#parameter-metadata)
-    * [Metadata](#metadata)
-    * [Outputs](#outputs)
-      * [Omitting Workflow Outputs](#omitting-workflow-outputs)
-  * [Struct Definition](#struct-definition)
-    * [Struct Declarations](#struct-declarations)
-      * [Optional and non Empty Struct Values](#optional-and-non-empty-struct-values)
-    * [Using a Struct](#using-a-struct)
-      * [Struct Assignment from Map Literal](#struct-assignment-from-map-literal)
-    * [Struct Member Access](#struct-member-access)
-    * [Importing Structs](#importing-structs)
-* [Namespaces](#namespaces)
-* [Value Scopes and Visibility](#value-scopes-and-visibility)
-* [Optional Parameters &amp; Type Constraints](#optional-parameters--type-constraints)
-  * [Prepending a String to an Optional Parameter](#prepending-a-string-to-an-optional-parameter)
-* [Scatter / Gather](#scatter--gather)
-* [Variable Resolution](#variable-resolution)
-  * [Task-Level Resolution](#task-level-resolution)
-  * [Workflow-Level Resolution](#workflow-level-resolution)
-* [Computing Inputs](#computing-inputs)
-  * [Computing Task Inputs](#computing-task-inputs)
-  * [Computing Workflow Inputs](#computing-workflow-inputs)
-  * [Specifying Workflow Inputs](#specifying-workflow-inputs)
-    * [Cromwell-style inputs](#cromwell-style-inputs)
-  * [Optional Inputs](#optional-inputs)
-  * [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
-    * [Optional Inputs with Defaults](#optional-inputs-with-defaults)
-  * [Call Input Blocks](#call-input-blocks)
-* [Type Coercion](#type-coercion)
-* [Standard Library](#standard-library)
-  * [File stdout()](#file-stdout)
-  * [File stderr()](#file-stderr)
-  * [Array[String] read_lines(String|File)](#arraystring-read_linesstringfile)
-  * [Array[Array[String]] read_tsv(String|File)](#arrayarraystring-read_tsvstringfile)
-  * [Map[String, String] read_map(String|File)](#mapstring-string-read_mapstringfile)
-  * [mixed read_json(String|File)](#mixed-read_jsonstringfile)
-  * [Int read_int(String|File)](#int-read_intstringfile)
-  * [String read_string(String|File)](#string-read_stringstringfile)
-  * [Float read_float(String|File)](#float-read_floatstringfile)
-  * [Boolean read_boolean(String|File)](#boolean-read_booleanstringfile)
-  * [File write_lines(Array[String])](#file-write_linesarraystring)
-  * [File write_tsv(Array[Array[String]])](#file-write_tsvarrayarraystring)
-  * [File write_map(Map[String, String])](#file-write_mapmapstring-string)
-  * [File write_json(mixed)](#file-write_jsonmixed)
-  * [Float size(File, [String])](#float-sizefile-string)
-    * [Acceptable compound input types](#acceptable-compound-input-types)
-  * [String sub(String, String, String)](#string-substring-string-string)
-  * [Array\[Int\] range(Int)](#arrayint-rangeint)
-  * [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
-  * [Array\[Pair(X,Y)\] zip(Array\[X\], Array\[Y\])](#arraypairxy-ziparrayx-arrayy)
-  * [Array\[Pair(X,Y)\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
-  * [Array\[Pair(X,Y)\] as_pairs(Map\[X,Y\])](#arraypairxy-as_pairsmapxy)
-  * [Map\[X,Y\] as_map(Array\[Pair(X,Y)\])](#mapxy-as_maparraypairxy)
-  * [Array\[X\] keys(Map\[X,Y\])](#arrayx-keysmapxy)
-  * [Map\[X,Array\[Y\]\] collect_by_key(Array\[Pair(X,Y)\])](#mapxarrayy-collect_by_keyarraypairxy)
-  * [Int length(Array\[X\])](#int-lengtharrayx)
-  * [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
-  * [Array\[String\] prefix(String, Array\[X\])](#arraystring-prefixstring-arrayx)
-  * [Array\[String\] suffix(String, Array\[X\])](#arraystring-suffixstring-arrayx)
-  * [Array\[String\] quote(Array\[X\])](#arraystring-quotearrayx)
-  * [Array\[String\] squote(Array\[X\])](#arraystring-squotearrayx)
-  * [X select_first(Array\[X?\])](#x-select_firstarrayx)
-  * [Array\[X\] select_all(Array\[X?\])](#arrayx-select_allarrayx)
-  * [Boolean defined(X?)](#boolean-definedx)
-  * [String basename(String)](#string-basenamestring)
-  * [Int floor(Float), Int ceil(Float) and Int round(Float)](#int-floorfloat-int-ceilfloat-and-int-roundfloat)
-* [Data Types &amp; Serialization](#data-types--serialization)
-  * [Serialization of Task Inputs](#serialization-of-task-inputs)
-    * [Primitive Types](#primitive-types)
-    * [Compound Types](#compound-types)
-      * [Array serialization](#array-serialization)
-        * [Array serialization by expansion](#array-serialization-by-expansion)
-        * [Array serialization using write_lines()](#array-serialization-using-write_lines)
-        * [Array serialization using write_json()](#array-serialization-using-write_json)
-      * [Map serialization](#map-serialization)
-        * [Map serialization using write_map()](#map-serialization-using-write_map)
-        * [Map serialization using write_json()](#map-serialization-using-write_json)
-      * [Struct serialization](#struct-serialization)
-      * [Struct serialization using write_json()](#struct-serialization-using-write_json)
-  * [De-serialization of Task Outputs](#de-serialization-of-task-outputs)
-    * [Primitive Types](#primitive-types-1)
-    * [Compound Types](#compound-types-1)
-      * [Array deserialization](#array-deserialization)
-        * [Array deserialization using read_lines()](#array-deserialization-using-read_lines)
-        * [Array deserialization using read_json()](#array-deserialization-using-read_json)
-      * [Map deserialization](#map-deserialization)
-        * [Map deserialization using read_map()](#map-deserialization-using-read_map)
-        * [Map deserialization using read_json()](#map-deserialization-using-read_json)
+- [Workflow Description Language](#workflow-description-language)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+- [Language Specification](#language-specification)
+  - [Global Grammar Rules](#global-grammar-rules)
+    - [Whitespace, Strings, Identifiers, Constants](#whitespace-strings-identifiers-constants)
+    - [Comments](#comments)
+    - [Types](#types)
+      - [Numeric Behavior](#numeric-behavior)
+      - [Custom Types](#custom-types)
+    - [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
+    - [Declarations](#declarations)
+    - [Expressions](#expressions)
+      - [If then else](#if-then-else)
+    - [Operator Precedence Table](#operator-precedence-table)
+    - [Member Access](#member-access)
+    - [Map and Array Indexing](#map-and-array-indexing)
+    - [Pair Indexing](#pair-indexing)
+    - [Function Calls](#function-calls)
+    - [Array Literals](#array-literals)
+    - [Map Literals](#map-literals)
+    - [Pair Literals](#pair-literals)
+    - [Optional literals](#optional-literals)
+    - [Keywords](#keywords)
+  - [Versioning](#versioning)
+  - [Import Statements](#import-statements)
+  - [Task Definition](#task-definition)
+    - [Task Sections](#task-sections)
+    - [Task Inputs](#task-inputs)
+      - [Task Input Declaration](#task-input-declaration)
+      - [Task Input Localization](#task-input-localization)
+        - [Special Case: Versioning Filesystems](#special-case-versioning-filesystems)
+    - [Non-Input Declarations](#non-input-declarations)
+    - [Command Section](#command-section)
+      - [Expression Placeholders](#expression-placeholders)
+      - [Stripping Leading Whitespace](#stripping-leading-whitespace)
+    - [Outputs Section](#outputs-section)
+      - [File Outputs](#file-outputs)
+      - [Directory Outputs](#directory-outputs)
+        - [Soft link resolution example](#soft-link-resolution-example)
+      - [Globs](#globs)
+        - [Task portability and non-standard BaSH](#task-portability-and-non-standard-bash)
+    - [String Interpolation](#string-interpolation)
+    - [Runtime Section](#runtime-section)
+      - [docker](#docker)
+      - [memory](#memory)
+    - [Parameter Metadata Section](#parameter-metadata-section)
+    - [Metadata Section](#metadata-section)
+    - [Examples](#examples)
+      - [Example 1: Simplest Task](#example-1-simplest-task)
+      - [Example 2: Inputs/Outputs](#example-2-inputsoutputs)
+      - [Example 3: Runtime/Metadata](#example-3-runtimemetadata)
+      - [Example 4: BWA mem](#example-4-bwa-mem)
+      - [Example 5: Word Count](#example-5-word-count)
+      - [Example 6: tmap](#example-6-tmap)
+  - [Workflow Definition](#workflow-definition)
+    - [Workflow Elements](#workflow-elements)
+    - [Workflow Inputs](#workflow-inputs)
+      - [Optional Inputs](#optional-inputs)
+      - [Declared Inputs: Defaults and Overrides](#declared-inputs-defaults-and-overrides)
+        - [Optional inputs with defaults](#optional-inputs-with-defaults)
+    - [Call Statement](#call-statement)
+      - [Call Input Blocks](#call-input-blocks)
+      - [Sub Workflows](#sub-workflows)
+    - [Scatter](#scatter)
+    - [Conditionals](#conditionals)
+    - [Parameter Metadata](#parameter-metadata)
+    - [Metadata](#metadata)
+    - [Outputs](#outputs)
+      - [Omitting Workflow Outputs](#omitting-workflow-outputs)
+  - [Struct Definition](#struct-definition)
+    - [Struct Declarations](#struct-declarations)
+      - [Optional and non Empty Struct Values](#optional-and-non-empty-struct-values)
+    - [Using a Struct](#using-a-struct)
+      - [Struct Literals](#struct-literals)
+    - [Struct Member Access](#struct-member-access)
+    - [Importing Structs](#importing-structs)
+- [Namespaces](#namespaces)
+- [Value Scopes and Visibility](#value-scopes-and-visibility)
+  - [Types of Value](#types-of-value)
+  - [Evaluation Order](#evaluation-order)
+  - [Value Reachability Rules](#value-reachability-rules)
+  - [Examples](#examples-1)
+    - [Task Scoping](#task-scoping)
+    - [Workflow Scoping](#workflow-scoping)
+    - [Forward Reference](#forward-reference)
+    - [Referencing values within and from outside sub-sections](#referencing-values-within-and-from-outside-sub-sections)
+    - [Acyclic Sub-Sections](#acyclic-sub-sections)
+- [Optional Parameters & Type Constraints](#optional-parameters--type-constraints)
+  - [Interpolating and concatenating optional strings](#interpolating-and-concatenating-optional-strings)
+- [Scatter / Gather](#scatter--gather)
+- [Computing Inputs](#computing-inputs)
+  - [Computing Task Inputs](#computing-task-inputs)
+  - [Computing Workflow Inputs](#computing-workflow-inputs)
+  - [Specifying Workflow Inputs](#specifying-workflow-inputs)
+    - [JSON Input Format](#json-input-format)
+    - [Other input formats](#other-input-formats)
+- [Computing outputs](#computing-outputs)
+  - [Computing workflow outputs](#computing-workflow-outputs)
+  - [Output formats](#output-formats)
+    - [JSON Output Format](#json-output-format)
+    - [Other output formats](#other-output-formats)
+- [Type Coercion](#type-coercion)
+- [Standard Library](#standard-library)
+  - [File stdout()](#file-stdout)
+  - [File stderr()](#file-stderr)
+  - [Array[String] read_lines(String|File)](#arraystring-read_linesstringfile)
+  - [Array[Array[String]] read_tsv(String|File)](#arrayarraystring-read_tsvstringfile)
+  - [Map[String, String] read_map(String|File)](#mapstring-string-read_mapstringfile)
+  - [mixed read_json(String|File)](#mixed-read_jsonstringfile)
+  - [Int read_int(String|File)](#int-read_intstringfile)
+  - [String read_string(String|File)](#string-read_stringstringfile)
+  - [Float read_float(String|File)](#float-read_floatstringfile)
+  - [Boolean read_boolean(String|File)](#boolean-read_booleanstringfile)
+  - [File write_lines(Array[String])](#file-write_linesarraystring)
+  - [File write_tsv(Array[Array[String]])](#file-write_tsvarrayarraystring)
+  - [File write_map(Map[String, String])](#file-write_mapmapstring-string)
+  - [File write_json(mixed)](#file-write_jsonmixed)
+  - [Float size(File, [String])](#float-sizefile-string)
+    - [Acceptable compound input types](#acceptable-compound-input-types)
+  - [String sub(String, String, String)](#string-substring-string-string)
+  - [Array[Int] range(Int)](#arrayint-rangeint)
+  - [Array[Array[X]] transpose(Array[Array[X]])](#arrayarrayx-transposearrayarrayx)
+  - [Array[Pair[X,Y]] zip(Array[X], Array[Y])](#arraypairxy-ziparrayx-arrayy)
+  - [Array[Pair[X,Y]] cross(Array[X], Array[Y])](#arraypairxy-crossarrayx-arrayy)
+  - [Array[Pair[X,Y]] as_pairs(Map[X,Y])](#arraypairxy-as_pairsmapxy)
+  - [Map[X,Y] as_map(Array[Pair[X,Y]])](#mapxy-as_maparraypairxy)
+  - [Array[X] keys(Map[X,Y])](#arrayx-keysmapxy)
+  - [Map[X,Array[Y]] collect_by_key(Array[Pair[X,Y]])](#mapxarrayy-collect_by_keyarraypairxy)
+  - [Int length(Array[X])](#int-lengtharrayx)
+  - [Array[X] flatten(Array[Array[X]])](#arrayx-flattenarrayarrayx)
+  - [Array[String] prefix(String, Array[X])](#arraystring-prefixstring-arrayx)
+  - [Array[String] suffix(String, Array[X])](#arraystring-suffixstring-arrayx)
+  - [Array[String] quote(Array[X])](#arraystring-quotearrayx)
+  - [Array[String] squote(Array[X])](#arraystring-squotearrayx)
+  - [X select_first(Array[X?])](#x-select_firstarrayx)
+  - [Array[X] select_all(Array[X?])](#arrayx-select_allarrayx)
+  - [Boolean defined(X?)](#boolean-definedx)
+  - [String basename(String)](#string-basenamestring)
+  - [Int floor(Float), Int ceil(Float) and Int round(Float)](#int-floorfloat-int-ceilfloat-and-int-roundfloat)
+  - [String sep(String, Array[String])](#string-sepstring-arraystring)
+- [Data Types & Serialization](#data-types--serialization)
+  - [Serialization of Task Inputs](#serialization-of-task-inputs)
+    - [Primitive Types](#primitive-types)
+    - [Compound Types](#compound-types)
+      - [Array serialization](#array-serialization)
+        - [Array serialization by expansion](#array-serialization-by-expansion)
+        - [Array serialization using write_lines()](#array-serialization-using-write_lines)
+        - [Array serialization using write_json()](#array-serialization-using-write_json)
+      - [Map serialization](#map-serialization)
+        - [Map serialization using write_map()](#map-serialization-using-write_map)
+        - [Map serialization using write_json()](#map-serialization-using-write_json)
+      - [Struct serialization](#struct-serialization)
+      - [Struct serialization using write_json()](#struct-serialization-using-write_json)
+  - [De-serialization of Task Outputs](#de-serialization-of-task-outputs)
+    - [Primitive Types](#primitive-types-1)
+    - [Compound Types](#compound-types-1)
+      - [Array deserialization](#array-deserialization)
+        - [Array deserialization using read_lines()](#array-deserialization-using-read_lines)
+        - [Array deserialization using read_json()](#array-deserialization-using-read_json)
+      - [Map deserialization](#map-deserialization)
+        - [Map deserialization using read_map()](#map-deserialization-using-read_map)
+        - [Map deserialization using read_json()](#map-deserialization-using-read_json)
 
 ## Introduction
 
@@ -333,8 +342,7 @@ struct BamAndIndex {
     File bam
     File bam_index
 }
-BamAndIndex b_and_i = {"bam":"NA12878.bam", "bam_index":"NA12878.bam.bai"}
-BamAndIndex b_and_i_2 = object {bam:"NA12878.bam", bam_index:"NA12878.bam.bai"}
+BamAndIndex b_and_i = BamAndIndex { bam: "NA12878.bam", bam_index: "NA12878.bam.bai" }
 ```
 
 Some examples of types:
@@ -690,23 +698,6 @@ Map[String, Int] = {"a": 1, "b": 2}
 String a = "one"
 Map[String, Int] = {a: 1, "not " + a: 2}
 ```
-
-### Object Literals
-
-Similar to Map literals, however object literal keys are unquoted strings.
-This makes them well suited for assigning to `Structs`.
-Beware the behaviour difference with Map literals
-
-```wdl
-Map[String, Int] map_1 = object {a: 1, b: 2}
-String a = "one"
-String b = "two"
-# map_2 != map_1
-Map[String, Int] map_2 = {a: 1, b: 2}
-```
-
-map_1 has the keys 'a' and 'b'.
-map_2 has the keys 'one' and 'two'.
 
 ### Pair Literals
 
@@ -2047,7 +2038,7 @@ struct Name {
 
 When using a struct in the declaration section of either a `workflow` or a `task` or `output` section you define them in the same way you would define any other type.
 
-Structs should be declared with Object literals, as the keys can be checked
+Structs should be declared with Struct literals, as the keys can be checked
 for correctness before run time.
 Assignment is also possible from `Maps`, other `Structs`.
 As `Map` literals can contain arbitrary expressions for the keys,
@@ -2081,13 +2072,55 @@ task myTask {
 }
 
 workflow myWorkflow {
-    Person harry = object {name: "Harry", age: 11}
+    Person harry = Person { name: "Harry", age: 11 } 
     call myTask {
         input:
             a = harry
     }
 }
 ```
+
+#### Struct Literals
+Structs can be created and assigned using the `Struct Literal` notation. Struct literal notation enables the creation of typed struct objects which enforces the typing of all of its
+assigned parameters. Struct literal notation attempts to be more declarative to help engine implementations apply the proper
+type conversions to nested structs, as well as remove any ambiguity over what the object being constructed represents.
+
+A `Struct Literal` declaration is similar to a map literal except it is preceded by a reference to the struct name. For example, the basic syntax for the `Person` struct would look like the following:
+
+```wdl
+Person {...}
+```
+
+Arguments placed within the brackets are key-value pairs, where the key is the name of one of the struct declarations, and the value is the value to set the argument to.  
+There is no need to wrap a key in quotation marks, instead keys are represented in plain text followed by a colon `:`. The value follows after the `:`. Multiple arguments can 
+be separated by a comma ',' and arguments do not need to be specified in a specific order.
+
+Values passed to struct literals can be any previously defined declaration, or they themselves can be a literal notation.
+
+
+```wdl
+
+#Simple case
+
+input {
+    File fastq_1
+    File fastq_2
+}
+
+Sample sample_1 = Sample { type: "Blood", sequencing_info: "WGS", fastq: fastq_1 }
+
+Sample sample_2 = Sample { type: "Liver", sequencing_info: "WES", fastq: fastq_2 }
+Person person_1 = Person { name: "John", age: 30, samples: [sample_1,sample_2] }
+
+#Example representing using different literal notations
+SomeStruct struct_1 = SomeStruct { someDict: {"key":"value"}, someArray: [1.0,2.3,1.5] }
+
+#You can also use Struct literals within another Struct literal
+Person person_2 = Person { name: "Bob", age: 45, samples: [Sample { type:"Oral", sequencing_info: "WES", fastq: fastq_3 }] )
+
+```
+
+
 
 ### Struct Member Access
 
