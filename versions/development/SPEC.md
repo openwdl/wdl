@@ -3113,12 +3113,42 @@ In this example, `i`, and `f` are inputs to this task even though `i` is not dir
 
 ## Computing Workflow Inputs
 
-Workflows have inputs that must be satisfied to run them, just like tasks. Inputs to the workflow are provided as a key/value map where the key is of the form `workflow_name.input_name`.
+Workflows have inputs that must be satisfied to run them, just like tasks. 
+Inputs to the workflow are provided as a key/value map where the key is of the 
+form `workflow_name.input_name`.
 
-* If a workflow is to be used as a sub-workflow it must ensure that all of the inputs to its calls are satisfied.
-* If a workflow will only ever be submitted as a top-level workflow, it may optionally leave its tasks' inputs unsatisfied. This then forces the engine to additionally supply those inputs at run time. In this case, the inputs' names must be qualified in the inputs as `workflow_name.task_name.input_name`.
+* A call has its inputs supplied when called by a workflow. 
+    * Example: `call my_task { input: my_task_input=... }`
+* All required call inputs which do not have defaults should be filled by the 
+  calling workflow.
+* A workflow is allowed not to specify optional inputs in a call's input block. 
+  In this case, the inputs bubble up to become a nested input to the workflow 
+  instead.
+    * Example: an unsupplied input might have the fully-qualified name 
+      `my_workflow.my_task.my_task_input`.
+* If that workflow is used as a subworkflow, the input is allowed to bubble up 
+  again with a further-qualified name.
+    * Example: my_outer_workflow.my_workflow.my_task.my_task_input.
+* There is currently no way to supply a bubbled-up input in an outer workflow's 
+  call block.
+    * Example: the following inputs would not be valid for a call to a subworkflow
+      `{ inputs: my_task.my_task_input=... }`
+* By default an engine only allows inputs that are specified in the input
+  section of the top-level workflow.
+* If a workflow is suitable for use with nested inputs it should be explicitly
+  stated. This is done by setting `allowNestedInputs` to `true` in the meta
+  section of the workflow. For example:
 
-Any declaration that appears outside the `input` section is considered an intermediate value and **not** a workflow input. Any declaration can always be moved inside the `input` block to make it overridable.
+```WDL
+meta {
+    allowNestedInputs: true
+}
+```
+
+Any declaration that appears outside the `input` section is considered an 
+intermediate value and **not** a workflow input. 
+Any declaration can always be moved inside the `input` block to make it 
+overridable.
 
 Consider the following workflow:
 
@@ -3130,7 +3160,7 @@ task t1 {
   }
 
   command {
-    ./script --action=${s} -x${x}
+    ./script --action=~{s} -x~{x}
   }
   output {
     Int count = read_int(stdout())
@@ -3144,12 +3174,12 @@ task t1 {
 task t2 {
   input {
     String s
-    Int t
+    Int? t
     Int x
   }
 
   command {
-    ./script2 --action=${s} -x${x} --other=${t}
+    ./script2 --action=~{s} -x~{x} ~{"--other=" + t}
   }
   output {
     Int count = read_int(stdout())
@@ -3167,7 +3197,7 @@ task t3 {
   }
 
   command {
-    python -c "print(${y} + 1)"
+    python -c "print(~{y} + 1)"
   }
   output {
     Int incr = read_int(stdout())
@@ -3184,15 +3214,24 @@ workflow wf {
     Int int_val2 = 10
     Array[Int] my_ints
     File ref_file
+    String t1s
+    String t2s
+  }
+  meta {
+    allowNestedInputs: true
   }
 
   String not_an_input = "hello"
 
   call t1 {
-    input: x = int_val
+    input: 
+        x = int_val,
+        s = t1s
   }
   call t2 {
-    input: x = int_val, t=t1.count
+    input: 
+        x = t1.count,
+        s = t2s
   }
   scatter(i in my_ints) {
     call t3 {
@@ -3204,13 +3243,16 @@ workflow wf {
 
 The inputs to `wf` would be:
 
-* `wf.t1.s` as a `String`
-* `wf.t2.s` as a `String`
+* `wf.t1s` as a `String`
+* `wf.t2s` as a `String`
 * `wf.int_val` as an `Int`
 * `wf.my_ints` as an `Array[Int]`
 * `wf.ref_file` as a `File`
+* `wf.t2.t` as an `Int?`
 
-Note that because some call inputs are left unsatisfied, this workflow could not be used as a sub-workflow. To fix that, additional workflow inputs could be added to pass-through `t1.s` and `t2.s`.
+Note that the optional `t` input for task `t2` is left unsatisfied, this 
+option can be passed as `wf.t2.t` because `allowNestedInputs` is set to true
+if it were set to `false` this input would not be available. 
 
 ## Specifying Workflow Inputs in JSON
 
