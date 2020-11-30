@@ -94,6 +94,15 @@ Table of Contents
     - [Struct Member Access](#struct-member-access)
     - [Importing Structs](#importing-structs)
 - [Namespaces](#namespaces)
+- [Value Scopes and Visibility](#value-scopes-and-visibility)
+  - [Types of Value](#types-of-value)
+  - [Evaluation Order](#evaluation-order)
+  - [Value Reachability Rules](#value-reachability-rules)
+  - [Examples](#examples-1)
+    - [Task Scoping](#task-scoping)
+    - [Workflow Scoping](#workflow-scoping)
+    - [Forward Reference](#forward-reference)
+    - [Referencing values within and from outside sub-sections](#referencing-values-within-and-from-outside-sub-sections)
 - [Scope](#scope)
 - [Optional Parameters & Type Constraints](#optional-parameters--type-constraints)
   - [Prepending a String to an Optional Parameter](#prepending-a-string-to-an-optional-parameter)
@@ -193,7 +202,7 @@ workflow wf {
 
 This describes a task, called 'hello', which has two parameters (`String pattern` and `File in`).  A `task` definition is a way of **encapsulating a UNIX command and environment and presenting them as functions**.  Tasks have both inputs and outputs.  Inputs are declared as declarations at the top of the `task` definition, while outputs are defined in the `output` section.
 
-The user must provide a value for these two parameters in order for this task to be runnable.  Implementations of WDL should accept their [inputs as JSON format](#specifying-workflow-inputs-in-json).  For example, the above task needs values for two parameters: `String pattern` and `File in`:
+The user must provide a value for these two parameters in order for this task to be runnable. Implementations of WDL should accept their [inputs as JSON format](#specifying-workflow-inputs-in-json). The inputs described in such a JSON file must be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example, the above task needs values for two parameters: `String pattern` and `File in`:
 
 |Variable           |Value    |
 |-------------------|---------|
@@ -381,7 +390,13 @@ $fully_qualified_name = $identifier ('.' $identifier)*
 $namespaced_identifier = $identifier ('.' $identifier)*
 ```
 
-A fully qualified name is the unique identifier of any particular `call` or call input or output.  For example:
+A fully qualified name is the unique identifier of any particular call, input or output. These follow the following structure:
+* For calls: `<parent namespace>.<call alias>`
+* For inputs and outputs: `<parent namespace>.<input or output name>`
+
+The `parent namespace` here will equal the fully qualified name of the call containing the call, input or output. For the top-level workflow this is equal to the workflow name, as it lacks a call alias.
+
+For example:
 
 other.wdl
 ```wdl
@@ -399,6 +414,13 @@ task foobar {
   runtime {
     container: "my_image:latest"
   }
+}
+
+workflow otherWorkflow {
+    input {
+        Boolean bool
+    }
+    call foobar
 }
 ```
 
@@ -425,6 +447,8 @@ workflow wf {
   call test
   call test as test2
   call other.foobar
+  call other.otherWorkflow
+  call other.otherWorkflow as otherWorkflow2
   output {
     test.results
     foobar.results
@@ -448,6 +472,14 @@ The following fully-qualified names would exist within `workflow wf` in main.wdl
 * `wf.test2.results` - References the `File` output of second call to task `test`
 * `wf.foobar.results` - References the `File` output of the call to `other.foobar`
 * `wf.foobar.input` - References the `File` input of the call to `other.foobar`
+* `wf.otherWorkflow` - References the first call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow.bool` - References the `Boolean` input of the first call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow.foobar.results` - References the `File` output of the call to `foobar` inside the first call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow.foobar.input` - References the `File` input of the call to `foobar` inside the first call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow2` - References the second call to subworkflow `other.otherWorkflow` (aliased as otherWorkflow2)
+* `wf.otherWorkflow2.bool` - References the `Boolean` input of the second call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow2.foobar.results` - References the `File` output of the call to `foobar` inside the second call to subworkflow `other.otherWorkflow`
+* `wf.otherWorkflow2.foobar.input` - References the `File` input of the call to `foobar` inside the second call to subworkflow `other.otherWorkflow`
 * `wf.arr` - References the `Array[String]` declaration on the workflow
 * `wf.scattered_test` - References the scattered version of `call test`
 * `wf.scattered_test.my_var` - References an `Array[String]` for each element used as `my_var` when running the scattered version of `call test`.
@@ -2531,15 +2563,204 @@ aliased name.
 
 # Namespaces
 
-Import statements can be used to pull in tasks/workflows from other locations as well as to create namespaces.  In the simplest case, an import statement adds the tasks/workflows that are imported into the specified namespace.  For example:
+The following namespaces exist:
+* [A WDL file](#import-statements): When imported the name equals that of the basename of the file by default, but may be aliased using the `as identifier` syntax.
+  * May contain namespaces, tasks, structs (please see the notes at [Importing Structs](#importing-structs)) and at most one workflow.
+* [A call (of a task or workflow)](#call-statement): The name equals that of the called task or workflow by default, but may be aliased using the `as identifier` syntax.
+  * May contain inputs, outputs, runtime_attributes (if the call is to a task), variables (accessibility limited by [scope](#scope)) and calls (if the call is to a workflow).
+* [A struct instance](#struct-definition): The name equals that of the variable name of the struct instance.
+  * May contain variables.
 
-tasks.wdl
-```
-task x {
-  command { python script.py }
+All members of a namespace (ie. inputs, outputs, variables, tasks, workflows, structs, imported namespaces and calls) must be unique within that namespace.
+
+For example, one cannot import two workflows while they have the same namespace identifier. Additionally, a workflow and a namespace both named `foo` cannot exist inside a common namespace.
+Similarly there cannot be a call `foo` in a workflow also named `foo`. However, you can import two workflows with different namespace identifiers that have identically named tasks.
+For example, you can import namespaces `foo` and `bar`, both of which contain a task `baz`, and you can call `foo.baz` and `bar.baz` from the same primary workflow.
+
+# Value Scopes and Visibility
+
+Values can be defined within workflows and tasks. Within these, various blocks exist which can also contain value definitions, for example:
+
+* `input` blocks
+* `output` blocks
+* `scatter` blocks
+* `if` blocks
+
+## Types of Value
+
+Values can be defined within a `task` or `workflow` as either inputs, outputs or intermediate values.
+
+* **Inputs** are declared in the `input` block of the task or workflow.
+  * If inputs are defined at the same time, that value provides a default which can be overridden by a user's input set.
+* **Outputs** must be defined in `output` sections.
+* **Intermediate values** are not provided as inputs and are not exposed as outputs. Instead, they allow the storage of
+temporary values. Intermediate values are visible only within the task or workflow that contain them and disappear
+when the task or workflow is completed.
+
+The final type of value is a **scatter value**. Each `scatter` block provides a scoped value representing each item in the
+scatter. For example `scatter(x in ...)` makes the value `x` visible **only within the scatter's `{...}` block or nested sub-blocks**.
+
+## Evaluation Order
+
+All values in workflows can be evaluated as soon as - but not before - their expression inputs are available.
+Beyond that it is at the discretion of the engine when to evaluate each value.
+
+
+Sometimes input definition are based on intermediate values - or even task outputs. In that case, the user can provide
+an override in their inputs file, or else the value must wait until the definition expression can be evaluated.
+
+
+Within tasks the order is more defined since they interact with the running of the command itself:
+* Inputs and intermediate values must be evaluated in the order required by their definition expressions.
+  * This is true even if the intermediate value definitions follow the `command` block positionally in the file.
+* Outputs are evaluated *after* the command has been run.
+
+## Value Reachability Rules
+
+* Within a (`workflow` or `task`), each value name is unique, is immutable once set, and is visible from anywhere else in the task or workflow.
+    * Exception: `scatter` values
+        * For example the value named `x` in the line `scatter(x in ...) { ... }`
+        * Scatter values are only accessible within the scatter block and any sub-blocks.
+        * Scatter value names can be reused as scatter value names by other scatter blocks
+    * Exception: `output` values
+        * Because they must be calculated last, `output` values are *not* reachable from outside the `output` section.
+* Any value may be used as a dependency higher up in the WDL file than the location where it is defined.
+    * This is OK because evaluation order is defined by the availability of dependencies, not the order in the page.
+    * See the [Forward Reference](#forward-reference) example.
+* Despite values being reachable from outside sub-sections, the types of values may change if accessed from outside:
+    * Using a value which was declared within a `scatter` from outside that `scatter` implicitly collects the results, turning any `X` into an `Array[X]`.
+    * Using a value which was declared within a `if` from outside the `if` implicitly optionalizes the results, turning any `X` into an `X?`.
+* References must always be acyclic:
+    * If "`a` depends on `b`" then it cannot also be true that "`b` depends on `a`".
+    * Values defined inside a `scatter` or `if` block are not available to evaluate the respective `scatter` or `if` expression.  
+    * References must also not cause cyclic dependencies between sub-blocks of a task or workflow.
+      * See the [Acyclic Sub-Sections](#acyclic-sub-sections) for an example of what this means.
+
+## Examples
+
+### Task Scoping
+
+```wdl
+version development
+
+task my_task {
+  input {
+    Int x
+    File f
+  }
+
+  Int y = x + 1
+
+  command {
+    my_cmd --integer1=~{x} --integer2=~{y} ~{f}
+  }
+
+  output {
+    Int z = read_int(stdout())
+    Int z_plus_one = z + 1
+  }
 }
-task y {
-  command { python script2.py }
+```
+
+* `x` and `f` are `input` values which will be evaluated before the task begins.
+* `y` is an intermediate value with an upstream dependency on the input `x`.
+* The `command` section is able to access all `input`s and intermediate values. It is not able to reference `output` values.
+* `z` is an `output` value - it cannot be accessed except by the other declaration in the `output` section.
+* `z_plus_one` is another `output` value.
+
+### Workflow Scoping
+
+This workflow calls the `my_task` task from the previous example.
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    File file
+    Int x = 2
+  }
+
+  call my_task { input:
+    x = x,
+    f = file
+  }
+
+  output {
+    Int z = my_task.z
+  }
+}
+```
+
+* `file` and `x` are `input` values which will be evaluated before the workflow begins.
+* The call block provides inputs for the task values `x` and `f`.
+    * Note that `x` is used twice in the line `x = x,`
+        * First: to name the value in the task being provided. This must reference an input value in the `task` scope of the appropriate `task`.
+        * Second: as part of the input expression. This expression may reference any values in scope in the current `workflow`.
+* `z` is an output value which depends on the output from the `call` to `my_task`. It is not accessible from elsewhere in the `workflow`.
+
+### Forward Reference
+
+This example shows that forward references are alright so long as they can ultimately be processed as an acyclic graph.
+
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    File file
+    Int x = 2
+  }
+
+  call my_task { input:
+    x = x_modified,
+    f = file
+  }
+
+  Int x_modified = x
+
+  output {
+    Int z = my_task.z
+  }
+}
+```
+
+* The graph dependencies for this workflow would be:
+```
+file is an input
+x is an input
+x_modified depends on {x}
+my_task depends on {x_modified, file}
+z depends on {my_task}
+```
+
+* There are no cycles in this dependency graph.
+* Therefore, although not necessarily recommended for readability reasons, this workflow would processed without problem.
+
+### Referencing values within and from outside sub-sections
+
+This example scatters over the `my_task` task from the previous examples.
+```wdl
+version development
+
+workflow my_workflow {
+  input {
+    File file
+    Array[Int] xs = [1, 2, 3]
+  }
+
+  scatter (x in xs) {
+    call my_task { input:
+      x = x,
+      f = file
+    }
+
+    Int z = my_task.z
+  }
+
+  output {
+    Array[Int] zs = z
+  }
 }
 ```
 
