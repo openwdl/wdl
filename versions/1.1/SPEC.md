@@ -3351,7 +3351,7 @@ Some functions accept arguments of multiple different types, denoted as a list o
 
 Some functions are polymorphic, which means that they are actually multiple functions with the same name but different signatures. Such functions are defined with generic types (e.g. `X`, `Y`) instead of concrete types (e.g. `File` or `String`), and the bounds of each type parameter is specified in the function description.
 
-Functions that are new in this version of the specification are denoted by ✨, and deprecated functions are de
+Functions that are new in this version of the specification are denoted by ✨, and deprecated functions are denoted by 🗑.
 
 ## Int floor(Float), Int ceil(Float) and Int round(Float)
 
