@@ -20,17 +20,14 @@ Keep the changelog pleasant to read in the text editor:
 
 version 2.0.0
 ---------------------------
-<<<<<<< HEAD
+
 + Abbreviated syntax for call inputs bound to workflow-scoped values by name:
   `{input: x, y=b, z}` is shorthand for `{input: x=x, y=b, z=z}`
   [PR 365](https://github.com/openwdl/wdl/pull/365) by @mlin
 
-=======
-
 + Write a specification for unsatisfied task inputs and nested optional inputs.
   [PR 359](https://github.com/openwdl/wdl/pull/359) by @rhpvorderman
   
->>>>>>> rhpvorderman/optionalinputs
 + Removes string interpolator options and adds an engine function for joining arrays of strings. 
   [PR 229](https://github.com/openwdl/wdl/pull/229) and [PR 368](https://github.com/openwdl/wdl/pull/366) 
   by @EvanTheB and @illusional. 
