@@ -909,7 +909,7 @@ String s = read_string("/path/to/file")  # requires reading a file that
 
 WDL provides the standard unary and binary mathematical and logical operators. The following table lists the valid operand and result type combinations for each operator. Using an operator with unsupported types results in an error.
 
-In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type is first cast to a `Float`; the result type is always `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by the `Float`. Note that a `Float` can be converted to an `Int` with the `ceil`, `round`, or `floor` functions.
+In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type is first cast to a `Float`; the result type is always `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by the `Float`. Note that a `Float` can be converted to an `Int` with the [`ceil`, `round`, or `floor`](#int-floorfloat-int-ceilfloat-and-int-roundfloat) functions.
 
 ##### Unary Operators
 
@@ -925,7 +925,7 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 |--------|--------|--------|------|---------|
 |`Boolean`|`==`|`Boolean`|`Boolean`||
 |`Boolean`|`!=`|`Boolean`|`Boolean`||
-|`Boolean`|`||`|`Boolean`|`Boolean`||
+|`Boolean`|`\|\|`|`Boolean`|`Boolean`||
 |`Boolean`|`&&`|`Boolean`|`Boolean`||
 |`Int`|`+`|`Float`|`Float`||
 |`Int`|`-`|`Float`|`Float`||
