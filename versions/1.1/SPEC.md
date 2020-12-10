@@ -587,7 +587,7 @@ String path = "/path/to/file"
 File f = path
 ```
 
-The tables below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
+The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
 |Target Type |Source Type     |Notes/Constraints |
 |------------|----------------|------------------|
@@ -595,12 +595,12 @@ The tables below lists all globally valid coercions. The "target" type is the ty
 |`Float`|`Int`|May cause overflow error|
 |`Y?`|`X`|`X` must be coercible to `Y`|
 |`Array[Y]`|`Array[X]`|`X` must be coercible to `Y`|
-|`Map[X, Z]`|`Map[W, Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
-|`Pair[X, Z]`|`Pair[W, Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
-|`Object`|`Map[String, X]`||
-|`Map[String, X]`|`Object`|All object values must be coercible to `X`|
-|`Struct`    |`Map[String, X]`|`Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `X`|
-|`Map[String, X]`|`Struct`|All `Struct` members must be coercible to `X`|
+|`Map[X,Z]`|`Map[W,Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
+|`Pair[X,Z]`|`Pair[W,Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
+|`Object`|`Map[String,Y]`||
+|`Map[String,Y]`|`Object`|All object values must be coercible to `Y`|
+|`Struct`    |`Map[String,Y]`|`Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`|
+|`Map[String,Y]`|`Struct`|All `Struct` members must be coercible to `Y`|
 |`Object`|`Struct`||
 |`Struct`|`Object`|`Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types|
 
