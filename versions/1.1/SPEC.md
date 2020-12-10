@@ -71,8 +71,8 @@ This is version 1.1 of the WDL specification. It introduces a number of ✨ new 
         - [`memory`](#memory)
         - [`gpu`](#gpu)
         - [`disks`](#disks)
-        - [maxRetries](#maxretries)
-        - [returnCodes](#returncodes)
+        - [`maxRetries`](#maxretries)
+        - [`returnCodes`](#returncodes)
       - [Reserved `runtime` hints](#reserved-runtime-hints)
       - [Conventions and Best Practices](#conventions-and-best-practices)
     - [Metadata Sections](#metadata-sections)
@@ -2036,7 +2036,7 @@ task disks_test {
 }
 ```
 
-##### maxRetries
+##### `maxRetries`
 
 * Accepted type: `Int`
 * Default value: `0`
@@ -2056,7 +2056,7 @@ task maxRetries_test {
 }
 ```
 
-##### returnCodes
+##### `returnCodes`
 
 * Accepted types:
     * `"*"`: This special value indicates that ALL returnCodes should be considered a success.
