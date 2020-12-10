@@ -3300,7 +3300,7 @@ task my_task {
 }
 
 workflow my_workflow {
-  Person harry = Person { name: "Harry", age: 11 }
+  Wizard harry = Wizard { name: "Harry", age: 11 }
   
   call myTask { input: a = harry }
 }
