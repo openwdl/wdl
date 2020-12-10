@@ -1439,7 +1439,7 @@ A task may also specify [requirements for the runtime environment](#runtime-sect
 
 There are also two optional metadata sections: the [`meta`](#metadata-sections) section, for task-level metadata, and the [`parameter_meta`](#parameter-metadata-section) section, for parameter-level metadata.
 
-The execution engine is responsible for "materializing" the shell script (i.e. replacing all references with actual values) in an environment that meets all specified runtime requirements, localizing any input files into that environment, executing the script, and generating any requested outputs.
+The execution engine is responsible for "instantiating" the shell script (i.e. replacing all references with actual values) in an environment that meets all specified runtime requirements, localizing any input files into that environment, executing the script, and generating any requested outputs.
 
 ### Task Inputs
 
