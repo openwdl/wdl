@@ -2416,6 +2416,35 @@ stage2 map1 --max-seq-length 20 --min-seq-length 10 --seed-length 16 \
 
 ## Workflow Definition
 
+
+```wdl
+workflow name {
+  input {
+    # workflow inputs are declared here
+  }
+
+  # other "private" declarations can be made here
+ 
+  # there may be any number of (potentially nested) 
+  # calls, scatter blocks, or conditional blocks
+  call target { input: ... }
+  scatter (i in collection) { ... }
+  if (condition) { ... }
+
+  output {
+    # workflow outputs are declared here
+  }
+
+  meta {
+    # workflow-level metadata can go here
+  }
+
+  parameter_meta {
+    # metadata about each input/output parameter can go here
+  }
+}
+```
+
 A workflow can be thought of as a directed acyclic graph (DAG) of transformations that convert the input data to the desired outputs. Rather than explicitly specifying the sequence of operations, A WDL workflow instead describes the connections between the steps in the workflow (i.e. between the nodes in the graph). It is the responsibility of the execution engine to determine the proper ordering of the workflow steps, and to orchestrate the execution of the different steps.
 
 A workflow is defined using the `workflow` keyword, followed by a workflow name that is unique within its WDL document.
