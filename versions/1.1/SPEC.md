@@ -1,6 +1,6 @@
 # Workflow Description Language
 
-This is version 1.1 of the WDL specification. It introduces a number of new features (✨) and clarifications to the 1.0 version of the specification. It also deprecates (🗑) several aspects of the 1.0 specification that will be removed in version 2.0.
+This is version 1.1 of the WDL specification. It introduces a number of ✨ new features and clarifications to the 1.0 version of the specification. It also 🗑 deprecates several aspects of the 1.0 specification that will be removed in version 2.0.
 
 ## Table of Contents
 
