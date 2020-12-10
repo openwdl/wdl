@@ -3256,13 +3256,13 @@ It is valid to import the same struct into the global namespace multiple times v
 For example, if your current WDL defines a struct named `Experiment` and an imported WDL also defines a struct named `Experiment` you can alias it as follows:
 
 ```wdl
-import http://example.com/example.wdl as ex alias Experiment as OtherExperiment
+import "http://example.com/example.wdl" as ex alias Experiment as OtherExperiment
 ```
 
 In order to resolve multiple structs, simply add additional alias statements.
 
 ```wdl
-import http://example.com/another_exampl.wdl as ex2
+import "http://example.com/another_exampl.wdl" as ex2
     alias Parent as Parent2
     alias Child as Child2
     alias GrandChild as GrandChild2
