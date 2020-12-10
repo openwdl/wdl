@@ -617,7 +617,7 @@ See [Expression Placeholder Coercion](#expression-placeholder-coercion) for deta
 
 A non-optional type `T` can always be coerced to an optional type `T?`, but the reverse is not true - coercion from `T?` to `T` is not allowed because the latter cannot accept `None`.
 
-This constraint propagates into compound types. For example, an `Array[T?]` can contain both optional and non-optional elements. This facilitates the common idiom `select_first([expr, default])`, where `expr` is of type `T?` and `default` is of type `T`, for converting an optional type to a non-optional type. However, an `Array[T?]` could not be passed to the `sep` function, which requires an `Array[T]`.
+This constraint propagates into compound types. For example, an `Array[T?]` can contain both optional and non-optional elements. This facilitates the common idiom `select_first([expr, default])`, where `expr` is of type `T?` and `default` is of type `T`, for converting an optional type to a non-optional type. However, an `Array[T?]` could not be passed to the [`sep`](#-string-sepstring-arraystring) function, which requires an `Array[T]`.
 
 The two exceptions where coercion from `T?` to `T` are allowed are:
 * [String concatenation in expression placeholders](#concatenation-of-optional-values)
@@ -3513,7 +3513,7 @@ At least in standard Bash, glob expressions are not evaluated recursively, i.e. 
 
 **Returns**: A array of all files matched by the glob.
 
-**Restrictions**: Can only be used within the `output` section of a `task`.
+**Restrictions**: Can only be used within a `task`.
 
 **Example**
 
