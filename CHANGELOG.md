@@ -21,6 +21,42 @@ Keep the changelog pleasant to read in the text editor:
 version 2.0.0
 ---------------------------
 
++ Runtime section no longer accepts arbitrary keys. Added new hints section for arbitrary runtime hints.
+  [PR 315](https://github.com/openwdl/wdl/pull/315) by @patmagee
+
++ Removes string interpolator options. 
+  [PR 229](https://github.com/openwdl/wdl/pull/229) and [PR 368](https://github.com/openwdl/wdl/pull/366) 
+  by @EvanTheB and @illusional. 
+
++ `object` has been removed from WDL. `struct` can be used to achieve the same
+  type of functionality in a more explicit way.
+  [PR 283](https://github.com/openwdl/wdl/pull/283) by @patmagee.
+
++ Added a new directory type to make it easier when working with inputs that
+  consist of multiple files.
+  [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
+
+version 1.1.0
+---------------------------
+
++ Clarified that the `sub` function requires a POSIX Extended Regular Expression (ERE).
+  [PR 243](https://github.com/openwdl/wdl/pull/243) by @rhpvorderman
+
++ Added syntax for struct literals.
+  [PR 297](https://github.com/openwdl/wdl/pull/297) by @patmagee
+
++ Added engine functions for `min` and `max`.
+  [PR 304](https://github.com/openwdl/wdl/pull/304) by @pshapiro
+
++ Added seciton on file outputs including optional outputs.
+  [PR 310](https://github.com/openwdl/wdl/pull/310) by @jtratner
+
++ Added reserved keys, explicit formats, and default values for runtime attributes and hints.
+  [PR 315](https://github.com/openwdl/wdl/pull/315) by @patmagee
+
++ Namespacing has been clarified.
+  [PR 340](https://github.com/openwdl/wdl/pull/340) by @DavyCats
+
 + Abbreviated syntax for call inputs bound to workflow-scoped values by name:
   `{input: x, y=b, z}` is shorthand for `{input: x=x, y=b, z=z}`
   [PR 365](https://github.com/openwdl/wdl/pull/365) by @mlin
@@ -28,9 +64,9 @@ version 2.0.0
 + Write a specification for unsatisfied task inputs and nested optional inputs.
   [PR 359](https://github.com/openwdl/wdl/pull/359) by @rhpvorderman
   
-+ Removes string interpolator options and adds an engine function for joining arrays of strings. 
++ Adds an engine function for joining arrays of strings. 
   [PR 229](https://github.com/openwdl/wdl/pull/229) and [PR 368](https://github.com/openwdl/wdl/pull/366) 
-  by @EvanTheB and @illusional. 
+  by @EvanTheB and @illusional.
 
 + Added an engine function for adding a suffix to an array of primitives as well
   as well as `quote` and `squote` engine functions.
@@ -50,10 +86,6 @@ version 2.0.0
 
 + Optional and non-empty type constraints have been clarified.
   [PR 290](https://github.com/openwdl/wdl/pull/290) by @mlin.
-
-+ `object` has been removed from WDL. `struct` can be used to achieve the same
-  type of functionality in a more explicit way.
-  [PR 283](https://github.com/openwdl/wdl/pull/283) by @patmagee.
 
 + The way comments work has been clarified.
   [PR 277](https://github.com/openwdl/wdl/pull/277) by @patmagee.
@@ -79,19 +111,13 @@ version 2.0.0
 + Added a `keys` function to get an array of keys from a map.
   [PR 244](https://github.com/openwdl/wdl/pull/244) by @ffinfo.
 
-+ Added a new directory type to make it easier when working with inputs that
-  consist of multiple files.
-  [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
-
 + Several bugs in the grammar have been fixed.
   [PR 238](https://github.com/openwdl/wdl/pull/238) and
   [PR 240](https://github.com/openwdl/wdl/pull/240) by @cjllanwarne.
 
-<!---
 This is not implemented yet.
 + Type conversions and meanings have been clarified.
   [PR 235](https://github.com/openwdl/wdl/pull/235) by @EvanTheB.
--->
 
 + **Backported to 1.0**: Imports are now relative to their current location.
   [PR 220](https://github.com/openwdl/wdl/pull/220) by @geoffjentry.
@@ -102,7 +128,6 @@ This is not implemented yet.
 
 + Add an `after` keyword to run a task after other tasks.
   [PR 162](https://github.com/openwdl/wdl/pull/162) by @cjllanwarne.
-
 
 version 1.0.0
 ---------------------------
