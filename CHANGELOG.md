@@ -48,7 +48,7 @@ version 1.1.0
 + Added engine functions for `min` and `max`.
   [PR 304](https://github.com/openwdl/wdl/pull/304) by @pshapiro
 
-+ Added seciton on file outputs including optional outputs.
++ Added section on file outputs including optional outputs.
   [PR 310](https://github.com/openwdl/wdl/pull/310) by @jtratner
 
 + Added reserved keys, explicit formats, and default values for runtime attributes and hints.

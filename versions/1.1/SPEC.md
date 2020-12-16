@@ -1095,11 +1095,13 @@ WDL provides a [standard library](#standard-library) of functions. These functio
 
 #### Expression Placeholders and String Interpolation
 
-Any WDL string expression may contain one or more "placeholders" of the form `~{*expression*}` or `${*expression*}`, each of which contains a single expression. When a string expression is evaluated, its placeholders are evaluated first, and their values are then substituted for the placeholders in the containing string.
+Any WDL string expression may contain one or more "placeholders" of the form `~{*expression*}`, each of which contains a single expression. Note that placeholders of the form `${*expression*}` may also be used interchangably, but their use is discouraged for reasons discussed in the [command section](#expression-placeholders) and may be deprecated in a future version of the specification.
+
+When a string expression is evaluated, its placeholders are evaluated first, and their values are then substituted for the placeholders in the containing string.
 
 ```wdl
 Int i = 3
-String s = "~{1 + i}"
+String s = "~{1 + i}"  # s == "4"
 ```
 
 As another example, consider how the following expression would be parsed:
@@ -1122,6 +1124,7 @@ Placeholders may contain other placeholders to any level of nesting, and placeho
 ```wdl
 Int i = 3
 Boolean b = true
+# s evaluates to "4", but would be "0" if b were false
 String s = "~{if b then '${1 + 3}' else 0}"
 ```
 
