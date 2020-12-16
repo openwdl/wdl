@@ -18,7 +18,7 @@ Keep the changelog pleasant to read in the text editor:
 + Properly indent blocks.
 -->
 
-version 2.0.0
+version development
 ---------------------------
 
 + Runtime section no longer accepts arbitrary keys. Added new hints section for arbitrary runtime hints.
@@ -115,7 +115,6 @@ version 1.1.0
   [PR 238](https://github.com/openwdl/wdl/pull/238) and
   [PR 240](https://github.com/openwdl/wdl/pull/240) by @cjllanwarne.
 
-This is not implemented yet.
 + Type conversions and meanings have been clarified.
   [PR 235](https://github.com/openwdl/wdl/pull/235) by @EvanTheB.
 

@@ -36,7 +36,7 @@ The execution engine is responsible for implementing all the necessary logic to 
     * The command template is evaluated in the context of all the (localized) input and private declaration values, and all expression placeholders are replaced with their (stringified) values. 
     * The instantiated command is written to local disk and made executable.
 8. Container resolution:
-    * If alternative container images are specified, the "best" one is selected
+    * If alternative container images are specified, the ["best"](SPEC.md#container) one is selected
     * The image is "pulled" to the local environment - this may involve a literal `docker pull`, downloading an image tarball and calling `docker load`, or some other mechanism
 9. Command execution: The instantiated command is staged within the container (along with any other necessary volumes) and executed there. All outputs should go to a staged output directory. If the command exits with any return code not specified in `runtime.returnCodes`, task execution exits with an error.
 10. Output ordering: Any output declarations that are initialized with expressions have their expressions examined to determine their dependencies. Declarations are then ordered such that they can be evaluated unambiguously.

@@ -1,6 +1,6 @@
 # Workflow Description Language
 
-This is version 1.1 of the WDL specification. It introduces a number of ✨ new features and clarifications to the 1.0 version of the specification. It also 🗑 deprecates several aspects of the 1.0 specification that will be removed in version 2.0.
+This is version 1.1 of the WDL specification. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the 1.0 version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in version 2.0 (denoted by the 🗑 symbol).
 
 ## Table of Contents
 
@@ -100,8 +100,8 @@ This is version 1.1 of the WDL specification. It introduces a number of ✨ new 
     - [Struct Usage](#struct-usage)
 - [Standard Library](#standard-library)
   - [Int floor(Float), Int ceil(Float) and Int round(Float)](#int-floorfloat-int-ceilfloat-and-int-roundfloat)
-  - [✨ Int min(Int, Int), Float min(Int|Float, Int|Float)](#-int-minint-int-float-minintfloat-intfloat)
-  - [✨ Int max(Int, Int), and Float max(Int|Float, Int|Float)](#-int-maxint-int-and-float-maxintfloat-intfloat)
+  - [✨ Int min(Int, Int), Float min(Float, Float), Float min(Int, Float), Float min(Float, Int)](#-int-minint-int-float-minfloat-float-float-minint-float-float-minfloat-int)
+  - [✨ Int max(Int, Int), Float max(Float, Float), Float max(Int, Float), Float max(Float, Int)](#-int-maxint-int-float-maxfloat-float-float-maxint-float-float-maxfloat-int)
   - [String sub(String, String, String)](#string-substring-string-string)
   - [File stdout()](#file-stdout)
   - [File stderr()](#file-stderr)
@@ -324,15 +324,15 @@ Tasks and workflow inputs may be passed in from an external source, or they may 
 
 #### Strings
 
-A string literal may contain any characters between single or double-quotes, with the exception of a few special characters that must be escaped:
+A string literal may contain any unicode characters between single or double-quotes, with the exception of a few special characters that must be escaped:
 
-|Escape Sequence|Meaning|\x Equivalent|
+|Escape Sequence|Meaning|\x Equivalent|Context|
 |-|-|-|
-|`\\`|`\`|`\x5C`|
-|`\n`|newline|`\x0A`|
-|`\t`|tab|`\x09`|
-|`\'`|single quote|`\x22`|
-|`\"`|double quote|`\x27`|
+|`\\`|`\`|`\x5C`||
+|`\n`|newline|`\x0A`||
+|`\t`|tab|`\x09`||
+|`\'`|single quote|`\x22`|within a single-quoted string|
+|`\"`|double quote|`\x27`|within a double-quoted string|
 
 Strings can also contain the following types of escape sequences:
 
@@ -419,10 +419,11 @@ The following primitive types exist in WDL:
 * A `Boolean` represents a value of `true` or `false`.
 * An `Int` represents a signed integer in the range \[-2^63, 2^63).
 * A `Float` represents a finite 64-bit IEEE-754 floating point number.
-* A `String` represents a character string following the format described [above](#strings).
+* A `String` represents a unicode character string following the format described [above](#strings).
 * A `File` represents a file (or file-like object).
   * A `File` declaration can have a string value indicating a relative or absolute path on the local file system.
-  * Execution engines may support other ways to specify `File` inputs (e.g. as URIs); the execution engine must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
+  * Within a WDL file, literal values for files may only be local (relative or absolute) paths.
+  * An execution engine may support other ways to specify [`File` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
 
 Examples:
 
@@ -1094,11 +1095,11 @@ WDL provides a [standard library](#standard-library) of functions. These functio
 
 #### Expression Placeholders and String Interpolation
 
-Any WDL string expression may contain one or more "placeholders", each of which contains a single expression. When a string expression is evaluated, its placeholders are evaluated first, and their values are then substituted for the placeholders in the containing string.
+Any WDL string expression may contain one or more "placeholders" of the form `${*expression*}` or `~{*expression*}`, each of which contains a single expression. When a string expression is evaluated, its placeholders are evaluated first, and their values are then substituted for the placeholders in the containing string.
 
 ```wdl
 Int i = 3
-String s = "${1 + i}"
+String s = "~{1 + i}"
 ```
 
 As another example, consider how the following expression would be parsed:
@@ -1314,15 +1315,15 @@ A WDL document is a file that contains valid WDL definitions.
 
 A WDL document must contain:
 
-* A [version statement](#versioning)
-* At least one [task definition](#task-definition), [workflow definition](#workflow-definition), or [struct definition](#struct-definition)
+* A [version statement](#versioning) on the first non-comment line of the file.
+* At least one [task definition](#task-definition), [workflow definition](#workflow-definition), or [struct definition](#struct-definition).
 
 A WDL document may contain any combination of the following:
 
-* Any number of [import statements](#import-statements)
-* Any number of task definitions
-* Any number of struct definitions
-* A maximum of one workflow definition
+* Any number of [import statements](#import-statements).
+* Any number of task definitions.
+* Any number of struct definitions.
+* A maximum of one workflow definition.
 
 To execute a WDL workflow, the user must provide the execution engine with the location of a "primary" WDL file (which may import additional files as needed) and any input values needed to satisfy all required task and workflow input parameters, using a [standard input JSON file](#json-input-format) or some other execution engine-specific mechanism.
 
@@ -1653,7 +1654,7 @@ There are two different syntaxes that can be used to define command expression p
 |`command { ... }`|`~{}` (preferred) or `${}`|
 |`command <<< >>>`|`~{}` only|
 
-Note that the `~{}` style of placeholder may only be used within the `command` section - for all other string expressions, the `${}` style must be used.
+Note that the `${}` and `~{}` styles may be used interchangably in other string expressions.
 
 Any valid WDL expression may be used within a placeholder. For example, a command might reference an input to the task, like this:
 
@@ -1688,7 +1689,7 @@ task write_array {
 }
 ```
 
-In most cases, the `~{}` style of placeholder is preferred, to avoid ambiguity between WDL placeholders and Bash variables, which are of the form `$name` or `${name}`. If the `command { ... }` style is used, then `${name}` is always interpreted as a WDL placeholder, so care must be taken to only use `$name` style Bash variables.
+In most cases, the `~{}` style of placeholder is preferred, to avoid ambiguity between WDL placeholders and Bash variables, which are of the form `$name` or `${name}`. If the `command { ... }` style is used, then `${name}` is always interpreted as a WDL placeholder, so care must be taken to only use `$name` style Bash variables. If the `command <<< ... >>>` style is used, then only `~{name}` is interpreted as a WDL placeholder, so either style of Bash variable may be used.
 
 ```wdl
 task test {
@@ -1788,7 +1789,7 @@ task example {
   }
   
   runtime {
-    container: "my_image:latest"
+    container: "quay.io/biocontainers/bwa:0.7.17--hed695b0_7"
   }
 }
 ```
@@ -3378,7 +3379,7 @@ round(1.49) == 1
 round(1.50) == 2
 ```
 
-## ✨ Int min(Int, Int), Float min(Int|Float, Int|Float)
+## ✨ Int min(Int, Int), Float min(Float, Float), Float min(Int, Float), Float min(Float, Int)
 
 Returns the smaller of two values. If both values are `Int`s, the return value is an `Int`, otherwise it is a `Float`.
 
@@ -3405,7 +3406,7 @@ workflow min_test {
 }
 ``` 
 
-## ✨ Int max(Int, Int), and Float max(Int|Float, Int|Float)
+## ✨ Int max(Int, Int), Float max(Float, Float), Float max(Int, Float), Float max(Float, Int)
 
 Returns the larger of two values. If both values are `Int`s, the return value is an `Int`, otherwise it is a `Float`.
 
