@@ -12,7 +12,6 @@ What should be mentioned (in order):
 + Credit where credit is due by mentioning the github account.
 
 Keep the changelog pleasant to read in the text editor:
-+ Max 80 characters per line
 + Empty line between changes.
 + Newline between summary and link+credit.
 + Properly indent blocks.
