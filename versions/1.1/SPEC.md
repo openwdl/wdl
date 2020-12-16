@@ -1,13 +1,15 @@
-# Workflow Description Language
+# Workflow Description Language (WDL)
 
-This is version 1.1 of the WDL specification. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the 1.0 version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in version 2.0 (denoted by the 🗑 symbol).
+This is version 1.1 of the Workflow Description Language (WDL) specification. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.0](../1.0/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in the [next major WDL version](../development/SPEC.md) (denoted by the 🗑 symbol).
 
 ## Table of Contents
 
-- [Workflow Description Language](#workflow-description-language)
+- [Workflow Description Language (WDL)](#workflow-description-language-wdl)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
-  - [Specification Organization](#specification-organization)
+    - [An Example WDL Workflow](#an-example-wdl-workflow)
+    - [Executing a WDL Workflow](#executing-a-wdl-workflow)
+    - [Advanced WDL Features](#advanced-wdl-features)
 - [WDL Language Specification](#wdl-language-specification)
   - [Global Grammar Rules](#global-grammar-rules)
     - [Whitespace](#whitespace)
@@ -17,13 +19,13 @@ This is version 1.1 of the WDL specification. It introduces a number of new feat
     - [Keywords](#keywords)
     - [Types](#types)
       - [Primitive Types](#primitive-types)
+      - [Optional Types and None](#optional-types-and-none)
       - [Compound Types](#compound-types)
         - [Array[X]](#arrayx)
         - [Pair[X, Y]](#pairx-y)
         - [Map[P, Y]](#mapp-y)
         - [🗑 Object](#-object)
         - [Custom Types (Structs)](#custom-types-structs)
-      - [Optional Types and None](#optional-types-and-none)
       - [Type Conversion](#type-conversion)
         - [Type Coercion](#type-coercion)
           - [Coercion of Optional Types](#coercion-of-optional-types)
@@ -184,7 +186,20 @@ This is version 1.1 of the WDL specification. It introduces a number of new feat
 
 ## Introduction
 
-WDL is meant to be a *human readable and writable* way to express tasks and workflows. Here is the "Hello World" tool in WDL:
+Workflow Description Language (WDL) is an open, standardized, *human readable and writable* language for expressing tasks and workflows. WDL is designed to be a general-purpose workflow language, but it is most widely used in the field of bioinformatics. There is a large community of WDL users who share their workflows and tasks on sites such as [Dockstore](https://dockstore.org/search?descriptorType=WDL&searchMode=files).
+
+This document provides a detailed technical specification for WDL. Users who are new to WDL may appreciate a more gentle introduction, such as the [learn-wdl](https://github.com/openwdl/learn-wdl) repository.
+
+Here is provided a short example of WDL, after which are several sections that provide the necessary details both for WDL users and for implementers of WDL execution engines:
+
+* [Language Specification](#wdl-language-specification): a description of the WDL grammar and all the parts of the WDL document.
+* [Standard Library](#standard-library): a catalog of the functions available to be called from within a WDL document.
+* [Input and Output Formats](#input-and-output-formats): a description of the standard input and output formats that must be supported by all WDL implementations.
+* [Appendices](#appendix-a-wdl-value-serialization-and-deserialization): Sections with more detailed information about various parts of the specification.
+
+### An Example WDL Workflow
+
+Below is the code for the "Hello World" task in WDL. This is just meant to give a flavor of WDL syntax and capabilities - all WDL elements are described in detail in the [Language Specification](#wdl-language-specification).
 
 ```wdl
 task hello {
@@ -229,7 +244,11 @@ This WDL document describes a task, called 'hello', and a workflow, called `wf`.
 
 Both workflows and tasks can accept input parameters and produce outputs. For example, the `wf` workflow has two input parameters, `File infile` and `String pattern`, and one output parameter, `Array[String] matches`. This simple workflow just passes its inputs to the `hello` task and returns its output.
 
-To execute this workflow, a WDL execution engine must be used (sometimes called the "WDL runtime" or "WDL implementation"). Some popular WDL execution engines are listed in the [README](https://github.com/openwdl/wdl#execution-engines). Along with the WDL file, the user must provide the implementation with values for the two input parameters. While implementations may provide their own mechanisms for launching workflows, all implementations minimally accept [inputs as JSON format](#json-input-format), which requires that inputs be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example:
+### Executing a WDL Workflow
+
+To execute this workflow, a WDL execution engine must be used (sometimes called the "WDL runtime" or "WDL implementation"). Some popular WDL execution engines are listed in the [README](https://github.com/openwdl/wdl#execution-engines).
+
+Along with the WDL file, the user must provide the execution engine with values for the two input parameters. While implementations may provide their own mechanisms for launching workflows, all implementations minimally accept [inputs as JSON format](#json-input-format), which requires that inputs be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example:
 
 |Variable     |Value    |
 |-------------|---------|
@@ -251,7 +270,9 @@ Running the `wf` workflow with these inputs would yield the following command li
 egrep '^[a-z]+$' '/file.txt'
 ```
 
-Now imagine you want to run the `hello` task in parallel across many different input files. You can write a workflow to do so using the well-known [scatter-gather](https://en.wikipedia.org/wiki/Vectored_I/O#:~:text=In%20computing%2C%20vectored%20I%2FO,in%20a%20vector%20of%20buffers) pattern:
+### Advanced WDL Features
+
+WDL also provides features for implementing more complex workflows. For example, the `hello` task introduced in the previous example can be called in parallel across many different input files using the well-known [scatter-gather](https://en.wikipedia.org/wiki/Vectored_I/O#:~:text=In%20computing%2C%20vectored%20I%2FO,in%20a%20vector%20of%20buffers) pattern:
 
 ```wdl
 workflow wf_parallel {
@@ -285,15 +306,6 @@ The inputs to this workflow would be `wf_parallel.files` and `wf_parallel.patter
   "wf_parallel.infile": ["/file1.txt", "/file2.txt"]
 }
 ```
-
-## Specification Organization
-
-This specification is organized into the following parts:
-
-* [Language Specification](#wdl-language-specification): a description of the WDL grammar and all the parts of the WDL document.
-* [Standard Library](#standard-library): a catalog of the functions available to be called from within a WDL document.
-* [Input and Output Formats](#input-and-output-formats): a description of the standard input and output formats that must be supported by all WDL implementations.
-* [Appendices](#appendix-a-wdl-value-serialization-and-deserialization): Sections with more detailed information about various parts of the specification.
 
 # WDL Language Specification
 
@@ -435,6 +447,30 @@ String s = "hello, world"
 File f = "path/to/file"
 ```
 
+#### Optional Types and None
+
+A type may have a `?` postfix quantifier, which means that it is an optional type, and its value is allowed to be undefined. It can only be used in calls or functions that accept optional values.
+
+WDL has a special value `None` whose meaning is "an undefined value". The type of the `None` value is `Any`, meaning `None` can be assigned to an optional declaration of any type. The `None` value is the only value that can be of type `Any`.
+
+An optional declaration has a default initialization of `None`, which indicates that it is undefined. An optional declaration may be initialized to any literal or expression of the correct type, including the special `None` value.
+
+```wdl
+Int certainly_five = 5      # an non-optional declaration
+Int? maybe_five_and_is = 5  # a defined optional declaration
+
+# the following are equivalent undefined optional declarations
+String? maybe_five_but_is_not
+String? maybe_five_but_is_not = None
+
+Boolean test_defined = defined(maybe_five_but_is_not) # Evaluates to false
+Boolean test_defined2 = defined(maybe_five_and_is)    # Evaluates to true
+Boolean test_is_none = maybe_five_but_is_not == None  # Evaluates to true
+Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false
+```
+
+For more details, see the section on [Optional Inputs with Defaults](#optional-inputs-with-defaults).
+
 #### Compound Types
 
 A compound type is one that contains nested types, i.e. it is *parameterized* by other types. The following compound types can be constructed. In the examples below `P` represents any of the primitive types above, and `X` and `Y` represent any valid type (including nested compound types).
@@ -453,7 +489,24 @@ Array[Int] empty = []
 empty[0]  # error!
 ```
 
-An `Array` may be empty, unless it is declared using the non-empty postfix quantifier `+`, in which case it must contain at least one element. Note that the `+` and `?` postfix quantifiers can be combined to declare an array that is either undefined or non-empty. Attempting to assign an empty array literal to a non-empty `Array` declaration results in an error. Otherwise, the non-empty assertion is only checked at runtime: binding an empty array to an `Array[T]+` input or function argument is a runtime error. 
+An `Array` may have an empty value (i.e. an array of length zero), unless it is declared using the non-empty postfix quantifier `+`, in which case it must contain at least one element. For example, the following task operates on an array of file and it requires at least one file to function:
+
+```wdl
+task align {
+  input {
+    Array[File]+ fastqs
+  }
+  String sample_type = if length(fastqs) == 1 then "--single-end" else "--paired-end"
+  command <<<
+  ./align ~{sample_type} ~{sep(" ", fastqs)} > output.bam
+  >>>
+  output {
+    File bam = "output.bam"
+  }
+}
+```
+
+Note that the `+` and `?` postfix quantifiers can be combined to declare an array that is either undefined or non-empty, i.e. it can have any value except the empty array. Attempting to assign an empty array literal to a non-empty `Array` declaration results in an error. Otherwise, the non-empty assertion is only checked at runtime: binding an empty array to an `Array[T]+` input or function argument is a runtime error. 
 
 ```wdl
 # array that must contain at least one Float
@@ -546,30 +599,6 @@ BamAndIndex b_and_i = BamAndIndex {
   bam_index: "NA12878.bam.bai" 
 }
 ```
-
-#### Optional Types and None
-
-A type may have a `?` postfix quantifier, which means that it is an optional type, and its value is allowed to be undefined. It can only be used in calls or functions that accept optional values.
-
-WDL has a special value `None` whose meaning is "an undefined value". The type of the `None` value is `Any`, meaning it can be assigned to an optional declaration of any type. The `None` value is the only value that can be of type `Any`.
-
-An optional declaration has a default initialization of `None`, which indicates that it is undefined. An optional declaration may be initialized to any literal or expression of the correct type, including the special `None` value.
-
-```wdl
-Int certainly_five = 5      # an non-optional declaration
-Int? maybe_five_and_is = 5  # a defined optional declaration
-
-# the following are equivalent undefined optional declarations
-String? maybe_five_but_is_not
-String? maybe_five_but_is_not = None
-
-Boolean test_defined = defined(maybe_five_but_is_not) # Evaluates to false
-Boolean test_defined2 = defined(maybe_five_and_is)    # Evaluates to true
-Boolean test_is_none = maybe_five_but_is_not == None  # Evaluates to true
-Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false
-```
-
-For more details, see the section on [Optional Inputs with Defaults](#optional-inputs-with-defaults).
 
 #### Type Conversion
 
