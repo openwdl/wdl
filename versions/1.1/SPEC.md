@@ -609,7 +609,7 @@ Note that primitive types can always be converted to `String` using [string inte
 
 ```wdl
 Int i = 5
-String istring = "${i}"
+String istring = "~{i}"
 ```
 
 See [Expression Placeholder Coercion](#expression-placeholder-coercion) for details.
@@ -1095,7 +1095,7 @@ WDL provides a [standard library](#standard-library) of functions. These functio
 
 #### Expression Placeholders and String Interpolation
 
-Any WDL string expression may contain one or more "placeholders" of the form `${*expression*}` or `~{*expression*}`, each of which contains a single expression. When a string expression is evaluated, its placeholders are evaluated first, and their values are then substituted for the placeholders in the containing string.
+Any WDL string expression may contain one or more "placeholders" of the form `~{*expression*}` or `${*expression*}`, each of which contains a single expression. When a string expression is evaluated, its placeholders are evaluated first, and their values are then substituted for the placeholders in the containing string.
 
 ```wdl
 Int i = 3
@@ -1105,24 +1105,24 @@ String s = "~{1 + i}"
 As another example, consider how the following expression would be parsed:
 
 ```wdl
-String command = "grep '${start}...${end}' ${input}"
+String command = "grep '~{start}...~{end}' ~{input}"
 ```
 
 This command would be parsed as:
 
 * `grep '` - literal string
-* `${start}` - identifier expression - replaced with the value of `start`
+* `~{start}` - identifier expression - replaced with the value of `start`
 * `...` - literal string
-* `${end}` - identifier expression - replaced with the value of `end`
+* `~{end}` - identifier expression - replaced with the value of `end`
 * `' ` - literal string
-* `${input}` - identifier expression - replaced with the value of `input`
+* `~{input}` - identifier expression - replaced with the value of `input`
 
 Placeholders may contain other placeholders to any level of nesting, and placeholders are evaluated recursively in a depth-first manner. Placeholder expressions are anonymous - they have no name and thus cannot be referenced by other expressions, but they can reference declarations and call outputs.
 
 ```wdl
 Int i = 3
 Boolean b = true
-String s = "${if b then '${1 + 3}' else 0}"
+String s = "~{if b then '${1 + 3}' else 0}"
 ```
 
 ##### Expression Placeholder Coercion
@@ -1136,16 +1136,16 @@ The expression result in a placeholder must ultimately be converted to a string 
 - `Boolean` is converted to the "stringified" version of its literal value, i.e. `true` or `false`.
 
 ```wdl
-"${"abc"}" == "abc"
+"~{"abc"}" == "abc"
 
 File def = "hij"
-"${def}" == "hij"
+"~{def}" == "hij"
 
-"${5}" == "5"
+"~{5}" == "5"
 
-"${3.141}" == "3.141000"
-"${3.141 * 1E-10}" == "0.000000"
-"${3.141 * 1E10}" == "31410000000.000000"
+"~{3.141}" == "3.141000"
+"~{3.141 * 1E-10}" == "0.000000"
+"~{3.141 * 1E10}" == "31410000000.000000"
 ```
 
 Compound types cannot be implicitly converted to strings. To convert an `Array` to a string, use the [`sep`](#-string-sepstring-arraystring) function: `~{sep(",", str_array)}`.
@@ -1164,12 +1164,12 @@ String? name2 = "Fred"
 # since name1 is undefined, the evaluation of the
 # expression in the placeholder fails, and the
 # value of greeting1 = "nice to meet you!"
-String greeting1 = "${salutation + ' ' + name1 + ' '}nice to meet you!"
+String greeting1 = "~{salutation + ' ' + name1 + ' '}nice to meet you!"
 
 # since name2 is defined, the evaluation of the
 # expression in the placeholder succeedes, and the
 # value of greeting2 = "hello Fred, nice to meet you!"
-String greeting2 = "${salutation + ' ' + name2 + ', '}nice to meet you!"
+String greeting2 = "~{salutation + ' ' + name2 + ', '}nice to meet you!"
 ```
 
 To illustrate how this can be used, consider this task:
@@ -1220,9 +1220,9 @@ The following options are available:
 
 `sep` is interpreted as the separator string used to join multiple parameters together. `sep` is only valid if the expression evaluates to an `Array`.
 
-For example, given a declaration `Array[Int] numbers = [1, 2, 3]`, the expression `"python script.py ${sep=',' numbers}"` yields the value: `python script.py 1,2,3`.
+For example, given a declaration `Array[Int] numbers = [1, 2, 3]`, the expression `"python script.py ~{sep=',' numbers}"` yields the value: `python script.py 1,2,3`.
 
-Alternatively, if the command were `"python script.py ${sep=' ' numbers}"` it would evaluate to: `python script.py 1 2 3`.
+Alternatively, if the command were `"python script.py ~{sep=' ' numbers}"` it would evaluate to: `python script.py 1 2 3`.
 
 > *Requirements*:
 >
@@ -1248,9 +1248,9 @@ task sep_example {
 
 `true` and `false` convert an expression that evaluates to a `Boolean` into a string literal when the result is `true` or `false`, respectively. 
 
-For example, `"${true='--enable-foo' false='--disable-foo' allow_foo}"` evaluates the expression `allow_foo` as an identifier and, depending on its value, replaces the entire expression placeholder with either `--enable-foo` or `--disable-foo`.
+For example, `"~{true='--enable-foo' false='--disable-foo' allow_foo}"` evaluates the expression `allow_foo` as an identifier and, depending on its value, replaces the entire expression placeholder with either `--enable-foo` or `--disable-foo`.
 
-Both `true` and `false` cases are required. If one case should insert no value then an empty string literal is used, e.g. `"${true='--enable-foo' false='' allow_foo}"`.
+Both `true` and `false` cases are required. If one case should insert no value then an empty string literal is used, e.g. `"~{true='--enable-foo' false='' allow_foo}"`.
 
 > *Requirements*:
 >
@@ -1654,7 +1654,7 @@ There are two different syntaxes that can be used to define command expression p
 |`command { ... }`|`~{}` (preferred) or `${}`|
 |`command <<< >>>`|`~{}` only|
 
-Note that the `${}` and `~{}` styles may be used interchangably in other string expressions.
+Note that the `~{}` and `${}` styles may be used interchangably in other string expressions.
 
 Any valid WDL expression may be used within a placeholder. For example, a command might reference an input to the task, like this:
 
@@ -1724,7 +1724,7 @@ task heredoc {
 
   command<<<
   python <<CODE
-    with open("${in}") as fp:
+    with open("~{in}") as fp:
       for line in fp:
         if not line.startswith('#'):
           print(line.strip())
@@ -1784,8 +1784,8 @@ task example {
     python analysis.py --prefix=${prefix} ${bam}
   }
   output {
-    File analyzed = "${prefix}.out"
-    File bam_sibling = "${bam}.suffix"
+    File analyzed = "~{prefix}.out"
+    File bam_sibling = "~{bam}.suffix"
   }
   
   runtime {
@@ -1794,7 +1794,7 @@ task example {
 }
 ```
 
-If prefix were specified as `"foobar"`, then `"${prefix}.out"` would be evaluated to `"foobar.out"`.
+If prefix were specified as `"foobar"`, then `"~{prefix}.out"` would be evaluated to `"foobar.out"`.
 
 Another common pattern is to use the [`glob`](#arrayfile-globstring) function to define outputs that might contain zero, one, or many files.
 
@@ -1888,7 +1888,7 @@ Several of the `runtime` attributes can (and some [Standard Library](#standard-l
 * Decimal: KB, MB, GB, TB
 * Binary: KiB, MiB, GiB, TiB
 
-An optional space is allowed between the number/expression and the suffix. For example: `6.2 GB`, `5MB`, `"${ram}GiB"`.
+An optional space is allowed between the number/expression and the suffix. For example: `6.2 GB`, `5MB`, `"~{ram}GiB"`.
 
 The decimal and binary units may be shortened by omitting the trailing "B". For example, "K" and "KB" are both interpreted as "kilobytes".
 
@@ -2299,7 +2299,7 @@ task runtime_meta {
     java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
   }
   output {
-    File results = "${sample_id}.out"
+    File results = "~{sample_id}.out"
   }
   parameter_meta {
     memory_mb: "Amount of memory to allocate to the JVM"
@@ -2312,7 +2312,7 @@ task runtime_meta {
   }
   runtime {
     container: "my_image:latest"
-    memory: "${memory_mb + 256} MB"
+    memory: "~{memory_mb + 256} MB"
   }
 }
 ```
@@ -2633,7 +2633,7 @@ workflow test {
   input {
     String name
   }
-  call copy_input { input: greeting = "hello ${name}" }
+  call copy_input { input: greeting = "hello ~{name}" }
   output {
     String greeting = copy_input.greeting_out
     String msg = copy_input.msg
@@ -2932,7 +2932,7 @@ workflow scatter_example {
   scatter (name in name_array) {
     # these statements are evaluated for each different value
     # of 'name'
-    String greeting = "${salutation} ${name}"
+    String greeting = "~{salutation} ~{name}"
     call say_hello { input: greeting = greeting }
   }
 }
@@ -2952,7 +2952,7 @@ workflow scatter_example {
   scatter (name in name_array) {
     scatter (salutation in salutation_array)
       # both 'name' and 'saluation' are accessible here
-      String greeting = "${salutation} ${name}"
+      String greeting = "~{salutation} ~{name}"
     }
   }
 
@@ -2983,7 +2983,7 @@ task say_hello {
   }
   command {}
   output {
-    String greeting = "${salutation} ${name}"
+    String greeting = "~{salutation} ~{name}"
   }
 }
 
@@ -3032,7 +3032,7 @@ If scatter blocks are nested to multiple levels, the output types are also neste
 workflow multi_level {
   scatter (i in [1, 2, 3]) {
     scatter (j in ["a", "b", "c"]) {
-      String msg = "${i} ${j}"
+      String msg = "~{i} ~{j}"
     }
     # directly outside the scatter containing msg,
     # msg's type is an Array
@@ -3291,7 +3291,7 @@ task my_task {
   >>>
 
   output {
-    String wizard_name = "${w.name} Potter"
+    String wizard_name = "~{w.name} Potter"
     Int age_in_muggle_years = w.age * 2
   }
     
@@ -4000,7 +4000,7 @@ un\tdeux\ttrois
 
 ## File write_map(Map[String, String])
 
-Writes a tab-separated value (TSV) file with one line for each element in a `Map[String, String]`. Each element is concatenated into a single tab-delimited string of the format `${key}\t${value}\n`. If the `Map` is empty, an empty file is written.
+Writes a tab-separated value (TSV) file with one line for each element in a `Map[String, String]`. Each element is concatenated into a single tab-delimited string of the format `~{key}\t~{value}\n`. If the `Map` is empty, an empty file is written.
 
 Since `Map`s are ordered, the order of the lines in the file is guaranteed to be the same order that the elements were added to the `Map`.
 
@@ -4444,7 +4444,7 @@ flatten(ai3D) == [[1, 2], [3, 4], [5, 6], [7, 8]]
 
 ## Array[String] prefix(String, Array[P])
 
-Adds a prefix to each element of the input array of primitive values. Equivalent to evaluating `"${prefix}${array[i]}"` for each `i` in `range(length(array))`.
+Adds a prefix to each element of the input array of primitive values. Equivalent to evaluating `"~{prefix}~{array[i]}"` for each `i` in `range(length(array))`.
 
 **Parameters**
 
@@ -4468,7 +4468,7 @@ prefix("-x ", env3)  # error! array element type is not primitive
 
 ## ✨ Array[String] suffix(String, Array[X])
 
-Adds a suffix to each element of the input array of primitive values. Equivalent to evaluating `"${array[i]}${suffix}"` for each `i` in `range(length(array))`.
+Adds a suffix to each element of the input array of primitive values. Equivalent to evaluating `"~{array[i]}~{suffix}"` for each `i` in `range(length(array))`.
 
 **Parameters**
 
@@ -4492,7 +4492,7 @@ suffix("-z", env3)  # error! array element type is not primitive
 
 ## ✨ Array[String] quote(Array[P])
 
-Adds double-quotes (`"`) around each element of the input array of primitive values. Equivalent to evaluating `'"${array[i]}"'` for each `i` in `range(length(array))`.
+Adds double-quotes (`"`) around each element of the input array of primitive values. Equivalent to evaluating `'"~{array[i]}"'` for each `i` in `range(length(array))`.
 
 **Parameters**
 
@@ -4512,7 +4512,7 @@ Array[String] env2_quoted = quote(env2) # ['"1"', '"2"', '"3"']
 
 ## ✨ Array[String] squote(Array[X])
 
-Adds single-quotes (`'`) around each element of the input array of primitive values. Equivalent to evaluating `"'${array[i]}'"` for each `i` in `range(length(array))`.
+Adds single-quotes (`'`) around each element of the input array of primitive values. Equivalent to evaluating `"'~{array[i]}'"` for each `i` in `range(length(array))`.
 
 **Parameters**
 
@@ -5014,7 +5014,7 @@ Arrays can be serialized in two ways:
 
 #### Array serialization by expansion
 
-The array flattening approach can be done if a parameter is specified as `${sep=' ' my_param}`.  `my_param` must be declared as an `Array` of primitive values. When the value of `my_param` is specified, then the values are joined together with the separator character (a space in this case).  For example:
+The array flattening approach can be done if a parameter is specified as `~{sep=' ' my_param}`.  `my_param` must be declared as an `Array` of primitive values. When the value of `my_param` is specified, then the values are joined together with the separator character (a space in this case).  For example:
 
 ```wdl
 task test {
