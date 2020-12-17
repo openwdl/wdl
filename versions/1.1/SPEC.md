@@ -16,7 +16,7 @@ This is version 1.1 of the Workflow Description Language (WDL) specification. It
     - [Literals](#literals)
       - [Strings](#strings)
     - [Comments](#comments)
-    - [Keywords](#keywords)
+    - [Reserved Keywords](#reserved-keywords)
     - [Types](#types)
       - [Primitive Types](#primitive-types)
       - [Optional Types and None](#optional-types-and-none)
@@ -398,7 +398,7 @@ workflow wf {
 }
 ```
 
-### Keywords
+### Reserved Keywords
 
 The following language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, or struct types & aliases.
 
@@ -419,10 +419,7 @@ The following keywords should also be considered as reserved - they are not used
 
 A [declaration](#declarations) is a name that the user reserves in a given [scope](#appendix-b-wdl-namespaces-and-scopes) to hold a value of a certain type. In WDL *all* declarations (including inputs and outputs) must be typed. This means that the information about the type of data that may be held by each declarations must be specified explicitly.
 
-In WDL *all* types represent immutable values.
-
-- Even a `File` represent a logical "snapshot" of the file at the time when the value was created.
-- It's impossible for a task to change an upstream value which has been provided as an input: even if it makes changes to its local copy the original value is unaffected.
+In WDL *all* types represent immutable values. For example, a `File` represent a logical "snapshot" of the file at the time when the value was created. It's impossible for a task to change an upstream value that has been provided as an input - even if it modifies its local copy, the original value is unaffected.
 
 #### Primitive Types
 
@@ -469,7 +466,7 @@ Boolean test_is_none = maybe_five_but_is_not == None  # Evaluates to true
 Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false
 ```
 
-For more details, see the section on [Optional Inputs with Defaults](#optional-inputs-with-defaults).
+For more details, see the sections on [Input Type Constraints](#input-type-constraints) and [Optional Inputs with Defaults](#optional-inputs-with-defaults).
 
 #### Compound Types
 
@@ -477,16 +474,17 @@ A compound type is one that contains nested types, i.e. it is *parameterized* by
 
 ##### Array[X]
 
-An `Array` represents an ordered list of elements that are all of the same type.
+An `Array` represents an ordered list of elements that are all of the same type. An array is insertion ordered, meaning the order in which elements are added to the `Array` is preserved.
 
 An array value can be declared with comma-separated values in brackets (`[]`), and a specific (zero-based) index of an `Array` can be accessed by placing the index in brackets after the declaration name. Accessing a non-existent index of an `Array` results in an error.
 
 ```wdl
 Array[File] files = ["/path/to/file1", "/path/to/file2"]
-File f = files[0]
+File f = files[0]  # evaluates to "/path/to/file1"
 
 Array[Int] empty = []
-empty[0]  # error!
+# this causes an error - trying to access a non-existent array element
+Int i = empty[0]
 ```
 
 An `Array` may have an empty value (i.e. an array of length zero), unless it is declared using the non-empty postfix quantifier `+`, in which case it must contain at least one element. For example, the following task operates on an array of file and it requires at least one file to function:
@@ -519,20 +517,23 @@ Array[Int?]+ nonempty2 = [None, 1]
 Array[Int]+? nonempty4
 Array[Int]+? nonempty5 = [0.0]
 
-Array[Boolean]+ nonempty3 = []  # error!
-Array[Int]+? nonempty6 = []     # error!
+# these both cause an error - can't assign empty array value to non-empty Array type
+Array[Boolean]+ nonempty3 = []
+Array[Int]+? nonempty6 = [] 
 ```
+
+For more details see the section on [Input Type Constraints](#input-type-constraints).
 
 ##### Pair[X, Y]
 
-A `Pair` represents two associated values, which may be of different types In other programming languages, a `Pair` might be called a "two-tuple".
+A `Pair` represents two associated values, which may be of different types. In other programming languages, a `Pair` might be called a "two-tuple".
 
 A `Pair` can be declared with comma-separated values in parentheses (`()`). The components of a pair value are accessed using its `left` and `right` accessors.
 
 ```wdl
 Pair[Int, Array[String]] data = (5, ["hello", "goodbye"])
-Int i = p.left
-String hello = data.right[0]
+Int five = p.left  # evaluates to 5
+String hello = data.right[0]  # evaluates to "hello"
 ```
 
 ##### Map[P, Y]
@@ -548,16 +549,17 @@ Map[File, Array[Int]] file_to_ints = {
   "/path/to/file1": [0, 1, 2],
   "/path/to/file2": [9, 8, 7]
 }
-
-string_to_int["b"]  # => 2
-string_to_int["c"]  # error!  
+Int b = string_to_int["b"]  # evaluates to 2
+Int c = string_to_int["c"]  # error - "c" is not a key in the map
 ```
 
 A `Map` is insertion ordered, meaning the order in which elements are added to the `Map` is preserved, for example when [✨ converting a `Map` to an array of `Pair`s](#-arraypairp-y-as_pairsmapp-y).
 
 ```wdl
+# declaration using a map literal
 Map[Int, String] int_to_string = { 2: "hello", 1: "goodbye" }
-as_pairs(int_to_string)  # => [(2, "hello"), (1, "goodbye")]
+# evaluates to [(2, "hello"), (1, "goodbye")]
+Array[Pair[Int, String]] pairs = as_pairs(int_to_string)
 ```
 
 ##### 🗑 Object
@@ -614,6 +616,7 @@ For example, file paths are always represented as strings, making the conversion
 
 ```wdl
 String path = "/path/to/file"
+# valid - String coerces unambiguously to File
 File f = path
 ```
 
@@ -828,6 +831,10 @@ task mytask {
 
   Boolean b = true  # declaration in the task body
 
+  # This is an error! f is not an input parameter and thus
+  # must be initialized.
+  File f
+
   command <<< ... >>>
 
   output {
@@ -931,8 +938,8 @@ Map[String, Int] = as_map(zip(["a", "b", "c"], [1, 2, 3]))
 
 # non-simple expressions
 Int i = x + 3  # requires knowing the value of x
-String s = read_string("/path/to/file")  # requires reading a file that 
-                                         # might only exist at runtime
+# requires reading a file that might only exist at runtime
+String s = read_string("/path/to/file")  
 ```
 
 #### Built-in Operators
@@ -1031,9 +1038,13 @@ In general, two compound values are equal if-and-only-if all of the following ar
 Since `Array`s and `Map`s are ordered, the order of their elements are also compared. For example:
 
 ```wdl
-[1, 2, 3] == [1, 2, 3]
-[1, 2, 3] != [2, 1, 3]
-{"a": 1, "b": 2} != {"b": 2, "a": 1}
+# arrays and maps with the same elements in the same order are equal
+Boolean is_true1 = [1, 2, 3] == [1, 2, 3]
+Boolean is_true2 = {"a": 1, "b": 2} == {"a": 1, "b": 2}
+
+# arrays and maps with the same elements in different orders are not equal
+Boolean is_false1 = [1, 2, 3] == [2, 1, 3]
+Boolean is_false2 = {"a": 1, "b": 2} == {"b": 2, "a": 1}
 ```
 
 Note that [type coercion](#type-coercion) can be employed to compare values of different but compatible types. For example:
@@ -1041,11 +1052,12 @@ Note that [type coercion](#type-coercion) can be employed to compare values of d
 ```wdl
 Array[Int] i = [1,2,3]
 Array[Float] f = [1.0, 2.0, 3.0]
-i == f  # false
+# Floats are not not automatically coerced to Ints for comparison
+Boolean is_false = i == f
 
-# coerce i to an array of Float
+# instead, coerce i to an array of Float first
 Array[Float] i_to_f = i
-i_to_f == f  # true
+Boolean is_true = i_to_f == f
 ```
 
 ##### Equality and Inequality Comparison of Optional Types
@@ -1057,10 +1069,13 @@ Int i = 1
 Int? j = 1
 Int? k = None
 
-i == j  # true
-i == k  # false
-j != k  # true
-k == None  # true
+# equal values of the same type are equal even if one is optional
+Boolean is_true = i == j
+# k is undefined (None), and so is only equal to None
+Boolean is_true2 k == None
+# these comparisons are valid and evaluate to false
+Boolean is_false = i == k
+Boolean is_false2 j == k
 ```
 
 #### Operator Precedence Table
@@ -1092,10 +1107,14 @@ k == None  # true
 The syntax `x.y` refers to member access. `x` must be a call in a workflow, or a struct or object value. A call can be thought of as a struct where the members are the outputs of the called task.
 
 ```wdl
+# task foo has an output y
 call foo
 String x = foo.y
 
-Struct z
+Stuct MyType {
+  String b
+}
+MyType z = MyType { z: 'hello' }
 String a = z.b
 ```
 
@@ -1168,16 +1187,16 @@ The expression result in a placeholder must ultimately be converted to a string 
 - `Boolean` is converted to the "stringified" version of its literal value, i.e. `true` or `false`.
 
 ```wdl
-"~{"abc"}" == "abc"
+Boolean is_true1 = "~{"abc"}" == "abc"
 
-File def = "hij"
-"~{def}" == "hij"
+File x = "hij"
+Boolean is_true2 = "~{x}" == "hij"
+ 
+Boolean is_true3 = "~{5}" == "5"
 
-"~{5}" == "5"
-
-"~{3.141}" == "3.141000"
-"~{3.141 * 1E-10}" == "0.000000"
-"~{3.141 * 1E10}" == "31410000000.000000"
+Boolean is_true4 = "~{3.141}" == "3.141000"
+Boolean is_true5 = "~{3.141 * 1E-10}" == "0.000000"
+Boolean is_true6 = "~{3.141 * 1E10}" == "31410000000.000000"
 ```
 
 Compound types cannot be implicitly converted to strings. To convert an `Array` to a string, use the [`sep`](#-string-sepstring-arraystring) function: `~{sep(",", str_array)}`.
@@ -1523,9 +1542,13 @@ task test {
     Array[File]  a
     Array[File]+ b
     Array[File]? c
-    #File+ d <-- can't do this, + only applies to Arrays
-    Array[File]+? e  # An optional array that, if defined, must contain at least one element
+    # If the next line were uncommented it would cause an error
+    # + only applies to Array, not File
+    #File+ d
+    # An optional array that, if defined, must contain at least one element
+    Array[File]+? e
   }
+
   command {
     /bin/mycmd ${sep=" " a}
     /bin/mycmd ${sep="," b}
@@ -1603,6 +1626,7 @@ workflow foo {
   if (use_salutation) {
     call say_hello { input: name = name }
   }
+
   if (!use_salutation) {
     call say_hello { 
       input: 
@@ -1812,9 +1836,11 @@ task example {
     String prefix
     File bam
   }
+
   command {
     python analysis.py --prefix=${prefix} ${bam}
   }
+
   output {
     File analyzed = "~{prefix}.out"
     File bam_sibling = "~{bam}.suffix"
@@ -3137,6 +3163,7 @@ workflow foo {
     Boolean b
     Boolean c
   }
+
   if(b) {
     if(c) {
       call x
@@ -3200,8 +3227,8 @@ struct Person {
 Invalid struct:
 ```wdl
 struct Invalid {
-    String myString = "Cannot do this"
-    Int myInt
+  String myString = "Cannot do this"
+  Int myInt
 }
 ```
 
@@ -3296,9 +3323,9 @@ In order to resolve multiple structs, simply add additional alias statements.
 
 ```wdl
 import "http://example.com/another_exampl.wdl" as ex2
-    alias Parent as Parent2
-    alias Child as Child2
-    alias GrandChild as GrandChild2
+  alias Parent as Parent2
+  alias Child as Child2
+  alias GrandChild as GrandChild2
 ```
 
 A struct can always be aliased even if its name does not conflict with another struct in the global namespace. When a struct is imported with an alias, it is added to the global namespace only under that alias. If aliases are used for some structs in an imported WDL but not others, the unaliased structs are still imported into the global namespace under their original names.
@@ -3403,12 +3430,15 @@ These functions convert a `Float` to an `Int` using different rounding methods:
 **Example**
 
 ```wdl
-floor(1.0) == 1
-floor(1.9) == 1
-ceil(2.0) == 2
-ceil(2.1) == 3
-round(1.49) == 1
-round(1.50) == 2
+# all these expressions evaluate to true
+Boolean all_true = [
+  floor(1.0) == 1,
+  floor(1.9) == 1,
+  ceil(2.0) == 2,
+  ceil(2.1) == 3,
+  round(1.49) == 1,
+  round(1.50) == 2
+]
 ```
 
 ## ✨ Int min(Int, Int), Float min(Float, Float), Float min(Int, Float), Float min(Float, Int)
@@ -3622,8 +3652,8 @@ Returns the "basename" of a file - the name after the last directory separator i
 **Example**
 
 ```wdl
-basename("/path/to/file.txt") == "file.txt"`
-basename("/path/to/file.txt", ".txt") == "file"
+Boolean is_true1 = basename("/path/to/file.txt") == "file.txt"`
+Boolean is_true2 = basename("/path/to/file.txt", ".txt") == "file"
 ```
 
 ## Array[String] read_lines(String|File)
@@ -4113,7 +4143,6 @@ task test {
 }
 ```
 
-
 The actual command line might look like:
 
 ```
@@ -4222,7 +4251,8 @@ When serializing compound types, all nested types must be serializable or an err
 
 ```wdl
 Pair[Int, Map[Int, String]] x = (1, {2: "hello"})
-write_json(x)  # error! Map with Int keys is not serializable
+# this fails with an error - Map with Int keys is not serializable
+File f = write_json(x)  
 ```
 
 **Parameters**
@@ -4374,7 +4404,7 @@ Array[Array[Int]] input_array = [[0, 1, 2], [3, 4, 5]]
 # output array is 3 rows * 2 columns
 Array[Array[Int]] expected_output_array = [[0, 3], [1, 4], [2, 5]]
 
-transpose(input_array) == expected_output_array
+Boolean is_true = transpose(input_array) == expected_output_array
 ``` 
 
 ## Array[Pair[X,Y]] zip(Array[X], Array[Y])
@@ -4396,9 +4426,10 @@ Array[String] ys = [ "a", "b", "c" ]
 Array[String] zs = [ "d", "e" ]
 
 Array[Pair[Int, String]] zipped = zip(xs, ys) 
-zipped == [ (1, "a"), (2, "b"), (3, "c") ]
+Boolean is_true = zipped == [ (1, "a"), (2, "b"), (3, "c") ]
 
-zip(xs, zs)  # error! xs and zs are not the same length
+# this fails with an error - xs and zs are not the same length
+Array[Pair[Int, String]] bad = zip(xs, zs)
 ```
 
 ## ✨ Pair[Array[X], Array[Y]] unzip(Array[Pair[X, Y]])
@@ -4415,12 +4446,12 @@ Creates a `Pair` of `Arrays`, the first containing the elements from the `left` 
 
 ```wdl
 Array[Pair[Int, String]] int_str_arr = [(0, "hello"), (42, "goodbye")]
-unzip(int_str_arr) == ([0, 42], ["hello", "goodbye"])
+Boolean is_true = unzip(int_str_arr) == ([0, 42], ["hello", "goodbye"])
 
 Map[String, Int] m = {"a": 0, "b": 1, "c": 2}
 Pair[Array[X], Pair[Array[Y]] keys_and_values = unzip(as_pairs(map))
-keys_and_values.left = ["a", "b", "c"]
-keys_and_values.right = [0, 1, 2]
+Boolean is_true2 = keys_and_values.left == ["a", "b", "c"]
+Boolean is_true3 = keys_and_values.right == [0, 1, 2]
 ```
 
 ## Array[Pair[X,Y]] cross(Array[X], Array[Y])
@@ -4443,7 +4474,7 @@ Array[Int] xs = [ 1, 2, 3 ]
 Array[String] ys = [ "a", "b" ]
 
 Array[Pair[Int, String]] crossed = cross(xs, ys)
-crossed == [ (1, "a"), (1, "b"), (2, "a"), (2, "b"), (3, "a"), (3, "b") ]
+Boolean is_true = crossed == [ (1, "a"), (1, "b"), (2, "a"), (2, "b"), (3, "a"), (3, "b") ]
 ```
 
 ## Array[X] flatten(Array[Array[X]])
@@ -4460,18 +4491,18 @@ Flattens a nested `Array[Array[X]]` by concatenating all of the element arrays, 
 
 ```wdl
 Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
-flatten(ai2D) == [1, 2, 3, 1, 21, 22]
+Boolean is_true = flatten(ai2D) == [1, 2, 3, 1, 21, 22]
 
 Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
-flatten(af2D) == ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
+Boolean is_true2 = flatten(af2D) == ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
 
 Array[Array[Pair[Float, String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
-flatten(aap2D) == [(0.1, "mouse"), (3, "cat"), (15, "dog")]
+Boolean is_true3 = flatten(aap2D) == [(0.1, "mouse"), (3, "cat"), (15, "dog")]
 # we can use as_map to turn this into a Map[Float, String]
-Map[Float, String] = as_map(flatten(aap2D))
+Map[Float, String] f2s = as_map(flatten(aap2D))
 
 Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
-flatten(ai3D) == [[1, 2], [3, 4], [5, 6], [7, 8]]
+Boolean is_true4 = flatten(ai3D) == [[1, 2], [3, 4], [5, 6], [7, 8]]
 ```
 
 ## Array[String] prefix(String, Array[P])
@@ -4495,7 +4526,8 @@ Array[Int] env2 = [1, 2, 3]
 Array[String] env2_param = prefix("-f ", env2) # ["-f 1", "-f 2", "-f 3"]
 
 Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
-prefix("-x ", env3)  # error! array element type is not primitive
+# this fails with an error - env3 element type is not primitive
+Array[String] bad = prefix("-x ", env3)
 ```
 
 ## ✨ Array[String] suffix(String, Array[X])
@@ -4513,13 +4545,14 @@ Adds a suffix to each element of the input array of primitive values. Equivalent
 
 ```wdl
 Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
-suffix(".txt ", env) == ["key1=value1.txt", "key2=value2.txt", "key3=value3.txt"]
+Boolean is_true = suffix(".txt ", env) == ["key1=value1.txt", "key2=value2.txt", "key3=value3.txt"]
 
 Array[Int] env2 = [1, 2, 3]
-suffix(".0", env2) == ["1.0", "2.0", "3.0"]
+Boolean is_true2 = suffix(".0", env2) == ["1.0", "2.0", "3.0"]
 
 Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
-suffix("-z", env3)  # error! array element type is not primitive
+# this fails with an error - env3 element type is not primitive
+Array[String] bad = suffix("-z", env3)  
 ```
 
 ## ✨ Array[String] quote(Array[P])
@@ -4576,13 +4609,14 @@ Concatenates the elements of an array together into a string with the given sepa
 **Example**
 
 ```wdl
-sep("", ["a, "b", "c"]) == "abc"
-sep(' ', ["a", "b", "c"]) == "a b c"
-
 Array[String] a = ["file_1", "file_2"]
-sep(' ', prefix('-i ', a)) == "-i file_1 -i file_2"
-
-sep(',', [1]) == "1"
+# these all evaluate to true
+Boolean all_true = [
+  sep(' ', prefix('-i ', a)) == "-i file_1 -i file_2",
+  sep("", ["a, "b", "c"]) == "abc",
+  sep(' ', ["a", "b", "c"]) == "a b c",
+  sep(',', [1]) == "1"
+]
 ```
 
 ## ✨ Array[Pair[P, Y]] as_pairs(Map[P, Y])
@@ -4598,17 +4632,19 @@ Converts a `Map` into an `Array` of `Pair`s. Since `Map`s are ordered, the outpu
 **Example**
 
 ```wdl
-Map[String, Int] x = {"a": 1, "c": 3, "b": 2}
-as_pairs(x) == [("a", 1), ("c", 3), ("b", 2)]
+workflow foo {
+  Map[String, Int] x = {"a": 1, "c": 3, "b": 2}
+  Boolean is_true = as_pairs(x) == [("a", 1), ("c", 3), ("b", 2)]
 
-Map[String, Pair[File, File]] y = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
-scatter (item in as_pairs(y)) {
-  String s = item.left
-  Pair[File, File] files = item.right
-  Pair[File, String] bams = (files.left, s)
+  Map[String, Pair[File, File]] y = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+  scatter (item in as_pairs(y)) {
+    String s = item.left
+    Pair[File, File] files = item.right
+    Pair[File, String] bams = (files.left, s)
+  }
+  Boolean is_true2 = bams == [("a.bam", "a"), ("b.bam", "b")]
+  Map[File, String] bam_to_name = as_map(bams)
 }
-Boolean eq = (bams == [("a.bam", "a"), ("b.bam", "b")])
-Map[File, String] bam_to_name = as_map(bams)
 ```
 
 ## ✨ Map[P, Y] as_map(Array[Pair[P, Y]])
@@ -4625,12 +4661,13 @@ Converts an `Array` of `Pair`s into a `Map` in which the left elements of the `P
 
 ```wdl
 Array[Pair[String, Int]] x = [("a", 1), ("c", 3), ("b", 2)]
-as_map(x) == {"a": 1, "c": 3, "b": 2}
+Boolean is_true = as_map(x) == {"a": 1, "c": 3, "b": 2}
 
 Array[Pair[String, Pair[File,File]]] y = [("a", ("a.bam", "a.bai")), ("b", ("b.bam", "b.bai"))
-as_map(y) == {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+Boolean is_true2 = as_map(y) == {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
 
-as_map([("a", 1), ("a", 2)])  # error! the "a" key is duplicated
+# this fails with an error - the "a" key is duplicated
+Boolean bad = as_map([("a", 1), ("a", 2)])  
 ```
 
 ## ✨ Array[P] keys(Map[P, Y])
@@ -4646,15 +4683,17 @@ Creates an `Array` of the keys from the input `Map`, in the same order as the el
 **Example**
 
 ```wdl
-Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
-keys(x) == ["a", "b", "c"]
+workflow foo {
+  Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
+  Boolean is_true = keys(x) == ["a", "b", "c"]
 
-Map[String, Pair[File, File]] str_to_files = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
-scatter (item in str_to_files) {
-  String key = item.left
+  Map[String, Pair[File, File]] str_to_files = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+  scatter (item in str_to_files) {
+    String key = item.left
+  }
+  Array[String] str_to_files_keys = key
+  Boolean is_truew = str_to_files_keys == keys(str_to_files)
 }
-Array[String] str_to_files_keys = key
-str_to_files_keys == keys(str_to_files)
 ```
 
 ## ✨ Map[P, Array[Y]] collect_by_key(Array[Pair[P, Y]])
@@ -4673,12 +4712,15 @@ The order of the keys in the output `Map` is the same as the order of their firs
 
 ```wdl
 Array[Pair[String, Int]] x = [("a", 1), ("b", 2), ("a", 3)]
-as_map(x) == {"a": [1, 3], "b": [2]}
+Boolean is_true = as_map(x) == {"a": [1, 3], "b": [2]}
 
 Array[Pair[String, Pair[File, File]]] y = [
   ("a", ("a_1.bam", "a_1.bai")), ("b", ("b.bam", "b.bai")), ("a", ("a_2.bam", "a_2.bai"))
 ]
-as_map(y) == {"a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], "b": [("b.bam", "b.bai")]}
+Boolean is_true2 = as_map(y) == {
+  "a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], 
+  "b": [("b.bam", "b.bai")]
+}
 ```
 
 ## Boolean defined(X?)
@@ -4759,7 +4801,7 @@ workflow SelectAll {
     Int? maybe_three = 3
   }
   Array[Int] fivethree = select_all([maybe_five, maybe_four_but_is_not, maybe_three])
-  Boolean eq = (fivethree == [5, 3])
+  Boolean is_true = fivethree == [5, 3]
 }
 ```
 
