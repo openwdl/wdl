@@ -24,13 +24,13 @@ This is version 1.1 of the Workflow Description Language (WDL) specification. It
         - [Array[X]](#arrayx)
         - [Pair[X, Y]](#pairx-y)
         - [Map[P, Y]](#mapp-y)
-        - [🗑 Object](#-object)
         - [Custom Types (Structs)](#custom-types-structs)
+        - [🗑 Object](#-object)
       - [Type Conversion](#type-conversion)
+        - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
           - [Coercion of Optional Types](#coercion-of-optional-types)
           - [Struct/Object coercion from Map](#structobject-coercion-from-map)
-    - [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
     - [Declarations](#declarations)
     - [Expressions](#expressions)
       - [Built-in Operators](#built-in-operators)
@@ -92,6 +92,7 @@ This is version 1.1 of the Workflow Description Language (WDL) specification. It
     - [Workflow Inputs](#workflow-inputs)
     - [Workflow Outputs](#workflow-outputs)
     - [Evaluation of Workflow Elements](#evaluation-of-workflow-elements)
+    - [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
     - [Call Statement](#call-statement)
       - [Computing Call Inputs](#computing-call-inputs)
     - [Scatter](#scatter)
@@ -115,7 +116,7 @@ This is version 1.1 of the Workflow Description Language (WDL) specification. It
   - [Map[String, String] read_map(String|File)](#mapstring-string-read_mapstringfile)
   - [🗑 Object read_object(String|File)](#-object-read_objectstringfile)
   - [🗑 Array[Object] read_objects(String|File)](#-arrayobject-read_objectsstringfile)
-  - [X read_json(String|File)](#x-read_jsonstringfile)
+  - [R read_json(String|File)](#r-read_jsonstringfile)
   - [String read_string(String|File)](#string-read_stringstringfile)
   - [Int read_int(String|File)](#int-read_intstringfile)
   - [Float read_float(String|File)](#float-read_floatstringfile)
@@ -154,9 +155,9 @@ This is version 1.1 of the Workflow Description Language (WDL) specification. It
   - [JSON Serialization of WDL Types](#json-serialization-of-wdl-types)
     - [Primitive Types](#primitive-types-1)
     - [Array](#array)
-    - [Struct and Object](#struct-and-object)
     - [Pair](#pair)
     - [Map](#map)
+    - [Struct and Object](#struct-and-object)
 - [Appendix A: WDL Value Serialization and Deserialization](#appendix-a-wdl-value-serialization-and-deserialization)
   - [Primitive Values](#primitive-values)
   - [Compound Values](#compound-values)
@@ -332,7 +333,7 @@ $string = "([^\\\"\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-
 $string = '([^\\\'\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'
 ```
 
-Tasks and workflow inputs may be passed in from an external source, or they may be specified in the WDL document itself using literal values. Input, output, and other declaration values may also be constructed at runtime using [expressions](#expressions) that consist of literals, identifiers (references to declarations or call outputs), built-in [operators](#operator-precedence-table), and [standard library functions](#standard-library).
+Tasks and workflow inputs may be passed in from an external source, or they may be specified in the WDL document itself using literal values. Input, output, and other declaration values may also be constructed at runtime using [expressions](#expressions) that consist of literals, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), built-in [operators](#operator-precedence-table), and [standard library functions](#standard-library).
 
 #### Strings
 
@@ -446,7 +447,7 @@ File f = "path/to/file"
 
 #### Optional Types and None
 
-A type may have a `?` postfix quantifier, which means that it is an optional type, and its value is allowed to be undefined. It can only be used in calls or functions that accept optional values.
+A type may have a `?` postfix quantifier, which means that its value is allowed to be undefined without causing an error. It can only be used in calls or functions that accept optional values.
 
 WDL has a special value `None` whose meaning is "an undefined value". The type of the `None` value is `Any`, meaning `None` can be assigned to an optional declaration of any type. The `None` value is the only value that can be of type `Any`.
 
@@ -487,7 +488,7 @@ Array[Int] empty = []
 Int i = empty[0]
 ```
 
-An `Array` may have an empty value (i.e. an array of length zero), unless it is declared using the non-empty postfix quantifier `+`, in which case it must contain at least one element. For example, the following task operates on an array of file and it requires at least one file to function:
+An `Array` may have an empty value (i.e. an array of length zero), unless it is declared using `+`, the non-empty postfix quantifier, which represents a constraint that the `Array` value must contain one-or-more elements. For example, the following task operates on an `Array` of `File`s and it requires at least one file to function:
 
 ```wdl
 task align {
@@ -504,7 +505,9 @@ task align {
 }
 ```
 
-Note that the `+` and `?` postfix quantifiers can be combined to declare an array that is either undefined or non-empty, i.e. it can have any value except the empty array. Attempting to assign an empty array literal to a non-empty `Array` declaration results in an error. Otherwise, the non-empty assertion is only checked at runtime: binding an empty array to an `Array[T]+` input or function argument is a runtime error. 
+Recall that a type may have an optional postfix quantifier (`?`), which means that its value may be undefined. The `+` and `?` postfix quantifiers can be combined to declare an `Array` that is either undefined or non-empty, i.e. it can have any value *except* the empty array.
+
+Attempting to assign an empty array literal to a non-empty `Array` declaration results in an error. Otherwise, the non-empty assertion is only checked at runtime: binding an empty array to an `Array[T]+` input or function argument is a runtime error. 
 
 ```wdl
 # array that must contain at least one Float
@@ -562,16 +565,46 @@ Map[Int, String] int_to_string = { 2: "hello", 1: "goodbye" }
 Array[Pair[Int, String]] pairs = as_pairs(int_to_string)
 ```
 
+##### Custom Types (Structs)
+
+WDL provides the ability to define custom compound types called [structs](#struct-definition). Structs are defined directly in the WDL document and are usable like any other type. A struct contains any number of declarations of any types, including other Structs.
+
+A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A declaration with a custom type can be assigned a value using struct literal syntax, which is similar to a map literal, but with two differences:
+
+1. The `Struct` type name comes before the opening brace (`{`).
+2. The member names are not quoted.
+
+```wdl
+# a struct is a user-defined type; it can contain members of any types
+struct SampleBamAndIndex {
+  String sample_name
+  File bam
+  File bam_index
+}
+
+SampleBamAndIndex b_and_i = SampleBamAndIndex {
+  sample_name: "NA12878",
+  bam: "NA12878.bam",
+  bam_index: "NA12878.bam.bai" 
+}
+```
+
+The value of a specific member of a struct value can be accessed by placing a `.` followed by the member name after the identifier.
+
+```wdl
+File bam = b_and_i.bam
+```
+
 ##### 🗑 Object
 
-An `Object` is an unordered associative array of identifier-value pairs, where values may be of any type and are not specified explicitly.
+An `Object` is an unordered associative array of name-value pairs, where values may be of any type and are not specified explicitly.
 
 An `Object` can be declared using syntax similar to a map literal, but with two differences:
 
 1. The `object` keyword comes before the opening brace (`{`).
-2. The identifiers are not quoted.
+2. The member names are not quoted.
 
-The value of a specific member of an object value can be accessed by placing a `.` followed by the member identifier after the object declaration name.
+The value of a specific member of an object value can be accessed by placing a `.` followed by the member name after the identifier.
 
 ```wdl
 Object f = object {
@@ -581,32 +614,22 @@ Object f = object {
 Int i = f.a
 ```
 
-Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, **the `Object` type, the `object` literal syntax, and all of the [standard library functions](#-object-read_objectstringfile) with `Object` parameters or return values have been deprecated and will be removed in the next major version of the WDL specification**.
-
-##### Custom Types (Structs)
-
-WDL provides the ability to define custom compound types called [`struct`s](#struct-definition). Structs are defined directly in the WDL document and are usable like any other type. 
-
-A `struct` is declared using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A declaration with a custom type can be assigned a value using struct literal syntax, which is identical to the [objects literal syntax](#-object) with the exception that the `struct` name is used instead of the `object` keyword.
-
-```wdl
-# a struct is a user-defined type; it can contain members of any types
-struct BamAndIndex {
-    File bam
-    File bam_index
-}
-
-BamAndIndex b_and_i = BamAndIndex { 
-  bam: "NA12878.bam",
-  bam_index: "NA12878.bam.bai" 
-}
-```
+Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, **the `Object` type, the `object` literal syntax, and all of the [standard library functions](#-object-read_objectstringfile) with `Object` parameters or return values have been deprecated and will be removed in the next major version of the WDL specification**. All uses of `Object` can be replaced with custom types ([structs](#struct-definition)).
 
 #### Type Conversion
 
 WDL has some limited facilities for converting a value of one type to another type. Some of these are explicitly provided by [standard library](#standard-library) functions, while others are [implicit](#type-coercion). When converting between types, it is best to be explicit whenever possible, even if an implicit conversion is allowed.
 
 The execution engine is also responsible for converting (or "serializing") input values when constructing commands, as well as "deserializing" command outputs. For more information, see the [Command Section](#command-section) and the more extensive Appendix on [WDL Value Serialization and Deserialization](#appendix-a-wdl-value-serialization-and-deserialization).
+
+##### Primitive Conversion to String 
+
+Primitive types can always be converted to `String` using [string interpolation](#expression-placeholders-and-string-interpolation). See [Expression Placeholder Coercion](#expression-placeholder-coercion) for details.
+
+```wdl
+Int i = 5
+String istring = "~{i}"
+```
 
 ##### Type Coercion
 
@@ -630,21 +653,12 @@ The table below lists all globally valid coercions. The "target" type is the typ
 |`Array[Y]`|`Array[X]`|`X` must be coercible to `Y`|
 |`Map[X,Z]`|`Map[W,Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
 |`Pair[X,Z]`|`Pair[W,Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
-|`Object`|`Map[String,Y]`||
-|`Map[String,Y]`|`Object`|All object values must be coercible to `Y`|
 |`Struct`    |`Map[String,Y]`|`Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`|
 |`Map[String,Y]`|`Struct`|All `Struct` members must be coercible to `Y`|
-|`Object`|`Struct`||
-|`Struct`|`Object`|`Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types|
-
-Note that primitive types can always be converted to `String` using [string interpolation](#expression-placeholders-and-string-interpolation).
-
-```wdl
-Int i = 5
-String istring = "~{i}"
-```
-
-See [Expression Placeholder Coercion](#expression-placeholder-coercion) for details.
+|`Object`|`Map[String,Y]`|🗑|
+|`Map[String,Y]`|`Object`|🗑 All object values must be coercible to `Y`|
+|`Object`|`Struct`|🗑|
+|`Struct`|`Object`|🗑 `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types|
 
 ###### Coercion of Optional Types
 
@@ -665,141 +679,29 @@ String a = "beware"
 String b = "key"
 String c = "lookup"
 
+struct Words {
+  Int a
+  Int b
+  Int c
+}
+
 # What are the keys to this object?
-Object object_syntax = object {
+Words literal_syntax = Words {
   a: 10,
   b: 11,
   c: 12
 }
 
 # What are the keys to this object?
-Object map_coercion = {
+Words map_coercion = {
   a: 10,
   b: 11,
   c: 12
 }
 ```
 
-- If an `Object` is specified using the object-style `Object map_syntax = object { a: ...` syntax then the keys will be `"a"`, `"b"` and `"c"`.
-- If an `Object` is specified using the map-style `Object map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
-
-### Fully Qualified Names & Namespaced Identifiers
-
-```txt
-$fully_qualified_name = $identifier ('.' $identifier)*
-$namespaced_identifier = $identifier ('.' $identifier)*
-```
-
-A fully qualified name is the unique identifier of any particular call, input, or output, and has the following structure:
-
-* For calls: `<parent namespace>.<call alias>`
-* For inputs and outputs: `<parent namespace>.<input or output name>`
-
-The `parent namespace` here will equal the fully qualified name of the workflow containing the call, or the workflow or task containing the input or output. For the top-level workflow this is equal to the workflow name.
-
-For example:
-
-`other.wdl`
-```wdl
-task foobar {
-  input {
-    File in
-  }
-  command {
-    sh setup.sh ${in}
-  }
-  output {
-    File results = stdout()
-  }
-  runtime {
-    container: "my_image:latest"
-  }
-}
-
-workflow other_workflow {
-  input {
-    Boolean bool
-  }
-  call foobar
-}
-```
-
-`main.wdl`
-```wdl
-import "other.wdl" as other
-
-task test {
-  input {
-    String my_var
-  }
-  command {
-    ./script ${my_var}
-  }
-  output {
-    File results = stdout()
-  }
-  runtime {
-    container: "my_image:latest"
-  }
-}
-
-workflow wf {
-  Array[String] arr = ["a", "b", "c"]
-  call test
-  call test as test2
-  call other.foobar
-  call other.other_workflow
-  call other.other_workflow as other_workflow2
-  output {
-    test.results
-    foobar.results
-  }
-  scatter(x in arr) {
-    call test as scattered_test {
-      input: my_var = x
-    }
-  }
-}
-```
-
-The following fully-qualified names would exist within `workflow wf` in main.wdl:
-
-* `wf` - References top-level workflow
-* `wf.test` - References the first call to task `test`
-* `wf.test2` - References the second call to task `test` (aliased as test2)
-* `wf.test.my_var` - References the `String` input of first call to task `test`
-* `wf.test.results` - References the `File` output of first call to task `test`
-* `wf.test2.my_var` - References the `String` input of second call to task `test`
-* `wf.test2.results` - References the `File` output of second call to task `test`
-* `wf.foobar.results` - References the `File` output of the call to `other.foobar`
-* `wf.foobar.input` - References the `File` input of the call to `other.foobar`
-* `wf.other_workflow` - References the first call to subworkflow `other.other_workflow`
-* `wf.other_workflow.bool` - References the `Boolean` input of the first call to subworkflow `other.other_workflow`
-* `wf.other_workflow.foobar.results` - References the `File` output of the call to `foobar` inside the first call to subworkflow `other.other_workflow`
-* `wf.other_workflow.foobar.input` - References the `File` input of the call to `foobar` inside the first call to subworkflow `other.other_workflow`
-* `wf.other_workflow2` - References the second call to subworkflow `other.other_workflow` (aliased as other_workflow2)
-* `wf.other_workflow2.bool` - References the `Boolean` input of the second call to subworkflow `other.other_workflow`
-* `wf.other_workflow2.foobar.results` - References the `File` output of the call to `foobar` inside the second call to subworkflow `other.other_workflow`
-* `wf.other_workflow2.foobar.input` - References the `File` input of the call to `foobar` inside the second call to subworkflow `other.other_workflow`
-* `wf.arr` - References the `Array[String]` declaration on the workflow
-* `wf.scattered_test` - References the scattered version of `call test`
-* `wf.scattered_test.my_var` - References an `Array[String]` for each element used as `my_var` when running the scattered version of `call test`.
-* `wf.scattered_test.results` - References an `Array[File]` which are the accumulated results from scattering `call test`
-* `wf.scattered_test.1.results` - References an `File` from the second invocation (0-indexed) of `call test` within the scatter block.  This particular invocation used value "b" for `my_var`
-
-A namespaced identifier has the same syntax as a fully-qualified name. It is interpreted as the left-hand side being the name of a namespace and the right-hand side being the name of a workflow, task, or sub-namespace within that namespace.
-
-Consider this workflow:
-
-```wdl
-import "other.wdl" as ns
-
-workflow wf {
-  call ns.ns2.task
-}
-```
-
-Here, `ns.ns2.task` is a namespace identifier (see the [Call Statement](#call-statement) section for more details). Namespace identifiers, like fully-qualified names are left-associative, which means `ns.ns2.task` is interpreted as `((ns.ns2).task)`, which means `ns.ns2` has to resolve to a namespace so that `.task` can be applied. If `ns2` is instead a task definition within `ns`, then the namespaced identifier `ns.ns2.task` is invalid.
+- If a `Struct` (or `Object`) declaration is initialized using the struct-literal (or object-literal) syntax `Words literal_syntax = Words { a: ...` then the keys will be `"a"`, `"b"` and `"c"`.
+- If a `Struct` (or `Object`) declaration is initialized using the map-literal syntax `Words map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
 
 ### Declarations
 
@@ -807,7 +709,7 @@ Here, `ns.ns2.task` is a namespace identifier (see the [Call Statement](#call-st
 $declaration = $type $identifier ('=' $expression)?
 ```
 
-A declaration reserves a name that can be referenced anywhere in the [scope](#appendix-b-wdl-namespaces-and-scopes) where it is declared. A declaration has a type, a name, and an optional initialization. Each declaration must be unique within its scope, and may not collide with a reserved WDL keyword (e.g. `workflow`, or `input`).
+A declaration reserves a name that can be referenced anywhere in the [scope](#appendix-b-wdl-namespaces-and-scopes) where it is declared. A declaration has a type, a name, and an optional initialization. Each declaration must be unique within its scope, and may not collide with a [reserved WDL keyword](#reserved-keywords) (e.g. `workflow`, or `input`).
 
 Some examples of declarations:
 
@@ -835,7 +737,7 @@ task mytask {
   # must be initialized.
   File f
 
-  command <<< ... >>>
+  ...
 
   output {
     Array[String] strarr = ["a", "b"] # output declaration
@@ -851,9 +753,9 @@ task test {
   input {
     String var
   }
-  command {
-    ./script ${var}
-  }
+  command <<<
+    ./script ~{var}
+  >>>
   output {
     String value = read_string(stdout())
   }
@@ -866,9 +768,9 @@ task test2 {
   input {
     Array[String] array
   }
-  command {
-    ./script ${write_lines(array)}
-  }
+  command <<<
+    ./script ~{write_lines(array)}
+  >>>
   output {
     Int value = read_int(stdout())
   }
@@ -926,7 +828,7 @@ $expression = '[' ($expression (',' $expression)*)? ']'
 $expression = $string | $integer | $float | $boolean | $identifier
 ```
 
-An expression is a compound statement that consists of literal values, identifiers (references to declarations or call outputs), [built-in operators](#built-in-operators) (e.g. `+` or `>=`), and calls to [standard library functions](#standard-library).
+An expression is a compound statement that consists of literal values, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), [built-in operators](#built-in-operators) (e.g. `+` or `>=`), and calls to [standard library functions](#standard-library).
 
 A "simple" expression is one that does not make use of identifiers or any function that takes a `File` input or returns a `File` output; i.e. it is an expression that can be evaluated unambiguously without any knowledge of the runtime context. An execution engine may choose to replace simple expressions with their literal values.
 
@@ -1024,10 +926,10 @@ WDL `String`s are compared by the unicode values of their corresponding characte
 |`Map`|`!=`|`Map`|`Boolean`|
 |`Pair`|`==`|`Pair`|`Boolean`|
 |`Pair`|`!=`|`Pair`|`Boolean`|
-|`struct`|`==`|`struct`|`Boolean`|
-|`struct`|`!=`|`struct`|`Boolean`|
-|`Object`|`==`|`Object`|`Boolean`|
-|`Object`|`!=`|`Object`|`Boolean`|
+|`Struct`|`==`|`Struct`|`Boolean`|
+|`Struct`|`!=`|`Struct`|`Boolean`|
+|🗑`Object`|`==`|`Object`|`Boolean`|
+|🗑`Object`|`!=`|`Object`|`Boolean`|
 
 In general, two compound values are equal if-and-only-if all of the following are true:
 
@@ -1104,7 +1006,7 @@ Boolean is_false2 j == k
 
 #### Member Access
 
-The syntax `x.y` refers to member access. `x` must be a call in a workflow, or a struct or object value. A call can be thought of as a struct where the members are the outputs of the called task.
+The syntax `x.y` refers to member access. `x` must be a call in a workflow, or a `Struct` (or `Object`) value. A call can be thought of as a struct where the members are the outputs of the called task.
 
 ```wdl
 # task foo has an output y
@@ -1126,20 +1028,27 @@ Examples:
 
 - Choose whether to say "good morning" or "good afternoon":
 ```wdl
-Boolean morning = ...
-String greeting = "good " + if morning then "morning" else "afternoon"
+task greet {
+  input {
+    Boolean morning
+  }
+  String greeting = "good ~{if morning then "morning" else "afternoon}"
+}
 ```
 - Choose how much memory to use for a task:
 ```wdl
-Int array_length = length(array)
-runtime {
-  memory: if array_length > 100 then "16GB" else "8GB"
+task mytask {
+  input {
+    Array[String] array
+  }
+  Int array_length = length(array)
+  Int memory = if array_length > 100 then "16GB" else "8GB"
 }
 ```
 
 #### Function Calls
 
-WDL provides a [standard library](#standard-library) of functions. These functions can be called using the syntax `func(p1, p2, ...)`, where `func` is the function name and `p1` and `p2` are parameters to the function. Note that standard library function names are identifiers, meaning they are reserved for use by WDL and cannot be used as declaration, task, or workflow names or aliases.
+WDL provides a [standard library](#standard-library) of functions. These functions can be called using the syntax `func(p1, p2, ...)`, where `func` is the function name and `p1` and `p2` are parameters to the function.
 
 #### Expression Placeholders and String Interpolation
 
@@ -1173,7 +1082,7 @@ Placeholders may contain other placeholders to any level of nesting, and placeho
 Int i = 3
 Boolean b = true
 # s evaluates to "4", but would be "0" if b were false
-String s = "~{if b then '${1 + 3}' else 0}"
+String s = "~{if b then '${1 + i}' else 0}"
 ```
 
 ##### Expression Placeholder Coercion
@@ -1183,7 +1092,7 @@ The expression result in a placeholder must ultimately be converted to a string 
 - `String` is substituted directly.
 - `File` is substituted as if it were a `String`.
 - `Int` is formatted without leading zeros (unless the value is `0`), and with a leading `-` if the value is negative.
-- `Float` is printed in the style `[-]ddd.ddd`, with 6 digits after the decimal point.
+- `Float` is printed in the style `[-]ddd.dddddd`, with 6 digits after the decimal point.
 - `Boolean` is converted to the "stringified" version of its literal value, i.e. `true` or `false`.
 
 ```wdl
@@ -1231,9 +1140,9 @@ task test {
     String? val
   }
 
-  command {
-    python script.py --val=${val}
-  }
+  command <<<
+    python script.py --val=~{val}
+  >>>
 }
 ```
 
@@ -1366,15 +1275,15 @@ A WDL document is a file that contains valid WDL definitions.
 
 A WDL document must contain:
 
-* A [version statement](#versioning) on the first non-comment line of the file.
-* At least one [task definition](#task-definition), [workflow definition](#workflow-definition), or [struct definition](#struct-definition).
+* A [`version` statement](#versioning) on the first non-comment line of the file.
+* At least one [`task` definition](#task-definition), [`workflow` definition](#workflow-definition), or [`struct` definition](#struct-definition).
 
 A WDL document may contain any combination of the following:
 
-* Any number of [import statements](#import-statements).
-* Any number of task definitions.
-* Any number of struct definitions.
-* A maximum of one workflow definition.
+* Any number of [`import` statements](#import-statements).
+* Any number of `task` definitions.
+* Any number of `struct` definitions.
+* A maximum of one `workflow` definition.
 
 To execute a WDL workflow, the user must provide the execution engine with the location of a "primary" WDL file (which may import additional files as needed) and any input values needed to satisfy all required task and workflow input parameters, using a [standard input JSON file](#json-input-format) or some other execution engine-specific mechanism.
 
@@ -1408,9 +1317,9 @@ $import_namespace = 'as' $ws+ $identifier
 $import_alias = 'alias' $identifier $ws+ 'as' $ws+ $identifier
 ```
 
-The import statement specifies a WDL document source as a string literal, which is interpreted as a URI. The execution engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code **of the same version as the importing document**.
+The `import` statement specifies a WDL document source as a string literal, which is interpreted as a URI. The execution engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code **of the same version as the importing document**.
 
-Every imported WDL file requires a namespace, which can be specified using an identifier (via the `as $identifier` syntax). If a namespace identifier is not specified explicitly, then the default namespace is the filename of the imported WDL, minus the `.wdl` extension. For all imported WDL files, the tasks and workflows imported from that file will only be accessible through the assigned [namespace](#namespaces).
+Every imported WDL file requires a namespace, which can be specified using the `as $identifier` syntax. If a namespace identifier is not specified explicitly, then the default namespace is the filename of the imported WDL, minus the `.wdl` extension. For all imported WDL files, the tasks and workflows imported from that file will only be accessible through the assigned [namespace](#namespaces) - see [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details.
 
 ```wdl
 import "http://example.com/lib/analysis_tasks" as analysis
@@ -1447,7 +1356,7 @@ Some examples of correct import resolution:
 | http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | /openwdl/otherwdls/subworkflow.wdl | http://www.github.com/openwdl/otherwdls/subworkflow.wdl |
 | /some/path/hello.wdl                                  | /another/path/world.wdl            | /another/path/world.wdl                                  |
 
-Import statements also support aliasing of `struct`s using the `x as y` syntax. See [struct namespacing](#struct-namespacing) for details.
+`Import` statements also support aliasing of structs using the `x as y` syntax. See [struct namespacing](#struct-namespacing) for details.
 
 ## Task Definition
 
@@ -1459,9 +1368,9 @@ task name {
 
   # other "private" declarations can be made here
  
-  command {
+  command <<<
     # the command template - this section is required
-  }
+  >>>
 
   output {
     # task outputs are declared here
@@ -1549,11 +1458,11 @@ task test {
     Array[File]+? e
   }
 
-  command {
-    /bin/mycmd ${sep=" " a}
-    /bin/mycmd ${sep="," b}
-    /bin/mycmd ${write_lines(c)}
-  }
+  command <<<
+    /bin/mycmd ~{sep=" " a}
+    /bin/mycmd ~{sep="," b}
+    /bin/mycmd ~{write_lines(c)}
+  >>>
   
   runtime {
     container: "my_image:latest"
@@ -1611,7 +1520,7 @@ task say_hello {
     String name
     String? saluation = "hello"
   }
-  command {}
+  command <<< >>>
   output {
     String greeting = if defined(saluation) then "${saluation} ${name}" else name
   }
@@ -1662,7 +1571,7 @@ task test {
     Int i
   }
   String s = "hello"
-  command { ... }
+  command <<< ... >>>
   output {
     File out = "/path/to/file"
   }
@@ -1692,7 +1601,7 @@ There are two different syntaxes that can be used to define the command section:
 command <<< ... >>>
 
 # older style - may be preferable in some cases
-command { ... }
+command <<< ... >>>
 ```
 
 There may be any number of commands within a command section. Commands are not modified by the execution engine, with the following exceptions:
@@ -1707,8 +1616,8 @@ There are two different syntaxes that can be used to define command expression p
 
 |Command Definition Style|Placeholder Style|
 |---|---|
-|`command { ... }`|`~{}` (preferred) or `${}`|
 |`command <<< >>>`|`~{}` only|
+|`command { ... }`|`~{}` (preferred) or `${}`|
 
 Note that the `~{}` and `${}` styles may be used interchangably in other string expressions.
 
@@ -1837,9 +1746,9 @@ task example {
     File bam
   }
 
-  command {
-    python analysis.py --prefix=${prefix} ${bam}
-  }
+  command <<<
+    python analysis.py --prefix=~{prefix} ~{bam}
+  >>>
 
   output {
     File analyzed = "~{prefix}.out"
@@ -1928,9 +1837,9 @@ task test {
     String ubuntu_version
   }
 
-  command {
+  command <<<
     python script.py
-  }
+  >>>
   
   runtime {
     container: ubuntu_version
@@ -2257,9 +2166,22 @@ Both of these sections can contain key/value pairs. Metadata values are differen
 * The special value `null` is allowed for undefined attributes.
 * Expressions are not allowed.
 
-A meta object is similar to a regular WDL object, except:
-* The `object` keyword is not required.
+A meta object is similar to a struct literal, except:
+* A `Struct` type name is not required.
 * Its values must conform to the same metadata rules defined above.
+
+```wdl
+task {
+  meta {
+    authors: ["Jim", "Bob"]
+    version: 1.1
+    citation: {
+      year: 2020,
+      doi: "1234/10.1010"
+    }
+  }
+}
+```
 
 Note that, unlike the WDL `Object` type, metadata objects are not deprecated and will continue to be supported in future versions.
 
@@ -2300,9 +2222,9 @@ task wc {
     }
   }
 
-  command {
-    wc ${true="-l", false=' ' lines_only} ${infile}
-  }
+  command <<<
+    wc ~{true="-l", false=' ' lines_only} ~{infile}
+  >>>
 
   output {
      String retval = stdout()
@@ -2320,7 +2242,9 @@ task wc {
 
 ```wdl
 task hello_world {
-  command {echo "hello world"}
+  command <<<
+  echo "hello world"
+  >>>
 }
 ```
 
@@ -2332,9 +2256,9 @@ task one_and_one {
     String pattern
     File infile
   }
-  command {
-    grep ${pattern} ${infile}
-  }
+  command <<<
+    grep ~{pattern} ~{infile}
+  >>>
   output {
     File filtered = stdout()
   }
@@ -2353,9 +2277,9 @@ task runtime_meta {
     String sample_id
     String param
   }
-  command {
-    java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
-  }
+  command <<<
+    java -Xmx~{memory_mb}M -jar task.jar -id ~{sample_id} -param ~{param} -out ~{sample_id}.out
+  >>>
   output {
     File results = "~{sample_id}.out"
   }
@@ -2386,13 +2310,13 @@ task bwa_mem_tool {
     File reference
     File reads
   }
-  command {
-    bwa mem -t ${threads} \
-            -k ${min_seed_length} \
-            -I ${sep=',' min_std_max_min} \
-            ${reference} \
-            ${sep=' ' reads+} > output.sam
-  }
+  command <<<
+    bwa mem -t ~{threads} \
+            -k ~{min_seed_length} \
+            -I ~{sep=',' min_std_max_min} \
+            ~{reference} \
+            ~{sep=' ' reads+} > output.sam
+  >>>
   output {
     File sam = "output.sam"
   }
@@ -2410,9 +2334,9 @@ task wc2_tool {
   input {
     File file1
   }
-  command {
-    wc ${file1}
-  }
+  command <<<
+    wc ~{file1}
+  >>>
   output {
     Int count = read_int(stdout())
   }
@@ -2444,9 +2368,9 @@ task tmap_tool {
     Array[String] stages
     File reads
   }
-  command {
-    tmap mapall ${sep=' ' stages} < ${reads} > output.sam
-  }
+  command <<<
+    tmap mapall ~{sep=' ' stages} < ~{reads} > output.sam
+  >>>
   output {
     File sam = "output.sam"
   }
@@ -2475,6 +2399,9 @@ stage2 map1 --max-seq-length 20 --min-seq-length 10 --seed-length 16 \
 
 ## Workflow Definition
 
+A workflow can be thought of as a directed acyclic graph (DAG) of transformations that convert the input data to the desired outputs. Rather than explicitly specifying the sequence of operations, A WDL workflow instead describes the connections between the steps in the workflow (i.e. between the nodes in the graph). It is the responsibility of the execution engine to determine the proper ordering of the workflow steps, and to orchestrate the execution of the different steps.
+
+A workflow is defined using the `workflow` keyword, followed by a workflow name that is unique within its WDL document, followed by any number of workflow elements within braces.
 
 ```wdl
 workflow name {
@@ -2503,10 +2430,6 @@ workflow name {
   }
 }
 ```
-
-A workflow can be thought of as a directed acyclic graph (DAG) of transformations that convert the input data to the desired outputs. Rather than explicitly specifying the sequence of operations, A WDL workflow instead describes the connections between the steps in the workflow (i.e. between the nodes in the graph). It is the responsibility of the execution engine to determine the proper ordering of the workflow steps, and to orchestrate the execution of the different steps.
-
-A workflow is defined using the `workflow` keyword, followed by a workflow name that is unique within its WDL document.
 
 Here is an example of a simple workflow that runs one task (not defined here):
 
@@ -2578,6 +2501,146 @@ The control flow of this workflow changes depending on whether the value of `y` 
 
 * If an input value is provided for `y` then it receives that value immediately and `t2` may start running as soon as the workflow starts.
 * In no input value is provided for `y` then it will need to wait for `t1` to complete before it is assigned.
+
+### Fully Qualified Names & Namespaced Identifiers
+
+```txt
+$fully_qualified_name = $identifier ('.' $identifier)*
+$namespaced_identifier = $identifier ('.' $identifier)*
+```
+
+A fully qualified name is the unique identifier of any particular call, input, or output, and has the following structure:
+
+* For `call`s: `<parent namespace>.<call alias>`
+* For inputs and outputs: `<parent namespace>.<input or output name>`
+* For `Struct`s and `Object`s: `<parent namespace>.<member name>`
+
+A [namespace](#namespaces) is a set of names, such that every name is unique within the namespace (but the same name could be used in two different namespaces). The `parent namespace` is the fully qualified name of the workflow containing the call, the workflow or task containing the input or output declaration, or the `Struct` or `Object` declaration containing the member. For the top-level workflow this is equal to the workflow name.
+
+For example: `ns.ns2.mytask` is a fully-qualified name - `ns.ns2` is the parent namespace, and `mytask` is the task name being referred to within that namespace. Fully-qualified names are left-associative, meaning `ns.ns2.mytask` is interpreted as `((ns.ns2).mytask)`, meaning `ns.ns2` has to resolve to a namespace so that `.mytask` can be applied.
+
+When a [call statement](#call-statement) needs to refer to a task or workflow in another namespace, then it must use the fully-qualified name of that task or workflow. When an [expression](#expressions) needs to refer to a declaration in another namespace, it must use a *namespaced identifier*, which is an identifier consisting of a fully-qualified name.
+
+Consider this workflow:
+
+`other.wdl`
+```wdl
+struct Result {
+  String foo
+}
+
+task mytask {
+  ...
+  output {
+    Result result
+  }
+}
+```
+
+`main.wdl`
+```wdl
+import "other.wdl" as ns
+
+workflow wf {
+  call ns.mytask
+
+  output {
+    String result = mytask.result.foo
+  }
+}
+```
+
+In this example, the call statement uses the fully-qualified name `ns.mytask` to refer to task `mytask` in namespace `ns`, which is the alias given to `other.wdl` when it is imported. We can then refer to the outputs of this call using its alias `mytask` (see the [Call Statement](#call-statement) section for details on call aliasing). `mytask.result.foo` is a namespaced identifier referring to the member `foo` of the `Struct`-typed output declaration `result` of the call `mytask`.
+
+In the following more extensive example, all of the fully-qualified names that exist within the top-level workflow are listed exhaustively:
+
+`other.wdl`
+```wdl
+task foobar {
+  input {
+    File infile
+  }
+  command <<<
+    sh setup.sh ~{infile}
+  >>>
+  output {
+    File results = stdout()
+  }
+  runtime {
+    container: "my_image:latest"
+  }
+}
+
+workflow other_workflow {
+  input {
+    Boolean bool
+  }
+  call foobar
+}
+```
+
+`main.wdl`
+```wdl
+import "other.wdl" as other
+
+task test {
+  input {
+    String my_var
+  }
+  command <<<
+    ./script ~{my_var}
+  >>>
+  output {
+    File results = stdout()
+  }
+  runtime {
+    container: "my_image:latest"
+  }
+}
+
+workflow wf {
+  Array[String] arr = ["a", "b", "c"]
+  call test
+  call test as test2
+  call other.foobar
+  call other.other_workflow
+  call other.other_workflow as other_workflow2
+  output {
+    test.results
+    foobar.results
+  }
+  scatter(x in arr) {
+    call test as scattered_test {
+      input: my_var = x
+    }
+  }
+}
+```
+
+The following fully-qualified names exist within `workflow wf` in main.wdl:
+
+* `wf` - References top-level workflow
+* `wf.test` - References the first call to task `test`
+* `wf.test2` - References the second call to task `test` (aliased as test2)
+* `wf.test.my_var` - References the `String` input of first call to task `test`
+* `wf.test.results` - References the `File` output of first call to task `test`
+* `wf.test2.my_var` - References the `String` input of second call to task `test`
+* `wf.test2.results` - References the `File` output of second call to task `test`
+* `wf.foobar.results` - References the `File` output of the call to `other.foobar`
+* `wf.foobar.input` - References the `File` input of the call to `other.foobar`
+* `wf.other_workflow` - References the first call to subworkflow `other.other_workflow`
+* `wf.other_workflow.bool` - References the `Boolean` input of the first call to subworkflow `other.other_workflow`
+* `wf.other_workflow.foobar.results` - References the `File` output of the call to `foobar` inside the first call to subworkflow `other.other_workflow`
+* `wf.other_workflow.foobar.input` - References the `File` input of the call to `foobar` inside the first call to subworkflow `other.other_workflow`
+* `wf.other_workflow2` - References the second call to subworkflow `other.other_workflow` (aliased as other_workflow2)
+* `wf.other_workflow2.bool` - References the `Boolean` input of the second call to subworkflow `other.other_workflow`
+* `wf.other_workflow2.foobar.results` - References the `File` output of the call to `foobar` inside the second call to subworkflow `other.other_workflow`
+* `wf.other_workflow2.foobar.input` - References the `File` input of the call to `foobar` inside the second call to subworkflow `other.other_workflow`
+* `wf.arr` - References the `Array[String]` declaration on the workflow
+* `wf.scattered_test` - References the scattered version of `call test`
+* `wf.scattered_test.my_var` - References an `Array[String]` for each element used as `my_var` when running the scattered version of `call test`.
+* `wf.scattered_test.results` - References an `Array[File]` which are the accumulated results from scattering `call test`
+* `wf.scattered_test.1.results` - References an `File` from the second invocation (0-indexed) of `call test` within the scatter block.  This particular invocation used value "b" for `my_var`
 
 ### Call Statement
 
@@ -2741,9 +2804,9 @@ task my_task {
     Int disk_space_gb
   }
 
-  command {
+  command <<<
     python do_stuff.py ~{f}
-  }
+  >>>
 
   output {
     File results = stdout()
@@ -2776,9 +2839,9 @@ task hello {
   input {
     String addressee
   }
-  command {
-    echo "Hello ${addressee}!"
-  }
+  command <<<
+    echo "Hello ~{addressee}!"
+  >>>
   runtime {
     container: "ubuntu:latest"
   }
@@ -2859,9 +2922,9 @@ task t1 {
     Int x
   }
 
-  command {
+  command <<<
     ./script --action=~{s} -x~{x}
-  }
+  >>>
 
   output {
     Int count = read_int(stdout())
@@ -2879,9 +2942,9 @@ task t2 {
     Int x
   }
 
-  command {
+  command <<<
     ./script2 --action=~{s} -x~{x} ~{"--other=" + t}
-  }
+  >>>
 
   output {
     Int count = read_int(stdout())
@@ -2898,9 +2961,9 @@ task t3 {
     File ref_file # Do nothing with this
   }
 
-  command {
+  command <<<
     python -c "print(~{y} + 1)"
-  }
+  >>>
 
   output {
     Int incr = read_int(stdout())
@@ -3039,7 +3102,7 @@ task say_hello {
     String salutation
     String name
   }
-  command {}
+  command <<< >>>
   output {
     String greeting = "~{salutation} ~{name}"
   }
@@ -3210,11 +3273,11 @@ workflow foo {
 
 ## Struct Definition
 
-A struct type is a user-defined data type. Structs enable the creation of compound data types that bundle together related attributes in a more natural way than is possible using the general-purpose compound types like `Pair` or `Map`. Once defined, a struct type can be used as the type of a declaration like any other data type.
+A `Struct` type is a user-defined data type. Structs enable the creation of compound data types that bundle together related attributes in a more natural way than is possible using the general-purpose compound types like `Pair` or `Map`. Once defined, a `Struct` type can be used as the type of a declaration like any other data type.
 
-A struct is a top-level WDL element, meaning it is defined at the same level as tasks and workflows, and it cannot be defined within a task or workflow body. A struct is defined using the `struct` keyword, followed by a name that is unique within the WDL document, and a body containing a set of member declarations. Declarations in a `struct` body differ from those in a task or workflow in that struct members cannot have default initializers. Struct members may be optional.
+A `struct` definition is a top-level WDL element, meaning it is defined at the same level as tasks and workflows, and it cannot be defined within a task or workflow body. A struct is defined using the `struct` keyword, followed by a name that is unique within the WDL document, and a body containing a set of member declarations. Declarations in a `struct` body differ from those in a `task` or `workflow` in that `struct` members cannot have default initializers. `Struct` members may be optional.
 
-Valid struct:
+Valid `struct`:
 ```wdl
 struct Person {
   String first_name
@@ -3224,7 +3287,7 @@ struct Person {
 }
 ```
 
-Invalid struct:
+Invalid `struct`:
 ```wdl
 struct Invalid {
   String myString = "Cannot do this"
@@ -3232,7 +3295,7 @@ struct Invalid {
 }
 ```
 
-A struct member may be of any type, including compound types and even other struct types.
+A `struct` member may be of any type, including compound types and even other `Struct` types.
 
 ```wdl
 struct Sample {
@@ -3244,9 +3307,9 @@ struct Sample {
 
 ### Struct Literals
 
-A struct literal is similar to an [`object` literal](#-object), except that the struct name is used in place of the `object` keyword. The members of a struct value can be validated against the struct's definition at the time of creation, which makes WDL code written using `struct`s more amenable to static type analysis.
+A struct literal is an instance of a specific `Struct` type that provides values for all of the non-optional members and any of the optional members. The members of a struct literal are validated against the `Struct`'s definition at the time of creation. Members do not need to be specified in any specific order. Once a struct literal is created, it is immutable like any other WDL value.
 
-A struct literal must at least provide values for all the non-optional struct members, and may also provide values for any optional members. Members do not need to be specified in any specific order. Once a struct literal is created, it is immutable like any other WDL value.
+A struct literal begins with the name of the `Struct` type, followed by name-value pairs for each of the members within braces.
 
 ```wdl
 struct BankAccount {
@@ -3285,11 +3348,16 @@ task {
 }
 ```
 
-🗑 It is also possible to assign an `Object` or `Map[String, X]` value to a struct declaration. In the either case, the object/map must not have any members that are not declared for the struct, the value of each object/map member must be coercible to the declared type of the struct member, and the object/map must at least contain values for all of the struct's non-optional members. Note that the ability to assign non-struct values to struct declarations is deprecated and will be removed in WDL 2.0.
+🗑 It is also possible to assign an `Object` or `Map[String, X]` value to a `Struct` declaration. In the either case:
+* The `Object`/`Map` must not have any members that are not declared for the struct.
+* The value of each object/map member must be coercible to the declared type of the struct member.
+* The `Object`/`Map` must at least contain values for all of the struct's non-optional members.
+
+Note that the ability to assign non-`Struct` values to `Struct` declarations is deprecated and will be removed in WDL 2.0.
 
 ### Struct Namespacing
 
-Although a struct is a top-level element, it is not considered a member of the WDL document's namespace the way that other top-level elements (tasks and workflows) are. Instead, when a WDL document is imported all of its structs are added to a global struct namespace. This enables structs to be used by their name alone, without the need for any any `namespace.` prefix.
+Although a `struct` is a top-level element, it is not considered a member of the WDL document's namespace the way that other top-level elements (`task`s and `workflow`s) are. Instead, when a WDL document is imported all of its `structs` are added to a global struct namespace. This enables structs to be used by their name alone, without the need for any any `namespace.` prefix.
 
 `structs.wdl`
 ```wdl
@@ -3311,15 +3379,15 @@ task test {
 }
 ```
 
-It is valid to import the same struct into the global namespace multiple times via different paths; however, if two structs with the same name but different members are imported into the global namespace there is a name collision resulting in an error. This means that care must be taken not to give identical names to two different structs that might be imported into the same WDL document tree. Alternatively, structs can be aliased at import time.
+It is valid to import the same `Struct` into the global namespace multiple times via different paths; however, if two `Struct`s with the same name but different members are imported into the global namespace there is a name collision resulting in an error. This means that care must be taken not to give identical names to two different `Struct`s that might be imported into the same WDL document tree. Alternatively, `Struct`s can be aliased at import time.
 
-For example, if your current WDL defines a struct named `Experiment` and an imported WDL also defines a struct named `Experiment` you can alias it as follows:
+For example, if the current WDL defines a `struct Experiment` and an imported WDL defines a different `struct Experiment`, it can be aliased as follows:
 
 ```wdl
 import "http://example.com/example.wdl" as ex alias Experiment as OtherExperiment
 ```
 
-In order to resolve multiple structs, simply add additional alias statements.
+In order to resolve multiple `Struct`s, simply add additional alias statements:
 
 ```wdl
 import "http://example.com/another_exampl.wdl" as ex2
@@ -3328,11 +3396,11 @@ import "http://example.com/another_exampl.wdl" as ex2
   alias GrandChild as GrandChild2
 ```
 
-A struct can always be aliased even if its name does not conflict with another struct in the global namespace. When a struct is imported with an alias, it is added to the global namespace only under that alias. If aliases are used for some structs in an imported WDL but not others, the unaliased structs are still imported into the global namespace under their original names.
+A `Struct` can always be aliased even if its name does not conflict with another `Struct` in the global namespace. When a `Struct` is imported with an alias, it is added to the global namespace only under that alias. If aliases are used for some `Struct`s in an imported WDL but not others, the unaliased `Struct`s are still imported into the global namespace under their original names.
 
 ### Struct Usage
 
-[Member access](#member-access) for structs is the same as for `Object`s and calls.
+A `Struct`s members are [accessed](#member-access) using a `.` to separate the identifier from the member name. For example:
 
 ```wdl
 struct Wizard {
@@ -3531,9 +3599,9 @@ task example {
     String output_file_name = sub(input_file, "\\.bam$", ".index")
   }
 
-  command {
-    echo "I want an index instead" > ${output_file_name}
-  }
+  command <<<
+    echo "I want an index instead" > ~{output_file_name}
+  >>>
 
   output {
     File outputFile = output_file_name
@@ -3561,7 +3629,7 @@ This task echos a message to standard out, and then returns a `File` containing 
 
 ```wdl
 task echo {
-  command { echo "hello world" }
+  command <<< echo "hello world" >>>
   output {
     File message = stdout()
   }
@@ -3584,7 +3652,7 @@ This task echos a message to standard error, and then returns a `File` containin
 
 ```wdl
 task echo {
-  command { >&2 echo "hello world" }
+  command <<< >&2 echo "hello world" >>>
   output {
     File message = stderr()
   }
@@ -3611,9 +3679,9 @@ At least in standard Bash, glob expressions are not evaluated recursively, i.e. 
 
 ```wdl
 task gen_files {
-  command {
+  command <<<
     ./generate_files --num 4 --prefix "a"
-  }
+  >>>
 
   output {
     Array[File] a_files = glob("a*")
@@ -3681,9 +3749,9 @@ task do_stuff {
     File file
   }
 
-  command {
-    grep '${pattern}' ${file}
-  }
+  command <<<
+    grep '~{pattern}' ~{file}
+  >>>
 
   output {
     Array[String] matches = read_lines(stdout())
@@ -3718,9 +3786,9 @@ task do_stuff {
   input {
     File file
   }
-  command {
-    python do_stuff.py ${file}
-  }
+  command <<<
+    python do_stuff.py ~{file}
+  >>>
   output {
     Array[Array[String]] output_table = read_tsv("./results/file_list.tsv")
   }
@@ -3751,9 +3819,9 @@ task do_stuff {
     String flags
     File file
   }
-  command {
-    ./script --flags=${flags} ${file}
-  }
+  command <<<
+    ./script --flags=~{flags} ~{file}
+  >>>
   output {
     Map[String, String] mapping = read_map(stdout())
   }
@@ -3868,7 +3936,7 @@ Which are read into an `Array[Object]` with the following elements:
 |     |key_2    |"value_2"|
 |     |key_3    |"value_3"|
 
-## X read_json(String|File)
+## R read_json(String|File)
 
 Reads a JSON file into a WDL value whose type depends on the file's contents. The mapping of JSON type to WDL type is:
 
@@ -3884,6 +3952,25 @@ Reads a JSON file into a WDL value whose type depends on the file's contents. Th
 The return value must be used in a context where it can be coerced to the expected type, or an error is raised. For example, if the JSON file contains `null`, then the return type will be `None`, meaning the value can only be used in a context where an optional type is expected.
 
 If the JSON file contains an array, then all the elements of the array must be of the same type or an error is raised.
+
+Note that the `read_json` function doesn't have access to any WDL type information, so it cannot return an instance of a specific `Struct` type. Instead, it returns a generic `Object` value that must be coerced to the desired `Struct` type. For example:
+
+`person.json`
+```json
+{
+  "name": "John",
+  "age": 42
+}
+```
+
+```wdl
+struct Person {
+  String name
+  Int age
+}
+File json_file = "person.json"
+Person p = read_json(json_file)
+```
 
 If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
 
@@ -3903,9 +3990,9 @@ task do_stuff {
     File file
   }
   
-  command {
-    python do_stuff.py ${file}
-  }
+  command <<<
+    python do_stuff.py ~{file}
+  >>>
 
   output {
     Map[String, String] output_table = read_json("./results/file_list.json")
@@ -3989,9 +4076,9 @@ task example {
     Array[String] array = ["first", "second", "third"]
   }
 
-  command {
-    ./script --file-list=${write_lines(array)}
-  }
+  command <<<
+    ./script --file-list=~{write_lines(array)}
+  >>>
   
   runtime {
     container: "my_image:latest"
@@ -4037,9 +4124,9 @@ task example {
     Array[Array[String]] array = [["one", "two", "three"], ["un", "deux", "trois"]]
   }
 
-  command {
-    ./script --tsv=${write_tsv(array)}
-  }
+  command <<<
+    ./script --tsv=~{write_tsv(array)}
+  >>>
   
   runtime {
     container: "my_image:latest"
@@ -4086,9 +4173,9 @@ task example {
     Map[String, String] map = {"key1": "value1", "key2": "value2"}
   }
 
-  command {
-    ./script --map=${write_map(map)}
-  }
+  command <<<
+    ./script --map=~{write_map(map)}
+  >>>
   
   runtime {
     container: "my_image:latest"
@@ -4236,7 +4323,7 @@ Writes a JSON file with the serialized form of a WDL value. The following WDL ty
 
 |WDL Type|JSON Type|
 |--------|--------|
-|`struct`        |object |
+|`Struct`        |object |
 |`Object`        |object |
 |`Map[String, X]`|object |
 |`Array[X]`      |array  |
@@ -4271,9 +4358,9 @@ task example {
     Map[String, String] map = {"key1": "value1", "key2": "value2"}
   }
 
-  command {
-    ./script --map=${write_json(map)}
-  }
+  command <<<
+    ./script --map=~{write_json(map)}
+  >>>
   
   runtime {
     container: "my_image:latest"
@@ -4323,9 +4410,9 @@ task example {
     Array[File] input_files
   }
 
-  command {
+  command <<<
     echo "this file is 22 bytes" > created_file
-  }
+  >>>
 
   output {
     Float input_files_gb = size(input_files, "GB")
@@ -4740,7 +4827,7 @@ task say_hello {
   input {
     String name
   }
-  command { echo ~{name} }
+  command <<< echo ~{name} >>>
 }
 
 workflow wf {
@@ -4936,7 +5023,7 @@ To differentiate runtime attributes from task inputs, the `runtime` namespace is
 
 ### Primitive Types
 
-All WDL types serialize naturally to JSON values:
+All primitive WDL types serialize naturally to JSON values:
 
 |WDL Type        |JSON Type|
 |----------------|---------|
@@ -4957,12 +5044,6 @@ Arrays are represented naturally in JSON using the `array` type. Each array elem
 
 When a JSON `array` is deserialized to WDL, each element of the array must be coercible to a common type.
 
-### Struct and Object
-
-`Struct`s and `Object`s are represented naturally in JSON using the `object` type. Each WDL `struct` or `Object` member value is serialized recursively into its JSON format.
-
-When a JSON `object` is deserialized, each value is deserialized to its most likely WDL type. The WDL `Object` may then be coerced to a `struct` type if necessary.
-
 ### Pair
 
 `Pair`s are not directly serializable to JSON, because there is no way to represent them unambiguously. Instead, a `Pair` must first be converted to a serializable type, such as using one of the following suggested methods. Attempting to serialize a `Pair` in an error.
@@ -4979,9 +5060,9 @@ Array[Int] a = [p.left, p.right]
 Pair[Int, Int] p2 = (a[0], a[1])
 ```
 
-**Suggested Conversion 2: `struct`**
+**Suggested Conversion 2: `Struct`**
 
-When a `Pair` left and right members are of different types, it can be converted to a `struct` with members of the correct types:
+When a `Pair`'s left and right members are of different types, it can be converted to a `Struct` with members of the correct types:
 
 ```wdl
 struct StringIntPair {
@@ -5000,13 +5081,13 @@ Pair[String, Int] p2 = (s.left, s.right)
 
 ### Map
 
-A `Map[String, X]` may be serialized to a JSON `object` by the same mechanism as a WDL `struct` or `Object`. This value will be deserialized to a WDL `Object`, after which it may be coerced to a `Map`.
+A `Map[String, X]` may be serialized to a JSON `object` by the same mechanism as a WDL `Struct` or `Object`. This value will be deserialized to a WDL `Object`, after which it may be coerced to a `Map`.
 
 Serialization of `Map`s with other key types is problematic, because there is no way to represent them in JSON unambiguously. Thus, a `Map` with non-`String` keys must first be converted to a serializable type, e.g. by using the following suggested method. Attempting to serialize a `Map` with a non-`String` key type results in an error.
 
 **Suggested Conversion**
 
-Convert the `Map[X, Y]` into a `struct` with two array members: `Array[X] keys` and `Array[Y] values`.
+Convert the `Map[X, Y]` into a `Struct` with two array members: `Array[X] keys` and `Array[Y] values`.
 
 ```wdl
 struct IntStringMap {
@@ -5023,6 +5104,12 @@ IntStringMap i = IntStringMap {
 # after deserialization, we can convert back to Map
 Map[Int, String] m2 = as_map(zip(i.keys, i.values))
 ```
+
+### Struct and Object
+
+`Struct`s and `Object`s are represented naturally in JSON using the `object` type. Each WDL `Struct` or `Object` member value is serialized recursively into its JSON format.
+
+A JSON `object` is deserialized to a WDL `Object` value, and each member value is deserialized to its most likely WDL type. The WDL `Object` may then be coerced to a `Struct` type if necessary.
 
 # Appendix A: WDL Value Serialization and Deserialization
 
@@ -5053,9 +5140,9 @@ task output_example {
     String param2
   }
 
-  command {
-    python do_work.py ${param1} ${param2} --out1=int_file --out2=str_file
-  }
+  command <<<
+    python do_work.py ~{param1} ~{param2} --out1=int_file --out2=str_file
+  >>>
 
   output {
     Int my_int = read_int("int_file")
@@ -5096,9 +5183,9 @@ task test {
     Array[File] bams
   }
 
-  command {
-    python script.py --bams=${sep=',' bams}
-  }
+  command <<<
+    python script.py --bams=~{sep=',' bams}
+  >>>
   
   runtime {
     container: "my_image:latest"
@@ -5126,9 +5213,9 @@ task test {
     Array[File] bams
   }
 
-  command {
-    sh script.sh ${write_lines(bams)}
-  }
+  command <<<
+    sh script.sh ~{write_lines(bams)}
+  >>>
   
   runtime {
     container: "my_image:latest"
@@ -5168,9 +5255,9 @@ task test {
     Array[File] bams
   }
 
-  command {
-    sh script.sh ${write_json(bams)}
-  }
+  command <<<
+    sh script.sh ~{write_json(bams)}
+  >>>
   
   runtime {
     container: "my_image:latest"
@@ -5256,7 +5343,7 @@ If the echo statement was instead `echo '{"foo": "bar"}'`, the engine MUST fail 
 
 ### Struct and Object
 
-`Struct`s and `Object`s are serialized identically. A JSON object is always deserialized to a WDL `Object`, which can then be coerced to a `struct` type if necessary.
+`Struct`s and `Object`s are serialized identically. A JSON object is always deserialized to a WDL `Object`, which can then be coerced to a `Struct` type if necessary.
 
 #### Struct serialization using write_json()
 
@@ -5322,9 +5409,9 @@ task test {
     Map[String, Float] sample_quality_scores
   }
 
-  command {
-    sh script.sh ${write_map(sample_quality_scores)}
-  }
+  command <<<
+    sh script.sh ~{write_map(sample_quality_scores)}
+  >>>
   
   runtime {
     container: "my_image:latest"
@@ -5364,9 +5451,9 @@ task test {
     Map[String, Float] sample_quality_scores
   }
 
-  command {
-    sh script.sh ${write_json(sample_quality_scores)}
-  }
+  command <<<
+    sh script.sh ~{write_json(sample_quality_scores)}
+  >>>
   
   runtime {
     container: "my_image:latest"
@@ -5451,7 +5538,7 @@ task test {
 }
 ```
 
-`my_map` will be a `Map[String, String] with members:
+`my_map` will be a `Map[String, String]` with members:
 
 |Key |Value |
 |----|------|
@@ -5479,19 +5566,24 @@ task pair_test {
 }
 ```
 
-Alternatively, a `struct` or `Object` can be created with `left` and `right` members and then serialized by the appropriate function.
+Alternatively, a `Struct` (or `Object`) can be created with `left` and `right` members and then serialized by the appropriate function.
 
 ```wdl
+struct IntStringPair {
+  Int left
+  String right
+}
+
 task pair_test_obj {
   input {
     Pair[Int, String] p
   }
-  Object obj = object {
+  IntStringPair serializable = IntStringPair {
     left: p.left,
     right: p.right
   }
   command <<<
-  ./myscript --json ~{write_json(obj)}
+  ./myscript --json ~{write_json(serializable)}
   >>>
 }
 ```
@@ -5506,21 +5598,21 @@ The following WDL namespaces exist:
 
 * [WDL document](#wdl-documents)
   * The namespace of an [imported](#import-statements) document equals that of the basename of the imported file by default, but may be aliased using the `as identifier` syntax.
-  * A WDL document may contain a workflow and/or tasks, which are names within the document's namespace.
-  * A WDL document may contain structs, which are added to a [global namespace](#struct-usage).
-  * A WDL document may contain other namespaces via imports.
-* A [WDL task](#task-definition) is a namespace consisting of:
-  * The task input declarations
-  * The task output declarations
+  * A WDL document may contain a `workflow` and/or `task`s, which are names within the document's namespace.
+  * A WDL document may contain `struct`s, which are added to a [global namespace](#struct-usage).
+  * A WDL document may contain other namespaces via `import`s.
+* A [WDL `task`](#task-definition) is a namespace consisting of:
+  * The `task` `input` declarations
+  * The `task` `output` declarations
   * A [`runtime`](#runtime-section) namespace that contains all the runtime attributes
-* A [WDL workflow](#workflow-definition) is a namespace consisting of:
-  * The workflow input declarations
-  * The workflow output declarations
-  * The [calls](#call-statement) made to tasks and subworkflows within the body of the Workflow.
-    * A call is itself a namespace that equals the name of the called task or subworkflow by default, but may be aliased using the `as identifier` syntax.
+* A [WDL `workflow`](#workflow-definition) is a namespace consisting of:
+  * The `workflow` `input` declarations
+  * The `workflow` `output` declarations
+  * The [`call`s](#call-statement) made to tasks and subworkflows within the body of the workflow.
+    * A call is itself a namespace that equals the name of the called task or subworkflow by default, but may be aliased using the `as $identifier` syntax.
     * A call namespace contains the output declarations of the called task or workflow.
     * A call to a subworkflow also contains the names of calls made in the body of that workflow.
-* A [struct instance](#struct-definition): is a namespace consisting of the members defined in the struct.
+* A [`struct` instance](#struct-definition): is a namespace consisting of the members defined in the `Struct`. This also applies to `Object` instances.
 
 All members of a namespace must be unique within that namespace. For example:
 
@@ -5560,9 +5652,9 @@ task my_task {
 
   Int y = x + 1
 
-  command {
+  command <<<
     my_cmd --integer1=~{x} --integer2=~{y} ~{f}
-  }
+  >>>
 
   output {
     Int z = read_int(stdout())
@@ -5690,7 +5782,7 @@ task mytask {
   input {
     Int inp
   }
-  command {}
+  command <<< >>>
   output {
     Int out = inp * 2
   }
