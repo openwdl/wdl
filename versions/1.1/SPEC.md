@@ -200,7 +200,7 @@ Here is provided a short example of WDL, after which are several sections that p
 
 ### An Example WDL Workflow
 
-Below is the code for the "Hello World" task in WDL. This is just meant to give a flavor of WDL syntax and capabilities - all WDL elements are described in detail in the [Language Specification](#wdl-language-specification).
+Below is the code for the "Hello World" workflow in WDL. This is just meant to give a flavor of WDL syntax and capabilities - all WDL elements are described in detail in the [Language Specification](#wdl-language-specification).
 
 ```wdl
 task hello {
@@ -238,18 +238,18 @@ workflow wf {
 }
 ```
 
-This WDL document describes a task, called 'hello', and a workflow, called `wf`.
+This WDL document describes a `task`, called `hello`, and a `workflow`, called `wf`.
 
 * A `task` encapsulates a Bash script and a UNIX environment and presents them as a reusable function.
 * A `workflow` encapsulates a (directed, acyclic) graph of task calls that transforms input data to the desired outputs.
 
-Both workflows and tasks can accept input parameters and produce outputs. For example, the `wf` workflow has two input parameters, `File infile` and `String pattern`, and one output parameter, `Array[String] matches`. This simple workflow just passes its inputs to the `hello` task and returns its output.
+Both workflows and tasks can accept input parameters and produce outputs. For example, `workflow wf` has two input parameters, `File infile` and `String pattern`, and one output parameter, `Array[String] matches`. This simple workflow calls `task hello`, passing through the workflow inputs to the task inputs, and using the results of `call hello` as the workflow output.
 
 ### Executing a WDL Workflow
 
 To execute this workflow, a WDL execution engine must be used (sometimes called the "WDL runtime" or "WDL implementation"). Some popular WDL execution engines are listed in the [README](https://github.com/openwdl/wdl#execution-engines).
 
-Along with the WDL file, the user must provide the execution engine with values for the two input parameters. While implementations may provide their own mechanisms for launching workflows, all implementations minimally accept [inputs as JSON format](#json-input-format), which requires that inputs be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example:
+Along with the WDL file, the user must provide the execution engine with values for the two input parameters. While implementations may provide their own mechanisms for launching workflows, all implementations minimally accept [inputs as JSON format](#json-input-format), which requires that the input arguments be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example:
 
 |Variable     |Value    |
 |-------------|---------|
@@ -265,15 +265,26 @@ Or, in JSON format:
 }
 ```
 
-Running the `wf` workflow with these inputs would yield the following command line from the call to the `hello` task:
+Running `workflow wf` with these inputs would yield the following command line from the call to `task hello`:
 
 ```sh
 egrep '^[a-z]+$' '/file.txt'
 ```
 
+And would result in (JSON) output that looks like:
+
+```json
+{
+  "wf.matches": [
+    "hello",
+    "world"
+  ]
+}
+```
+
 ### Advanced WDL Features
 
-WDL also provides features for implementing more complex workflows. For example, the `hello` task introduced in the previous example can be called in parallel across many different input files using the well-known [scatter-gather](https://en.wikipedia.org/wiki/Vectored_I/O#:~:text=In%20computing%2C%20vectored%20I%2FO,in%20a%20vector%20of%20buffers) pattern:
+WDL also provides features for implementing more complex workflows. For example, `task hello` introduced in the previous example can be called in parallel across many different input files using the well-known [scatter-gather](https://en.wikipedia.org/wiki/Vectored_I/O#:~:text=In%20computing%2C%20vectored%20I%2FO,in%20a%20vector%20of%20buffers) pattern:
 
 ```wdl
 workflow wf_parallel {
@@ -299,7 +310,7 @@ workflow wf_parallel {
 }
 ```
 
-The inputs to this workflow would be `wf_parallel.files` and `wf_parallel.pattern`. For example:
+The inputs to this workflow might look like:
 
 ```json
 {
@@ -340,7 +351,7 @@ Tasks and workflow inputs may be passed in from an external source, or they may 
 A string literal may contain any unicode characters between single or double-quotes, with the exception of a few special characters that must be escaped:
 
 |Escape Sequence|Meaning|\x Equivalent|Context|
-|-|-|-|
+|----|---|------|--|
 |`\\`|`\`|`\x5C`||
 |`\n`|newline|`\x0A`||
 |`\t`|tab|`\x09`||
