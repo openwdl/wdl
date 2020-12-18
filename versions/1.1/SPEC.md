@@ -80,7 +80,7 @@ This is version 1.1 of the Workflow Description Language (WDL) specification. It
     - [Metadata Sections](#metadata-sections)
       - [Task Metadata Section](#task-metadata-section)
       - [Parameter Metadata Section](#parameter-metadata-section)
-    - [Examples](#examples)
+    - [Task Examples](#task-examples)
       - [Example 1: Simplest Task](#example-1-simplest-task)
       - [Example 2: Inputs/Outputs](#example-2-inputsoutputs)
       - [Example 3: Runtime/Metadata](#example-3-runtimemetadata)
@@ -127,7 +127,7 @@ This is version 1.1 of the Workflow Description Language (WDL) specification. It
   - [🗑 File write_object(Object)](#-file-write_objectobject)
   - [🗑 File write_objects(Array[Object])](#-file-write_objectsarrayobject)
   - [File write_json(X)](#file-write_jsonx)
-  - [Float size(File|File?|Array[File]|Array[File?], [String])](#float-sizefilefilearrayfilearrayfile-string)
+  - [Float size(File?|Array[File?], [String])](#float-sizefilearrayfile-string)
   - [Int length(Array[X])](#int-lengtharrayx)
   - [Array[Int] range(Int)](#arrayint-rangeint)
   - [Array[Array[X]] transpose(Array[Array[X]])](#arrayarrayx-transposearrayarrayx)
@@ -488,7 +488,7 @@ A compound type is one that contains nested types, i.e. it is *parameterized* by
 
 An `Array` represents an ordered list of elements that are all of the same type. An array is insertion ordered, meaning the order in which elements are added to the `Array` is preserved.
 
-An array value can be declared with comma-separated values in brackets (`[]`), and a specific (zero-based) index of an `Array` can be accessed by placing the index in brackets after the declaration name. Accessing a non-existent index of an `Array` results in an error.
+An array value can be initialized with an array literal - a comma-separated list of values in brackets (`[]`). A specific zero-based index of an `Array` can be accessed by placing the index in brackets after the declaration name. Accessing a non-existent index of an `Array` results in an error.
 
 ```wdl
 Array[File] files = ["/path/to/file1", "/path/to/file2"]
@@ -542,7 +542,7 @@ For more details see the section on [Input Type Constraints](#input-type-constra
 
 A `Pair` represents two associated values, which may be of different types. In other programming languages, a `Pair` might be called a "two-tuple".
 
-A `Pair` can be declared with comma-separated values in parentheses (`()`). The components of a pair value are accessed using its `left` and `right` accessors.
+A `Pair` can be initialized with a pair literal - a comma-separated pair of values in parentheses (`()`). The components of a `Pair` value are accessed using its `left` and `right` accessors.
 
 ```wdl
 Pair[Int, Array[String]] data = (5, ["hello", "goodbye"])
@@ -554,7 +554,7 @@ String hello = data.right[0]  # evaluates to "hello"
 
 A `Map` represents an associative array of key-value pairs. All of the keys must be of the same (primitive) type, and all of the values must be of the same type, but keys and values can be different types.
 
-A `Map` can be declared with comma-separated key-value pairs in braces (`{}`). Key-value pairs are delimited by `:`. The value of a specific key can be accessed by placing the key in brackets after the declaration name. Accessing a non-existent key of a `Map` results in an error.
+A `Map` can be initialized with a map literal - a comma-separated list of key-value pairs in braces (`{}`), where key-value pairs are delimited by `:`. The value of a specific key can be accessed by placing the key in brackets after the declaration name. Accessing a non-existent key of a `Map` results in an error.
 
 ```wdl
 Map[Int, Int] int_to_int = {1: 10, 2: 11}
@@ -578,12 +578,9 @@ Array[Pair[Int, String]] pairs = as_pairs(int_to_string)
 
 ##### Custom Types (Structs)
 
-WDL provides the ability to define custom compound types called [structs](#struct-definition). Structs are defined directly in the WDL document and are usable like any other type. A struct contains any number of declarations of any types, including other Structs.
+WDL provides the ability to define custom compound types called [structs](#struct-definition). `Struct` types are defined directly in the WDL document and are usable like any other type. A `struct` definition contains any number of declarations of any types, including other `Struct`s.
 
-A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A declaration with a custom type can be assigned a value using struct literal syntax, which is similar to a map literal, but with two differences:
-
-1. The `Struct` type name comes before the opening brace (`{`).
-2. The member names are not quoted.
+A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A declaration with a custom type can be initialized with a struct literal, which begins with the `Struct` type name followed by a comma-separated list of key-value pairs in braces (`{}`), where name-value pairs are delimited by `:`. The member names in a struct literal are not quoted.
 
 ```wdl
 # a struct is a user-defined type; it can contain members of any types
@@ -600,7 +597,7 @@ SampleBamAndIndex b_and_i = SampleBamAndIndex {
 }
 ```
 
-The value of a specific member of a struct value can be accessed by placing a `.` followed by the member name after the identifier.
+The value of a specific member of a `Struct` value can be accessed by placing a `.` followed by the member name after the identifier.
 
 ```wdl
 File bam = b_and_i.bam
@@ -610,22 +607,17 @@ File bam = b_and_i.bam
 
 An `Object` is an unordered associative array of name-value pairs, where values may be of any type and are not specified explicitly.
 
-An `Object` can be declared using syntax similar to a map literal, but with two differences:
-
-1. The `object` keyword comes before the opening brace (`{`).
-2. The member names are not quoted.
-
-The value of a specific member of an object value can be accessed by placing a `.` followed by the member name after the identifier.
+An `Object` can be initialized using syntax similar to a struct literal, except that the `object` keyword is used in place of the `Struct` name. The value of a specific member of an `Object` value can be accessed by placing a `.` followed by the member name after the identifier.
 
 ```wdl
 Object f = object {
   a: 10,
-  b: 11
+  b: "hello"
 }
 Int i = f.a
 ```
 
-Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, **the `Object` type, the `object` literal syntax, and all of the [standard library functions](#-object-read_objectstringfile) with `Object` parameters or return values have been deprecated and will be removed in the next major version of the WDL specification**. All uses of `Object` can be replaced with custom types ([structs](#struct-definition)).
+Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, **the `Object` type, the `object` literal syntax, and all of the [standard library functions](#-object-read_objectstringfile) with `Object` parameters or return values have been deprecated and will be removed in the next major version of the WDL specification**. All uses of `Object` can be replaced with [structs](#struct-definition).
 
 #### Type Conversion
 
@@ -644,7 +636,7 @@ String istring = "~{i}"
 
 ##### Type Coercion
 
-There are some pairs of WDL types for which there is an obvious, unambiguous conversion from one to the other. In these cases, WDL provides an automatic conversion (called "coercion") from one type to the other, such that a value of one type can be used anywhere the other type is expected.
+There are some pairs of WDL types for which there is an obvious, unambiguous conversion from one to the other. In these cases, WDL provides an automatic conversion (called "coercion") from one type to the other, such that a value of one type typically can be used anywhere the other type is expected.
 
 For example, file paths are always represented as strings, making the conversion from `String` to `File` obvious and unambiguous.
 
@@ -675,9 +667,9 @@ The table below lists all globally valid coercions. The "target" type is the typ
 
 A non-optional type `T` can always be coerced to an optional type `T?`, but the reverse is not true - coercion from `T?` to `T` is not allowed because the latter cannot accept `None`.
 
-This constraint propagates into compound types. For example, an `Array[T?]` can contain both optional and non-optional elements. This facilitates the common idiom `select_first([expr, default])`, where `expr` is of type `T?` and `default` is of type `T`, for converting an optional type to a non-optional type. However, an `Array[T?]` could not be passed to the [`sep`](#-string-sepstring-arraystring) function, which requires an `Array[T]`.
+This constraint propagates into compound types. For example, an `Array[T?]` can contain both optional and non-optional elements. This facilitates the common idiom [`select_first([expr, default])`](#x-select_firstarrayx), where `expr` is of type `T?` and `default` is of type `T`, for converting an optional type to a non-optional type. However, an `Array[T?]` could not be passed to the [`sep`](#-string-sepstring-arraystring) function, which requires an `Array[T]`.
 
-The two exceptions where coercion from `T?` to `T` are allowed are:
+There are two exceptions where coercion from `T?` to `T` is allowed:
 * [String concatenation in expression placeholders](#concatenation-of-optional-values)
 * [Equality and inequality comparisons](#equality-and-inequality-comparison-of-optional-types)
 
@@ -696,14 +688,14 @@ struct Words {
   Int c
 }
 
-# What are the keys to this object?
+# What are the keys to this Struct?
 Words literal_syntax = Words {
   a: 10,
   b: 11,
   c: 12
 }
 
-# What are the keys to this object?
+# What are the keys to this Struct?
 Words map_coercion = {
   a: 10,
   b: 11,
@@ -732,7 +724,7 @@ Float pi = 3 + .14
 Map[String, String] m
 ```
 
-A [task](#task-definition) or [workflow](#workflow-definition) may declare input parameters within its `input` section and output parameters within its `output` section. If a non-optional input declaration does not have an initialization, it is considered a "required" parameter, and its value must be provided by the user before the workflow or task may be run. Declarations may also appear in the body of a task or workflow. All non-input parameters must be initialized.
+A [task](#task-definition) or [workflow](#workflow-definition) may declare input parameters within its `input` section and output parameters within its `output` section. If a non-optional input declaration does not have an initialization, it is considered a "required" parameter, and its value must be provided by the user before the workflow or task may be run. Declarations may also appear in the body of a task or workflow. All non-input declarations must be initialized.
 
 ```wdl
 task mytask {
@@ -923,6 +915,7 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 |`String`|`<`|`String`|`Boolean`|Unicode comparison|
 |`String`|`<=`|`String`|`Boolean`|Unicode comparison|
 |`File`|`==`|`File`|`Boolean`||
+|`File`|`==`|`String`|`Boolean`||
 |`File`|`!=`|`File`|`Boolean`||
 
 WDL `String`s are compared by the unicode values of their corresponding characters. Character `a` is less than character `b` if it has a lower unicode value.
@@ -1371,6 +1364,20 @@ Some examples of correct import resolution:
 
 ## Task Definition
 
+A WDL task can be thought of as a template for running a set of commands - specifically, a UNIX Bash script - in a manner that is (ideally) independent of the execution engine and the runtime environment.
+
+A task is defined using the `task` keyword, followed by a task name that is unique within its WDL document.
+
+A task has a required [`command`](#command-section) that is a template for a Bash script.
+
+Tasks explicitly define their [`input`s](#task-inputs) and [`output`s](#task-outputs), which is essential for building dependencies between tasks. The value of an input declaration may be supplied by the caller. All task declarations may be initialized with hard-coded literal values, or may have their values constructed from expressions. Declarations can be referenced in the command template.
+
+A task may also specify [requirements for the runtime environment](#runtime-section) (such as the amount of RAM or number of CPU cores) that must be satisfied in order for its commands to execute properly.
+
+There are two optional metadata sections: the [`meta`](#metadata-sections) section, for task-level metadata, and the [`parameter_meta`](#parameter-metadata-section) section, for parameter-level metadata.
+
+The execution engine is responsible for "instantiating" the shell script (i.e. replacing all references with actual values) in an environment that meets all specified runtime requirements, localizing any input files into that environment, executing the script, and generating any requested outputs.
+
 ```wdl
 task name {
   input {
@@ -1400,18 +1407,6 @@ task name {
   }
 }
 ```
-
-A WDL task can be thought of as a template for running a set of commands - specifically, a UNIX Bash script - in a manner that is (ideally) independent of the execution engine and the runtime environment.
-
-A task is defined using the `task` keyword, followed by a task name that is unique within its WDL document.
-
-Tasks explicitly define their [inputs](#task-inputs) and [outputs](#task-outputs), which is essential for building dependencies between tasks. The value of an input declaration may be supplied by the caller. Other declarations may have hard-coded literal values, or may have their values constructed from expressions. Declarations can be referenced in the command template.
-
-A task may also specify [requirements for the runtime environment](#runtime-section) (such as the amount of RAM or number of CPU cores) that must be satisfied in order for its commands to execute properly.
-
-There are also two optional metadata sections: the [`meta`](#metadata-sections) section, for task-level metadata, and the [`parameter_meta`](#parameter-metadata-section) section, for parameter-level metadata.
-
-The execution engine is responsible for "instantiating" the shell script (i.e. replacing all references with actual values) in an environment that meets all specified runtime requirements, localizing any input files into that environment, executing the script, and generating any requested outputs.
 
 ### Task Inputs
 
@@ -1574,7 +1569,7 @@ task t {
 }
 ```
 
-The value of a private declaration may *not* be specified by the task caller, nor is it accessible outside of the current scope.
+The value of a private declaration may *not* be specified by the task caller, nor is it accessible outside of the task [scope](#task-scope).
 
 ```wdl
 task test {
@@ -1838,7 +1833,7 @@ During execution of a task, resource requirements within the `runtime` section m
 
 There are a set of reserved attributes (described below) that must be supported by the execution engine, and which have well-defined meanings and default values. Default values for all optional standard attributes are directly defined by the WDL specification in order to encourage portability of workflows and tasks; execution engines should NOT provide additional mechanisms to set _default_ values for when no runtime attributes are defined.
 
-🗑 Additional arbitrary attributes may be specified in the `runtime` section, but these may be ignored by the execution engine. These non-standard attributes are called "hints". The use of hints attributes in the `runtime` section is deprecated; a later version of WDL will introduce a new `hints` section for arbitrary attributes and disallow non-standard attributes in the `runtime` section.
+🗑 Additional arbitrary attributes may be specified in the `runtime` section, but these may be ignored by the execution engine. These non-standard attributes are called "hints". The use of hint attributes in the `runtime` section is deprecated; a later version of WDL will introduce a new `hints` section for arbitrary attributes and disallow non-standard attributes in the `runtime` section.
 
 The value of a `runtime` attribute can be any expression that evaluates to the expected type - and in some cases matches the accepted format - for that attribute. Expressions in the `runtime` section may reference (non-output) declarations in the task:
 
@@ -2247,7 +2242,7 @@ task wc {
 }
 ```
 
-### Examples
+### Task Examples
 
 #### Example 1: Simplest Task
 
@@ -2472,13 +2467,13 @@ Tasks and workflows have several elements in common. These sections have nearly 
 
 In addition to these sections, a workflow may have any of the following elements that are specific to workflows:
 
-* [Calls](#call-statement) to tasks or subworkflows
-* [Scatter](#scatter) blocks, which are used to parallelize operations across collections
-* [Conditional](#conditional-if-block) blocks, where are only executed when a conditional expression evaluates to `true`
+* [`call`s](#call-statement) to tasks or subworkflows
+* [`scatter`](#scatter) blocks, which are used to parallelize operations across collections
+* [Conditional (`if`)](#conditional-if-block) blocks, which are only executed when a conditional expression evaluates to `true`
 
 ### Workflow Inputs
 
-The workflow [task `input` sections](#task-inputs) have identical semantics.
+The workflow and [task `input` sections](#task-inputs) have identical semantics.
 
 ### Workflow Outputs
 
@@ -3737,7 +3732,7 @@ Boolean is_true2 = basename("/path/to/file.txt", ".txt") == "file"
 
 ## Array[String] read_lines(String|File)
 
-Reads each line of a file as a `String`, and returns all lines in the file as an `Array[String]`.
+Reads each line of a file as a `String`, and returns all lines in the file as an `Array[String]`. Line endings (`\r` and `\n`) are removed from every line.
 
 The order of the lines in the returned `Array[String]` must be the order in which the lines appear in the file.
 
@@ -3776,7 +3771,7 @@ task do_stuff {
 
 ## Array[Array[String]] read_tsv(String|File)
 
-Reads a tab-separated value (TSV) file as an `Array[Array[String]]` representing a table of values.
+Reads a tab-separated value (TSV) file as an `Array[Array[String]]` representing a table of values. Line endings (`\r` and `\n`) are removed from every line.
 
 There is no requirement that the rows of the table are all the same length.
 
@@ -3808,7 +3803,7 @@ task do_stuff {
 
 ## Map[String, String] read_map(String|File)
 
-Reads a tab-separated value (TSV) file representing a set of pairs. Every row must have exactly two columns, i.e. `col1\tcol2`.
+Reads a tab-separated value (TSV) file representing a set of pairs. Every row must have exactly two columns, i.e. `col1\tcol2`. Line endings (`\r` and `\n`) are removed from every line.
 
 Each pair is added to a `Map[String, String]` in order. The values in the first column must be unique; if there are any duplicate keys, an error is raised.
 
@@ -3841,7 +3836,7 @@ task do_stuff {
 
 ## 🗑 Object read_object(String|File)
 
-Reads a tab-separated value (TSV) file representing the names and values of the members of an `Object`. There must be two rows, and each row must have the same number of elements. 
+Reads a tab-separated value (TSV) file representing the names and values of the members of an `Object`. There must be two rows, and each row must have the same number of elements. Line endings (`\r` and `\n`) are removed from every line.
 
 The first row specifies the object member names. The names in the first row must be unique; if there are any duplicate names, an error is raised.
 
@@ -3890,11 +3885,11 @@ Which are read into an `Object` with the following members:
 
 ## 🗑 Array[Object] read_objects(String|File)
 
-Reads a tab-separated value (TSV) file representing the names and values of the members of any number of `Object`s. 
+Reads a tab-separated value (TSV) file representing the names and values of the members of any number of `Object`s. Line endings (`\r` and `\n`) are removed from every line.
 
 There must be a header row with the names of the object members. The names in the first row must be unique; if there are any duplicate names, an error is raised.
 
-There are any number of additional rows, where each additional row contains the values of an object corresponding to the member names. Every row in the file must have the same number of elements.
+There are any number of additional rows, where each additional row contains the values of an object corresponding to the member names. Every row in the file must have the same number of elements. All of the `Object`'s values are of type `String`.
 
 If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
 
@@ -4017,7 +4012,7 @@ task do_stuff {
 
 ## String read_string(String|File)
 
-Reads a file that contains a single line. The contents of the line are returned as a string, with any trailing end-of-line characters stripped off. If the file is empty, an empty string is returned.
+Reads a file that contains a single line. The contents of the line are returned as a string, with any trailing end-of-line characters (`\r` and `\n`) stripped off. If the file is empty, an empty string is returned.
 
 If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
 
@@ -4065,7 +4060,7 @@ If the entire contents of the file can not be read for any reason, the calling t
 
 ## File write_lines(Array[String])
 
-Writes a file with one line for each element in a `Array[String]`. Each line is terminated with a newline (`\n`) character. If the `Array` is empty, an empty file is written.
+Writes a file with one line for each element in a `Array[String]`. All lines are terminated by the newline (`\n`) character (following the [POSIX standard](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap03.html#tag_03_206)). If the `Array` is empty, an empty file is written.
 
 The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
 
@@ -4105,15 +4100,11 @@ The actual command line might look like:
 
 And `/local/fs/tmp/array.txt` would contain:
 
-```txt
-first
-second
-third
-```
+`first\nsecond\nthird`
 
 ## File write_tsv(Array[Array[String]])
 
-Writes a tab-separated value (TSV) file with one line for each element in a `Array[Array[String]]`. Each element is concatenated into a single tab-delimited string that is terminated with a newline (`\n`) character. If the `Array` is empty, an empty file is written.
+Writes a tab-separated value (TSV) file with one line for each element in a `Array[Array[String]]`. Each element is concatenated into a single tab-delimited string. All lines are terminated by the newline (`\n`) character. If the `Array` is empty, an empty file is written.
 
 The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
 
@@ -4160,7 +4151,7 @@ un\tdeux\ttrois
 
 ## File write_map(Map[String, String])
 
-Writes a tab-separated value (TSV) file with one line for each element in a `Map[String, String]`. Each element is concatenated into a single tab-delimited string of the format `~{key}\t~{value}\n`. If the `Map` is empty, an empty file is written.
+Writes a tab-separated value (TSV) file with one line for each element in a `Map[String, String]`. Each element is concatenated into a single tab-delimited string of the format `~{key}\t~{value}`. All lines are terminated by the newline (`\n`) character. If the `Map` is empty, an empty file is written.
 
 Since `Map`s are ordered, the order of the lines in the file is guaranteed to be the same order that the elements were added to the `Map`.
 
@@ -4209,7 +4200,7 @@ key2\tvalue2
 
 ## 🗑 File write_object(Object)
 
-Writes a tab-separated value (TSV) file with the contents of an `Object`. The file contains two tab-delimited lines terminated by a newline (`\n`). The first line is the names of the `Object` members, and the second line is the corresponding values. The ordering of the columns is unspecified.
+Writes a tab-separated value (TSV) file with the contents of an `Object`. The file contains two tab-delimited lines. The first line is the names of the `Object` members, and the second line is the corresponding values. All lines are terminated by the newline (`\n`) character. The ordering of the columns is unspecified.
 
 The `Object` values must be serializable to strings, meaning that only primitive types are supported. Attempting to write an `Object` that has a compound member value results in an error.
 
@@ -4266,7 +4257,7 @@ value_1\tvalue_2\tvalue_3
 
 Writes a tab-separated value (TSV) file with the contents of a `Array[Object]`. All `Object`s in the `Array` must have the same member names, or an error is raised.
 
-The file contains N+1 tab-delimited lines terminated by a newline (`\n`), where N is the number of elements in the `Array`. The first line is the names of the `Object` members, and the subsequent lines are the corresponding values for each `Object`. The lines are written in the same order as the `Object`s in the `Array`. The ordering of the columns is unspecified. If the `Array` is empty, an empty file is written.
+The file contains N+1 tab-delimited lines terminated by a newline (`\n`), where N is the number of elements in the `Array`. The first line is the names of the `Object` members, and the subsequent lines are the corresponding values for each `Object`. All lines are terminated by the newline (`\n`) character. The lines are written in the same order as the `Object`s in the `Array`. The ordering of the columns is unspecified. If the `Array` is empty, an empty file is written.
 
 The object values must be serializable to strings, meaning that only primitive types are supported. Attempting to write an `Object` that has a compound member value results in an error.
 
@@ -4394,7 +4385,7 @@ And `/local/fs/tmp/map.json` would contain:
 }
 ```
 
-## Float size(File|File?|Array[File]|Array[File?], [String])
+## Float size(File?|Array[File?], [String])
 
 Determines the size of a file, or the sum total sizes of an array of files. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage).
 
@@ -4719,7 +4710,7 @@ Boolean all_true = [
 
 ## ✨ Array[Pair[P, Y]] as_pairs(Map[P, Y])
 
-Converts a `Map` into an `Array` of `Pair`s. Since `Map`s are ordered, the output array will always have elements in the same order they were added to the `Map`.
+Converts a `Map` with primitive keys into an `Array` of `Pair`s. Since `Map`s are ordered, the output array will always have elements in the same order they were added to the `Map`.
 
 **Parameters**
 
