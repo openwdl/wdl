@@ -5111,7 +5111,7 @@ Map[Int, String] m2 = as_map(zip(i.keys, i.values))
 
 `Struct`s and `Object`s are represented naturally in JSON using the `object` type. Each WDL `Struct` or `Object` member value is serialized recursively into its JSON format.
 
-A JSON `object` is deserialized to a WDL `Object` value, and each member value is deserialized to its most likely WDL type. The WDL `Object` may then be coerced to a `Struct` type if necessary.
+A JSON `object` is deserialized to a WDL `Object` value, and each member value is deserialized to its most likely WDL type. The WDL `Object` may then be coerced to a `Map` or `Struct` type if necessary.
 
 # Appendix A: WDL Value Serialization and Deserialization
 
@@ -5522,7 +5522,7 @@ task test {
 
 #### Map deserialization using read_json()
 
-`read_json()` will return whatever data type resides in the JSON file. If the file contains a JSON object, it is deserialized as an `Object` value, which can be coerced to a `Map[String, X]` so long as all values are coercible to `X`.
+`read_json()` will return whatever data type resides in the JSON file. If the file contains a JSON `object`, it is deserialized as an `Object` value, which can be coerced to a `Map[String, X]` so long as all values are coercible to `X`.
 
 ```wdl
 task test {
@@ -5545,6 +5545,23 @@ task test {
 |Key |Value |
 |----|------|
 |foo |bar   |
+
+Note that using `write_json`/`read_json` to serialize to/from a `Map` can cause suble issues due to the fact that `Map` is ordered whereas `Object` is not. For example:
+
+```wdl
+Map[String, Int] s2i = {"b": 2, "a": 1}
+File f = write_json(s2i)
+
+# Object is not ordered - coercion to Map may
+# result in either of two values:
+# {"a": 1, "b": 2} or {"b": 2, "a": 1}
+Map[String, Int] deserialized_s2i = read_json(f)
+
+# is_equal is non-deterministic - it may be
+# true or false, depending on how the members
+# are ordered in the Object
+Boolean is_equal = s2i == deserialized_s2i
+```
 
 ### Pair
 
