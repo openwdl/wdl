@@ -350,7 +350,7 @@ Tasks and workflow inputs may be passed in from an external source, or they may 
 
 A string literal may contain any unicode characters between single or double-quotes, with the exception of a few special characters that must be escaped:
 
-|Escape Sequence|Meaning|\x Equivalent|Context|
+| Escape Sequence | Meaning | \x Equivalent | Context |
 |----|---|------|--|
 |`\\`|`\`|`\x5C`||
 |`\n`|newline|`\x0A`||
