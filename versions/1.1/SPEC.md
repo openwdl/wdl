@@ -4012,7 +4012,17 @@ task do_stuff {
 
 ## String read_string(String|File)
 
-Reads a file that contains a single line. The contents of the line are returned as a string, with any trailing end-of-line characters (`\r` and `\n`) stripped off. If the file is empty, an empty string is returned.
+Reads an entire file as a string, with any trailing end-of-line characters (`\r` and `\n`) stripped off. If the file is empty, an empty string is returned.
+
+Note that if the file contains any internal newline characters, they are left intact. For example:
+
+```wdl
+# this file will contain "this\nfile\nhas\nfive\nlines\n"
+File f = write_lines(["this", "file", "has", "file", "lines"])
+
+# s will contain "this\nfile\nhas\nfive\nlines"
+String s = read_string(f)
+```
 
 If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
 
