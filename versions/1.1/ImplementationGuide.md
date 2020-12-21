@@ -2,7 +2,8 @@
 # WDL Implementation Guide
 
 <details>
-   <summary>Example: XYZ
+   <summary>
+   Example: XYZ
       
    ```wdl
    this is wdl
@@ -11,12 +12,15 @@
    </summary>
    
    <p>
+   Example input:
    
    ```json
    {
      "input": 1
    }
    ```
+   
+   Example output:
    
    ```json
    {
