@@ -7,6 +7,8 @@
    this is wdl
    ```
    </summary>
+   
+   <p>
    ```json
    {
      "input": 1
@@ -17,6 +19,7 @@
    {
       "expected output": 2
    }
+   </p>
 </details>
 
 ## Task Execution
