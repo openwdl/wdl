@@ -1,36 +1,6 @@
 
 # WDL Implementation Guide
 
-<details>
-   <summary>
-   Example: XYZ
-      
-   ```wdl
-   this is wdl
-   ```
-   
-   </summary>
-   
-   <p>
-   Example input:
-   
-   ```json
-   {
-     "input": 1
-   }
-   ```
-   
-   Example output:
-   
-   ```json
-   {
-      "expected output": 2
-   }
-   ```
-   
-   </p>
-</details>
-
 ## Task Execution
 
 The execution engine is responsible for implementing all the necessary logic to execute a task's command given a set of inputs. Task execution is performed in these logical stages, although an execution engine is free to implement these stages however it wishes, including combining or reording stages, so long as the contract of each stage is upheld:
