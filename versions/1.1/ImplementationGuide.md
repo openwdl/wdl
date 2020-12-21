@@ -2,7 +2,7 @@
 # WDL Implementation Guide
 
 <details>
-   <summary>
+   <summary>Example: XYZ
       
    ```wdl
    this is wdl
