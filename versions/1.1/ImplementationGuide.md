@@ -22,6 +22,7 @@
    {
       "expected output": 2
    }
+   ```
    
    </p>
 </details>
