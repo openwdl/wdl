@@ -2394,7 +2394,7 @@ task test {
 }
 ```
 
-In this example, `i`, and `f` are inputs to this task even though `i` is not directly used in the command section. In comparison, `s` is an input even though the command line references it.
+In this example, `i`, and `f` are inputs to this task even though `i` is not directly used in the command section. In comparison, `s` is not an input even though the command line references it.
 
 ## Computing Workflow Inputs
 
