@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 
 version 2.0.0
 ---------------------------
++ The illustration of differences between inputs and intermediate values
+  has been clarified.
+  [PR NNN](https://github.com/openwdl/wdl/pull/NNN) by @notestaff
+
 + Abbreviated syntax for call inputs bound to workflow-scoped values by name:
   `{input: x, y=b, z}` is shorthand for `{input: x=x, y=b, z=z}`
   [PR 365](https://github.com/openwdl/wdl/pull/365) by @mlin
