@@ -2252,7 +2252,7 @@ task do_stuff {
 }
 ```
 
-Then when the task finishes, to fulfull the `output_table` variable, `./results/file_list.json` must be a valid TSV file or an error will be reported.
+Then when the task finishes, to fulfull the `output_table` variable, `./results/file_list.json` must be a valid JSON file or an error will be reported.
 
 ## Int read_int(String|File)
 

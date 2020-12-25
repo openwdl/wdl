@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 
 version 2.0.0
 ---------------------------
++ Fixed file type in the description of read_json.
+  [PR 432](https://github.com/openwdl/wdl/pull/432) by @notestaff
+
 + Abbreviated syntax for call inputs bound to workflow-scoped values by name:
   `{input: x, y=b, z}` is shorthand for `{input: x=x, y=b, z=z}`
   [PR 365](https://github.com/openwdl/wdl/pull/365) by @mlin

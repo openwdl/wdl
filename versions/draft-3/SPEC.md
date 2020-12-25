@@ -2728,7 +2728,7 @@ task do_stuff {
 }
 ```
 
-Then when the task finishes, to fulfull the `output_table` variable, `./results/file_list.json` must be a valid TSV file or an error will be reported.
+Then when the task finishes, to fulfull the `output_table` variable, `./results/file_list.json` must be a valid JSON file or an error will be reported.
 
 If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
