@@ -3363,7 +3363,7 @@ Note that the ability to assign non-`Struct` values to `Struct` declarations is 
 
 ### Struct Namespacing
 
-Although a `struct` is a top-level element, it is not considered a member of the WDL document's namespace the way that other top-level elements (`task`s and `workflow`s) are. Instead, when a WDL document is imported all of its `structs` are added to a global struct namespace. This enables structs to be used by their name alone, without the need for any any `namespace.` prefix.
+Although a `struct` is a top-level element, it is not considered a member of the WDL document's namespace the way that other top-level elements (`task`s and `workflow`s) are. Instead, when a WDL document is imported all of its `structs` are added to a global struct namespace. This enables structs to be used by their name alone, without the need for any `namespace.` prefix.
 
 `structs.wdl`
 ```wdl
