@@ -1607,7 +1607,7 @@ There are two different syntaxes that can be used to define the command section:
 command <<< ... >>>
 
 # older style - may be preferable in some cases
-command <<< ... >>>
+command { ... }
 ```
 
 There may be any number of commands within a command section. Commands are not modified by the execution engine, with the following exceptions:
