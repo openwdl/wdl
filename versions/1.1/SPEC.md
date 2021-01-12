@@ -1655,7 +1655,7 @@ task write_array {
     # as a line in a temporary file, and returns the path to that
     # file, which can then be referenced by other commands such as 
     # the unix "cat" command
-    cat write_lines(str_array)
+    cat ~{write_lines(str_array)}
   >>>
 }
 ```
