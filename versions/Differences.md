@@ -4,25 +4,25 @@
 
 ## 1.1 to development
 
-* Introduces the `Directory` type
-* Restricts the `runtime` section to only the standard attributes
+* ⚙️Introduces the `Directory` type
+* ⚙️Restricts the `runtime` section to only the standard attributes
   * `container` is now a required runtime attribute
-* Adds a `hints` section for arbitrary runtime hints
-* Removes the `Object` type and the `read_object*` and `write_object*` functions
-* Removes placeholder options (`sep`, `true/false`, and `default`)
+* ⚙️Adds a `hints` section for arbitrary runtime hints
+* ⚙️Removes the `Object` type and the `read_object*` and `write_object*` functions
+* ⚙️Removes placeholder options (`sep`, `true/false`, and `default`)
 
 ## 1.0 to 1.1
 
-* Introduces `None` value for explicitly declaring an optional parameter as undefined.
-* Introduces a new notation for `Struct` literals
+* ⚙️Introduces `None` value for explicitly declaring an optional parameter as undefined.
+* ⚙️Introduces a new notation for `Struct` literals
 * The `Object` type is now deprecated - `Struct`s should be used instead
 * Adds support for relative imports
-* Adds new "pass-through" syntax for call inputs
-* Adds new `after` keyword for making explicit dependencies between calls
+* ⚙️Adds new "pass-through" syntax for call inputs
+* ⚙️Adds new `after` keyword for making explicit dependencies between calls
 * Formally defines the standard runtime attributes
   * `container` is added as an alias of `docker` - the use of `docker` is deprecated
   * `container` now supports image names in URI form (e.g. `docker://repo/img:tag`) and assumes `docker://` by default
-* Added the following new functions to the staNdard library:
+* Added the following new functions to the standard library:
   * min
   * max
   * suffix
