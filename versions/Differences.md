@@ -4,7 +4,7 @@
 
 ## 1.1 to development
 
-* Introduces a `Directory` type
+* Introduces the `Directory` type
 * Restricts the `runtime` section to only the standard attributes
   * `container` is now a required runtime attribute
 * Adds a `hints` section for arbitrary runtime hints
