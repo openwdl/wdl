@@ -2,6 +2,47 @@
 
 ⚙️denotes a change that affects the parser
 
+## 1.1 to development
+
+* Introduces a `Directory` type
+* Restricts the `runtime` section to only the standard attributes
+  * `container` is now a required runtime attribute
+* Adds a `hints` section for arbitrary runtime hints
+* Removes the `Object` type and the `read_object*` and `write_object*` functions
+* Removes placeholder options (`sep`, `true/false`, and `default`)
+
+## 1.0 to 1.1
+
+* Introduces `None` value for explicitly declaring an optional parameter as undefined.
+* Introduces a new notation for `Struct` literals
+* The `Object` type is now deprecated - `Struct`s should be used instead
+* Adds support for relative imports
+* Adds new "pass-through" syntax for call inputs
+* Adds new `after` keyword for making explicit dependencies between calls
+* Formally defines the standard runtime attributes
+  * `container` is added as an alias of `docker` - the use of `docker` is deprecated
+  * `container` now supports image names in URI form (e.g. `docker://repo/img:tag`) and assumes `docker://` by default
+* Added the following new functions to the staNdard library:
+  * min
+  * max
+  * suffix
+  * quote
+  * squote
+  * keys
+  * as_map
+  * collect_by_key
+  * sep
+  * unzip
+* Makes explicit that the `sub` function supports POSIX Extended Regular Expressions (EREs)
+  * Support for other regular expression formats is deprecated
+* Formally defines the JSON input and output formats
+  * Includes the ability to override runtime attributes in the input JSON
+* Makes explicit that unsatisified task inputs should not be allowed when running workflows
+  * Introduces the `allowNestedInputs` attribute that can be used in the workflow `meta` section to explicitly allow unsatisfied task inputs
+* Deprecates:
+  * Use of `file://` imports
+  * Placeholder options (`sep`, `true/false`, and `default`)
+
 ## Draft-2 to 1.0
 
 *   ⚙️Version statement required (as of draft-3)
