@@ -3573,6 +3573,13 @@ workflow max_test {
 
 Given 3 String parameters `input`, `pattern`, `replace`, this function replaces all non-overlapping occurrences of `pattern` in `input` by `replace`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) that will be evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 
+Note that regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
+
+```wdl
+String s1 = "hello\tBob"
+String s2 = sub(s1, "\\t", " ")
+```
+
 🗑 The option for execution engines to allow other regular expression grammars besides POSIX ERE is deprecated.
 
 **Parameters**:
