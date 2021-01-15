@@ -869,14 +869,10 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 |`Boolean`|`!=`|`Boolean`|`Boolean`||
 |`Boolean`|`\|\|`|`Boolean`|`Boolean`||
 |`Boolean`|`&&`|`Boolean`|`Boolean`||
-|`Int`|`+`|`Float`|`Float`||
-|`Int`|`-`|`Float`|`Float`||
-|`Int`|`*`|`Float`|`Float`||
-|`Int`|`/`|`Float`|`Float`||
-|`Int`|`>`|`Float`|`Boolean`||
-|`Int`|`>=`|`Float`|`Boolean`||
-|`Int`|`<`|`Float`|`Boolean`||
-|`Int`|`<=`|`Float`|`Boolean`||
+|🗑 `Boolean`|`>`|`Boolean`|`Boolean`|true is greater than false|
+|🗑 `Boolean`|`>=`|`Boolean`|`Boolean`|true is greater than false|
+|🗑 `Boolean`|`<`|`Boolean`|`Boolean`|true is greater than false|
+|🗑 `Boolean`|`<=`|`Boolean`|`Boolean`|true is greater than false|
 |`Int`|`+`|`Int`|`Int`||
 |`Int`|`-`|`Int`|`Int`||
 |`Int`|`*`|`Int`|`Int`||
@@ -888,20 +884,36 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 |`Int`|`>=`|`Int`|`Boolean`||
 |`Int`|`<`|`Int`|`Boolean`||
 |`Int`|`<=`|`Int`|`Boolean`||
+|🗑 `Int`|`+`|`String`|`String`||
+|`Int`|`+`|`Float`|`Float`||
+|`Int`|`-`|`Float`|`Float`||
+|`Int`|`*`|`Float`|`Float`||
+|`Int`|`/`|`Float`|`Float`||
+|`Int`|`==`|`Float`|`Boolean`||
+|`Int`|`!=`|`Float`|`Boolean`||
+|`Int`|`>`|`Float`|`Boolean`||
+|`Int`|`>=`|`Float`|`Boolean`||
+|`Int`|`<`|`Float`|`Boolean`||
+|`Int`|`<=`|`Float`|`Boolean`||
 |`Float`|`+`|`Float`|`Float`||
 |`Float`|`-`|`Float`|`Float`||
 |`Float`|`*`|`Float`|`Float`||
 |`Float`|`/`|`Float`|`Float`||
+|`Float`|`%`|`Float`|`Float`||
 |`Float`|`==`|`Float`|`Boolean`||
 |`Float`|`!=`|`Float`|`Boolean`||
 |`Float`|`>`|`Float`|`Boolean`||
 |`Float`|`>=`|`Float`|`Boolean`||
 |`Float`|`<`|`Float`|`Boolean`||
 |`Float`|`<=`|`Float`|`Boolean`||
+|🗑 `Float`|`+`|`String`|`String`||
 |`Float`|`+`|`Int`|`Float`||
 |`Float`|`-`|`Int`|`Float`||
 |`Float`|`*`|`Int`|`Float`||
 |`Float`|`/`|`Int`|`Float`||
+|`Float`|`%`|`Int`|`Float`||
+|`Float`|`==`|`Int`|`Boolean`||
+|`Float`|`!=`|`Int`|`Boolean`||
 |`Float`|`>`|`Int`|`Boolean`||
 |`Float`|`>=`|`Int`|`Boolean`||
 |`Float`|`<`|`Int`|`Boolean`||
@@ -914,11 +926,18 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 |`String`|`>=`|`String`|`Boolean`|Unicode comparison|
 |`String`|`<`|`String`|`Boolean`|Unicode comparison|
 |`String`|`<=`|`String`|`Boolean`|Unicode comparison|
+|🗑 `String`|`+`|`Int`|`String`||
+|🗑 `String`|`+`|`Float`|`String`||
 |`File`|`==`|`File`|`Boolean`||
-|`File`|`==`|`String`|`Boolean`||
 |`File`|`!=`|`File`|`Boolean`||
+|`File`|`==`|`String`|`Boolean`||
+|`File`|`!=`|`String`|`Boolean`||
+|🗑 `File`|`+`|`File`|`File`|append file paths - error if second path is not relative|
+|🗑 `File`|`+`|`String`|`File`|append file paths - error if second path is not relative|
 
 WDL `String`s are compared by the unicode values of their corresponding characters. Character `a` is less than character `b` if it has a lower unicode value.
+
+Except for `String + File`, all concatenations between `String` and non-`String` types are deprecated and will be removed in WDL 2.0. The same effect can be achieved using [string interpolation](#expression-placeholders-and-string-interpolation).
 
 ##### Equality of Compound Types
 
@@ -3721,7 +3740,9 @@ The runtime container may use a non-standard Bash shell that supports more compl
 
 ## String basename(String|File, [String])
 
-Returns the "basename" of a file - the name after the last directory separator in the file's path. The optional second parameter may specify a suffix to remove from the file name.
+Returns the "basename" of a file - the name after the last directory separator in the file's path. 
+
+The optional second parameter specifies a suffix to remove from the file name. This may be a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) that will be evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 
 **Parameters**
 
@@ -3735,6 +3756,9 @@ Returns the "basename" of a file - the name after the last directory separator i
 ```wdl
 Boolean is_true1 = basename("/path/to/file.txt") == "file.txt"`
 Boolean is_true2 = basename("/path/to/file.txt", ".txt") == "file"
+
+Boolean is_true3 = basename("/path/to/file.fastq") == "file.fastq"`
+Boolean is_true4 = basename("/path/to/file.fastq", ".f(ast)?q") == "file"
 ```
 
 ## Array[String] read_lines(String|File)
