@@ -3742,7 +3742,7 @@ The runtime container may use a non-standard Bash shell that supports more compl
 
 Returns the "basename" of a file - the name after the last directory separator in the file's path. 
 
-The optional second parameter specifies a suffix to remove from the file name. This may be a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) that will be evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
+The optional second parameter specifies a literal suffix to remove from the file name.
 
 **Parameters**
 
@@ -3756,9 +3756,6 @@ The optional second parameter specifies a suffix to remove from the file name. T
 ```wdl
 Boolean is_true1 = basename("/path/to/file.txt") == "file.txt"`
 Boolean is_true2 = basename("/path/to/file.txt", ".txt") == "file"
-
-Boolean is_true3 = basename("/path/to/file.fastq") == "file.fastq"`
-Boolean is_true4 = basename("/path/to/file.fastq", ".f(ast)?q") == "file"
 ```
 
 ## Array[String] read_lines(String|File)
