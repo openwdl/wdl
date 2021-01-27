@@ -1197,6 +1197,8 @@ The following options are available:
 * [`true` and `false`](#true-and-false): substitute a value depending on whether a boolean expression is `true` or `false`; e.g. `~{true="--yes" false="--no" boolean_value}`
 * [`default`](#default): substitute a default value for an undefined expression; e.g. `~{default="foo" optional_value}`
 
+Note that different options cannot be combined in the same expression placeholder.
+
 **Expression placeholder options are deprecated and will be removed in WDL 2.0**. In the sections below, each type of placeholder option is described in more detail, including how to replicate its behavior using future-proof syntax.
 
 ##### `sep`
