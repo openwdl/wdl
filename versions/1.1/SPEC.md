@@ -136,9 +136,9 @@ This is version 1.1 of the Workflow Description Language (WDL) specification. It
   - [Array[Pair[X,Y]] cross(Array[X], Array[Y])](#arraypairxy-crossarrayx-arrayy)
   - [Array[X] flatten(Array[Array[X]])](#arrayx-flattenarrayarrayx)
   - [Array[String] prefix(String, Array[P])](#arraystring-prefixstring-arrayp)
-  - [✨ Array[String] suffix(String, Array[X])](#-arraystring-suffixstring-arrayx)
+  - [✨ Array[String] suffix(String, Array[P])](#-arraystring-suffixstring-arrayp)
   - [✨ Array[String] quote(Array[P])](#-arraystring-quotearrayp)
-  - [✨ Array[String] squote(Array[X])](#-arraystring-squotearrayx)
+  - [✨ Array[String] squote(Array[P])](#-arraystring-squotearrayp)
   - [✨ String sep(String, Array[String])](#-string-sepstring-arraystring)
   - [✨ Array[Pair[P, Y]] as_pairs(Map[P, Y])](#-arraypairp-y-as_pairsmapp-y)
   - [✨ Map[P, Y] as_map(Array[Pair[P, Y]])](#-mapp-y-as_maparraypairp-y)
@@ -4659,7 +4659,7 @@ Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
 Array[String] bad = prefix("-x ", env3)
 ```
 
-## ✨ Array[String] suffix(String, Array[X])
+## ✨ Array[String] suffix(String, Array[P])
 
 Adds a suffix to each element of the input array of primitive values. Equivalent to evaluating `"~{array[i]}~{suffix}"` for each `i` in `range(length(array))`.
 
@@ -4704,7 +4704,7 @@ Array[Int] env2 = [1, 2, 3]
 Array[String] env2_quoted = quote(env2) # ['"1"', '"2"', '"3"']
 ``` 
 
-## ✨ Array[String] squote(Array[X])
+## ✨ Array[String] squote(Array[P])
 
 Adds single-quotes (`'`) around each element of the input array of primitive values. Equivalent to evaluating `"'~{array[i]}'"` for each `i` in `range(length(array))`.
 
