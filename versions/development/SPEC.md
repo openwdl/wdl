@@ -72,7 +72,7 @@ This is the development version of the Workflow Description Language (WDL) speci
         - [`maxRetries`](#maxretries)
         - [`returnCodes`](#returncodes)
     - [Meta Values](#meta-values)
-    - [Hints](#hints)
+    - [✨ Hints](#-hints)
       - [Reserved Hints](#reserved-hints)
       - [Conventions and Best Practices](#conventions-and-best-practices)
     - [Metadata Sections](#metadata-sections)
@@ -431,7 +431,7 @@ The following primitive types exist in WDL:
 * A `Float` represents a finite 64-bit IEEE-754 floating point number.
 * A `String` represents a unicode character string following the format described [above](#strings).
 * A `File` represents a file (or file-like object).
-* A `Directory` represents a directory of files.
+* ✨ A `Directory` represents a directory of files.
 
 A `File` or `Directory` declaration may have a string value indicating a relative or absolute path on the local file system. An execution engine may support other ways to specify [`File` and `Directory` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution the engine must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path.
 
@@ -1991,7 +1991,7 @@ task {
 }
 ```
 
-### Hints
+### ✨ Hints
 
 ```txt
 $hints = 'hints' $ws* '{' ($ws* $meta_kv $ws*)* '}'
