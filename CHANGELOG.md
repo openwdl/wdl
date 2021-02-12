@@ -27,11 +27,11 @@ version development
   [PR 229](https://github.com/openwdl/wdl/pull/229) and [PR 368](https://github.com/openwdl/wdl/pull/366) 
   by @EvanTheB and @illusional. 
 
-+ `object` has been removed from WDL. `struct` can be used to achieve the same
++ `Object` has been removed from WDL. `struct` can be used to achieve the same
   type of functionality in a more explicit way.
   [PR 283](https://github.com/openwdl/wdl/pull/283) by @patmagee.
 
-+ Added a new directory type to make it easier when working with inputs that
++ Added a new `Directory` type to make it easier when working with inputs that
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
