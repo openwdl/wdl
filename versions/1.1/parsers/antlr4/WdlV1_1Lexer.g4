@@ -35,8 +35,6 @@ OBJECT: 'Object';
 OBJECTLITERAL: 'object';
 SEPEQUAL: 'sep=';
 DEFAULTEQUAL: 'default=';
-TRUEEQUAL: 'true=';
-FALSEEQUAL: 'false=';
 PAIR: 'Pair';
 AFTER: 'after';
 COMMAND: 'command'-> mode(Command);

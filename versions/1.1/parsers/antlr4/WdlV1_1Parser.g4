@@ -46,8 +46,7 @@ number
 // Literals
 
 expression_placeholder_option
-  : TRUEEQUAL string
-  | FALSEEQUAL string
+  : BoolLiteral EQUAL string
   | DEFAULTEQUAL (string | number)
   | SEPEQUAL string
   ;
