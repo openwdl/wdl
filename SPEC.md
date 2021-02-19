@@ -8,7 +8,9 @@ Upcoming features which have previously been accepted but are not yet part of th
 
 Since the release of WDL 1.0, execution engines require that every WDL file include a version statement as its first line of code, like this:
 
-    version 1.0
+```wdl
+version 1.0
+```
 
 Note that the version statement CAN be preceded by comments.
 
