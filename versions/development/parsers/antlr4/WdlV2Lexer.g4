@@ -86,34 +86,6 @@ RUNTIME
   : 'runtime'
   ;
 
-RUNTIMECPU
-  : 'cpu'
-  ;
-
-RUNTIMECONTAINER
-  : 'container'
-  ;
-
-RUNTIMEMEMORY
-  : 'memory'
-  ;
-
-RUNTIMEGPU
-  : 'gpu'
-  ;
-
-RUNTIMEDISKS
-  : 'disks'
-  ;
-
-RUNTIMEMAXRETRIES
-  : 'maxRetries'
-  ;
-
-RUNTIMERETURNCODES
-  : 'returnCodes'
-  ;
-
 BOOLEAN
   : 'Boolean'
   ;
@@ -384,7 +356,7 @@ DQuoteStringPart
 mode Command;
 
 BeginWhitespace
-  : [ \t\r\n]* -> channel(HIDDEN)
+  : [ \t\r\n]+ -> channel(HIDDEN)
   ;
 
 BeginHereDoc
@@ -488,6 +460,10 @@ MetaWhitespace
   ;
 
 mode MetaBody;
+
+MetaBodyComment
+  : '#' ~[\r\n]* -> channel(COMMENTS)
+  ;
 
 MetaIdentifier
   : Identifier
@@ -614,6 +590,10 @@ MetaArrayWhitespace
   ;
 
 mode MetaObject;
+
+MetaObjectComment
+  : '#' ~[\r\n]* -> channel(COMMENTS)
+  ;
 
 MetaObjectIdentifier
   : Identifier
