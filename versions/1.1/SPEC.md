@@ -1,6 +1,6 @@
 # Workflow Description Language (WDL)
 
-This is the development version of the Workflow Description Language (WDL) specification. It introduces some new features (denoted by the ✨ symbol) to the [1.1](../1.1/SPEC.md) version of the specification. It also eliminates the features that were marked as deprecated (denoted by the 🗑 symbol) in version 1.1 of the specification.
+This is version 1.1 of the Workflow Description Language (WDL) specification. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.0](../1.0/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in the [next major WDL version](../development/SPEC.md) (denoted by the 🗑 symbol).
 
 ## Table of Contents
 
@@ -25,11 +25,12 @@ This is the development version of the Workflow Description Language (WDL) speci
         - [Pair[X, Y]](#pairx-y)
         - [Map[P, Y]](#mapp-y)
         - [Custom Types (Structs)](#custom-types-structs)
+        - [🗑 Object](#-object)
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
           - [Coercion of Optional Types](#coercion-of-optional-types)
-          - [Struct coercion from Map](#struct-coercion-from-map)
+          - [Struct/Object coercion from Map](#structobject-coercion-from-map)
     - [Declarations](#declarations)
     - [Expressions](#expressions)
       - [Built-in Operators](#built-in-operators)
@@ -44,6 +45,10 @@ This is the development version of the Workflow Description Language (WDL) speci
       - [Expression Placeholders and String Interpolation](#expression-placeholders-and-string-interpolation)
         - [Expression Placeholder Coercion](#expression-placeholder-coercion)
         - [Concatenation of Optional Values](#concatenation-of-optional-values)
+      - [🗑 Expression Placeholder Options](#-expression-placeholder-options)
+        - [`sep`](#sep)
+        - [`true` and `false`](#true-and-false)
+        - [`default`](#default)
   - [WDL Documents](#wdl-documents)
   - [Versioning](#versioning)
   - [Import Statements](#import-statements)
@@ -58,12 +63,11 @@ This is the development version of the Workflow Description Language (WDL) speci
       - [Expression Placeholders](#expression-placeholders)
       - [Stripping Leading Whitespace](#stripping-leading-whitespace)
     - [Task Outputs](#task-outputs)
-      - [File, Directory, and Optional Outputs](#file-directory-and-optional-outputs)
-        - [Soft link resolution example](#soft-link-resolution-example)
+      - [Files and Optional Outputs](#files-and-optional-outputs)
     - [Evaluation of Task Declarations](#evaluation-of-task-declarations)
     - [Runtime Section](#runtime-section)
       - [Units of Storage](#units-of-storage)
-      - [Runtime Attributes](#runtime-attributes)
+      - [Mandatory `runtime` attributes](#mandatory-runtime-attributes)
         - [`container`](#container)
         - [`cpu`](#cpu)
         - [`memory`](#memory)
@@ -71,9 +75,7 @@ This is the development version of the Workflow Description Language (WDL) speci
         - [`disks`](#disks)
         - [`maxRetries`](#maxretries)
         - [`returnCodes`](#returncodes)
-    - [Meta Values](#meta-values)
-    - [✨ Hints](#-hints)
-      - [Reserved Hints](#reserved-hints)
+      - [Reserved `runtime` hints](#reserved-runtime-hints)
       - [Conventions and Best Practices](#conventions-and-best-practices)
     - [Metadata Sections](#metadata-sections)
       - [Task Metadata Section](#task-metadata-section)
@@ -112,6 +114,8 @@ This is the development version of the Workflow Description Language (WDL) speci
   - [Array[String] read_lines(String|File)](#arraystring-read_linesstringfile)
   - [Array[Array[String]] read_tsv(String|File)](#arrayarraystring-read_tsvstringfile)
   - [Map[String, String] read_map(String|File)](#mapstring-string-read_mapstringfile)
+  - [🗑 Object read_object(String|File)](#-object-read_objectstringfile)
+  - [🗑 Array[Object] read_objects(String|File)](#-arrayobject-read_objectsstringfile)
   - [R read_json(String|File)](#r-read_jsonstringfile)
   - [String read_string(String|File)](#string-read_stringstringfile)
   - [Int read_int(String|File)](#int-read_intstringfile)
@@ -120,6 +124,8 @@ This is the development version of the Workflow Description Language (WDL) speci
   - [File write_lines(Array[String])](#file-write_linesarraystring)
   - [File write_tsv(Array[Array[String]])](#file-write_tsvarrayarraystring)
   - [File write_map(Map[String, String])](#file-write_mapmapstring-string)
+  - [🗑 File write_object(Object)](#-file-write_objectobject)
+  - [🗑 File write_objects(Array[Object])](#-file-write_objectsarrayobject)
   - [File write_json(X)](#file-write_jsonx)
   - [Float size(File?|Array[File?], [String])](#float-sizefilearrayfile-string)
   - [Int length(Array[X])](#int-lengtharrayx)
@@ -130,9 +136,9 @@ This is the development version of the Workflow Description Language (WDL) speci
   - [Array[Pair[X,Y]] cross(Array[X], Array[Y])](#arraypairxy-crossarrayx-arrayy)
   - [Array[X] flatten(Array[Array[X]])](#arrayx-flattenarrayarrayx)
   - [Array[String] prefix(String, Array[P])](#arraystring-prefixstring-arrayp)
-  - [✨ Array[String] suffix(String, Array[X])](#-arraystring-suffixstring-arrayx)
+  - [✨ Array[String] suffix(String, Array[P])](#-arraystring-suffixstring-arrayp)
   - [✨ Array[String] quote(Array[P])](#-arraystring-quotearrayp)
-  - [✨ Array[String] squote(Array[X])](#-arraystring-squotearrayx)
+  - [✨ Array[String] squote(Array[P])](#-arraystring-squotearrayp)
   - [✨ String sep(String, Array[String])](#-string-sepstring-arraystring)
   - [✨ Array[Pair[P, Y]] as_pairs(Map[P, Y])](#-arraypairp-y-as_pairsmapp-y)
   - [✨ Map[P, Y] as_map(Array[Pair[P, Y]])](#-mapp-y-as_maparraypairp-y)
@@ -144,14 +150,14 @@ This is the development version of the Workflow Description Language (WDL) speci
 - [Input and Output Formats](#input-and-output-formats)
   - [JSON Input Format](#json-input-format)
     - [Optional Inputs](#optional-inputs)
-    - [Specifying / Overriding Runtime Attributes and Hints](#specifying--overriding-runtime-attributes-and-hints)
   - [JSON Output Format](#json-output-format)
+  - [Specifying / Overriding Runtime Attributes](#specifying--overriding-runtime-attributes)
   - [JSON Serialization of WDL Types](#json-serialization-of-wdl-types)
     - [Primitive Types](#primitive-types-1)
     - [Array](#array)
     - [Pair](#pair)
     - [Map](#map)
-    - [Struct](#struct)
+    - [Struct and Object](#struct-and-object)
 - [Appendix A: WDL Value Serialization and Deserialization](#appendix-a-wdl-value-serialization-and-deserialization)
   - [Primitive Values](#primitive-values)
   - [Compound Values](#compound-values)
@@ -161,7 +167,7 @@ This is the development version of the Workflow Description Language (WDL) speci
       - [Array serialization using write_json()](#array-serialization-using-write_json)
       - [Array deserialization using read_lines()](#array-deserialization-using-read_lines)
       - [Array deserialization using read_json()](#array-deserialization-using-read_json)
-    - [Struct](#struct-1)
+    - [Struct and Object](#struct-and-object-1)
       - [Struct serialization using write_json()](#struct-serialization-using-write_json)
     - [Map](#map-1)
       - [Map serialization using write_map()](#map-serialization-using-write_map)
@@ -409,18 +415,23 @@ workflow wf {
 The following language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, or struct types & aliases.
 
 ```
-Array Boolean Directory File Float Int Map None Pair String
+Array Boolean Float Int Map None Object Pair String
 
-alias as call command else false if hints in import input 
-left meta output parameter_meta right runtime scatter struct 
-task then true workflow
+alias as call command else false if in import input 
+left meta object output parameter_meta right runtime 
+scatter struct task then true workflow
 ```
+
+The following keywords should also be considered as reserved - they are not used in the current version of the specification, but they will be used in a future version:
+
+* `Directory`
+* `hints`
 
 ### Types
 
 A [declaration](#declarations) is a name that the user reserves in a given [scope](#appendix-b-wdl-namespaces-and-scopes) to hold a value of a certain type. In WDL *all* declarations (including inputs and outputs) must be typed. This means that the information about the type of data that may be held by each declarations must be specified explicitly.
 
-In WDL *all* types represent immutable values. For example, a `File` represents a logical "snapshot" of the file at the time when the value was created. It's impossible for a task to change an upstream value that has been provided as an input - even if it modifies its local copy, the original value is unaffected.
+In WDL *all* types represent immutable values. For example, a `File` represent a logical "snapshot" of the file at the time when the value was created. It's impossible for a task to change an upstream value that has been provided as an input - even if it modifies its local copy, the original value is unaffected.
 
 #### Primitive Types
 
@@ -431,9 +442,9 @@ The following primitive types exist in WDL:
 * A `Float` represents a finite 64-bit IEEE-754 floating point number.
 * A `String` represents a unicode character string following the format described [above](#strings).
 * A `File` represents a file (or file-like object).
-* ✨ A `Directory` represents a directory of files.
-
-A `File` or `Directory` declaration may have a string value indicating a relative or absolute path on the local file system. An execution engine may support other ways to specify [`File` and `Directory` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution the engine must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path.
+  * A `File` declaration can have a string value indicating a relative or absolute path on the local file system.
+  * Within a WDL file, literal values for files may only be local (relative or absolute) paths.
+  * An execution engine may support other ways to specify [`File` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
 
 Examples:
 
@@ -443,7 +454,6 @@ Int i = 0
 Float f = 27.3
 String s = "hello, world"
 File f = "path/to/file"
-Directory d = "/path/to/"
 ```
 
 #### Optional Types and None
@@ -593,6 +603,22 @@ The value of a specific member of a `Struct` value can be accessed by placing a 
 File bam = b_and_i.bam
 ```
 
+##### 🗑 Object
+
+An `Object` is an unordered associative array of name-value pairs, where values may be of any type and are not specified explicitly.
+
+An `Object` can be initialized using syntax similar to a struct literal, except that the `object` keyword is used in place of the `Struct` name. The value of a specific member of an `Object` value can be accessed by placing a `.` followed by the member name after the identifier.
+
+```wdl
+Object f = object {
+  a: 10,
+  b: "hello"
+}
+Int i = f.a
+```
+
+Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, **the `Object` type, the `object` literal syntax, and all of the [standard library functions](#-object-read_objectstringfile) with `Object` parameters or return values have been deprecated and will be removed in the next major version of the WDL specification**. All uses of `Object` can be replaced with [structs](#struct-definition).
+
 #### Type Conversion
 
 WDL has some limited facilities for converting a value of one type to another type. Some of these are explicitly provided by [standard library](#standard-library) functions, while others are [implicit](#type-coercion). When converting between types, it is best to be explicit whenever possible, even if an implicit conversion is allowed.
@@ -625,7 +651,6 @@ The table below lists all globally valid coercions. The "target" type is the typ
 |Target Type |Source Type     |Notes/Constraints |
 |------------|----------------|------------------|
 |`File`|`String`||
-|`Directory`|`String`||
 |`Float`|`Int`|May cause overflow error|
 |`Y?`|`X`|`X` must be coercible to `Y`|
 |`Array[Y]`|`Array[X]`|`X` must be coercible to `Y`|
@@ -633,6 +658,10 @@ The table below lists all globally valid coercions. The "target" type is the typ
 |`Pair[X,Z]`|`Pair[W,Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
 |`Struct`    |`Map[String,Y]`|`Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`|
 |`Map[String,Y]`|`Struct`|All `Struct` members must be coercible to `Y`|
+|`Object`|`Map[String,Y]`|🗑|
+|`Map[String,Y]`|`Object`|🗑 All object values must be coercible to `Y`|
+|`Object`|`Struct`|🗑|
+|`Struct`|`Object`|🗑 `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types|
 
 ###### Coercion of Optional Types
 
@@ -644,9 +673,9 @@ There are two exceptions where coercion from `T?` to `T` is allowed:
 * [String concatenation in expression placeholders](#concatenation-of-optional-values)
 * [Equality and inequality comparisons](#equality-and-inequality-comparison-of-optional-types)
 
-###### Struct coercion from Map
+###### Struct/Object coercion from Map
 
-`Struct`s can be coerced from map literals, but beware the following behavioral difference:
+`Struct`s and `Object`s can be coerced from map literals, but beware the following behavioral difference:
 
 ```wdl
 String a = "beware"
@@ -674,8 +703,8 @@ Words map_coercion = {
 }
 ```
 
-- If a `Struct` declaration is initialized using the struct-literal syntax `Words literal_syntax = Words { a: ...` then the keys will be `"a"`, `"b"` and `"c"`.
-- If a `Struct` declaration is initialized using the map-literal syntax `Words map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
+- If a `Struct` (or `Object`) declaration is initialized using the struct-literal (or object-literal) syntax `Words literal_syntax = Words { a: ...` then the keys will be `"a"`, `"b"` and `"c"`.
+- If a `Struct` (or `Object`) declaration is initialized using the map-literal syntax `Words map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
 
 ### Declarations
 
@@ -797,6 +826,7 @@ $expression = $expression '!=' $expression
 $expression = $expression '&&' $expression
 $expression = $expression '||' $expression
 $expression = '{' ($expression ':' $expression (',' $expression ':' $expression )*)? '}'
+$expression = object '{' ($identifier ':' $expression (',' $identifier ':' $expression )*)? '}'
 $expression = '[' ($expression (',' $expression)*)? ']'
 $expression = $string | $integer | $float | $boolean | $identifier
 ```
@@ -839,6 +869,10 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 |`Boolean`|`!=`|`Boolean`|`Boolean`||
 |`Boolean`|`\|\|`|`Boolean`|`Boolean`||
 |`Boolean`|`&&`|`Boolean`|`Boolean`||
+|🗑 `Boolean`|`>`|`Boolean`|`Boolean`|true is greater than false|
+|🗑 `Boolean`|`>=`|`Boolean`|`Boolean`|true is greater than false|
+|🗑 `Boolean`|`<`|`Boolean`|`Boolean`|true is greater than false|
+|🗑 `Boolean`|`<=`|`Boolean`|`Boolean`|true is greater than false|
 |`Int`|`+`|`Int`|`Int`||
 |`Int`|`-`|`Int`|`Int`||
 |`Int`|`*`|`Int`|`Int`||
@@ -850,6 +884,7 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 |`Int`|`>=`|`Int`|`Boolean`||
 |`Int`|`<`|`Int`|`Boolean`||
 |`Int`|`<=`|`Int`|`Boolean`||
+|🗑 `Int`|`+`|`String`|`String`||
 |`Int`|`+`|`Float`|`Float`||
 |`Int`|`-`|`Float`|`Float`||
 |`Int`|`*`|`Float`|`Float`||
@@ -871,6 +906,7 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 |`Float`|`>=`|`Float`|`Boolean`||
 |`Float`|`<`|`Float`|`Boolean`||
 |`Float`|`<=`|`Float`|`Boolean`||
+|🗑 `Float`|`+`|`String`|`String`||
 |`Float`|`+`|`Int`|`Float`||
 |`Float`|`-`|`Int`|`Float`||
 |`Float`|`*`|`Int`|`Float`||
@@ -890,12 +926,18 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 |`String`|`>=`|`String`|`Boolean`|Unicode comparison|
 |`String`|`<`|`String`|`Boolean`|Unicode comparison|
 |`String`|`<=`|`String`|`Boolean`|Unicode comparison|
+|🗑 `String`|`+`|`Int`|`String`||
+|🗑 `String`|`+`|`Float`|`String`||
 |`File`|`==`|`File`|`Boolean`||
 |`File`|`!=`|`File`|`Boolean`||
 |`File`|`==`|`String`|`Boolean`||
 |`File`|`!=`|`String`|`Boolean`||
+|🗑 `File`|`+`|`File`|`File`|append file paths - error if second path is not relative|
+|🗑 `File`|`+`|`String`|`File`|append file paths - error if second path is not relative|
 
 WDL `String`s are compared by the unicode values of their corresponding characters. Character `a` is less than character `b` if it has a lower unicode value.
+
+Except for `String + File`, all concatenations between `String` and non-`String` types are deprecated and will be removed in WDL 2.0. The same effect can be achieved using [string interpolation](#expression-placeholders-and-string-interpolation).
 
 ##### Equality of Compound Types
 
@@ -909,6 +951,8 @@ WDL `String`s are compared by the unicode values of their corresponding characte
 |`Pair`|`!=`|`Pair`|`Boolean`|
 |`Struct`|`==`|`Struct`|`Boolean`|
 |`Struct`|`!=`|`Struct`|`Boolean`|
+|🗑`Object`|`==`|`Object`|`Boolean`|
+|🗑`Object`|`!=`|`Object`|`Boolean`|
 
 In general, two compound values are equal if-and-only-if all of the following are true:
 
@@ -985,7 +1029,7 @@ Boolean is_false2 j == k
 
 #### Member Access
 
-The syntax `x.y` refers to member access. `x` must be a call in a workflow, or a `Struct` value. A call can be thought of as a struct where the members are the outputs of the called task.
+The syntax `x.y` refers to member access. `x` must be a call in a workflow, or a `Struct` (or `Object`) value. A call can be thought of as a struct where the members are the outputs of the called task.
 
 ```wdl
 # task foo has an output y
@@ -1142,6 +1186,113 @@ The latter case is very likely an error case, and this `--val=` part should be l
 ```
 python script.py ${"--val=" + val}
 ```
+ 
+#### 🗑 Expression Placeholder Options
+
+Expression placeholder options are `option="value"` pairs that precede the expression within an expression placeholder and customize the interpolation of the WDL value into the containing string expression.
+
+The following options are available:
+
+* [`sep`](#sep): convert an array to a string using a delimiter; e.g. `~{sep=", " array_value}`
+* [`true` and `false`](#true-and-false): substitute a value depending on whether a boolean expression is `true` or `false`; e.g. `~{true="--yes" false="--no" boolean_value}`
+* [`default`](#default): substitute a default value for an undefined expression; e.g. `~{default="foo" optional_value}`
+
+Note that different options cannot be combined in the same expression placeholder.
+
+**Expression placeholder options are deprecated and will be removed in WDL 2.0**. In the sections below, each type of placeholder option is described in more detail, including how to replicate its behavior using future-proof syntax.
+
+##### `sep`
+
+`sep` is interpreted as the separator string used to join multiple parameters together. `sep` is only valid if the expression evaluates to an `Array`.
+
+For example, given a declaration `Array[Int] numbers = [1, 2, 3]`, the expression `"python script.py ~{sep=',' numbers}"` yields the value: `python script.py 1,2,3`.
+
+Alternatively, if the command were `"python script.py ~{sep=' ' numbers}"` it would evaluate to: `python script.py 1 2 3`.
+
+> *Requirements*:
+>
+> 1. `sep` MUST accept only a string as its value
+> 2. `sep` is only allowed if the type of the expression is `Array[P]`
+
+The `sep` option can be replaced with a call to the ✨ [`sep`](#-string-sepstring-arraystring) function:
+
+```wdl
+task sep_example {
+  input {
+    Array[String] str_array
+    Array[Int] int_array
+  }
+  command <<<
+    echo ~{sep(' ', str_array)}
+    echo ${sep(',', quote(int_array))}
+  >>>
+}
+```
+
+##### `true` and `false`
+
+`true` and `false` convert an expression that evaluates to a `Boolean` into a string literal when the result is `true` or `false`, respectively. 
+
+For example, `"~{true='--enable-foo' false='--disable-foo' allow_foo}"` evaluates the expression `allow_foo` as an identifier and, depending on its value, replaces the entire expression placeholder with either `--enable-foo` or `--disable-foo`.
+
+Both `true` and `false` cases are required. If one case should insert no value then an empty string literal is used, e.g. `"~{true='--enable-foo' false='' allow_foo}"`.
+
+> *Requirements*:
+>
+> 1.  `true` and `false` values MUST be string literals.
+> 2.  `true` and `false` are only allowed if the type of the expression is `Boolean`
+> 3.  Both `true` and `false` cases are required.
+
+The `true` and `false` options can be replaced with the use of an if-then-else expression:
+
+```wdl
+task tf_example {
+  input {
+    Boolean debug
+  }
+  command <<<
+    ./my_cmd ~{if debug then "--verbose" else "--quiet"}
+  >>>
+}
+```
+
+##### `default`
+
+The `default` option specifies a value to substitute for an optional-typed expression with an undefined value.
+
+For example, this task takes an optional `String` parameter and, if a value is not specified, then the value `foobar` is used instead.
+
+```wdl
+task default_test {
+  input {
+    String? s
+  }
+  command <<<
+    ./my_cmd ~{default="foobar" s}
+  >>>
+  ....
+}
+```
+
+> *Requirements*:
+>
+> 1. The type of the default value must match the type of the expression
+> 2. The type of the expression must be optional, i.e. it must have a `?` postfix quantifier
+
+The `default` option can be replaced in several ways - most commonly with an if-then-else expression or with a call to the [`select_first`](#x-select_firstarrayx) function.
+
+```wdl
+task default_example {
+  input {
+    String? s
+  }
+  command <<<
+    .my_cmd ~{if defined(s) then "--opt ${s}" else "foobar"}"foobar"}
+    # OR
+    .my_cmd ~{select_first([s, "foobar"])}
+  >>>
+}
+```
 
 ## WDL Documents
 
@@ -1217,6 +1368,7 @@ The execution engine must at least support the following protocols for import UR
 
 * `http://`
 * `https://`
+* 🗑 `file://` - Using the `file://` protocol for local imports can be problematic. Its use is deprecated and will be removed in WDL 2.0.
 
 In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. If a protocol-less import starts with `/` it will be interpreted as starting from the root of the host in the resolved URL.
 
@@ -1284,10 +1436,9 @@ A task's `input` section declares its input parameters. The values for declarati
 ```wdl
 task t {
   input {
-    Int i                 # a required input parameter
-    String s = "hello"    # an input parameter with a default value
-    File? f               # an optional input parameter
-    Directory? d = "/etc" # an optional input parameter with a default value
+    Int i               # a required input parameter
+    String s = "hello"  # an input parameter with a default value
+    File? f             # an optional input parameter
   }
 
   # [... other task sections]
@@ -1296,14 +1447,14 @@ task t {
 
 #### Task Input Localization
 
-`File` and `Directory` inputs may require localization to the execution directory. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
+`File` inputs must be treated specially since they may require localization to the execution directory. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
 
-- Files and directories are localized into the execution environment prior to the task execution commencing.
-- When localizing a `File` or `Directory`, the engine may choose to place the file wherever it likes so long as it adheres to these rules:
+- Files are localized into the execution directory prior to the task execution commencing.
+- When localizing a `File`, the engine may choose to place the file wherever it likes so long as it adheres to these rules:
   - The original file name must be preserved even if the path to it has changed.
-  - Two input files with the same name must be located in separate parent directories, to avoid name collision.
-  - Two input files that originated in the same storage directory must also be localized into the same parent directory for task execution (see the special case handling for [Versioning Filesystems](#special-case-versioning-filesystem)).
-- When a WDL author uses a `File` or `Directory` input in their [Command Section](#command-section), the fully qualified, localized path (with no trailing `'/'`) to the file is substituted when that declaration is referenced in the command template.
+  - Two input files with the same name must be located separately, to avoid name collision.
+  - Two input files that originated in the same storage directory must also be localized into the same directory for task execution (see the special case handling for Versioning Filesystems below).
+- When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted when that declaration is referenced in the command template.
 
 ##### Special Case: Versioning Filesystem
 
@@ -1311,7 +1462,7 @@ Two or more versions of a file in a versioning filesystem might have the same na
   - The first file is always placed according to the rules above.
   - Subsequent files that would otherwise overwrite this file are instead placed in a subdirectory named for the version.
 
-For example, imagine file `fs://path/to/A.txt` has two versions - `1.0` and `1.1` - that are being localized. The first might be localized as `/execution_dir/path/to/A.txt`. The second must then be placed in `/execution_dir/path/to/1.1/A.txt`
+For example, imagine two versions of file `fs://path/to/A.txt` are being localized (labeled version `1.0` and `1.1`). The first might be localized as `/execution_dir/path/to/A.txt`. The second must then be placed in `/execution_dir/path/to/1.1/A.txt`
 
 #### Input Type Constraints
 
@@ -1609,11 +1760,11 @@ After the command is executed, the following outputs are expected to be found in
 
 See the [WDL Value Serialization](#appendix-a-wdl-value-serialization-and-deserialization) section for more details.
 
-#### File, Directory, and Optional Outputs
+#### Files and Optional Outputs
 
-`File` and `Directory` outputs are represented as string paths.
+File outputs are represented as string paths.
 
-A common pattern is to use a placeholder in a string expression to construct a file/directory name as a function of the task input. For example:
+A common pattern is to use a placeholder in a string expression to construct a file name as a function of the task input. For example:
 
 ```wdl
 task example {
@@ -1658,7 +1809,7 @@ File rel = "my/path/to/something.txt"
 File abs = "/something.txt"
 ```
 
-All `File` and `Directory` outputs are required to exist, otherwise the task will fail. However, an output may be declared as optional (e.g. `File?`, `Directory?`, or `Array[File?]`), in which case the value will be undefined if the file/directory does not exist.
+All file outputs are required to exist, otherwise the task will fail. However, an output may be declared as optional (e.g. `File?` or `Array[File?]`), in which case the value will be undefined if the file does not exist.
 
 For example, executing the following task:
 
@@ -1682,28 +1833,6 @@ will generate the following outputs:
 * `optional_output.example_optional` will resolve to `None`
 * `optional_output.array_optional` will resolve to `[<File>, None]`
 
-The execution engine may need to "de-localize" `File` and `Directory` outputs. For example, if the WDL is executed on a cloud instance, then the outputs must be copied to cloud storage after execution completes successfully. When a `File` or `Directory` is de-localized, its name and contents (including subdirectories) are preserved, but not necessarily its local path. Any hard- or soft-links shall be resolved into a regular files/directories.
-
-##### Soft link resolution example
-
-If a task produces the following `Directory` output:
-
-```txt
-dir/
- - a           # a file, 10 MB
- - b -> a      # a softlink to 'a'
-```
-
-Then, after de-localization, it would be:
-
-```txt
-dir/
- - a           # a file, 10 MB
- - b           # another file, 10 MB
-```
-
-If this were then passed to the `Directory` input of another task, it would contain two independent files, `dir/a` and `dir/b`, with identical contents.
-
 ### Evaluation of Task Declarations
 
 All non-output declarations (i.e. input and private declarations) must be evaluated prior to evaluating the command section.
@@ -1719,13 +1848,15 @@ $runtime = 'runtime' $ws* '{' ($ws* $runtime_kv $ws*)* '}'
 $runtime_kv = $identifier $ws* '=' $ws* $expression
 ```
 
-The `runtime` section defines a set of key/value pairs that represent the minimum requirements needed to run a task and the conditions under which a task should be interpreted as a failure or success. The `runtime` section is limited to the attributes defined in this specification. Arbitrary key/value pairs are not allowed in the `runtime` section, and must instead be placed in the `hints` section.
+The `runtime` section defines a set of key/value pairs that represent the minimum requirements needed to run a task and the conditions under which a task should be interpreted as a failure or success. 
 
-During execution of a task, all resource requirements within the `runtime` section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task immediately fails. 
+During execution of a task, resource requirements within the `runtime` section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task immediately fails. 
 
-All `runtime` attributes have well-defined meanings and default values. Default values for the optional attributes are directly defined by the WDL specification in order to encourage portability of workflows and tasks; execution engines should not provide additional mechanisms to set default values for when no runtime attributes are defined.
+There are a set of reserved attributes (described below) that must be supported by the execution engine, and which have well-defined meanings and default values. Default values for all optional standard attributes are directly defined by the WDL specification in order to encourage portability of workflows and tasks; execution engines should NOT provide additional mechanisms to set _default_ values for when no runtime attributes are defined.
 
-The value of a `runtime` attribute may be any expression that evaluates to the expected type - and, in some cases, matches the accepted format - for that attribute. Expressions in the `runtime` section may reference (non-output) declarations in the task:
+🗑 Additional arbitrary attributes may be specified in the `runtime` section, but these may be ignored by the execution engine. These non-standard attributes are called "hints". The use of hint attributes in the `runtime` section is deprecated; a later version of WDL will introduce a new `hints` section for arbitrary attributes and disallow non-standard attributes in the `runtime` section.
+
+The value of a `runtime` attribute can be any expression that evaluates to the expected type - and in some cases matches the accepted format - for that attribute. Expressions in the `runtime` section may reference (non-output) declarations in the task:
 
 ```wdl
 task test {
@@ -1745,28 +1876,31 @@ task test {
 
 #### Units of Storage
 
-Several of the `runtime` attributes (and some [Standard Library](#standard-library) functions) can accept a string value with an optional unit suffix, using one of the valid [SI or IEC abbreviations](https://en.wikipedia.org/wiki/Binary_prefix). At a minimum, execution engines must support the following suffices in a case-insensitive manner:
+Several of the `runtime` attributes can (and some [Standard Library](#standard-library) functions) accept a string value with an optional unit suffix, using one of the valid [SI or IEC abbreviations](https://en.wikipedia.org/wiki/Binary_prefix). At a minimum, execution engines must support the following suffices in a case-insensitive manner:
 
 * B (bytes)
 * Decimal: KB, MB, GB, TB
 * Binary: KiB, MiB, GiB, TiB
 
-Optional whitespace is allowed between the number/expression and the suffix. For example: `6.2 GB`, `5MB`, `"~{ram}GiB"`.
+An optional space is allowed between the number/expression and the suffix. For example: `6.2 GB`, `5MB`, `"~{ram}GiB"`.
 
 The decimal and binary units may be shortened by omitting the trailing "B". For example, "K" and "KB" are both interpreted as "kilobytes".
 
-#### Runtime Attributes
+#### Mandatory `runtime` attributes
 
 The following attributes must be supported by the execution engine. The value for each of these attributes must be defined - if it is not specified by the user, then it must be set to the specified default value. 
 
 ##### `container`
 
-* Required
 * Accepted types:
     * `String`: A single container URI.
     * `Array[String]`: An array of container URIs.
 
-The `container` attribute accepts a URI string that describes a location where the execution engine can attempt to retrieve a container image to execute the task.
+The `container` key accepts a URI string that describes a location where the execution engine can attempt to retrieve a container image to execute the task.
+
+The user is strongly suggested to specify a `container` for every task. There is no default value for `container`. If `container` is not specified, the execution behavior is determined by the execution engine. Typically, the task is simply executed in the host environment. 
+
+🗑 The ability to omit `container` is deprecated. In WDL 2.0, `container` will be required.
 
 The format of a container URI string is `protocol://location`, where protocol is one of the protocols supported by the execution engine. Execution engines must, at a minimum, support the `docker://` protocol, and if no protocol is specified, it is assumed to be `docker://`. An execution engine should ignore any URI with a protocol it does not support.
 
@@ -1778,9 +1912,9 @@ task single_image_test {
   }
 ```
 
-Container source locations use the syntax defined by the individual container repository. For example, an image defined as `ubuntu:latest` would conventionally refer a Docker image living on `DockerHub`, while an image defined as `quay.io/bitnami/python` would refer to a `quay.io` repository.
+Container source locations should use the syntax defined by the individual container repository. For example an image defined as `ubuntu:latest` would conventionally refer a docker image living on `DockerHub`, while an image defined as `quay.io/bitnami/python` would refer to a `quay.io` repository.
 
-The `container` attribute also accepts an array of URI strings. All of the locations must point to images that are equivalent, i.e. they must always produce the same final results when the task is run with the same inputs. It is the responsibility of the execution engine to define the specific image sources it supports, and to determine which image is the "best" one to use at runtime. The ordering of the array does not imply any implicit preference or ordering of the containers. All images are expected to be the same, and therefore any choice would be equally valid. Defining multiple images enables greater portability across a broad range of execution environments.
+The `container` key also accepts an array of URI strings. All of the locations must point to images that are equivalent, i.e. they must always produce the same final results when the task is run with the same inputs. It is the responsibility of the execution engine to define the specific image sources it supports, and to determine which image is the "best" one to use at runtime. The ordering of the array does not imply any implicit preference or ordering of the containers. All images are expected to be the same, and therefore any choice would be equally valid. Defining multiple images enables greater portability across a broad range of execution environments.
 
 ```wdl
 task multiple_image_test {
@@ -1791,7 +1925,9 @@ task multiple_image_test {
 }
 ```
 
-The execution engine must cause the task to fail immediately if there is not a container URI that can be resolved successfully to a runnable image.
+The execution engine must cause the task to fail immediately if none of the container URIs can be successfully resolved to a runnable image.
+
+🗑 `docker` is supported as an alias for `container` with the exact same semantics. Exactly one of the `container` or `docker` is required. The `docker` alias will be dropped in WDL 2.0.
 
 ##### `cpu`
 
@@ -1958,7 +2094,88 @@ task maxRetries_test {
 }
 ```
 
-### Meta Values
+#### Reserved `runtime` hints
+
+The following attributes are considered "hints" rather than requirements. They are optional for execution engines to support. The purpose of reserving these attributes is to encourage interoperability of tasks and workflows between different execution engines.
+
+In WDL 2.0, these attributes will move to the new `hints` section.
+
+* `maxCpu`: Specifies the maximum CPU to be provisioned for a task. The value of this hint has the same specification as `runtime.cpu`.
+* `maxMemory`: Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as `runtime.memory`.
+* `shortTask`: A `Boolean` value, for which `true` indicates that that this task is not expected to take long to execute. The execution engine can interpret this as permission to attempt to optimize the execution of the task - e.g. by batching together multiple `shortTask`s, or by using the cost-optimized instance types that many clouds provide, e.g. `preemptible` instances on `gcp` and `spot` instances on `aws`. "Short" is a bit relative, but should generally be interpreted as << 24h.
+* `localizationOptional`: A `Boolean` value, for which `true` indicates that, if possible, the `File` type input declarations for this task should not be (immediately) localized. For example, a task that processes its input file once in linear fashion could have that input streamed (e.g. using a `fifo`) rather than requiring the input file to be fully localized prior to execution. This directive must not have any impact on the success or failure of a task (i.e. a task should run with or without localization).
+* `inputs`: Provides input-specific hints in the form of a hints object. Each key within this hint should refer to an actual input defined for the current task.
+  * `inputs.<key>.localizationOptional`: Tells the execution engine that a specific `File` input does not need to be localized for this task.
+* `outputs`: Provides outputs specific hints in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task
+  
+```wdl
+task foo {
+  input {
+    File bar
+  } 
+  ...
+  runtime {
+    container: "ubuntu:latest"
+    maxMemory: "36 GB"
+    maxCpu: 24
+    shortTask: true
+    localizationOptional: false
+    inputs: object {
+      bar: object { 
+        localizationOptional: true
+      } 
+    }
+  }
+}
+```
+
+#### Conventions and Best Practices
+
+In order to encourage interoperable workflows, WDL authors and execution engine implementors should view hints strictly as an optimization that can be made for a specific task at runtime; hints should not be interpreted as requirements for that task. By following this principle, we can guarantee that a workflow is runnable on all platforms assuming the `runtime` block has the required parameters, regardless of whether it contains any additional hints.
+
+The following guidelines should be followed when using hints:
+
+* A hint should never be required.
+* Less is more. Before adding a new hint key, ask yourself "do I really need another hint?", or "is there a better way to specify the behavior I require". If there is, then adding a hint is likely not the right way to achieve your aims.
+* Complexity is killer. By allowing any arbitrary keys, it is possible that the `runtime` section can get quite unruly and complex. This should be discouraged, and instead a pattern of simplicity should be stressed.
+* Sharing is caring. People tend to look for similar behavior between different execution engines. It is strongly encouraged that execution engines agree on common names and accepted values for hints that describe common usage patterns. A good example of hints that have conventions attached to them is cloud provider specific details:
+    ```wdl
+    task foo {
+      .... 
+      runtime {
+        gcp: {
+        ...
+        }
+        aws: {
+        ...
+        }
+        azure: {
+          ...
+        }
+        alibaba: {
+          ...
+        }
+      }
+    }
+    ```
+* Use objects to avoid collisions. If there are specific hints that are unlikely to ever be shared between execution engines, it is good practice to encapsulate these within their own execution engine-specific hints object:
+    ```wdl
+    task foo {
+      .... 
+      runtime {
+        cromwell: {
+          # cromwell specific 
+          ...
+        }
+        miniwdl: {
+          # miniwdl specific
+          ...
+        }
+      }
+    }
+    ```
+
+### Metadata Sections
 
 ```txt
 $meta_kv = $identifier $ws* '=' $ws* $meta_value
@@ -1967,10 +2184,12 @@ $meta_object = '{}' | '{' $meta_kv (, $meta_kv)* '}'
 $meta_array = '[]' |  '[' $meta_value (, $meta_value)* ']'
 ```
 
-The subsequent three sections (`hints`, `meta`, and `parameter_meta`) are all similar in that they can contain arbitrary key/value pairs. However, the values allowed in these sections ("meta values") are different than in `runtime` and other sections:
+There are two purely optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are designed to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface. Any attributes that may influence execution behavior should go in the `runtime` section.
+
+Both of these sections can contain key/value pairs. Metadata values are different than in `runtime` and other sections:
 
 * Only string, numeric, and boolean primitives are allowed.
-* Only array and object compound values are allowed.
+* Only array and "meta object" compound values are allowed.
 * The special value `null` is allowed for undefined attributes.
 * Expressions are not allowed.
 
@@ -1991,106 +2210,7 @@ task {
 }
 ```
 
-### ✨ Hints
-
-```txt
-$hints = 'hints' $ws* '{' ($ws* $meta_kv $ws*)* '}'
-```
-
-The `hints` section is optional and may contain any number of key/value pairs that provide hints to the execution engine. Some hint keys are reserved and have well-defined values.
-
-The `runtime` and `hints` sections differ in two important ways:
-
-1. A task execution must fail if the execution engine is not able to satisfy all of the `runtime` requirements, but a task execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
-2. The values of `runtime` attributes may be any valid expression, while only meta values may used in the `hints` section.
-
-#### Reserved Hints
-
-The following hints are reserved. They are optional for execution engines to support, but if they are supported they must have the meanings and allowed values defined below. The purpose of reserving these hints is to encourage interoperability of tasks and workflows between different execution engines.
-
-* `maxCpu`: Specifies the maximum CPU to be provisioned for a task. The value of this hint has the same specification as `runtime.cpu`.
-* `maxMemory`: Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as `runtime.memory`.
-* `shortTask`: A `Boolean` value, for which `true` indicates that that this task is not expected to take long to execute. The execution engine can interpret this as permission to attempt to optimize the execution of the task - e.g. by batching together multiple `shortTask`s, or by using the cost-optimized instance types that many clouds provide, e.g. `preemptible` instances on `gcp` and `spot` instances on `aws`. "Short" is a bit relative, but should generally be interpreted as << 24h.
-* `localizationOptional`: A `Boolean` value, for which `true` indicates that, if possible, the `File` type input declarations for this task should not be (immediately) localized. For example, a task that processes its input file once in linear fashion could have that input streamed (e.g. using a `fifo`) rather than requiring the input file to be fully localized prior to execution. This directive must not have any impact on the success or failure of a task (i.e. a task should run with or without localization).
-* `inputs`: Provides input-specific hints in the form of a hints object. Each key within this hint should refer to an actual input defined for the current task.
-  * `inputs.<key>.localizationOptional`: Tells the execution engine that a specific `File` input does not need to be localized for this task.
-* `outputs`: Provides outputs specific hints in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task
-  
-```wdl
-task foo {
-  input {
-    File bar
-  } 
-  
-  command <<< ... >>>
-
-  runtime {
-    container: "ubuntu:latest"
-  }
-
-  hints {
-    maxMemory: "36 GB"
-    maxCpu: 24
-    shortTask: true
-    localizationOptional: false
-    inputs: {
-      bar: { 
-        localizationOptional: true
-      } 
-    }
-  }
-}
-```
-
-#### Conventions and Best Practices
-
-To encourage interoperable workflows, WDL authors and execution engine implementors should view hints strictly as runtime optimizations. Hints must not be interpreted as requirements. Following this principle will ensure that a workflow is runnable on all platforms assuming the `runtime` block has the required attributes, regardless of whether it contains any additional hints.
-
-Please observe the following guidelines when using hints:
-
-* A hint must never be required for successful task execution.
-* Less is more. Before adding a new hint, ask yourself "do I really need another hint, or is there a better way to specify the behavior I require?".
-* Complexity is killer. By allowing any arbitrary keys and compound values, it is possible for the `hints` section to become quite complex. Use the simplest value possible to achieve the desired outcome.
-* Sharing is caring. Users tend to look for similar behavior between different execution engines. It is strongly encouraged that execution engines agree on common names and accepted values for hints that describe common usage patterns. A good example of hints that have conventions attached to them is cloud provider-specific details:
-    ```wdl
-    task foo {
-      .... 
-      hints {
-        gcp: {
-        ...
-        }
-        aws: {
-        ...
-        }
-        azure: {
-          ...
-        }
-        alibaba: {
-          ...
-        }
-      }
-    }
-    ```
-* Use objects to avoid collisions. If there are specific hints that are unlikely to ever be shared between execution engines, it is good practice to encapsulate these within their own execution engine-specific hints object:
-    ```wdl
-    task foo {
-      .... 
-      hints {
-        cromwell: {
-          # cromwell specific 
-          ...
-        }
-        miniwdl: {
-          # miniwdl specific
-          ...
-        }
-      }
-    }
-    ```
-
-### Metadata Sections
-
-There are two optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are designed to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface. Any attributes that may influence execution behavior should go in the `runtime` section.
+Note that, unlike the WDL `Object` type, metadata objects are not deprecated and will continue to be supported in future versions.
 
 #### Task Metadata Section
 
@@ -2420,9 +2540,9 @@ A fully qualified name is the unique identifier of any particular call, input, o
 
 * For `call`s: `<parent namespace>.<call alias>`
 * For inputs and outputs: `<parent namespace>.<input or output name>`
-* For `Struct`s: `<parent namespace>.<member name>`
+* For `Struct`s and `Object`s: `<parent namespace>.<member name>`
 
-A [namespace](#namespaces) is a set of names, such that every name is unique within the namespace (but the same name could be used in two different namespaces). The `parent namespace` is the fully qualified name of the workflow containing the call, the workflow or task containing the input or output declaration, or the `Struct` declaration containing the member. For the top-level workflow this is equal to the workflow name.
+A [namespace](#namespaces) is a set of names, such that every name is unique within the namespace (but the same name could be used in two different namespaces). The `parent namespace` is the fully qualified name of the workflow containing the call, the workflow or task containing the input or output declaration, or the `Struct` or `Object` declaration containing the member. For the top-level workflow this is equal to the workflow name.
 
 For example: `ns.ns2.mytask` is a fully-qualified name - `ns.ns2` is the parent namespace, and `mytask` is the task name being referred to within that namespace. Fully-qualified names are left-associative, meaning `ns.ns2.mytask` is interpreted as `((ns.ns2).mytask)`, meaning `ns.ns2` has to resolve to a namespace so that `.mytask` can be applied.
 
@@ -3255,6 +3375,13 @@ task {
 }
 ```
 
+🗑 It is also possible to assign an `Object` or `Map[String, X]` value to a `Struct` declaration. In the either case:
+* The `Object`/`Map` must not have any members that are not declared for the struct.
+* The value of each object/map member must be coercible to the declared type of the struct member.
+* The `Object`/`Map` must at least contain values for all of the struct's non-optional members.
+
+Note that the ability to assign non-`Struct` values to `Struct` declarations is deprecated and will be removed in WDL 2.0.
+
 ### Struct Namespacing
 
 Although a `struct` is a top-level element, it is not considered a member of the WDL document's namespace the way that other top-level elements (`task`s and `workflow`s) are. Instead, when a WDL document is imported all of its `structs` are added to a global struct namespace. This enables structs to be used by their name alone, without the need for any `namespace.` prefix.
@@ -3379,7 +3506,7 @@ Some functions accept arguments of multiple different types, denoted as a list o
 
 Some functions are polymorphic, which means that they are actually multiple functions with the same name but different signatures. Such functions are defined with generic types (e.g. `X`, `Y`) instead of concrete types (e.g. `File` or `String`), and the bounds of each type parameter is specified in the function description.
 
-Functions that are new in this version of the specification are denoted by ✨.
+Functions that are new in this version of the specification are denoted by ✨, and deprecated functions are denoted by 🗑.
 
 ## Int floor(Float), Int ceil(Float) and Int round(Float)
 
@@ -3473,6 +3600,8 @@ Note that regular expressions are written using regular WDL strings, so backslas
 String s1 = "hello\tBob"
 String s2 = sub(s1, "\\t", " ")
 ```
+
+🗑 The option for execution engines to allow other regular expression grammars besides POSIX ERE is deprecated.
 
 **Parameters**:
 
@@ -3735,24 +3864,132 @@ task do_stuff {
 }
 ```
 
+## 🗑 Object read_object(String|File)
+
+Reads a tab-separated value (TSV) file representing the names and values of the members of an `Object`. There must be two rows, and each row must have the same number of elements. Line endings (`\r` and `\n`) are removed from every line.
+
+The first row specifies the object member names. The names in the first row must be unique; if there are any duplicate names, an error is raised.
+
+The second row specifies the object member values corresponding to the names in the first row. All of the `Object`'s values are of type `String`.
+
+If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
+
+**Parameters**
+
+1. `String|File`: Path of the two-row TSV file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
+
+**Returns**: An `Object`, with as many members as there are unique names in the TSV.
+
+**Example**
+
+This task writes a TSV file to standard out, then reads it into an `Object`.
+
+```wdl
+task test {
+  command <<<
+    python <<CODE
+    print('\t'.join(["key_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    CODE
+  >>>
+  output {
+    Object my_obj = read_object(stdout())
+  }
+}
+```
+
+The command outputs the following lines to stdout:
+
+```
+key_1\tkey_2\tkey_3
+value_1\tvalue_2\tvalue_3
+```
+
+Which are read into an `Object` with the following members:
+
+|Attribute|Value|
+|---------|-----|
+|key_1    |"value_1"|
+|key_2    |"value_2"|
+|key_3    |"value_3"|
+
+## 🗑 Array[Object] read_objects(String|File)
+
+Reads a tab-separated value (TSV) file representing the names and values of the members of any number of `Object`s. Line endings (`\r` and `\n`) are removed from every line.
+
+There must be a header row with the names of the object members. The names in the first row must be unique; if there are any duplicate names, an error is raised.
+
+There are any number of additional rows, where each additional row contains the values of an object corresponding to the member names. Every row in the file must have the same number of elements. All of the `Object`'s values are of type `String`.
+
+If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
+
+**Parameters**
+
+1. `String|File`: Path of the TSV file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
+
+**Returns**: An `Array[Object]`, with N-1 elements, where N is the number of rows in the file.
+
+**Example**
+
+This task writes a TSV file to standard out, then reads it into an `Array[Object]`.
+
+```wdl
+task test {
+  command <<<
+    python <<CODE
+    print('\t'.join(["key_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    CODE
+  >>>
+  output {
+    Array[Object] my_obj = read_objects(stdout())
+  }
+}
+```
+
+The command outputs the following lines to stdout:
+
+```
+key_1\tkey_2\tkey_3
+value_1\tvalue_2\tvalue_3
+value_1\tvalue_2\tvalue_3
+value_1\tvalue_2\tvalue_3
+```
+
+Which are read into an `Array[Object]` with the following elements:
+
+|Index|Attribute|Value|
+|-----|---------|-----|
+|0    |key_1    |"value_1"|
+|     |key_2    |"value_2"|
+|     |key_3    |"value_3"|
+|1    |key_1    |"value_1"|
+|     |key_2    |"value_2"|
+|     |key_3    |"value_3"|
+|2    |key_1    |"value_1"|
+|     |key_2    |"value_2"|
+|     |key_3    |"value_3"|
+
 ## R read_json(String|File)
 
 Reads a JSON file into a WDL value whose type depends on the file's contents. The mapping of JSON type to WDL type is:
 
 |JSON Type|WDL Type|
 |---------|--------|
-|null|`None`|
-|boolean|`Boolean`|
+|object|`Object`|
+|array|`Array[X]`|
 |number|`Int` or `Float`|
 |string|`String`|
-|array|`Array[X]`|
-|object|object literal|
+|boolean|`Boolean`|
+|null|`None`|
 
 The return value must be used in a context where it can be coerced to the expected type, or an error is raised. For example, if the JSON file contains `null`, then the return type will be `None`, meaning the value can only be used in a context where an optional type is expected.
 
 If the JSON file contains an array, then all the elements of the array must be of the same type or an error is raised.
 
-The `read_json` function doesn't have access to any WDL type information, so it cannot return an instance of a specific `Struct` type. Instead, it returns a generic object litearal value that *must* be coerced immediately to the desired `Struct` or `Map` type. For example:
+Note that the `read_json` function doesn't have access to any WDL type information, so it cannot return an instance of a specific `Struct` type. Instead, it returns a generic `Object` value that must be coerced to the desired `Struct` type. For example:
 
 `person.json`
 ```json
@@ -3771,7 +4008,7 @@ File json_file = "person.json"
 Person p = read_json(json_file)
 ```
 
-If the entire contents of the file cannot be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
+If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
 
 **Parameters**
 
@@ -3781,7 +4018,7 @@ If the entire contents of the file cannot be read for any reason, the calling ta
 
 **Example**
 
-This task writes a JSON `object` to `./results/file_list.json` and then reads it into a generic object value, which is immediately coerced to a `Map[String, String]`.
+This task writes a JSON object to `./results/file_list.json` and then reads it into an `Object`, which is immediately coerced to a `Map[String, String]`.
 
 ```wdl
 task do_stuff {
@@ -4001,21 +4238,143 @@ key1\tvalue1
 key2\tvalue2
 ```
 
+## 🗑 File write_object(Object)
+
+Writes a tab-separated value (TSV) file with the contents of an `Object`. The file contains two tab-delimited lines. The first line is the names of the `Object` members, and the second line is the corresponding values. All lines are terminated by the newline (`\n`) character. The ordering of the columns is unspecified.
+
+The `Object` values must be serializable to strings, meaning that only primitive types are supported. Attempting to write an `Object` that has a compound member value results in an error.
+
+The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
+
+If the entire contents of the file can not be written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, insufficient disk space to write the file.
+
+**Parameters**
+
+1. `Object`: An object to write.
+
+**Returns**: A `File`.
+
+**Example**
+
+This task writes an `Object` to a file, and then calls a script with that file as input.
+
+```wdl
+task test {
+  input {
+    Object obj
+  }
+  command <<<
+    /bin/do_work --obj=~{write_object(obj)}
+  >>>
+  output {
+    File results = stdout()
+  }
+}
+```
+
+The actual command line might look like:
+
+```
+/bin/do_work --obj=/path/to/input.tsv
+```
+
+If `obj` has the following members:
+
+|Attribute|Value|
+|---------|-----|
+|key_1    |"value_1"|
+|key_2    |"value_2"|
+|key_3    |"value_3"|
+
+Then `/path/to/input.tsv` will contain:
+
+```
+key_1\tkey_2\tkey_3
+value_1\tvalue_2\tvalue_3
+```
+
+## 🗑 File write_objects(Array[Object])
+
+Writes a tab-separated value (TSV) file with the contents of a `Array[Object]`. All `Object`s in the `Array` must have the same member names, or an error is raised.
+
+The file contains N+1 tab-delimited lines terminated by a newline (`\n`), where N is the number of elements in the `Array`. The first line is the names of the `Object` members, and the subsequent lines are the corresponding values for each `Object`. All lines are terminated by the newline (`\n`) character. The lines are written in the same order as the `Object`s in the `Array`. The ordering of the columns is unspecified. If the `Array` is empty, an empty file is written.
+
+The object values must be serializable to strings, meaning that only primitive types are supported. Attempting to write an `Object` that has a compound member value results in an error.
+
+The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
+
+If the entire contents of the file can not be written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, insufficient disk space to write the file.
+
+**Parameters**
+
+1. `Array[Object]`: An array of objects to write.
+
+**Returns**: A `File`.
+
+**Example**
+
+This task writes an array of objects to a file, and then calls a script with that file as input.
+
+```wdl
+task test {
+  input {
+    Array[Object] obj_array
+  }
+  command <<<
+    /bin/do_work --obj=~{write_objects(obj_array)}
+  >>>
+  output {
+    File results = stdout()
+  }
+}
+```
+
+The actual command line might look like:
+
+```
+/bin/do_work --obj=/path/to/input.tsv
+```
+
+If `obj_array` has the items:
+
+|Index|Attribute|Value|
+|-----|---------|-----|
+|0    |key_1    |"value_1"|
+|     |key_2    |"value_2"|
+|     |key_3    |"value_3"|
+|1    |key_1    |"value_4"|
+|     |key_2    |"value_5"|
+|     |key_3    |"value_6"|
+|2    |key_1    |"value_7"|
+|     |key_2    |"value_8"|
+|     |key_3    |"value_9"|
+
+
+The `/path/to/input.tsv` will contain:
+
+```
+key_1\tkey_2\tkey_3
+value_1\tvalue_2\tvalue_3
+value_4\tvalue_5\tvalue_6
+value_7\tvalue_8\tvalue_9
+```
+
 ## File write_json(X)
 
 Writes a JSON file with the serialized form of a WDL value. The following WDL types can be serialized:
 
 |WDL Type|JSON Type|
 |--------|--------|
-|`None`          |null   |
-|`Boolean`       |boolean|
+|`Struct`        |object |
+|`Object`        |object |
+|`Map[String, X]`|object |
+|`Array[X]`      |array  |
 |`Int`           |number |
 |`Float`         |number |
 |`String`        |string |
 |`File`          |string |
-|`Array[X]`      |array  |
-|`Struct`        |object |
-|`Map[String, X]`|object |
+|`Boolean`       |boolean|
+|`None`          |null   |
 
 When serializing compound types, all nested types must be serializable or an error is raised. For example the following value could not be written to JSON:
 
@@ -4300,7 +4659,7 @@ Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
 Array[String] bad = prefix("-x ", env3)
 ```
 
-## ✨ Array[String] suffix(String, Array[X])
+## ✨ Array[String] suffix(String, Array[P])
 
 Adds a suffix to each element of the input array of primitive values. Equivalent to evaluating `"~{array[i]}~{suffix}"` for each `i` in `range(length(array))`.
 
@@ -4345,7 +4704,7 @@ Array[Int] env2 = [1, 2, 3]
 Array[String] env2_quoted = quote(env2) # ['"1"', '"2"', '"3"']
 ``` 
 
-## ✨ Array[String] squote(Array[X])
+## ✨ Array[String] squote(Array[P])
 
 Adds single-quotes (`'`) around each element of the input array of primitive values. Equivalent to evaluating `"'~{array[i]}'"` for each `i` in `range(length(array))`.
 
@@ -4583,7 +4942,7 @@ All WDL implementations are required to support the standard JSON input and outp
 
 ## JSON Input Format
 
-The inputs for a workflow invocation may be specified as a single JSON `object` that contains one member for each top-level workflow, subworkflow, or task input. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the input parameter, and the value is the [serialized form]() of the WDL value.
+The inputs for a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow, subworkflow, or task input. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the input parameter, and the value is the [serialized form]() of the WDL value.
 
 Here is an example JSON workflow input file:
 
@@ -4648,29 +5007,9 @@ The following would all be valid JSON inputs:
 }
 ```
 
-### Specifying / Overriding Runtime Attributes and Hints
-
-The user may also specify (or override) `runtime` attributes and `hints` in the input JSON. Input values for standardized runtime attributes and hints must adhere to the [supported types and formats](#runtime-section). Runtime attributes specified via the input JSON are treated as literals; expressions are not allowed.
-
-Runtime and hint values provided as inputs always supersede values supplied directly in the WDL. Any hints that are not supported by the execution engine are ignored.
-
-To differentiate runtime attributes and hints from task inputs, the `runtime` or `hints` namespace is added after the task name. For example:
-
-```json
-{
-  "wf.t1.runtime.memory": "16 GB",
-  "wf.t2.runtime.cpu": 2,
-  "wf.t2.runtime.disks": "100",
-  "wf.t2.runtime.container": "mycontainer:latest",
-  "wf.t1.hints.maxMemory": "32 GB",
-  "wf.t2.hints.maxCpu": 4,
-  "wf.t3.hints.arbitrary_key": ["arbitrary", "value"]
-}
-```
-
 ## JSON Output Format
 
-The outputs from a workflow invocation may be specified as a single JSON `object` that contains one member for each top-level workflow output; sub-workflow and task outputs are not provided. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the output parameter, and the value is the [serialized form]() of the WDL value.
+The outputs from a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow output; sub-workflow and task outputs are not provided. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the output parameter, and the value is the [serialized form]() of the WDL value.
 
 Every WDL implementation must support the ability to output this standard output. It is suggested that WDL implementations make the standard format be the default output format.
 
@@ -4706,6 +5045,21 @@ The output JSON will look like:
 ```
 
 It is recommended (but not required) that JSON outputs be "pretty printed" to be more human-readable.
+
+## Specifying / Overriding Runtime Attributes
+
+In addition to specifying workflow input in JSON, the user can also specify (or override) runtime attributes. Input values for standardized runtime attributes must adhere to the [supported types and formats](#runtime-section). Runtime values provided as inputs always supersede values supplied directly in the WDL. Any runtime attributes that are not supported by the execution engine are ignored.
+
+To differentiate runtime attributes from task inputs, the `runtime` namespace is added after the task name. For example:
+
+```json
+{
+  "wf.t1.runtime.memory": "16 GB",
+  "wf.t2.runtime.cpu": 2,
+  "wf.t2.runtime.disks": "100",
+  "wf.t2.runtime.container": "mycontainer:latest"
+}
+```
 
 ## JSON Serialization of WDL Types
 
@@ -4769,7 +5123,7 @@ Pair[String, Int] p2 = (s.left, s.right)
 
 ### Map
 
-A `Map[String, X]` may be serialized to a JSON `object` by the same mechanism as a WDL `Struct`. This value will be deserialized to a generic object value, immediately after which it must be coerced to a `Map`.
+A `Map[String, X]` may be serialized to a JSON `object` by the same mechanism as a WDL `Struct` or `Object`. This value will be deserialized to a WDL `Object`, after which it may be coerced to a `Map`.
 
 Serialization of `Map`s with other key types is problematic, because there is no way to represent them in JSON unambiguously. Thus, a `Map` with non-`String` keys must first be converted to a serializable type, e.g. by using the following suggested method. Attempting to serialize a `Map` with a non-`String` key type results in an error.
 
@@ -4783,7 +5137,7 @@ struct IntStringMap {
   Array[String] values
 }
 Map[Int, String] m = {0: "a", 1: "b"}
-Pair[Array[Int], Array[String]] u = unzip(as_pairs(m))
+Pair[Array[Int], Array[String]] u = unzip(m)
 IntStringMap i = IntStringMap {
   keys: u.left,
   values: u.right
@@ -4793,11 +5147,11 @@ IntStringMap i = IntStringMap {
 Map[Int, String] m2 = as_map(zip(i.keys, i.values))
 ```
 
-### Struct
+### Struct and Object
 
-`Struct`s are represented naturally in JSON using the `object` type. Each WDL `Struct` member value is serialized recursively into its JSON format.
+`Struct`s and `Object`s are represented naturally in JSON using the `object` type. Each WDL `Struct` or `Object` member value is serialized recursively into its JSON format.
 
-A JSON `object` is deserialized to a generic object value value, and each member value is deserialized to its most likely WDL type. The object must be coerced immediately to a `Map` or `Struct` type.
+A JSON `object` is deserialized to a WDL `Object` value, and each member value is deserialized to its most likely WDL type. The WDL `Object` may then be coerced to a `Map` or `Struct` type if necessary.
 
 # Appendix A: WDL Value Serialization and Deserialization
 
@@ -4809,7 +5163,7 @@ For example, a task that wraps a tool that operates on an `Array` of FASTQ files
 * A file containing a JSON list, e.g. `Rscript analysis.R --files=fastq_list.json`
 * Enumerated on the command line, e.g. `Rscript analysis.R 1.fastq 2.fastq 3.fastq`
 
-On the other end, command line tools will output results in files or to standard output, and these output data need to be converted to WDL values to be used as task outputs. For example, the FASTQ processor task mentioned above outputs a mapping of the input files to the number of reads in each file. This output might be represented as a two-column TSV or as a JSON `object`, both of which would need to be deserialized to a WDL `Map[File, Int]` value.
+On the other end, command line tools will output results in files or to standard output, and these output data need to be converted to WDL values to be used as task outputs. For example, the FASTQ processor task mentioned above outputs a mapping of the input files to the number of reads in each file. This output might be represented as a two-column TSV or as a JSON object, both of which would need to be deserialized to a WDL `Map[File, Int]` value.
 
 The various methods for serializing and deserializing primitive and compound values are enumerated below.
 
@@ -5029,9 +5383,9 @@ This task would assign the array with elements `"foo"` and `"bar"` to `my_array`
 
 If the echo statement was instead `echo '{"foo": "bar"}'`, the engine MUST fail the task for a type mismatch.
 
-### Struct
+### Struct and Object
 
-A `Struct` is serialized to a JSON `object`. A JSON `object` is always deserialized to a generic object value, which must then be coerced immediately to a `Struct` type.
+`Struct`s and `Object`s are serialized identically. A JSON object is always deserialized to a WDL `Object`, which can then be coerced to a `Struct` type if necessary.
 
 #### Struct serialization using write_json()
 
@@ -5208,7 +5562,7 @@ task test {
 
 #### Map deserialization using read_json()
 
-`read_json()` will return whatever data type resides in the JSON file. If the file contains a JSON `object`, it is deserialized to a generic object value, which must be coerced immediately to a `Map[String, X]` so long as all values are coercible to `X`.
+`read_json()` will return whatever data type resides in the JSON file. If the file contains a JSON `object`, it is deserialized as an `Object` value, which can be coerced to a `Map[String, X]` so long as all values are coercible to `X`.
 
 ```wdl
 task test {
@@ -5232,20 +5586,20 @@ task test {
 |----|------|
 |foo |bar   |
 
-Note that using `write_json`/`read_json` to serialize to/from a `Map` can cause subtle issues due to the fact that `Map` is ordered whereas an object value is not. For example:
+Note that using `write_json`/`read_json` to serialize to/from a `Map` can cause suble issues due to the fact that `Map` is ordered whereas `Object` is not. For example:
 
 ```wdl
 Map[String, Int] s2i = {"b": 2, "a": 1}
 File f = write_json(s2i)
 
-# object is not ordered - coercion to Map may
+# Object is not ordered - coercion to Map may
 # result in either of two values:
 # {"a": 1, "b": 2} or {"b": 2, "a": 1}
 Map[String, Int] deserialized_s2i = read_json(f)
 
 # is_equal is non-deterministic - it may be
 # true or false, depending on how the members
-# are ordered in the object
+# are ordered in the Object
 Boolean is_equal = s2i == deserialized_s2i
 ```
 
@@ -5271,7 +5625,7 @@ task pair_test {
 }
 ```
 
-Alternatively, a `Struct` can be created with `left` and `right` members and then serialized by the appropriate function.
+Alternatively, a `Struct` (or `Object`) can be created with `left` and `right` members and then serialized by the appropriate function.
 
 ```wdl
 struct IntStringPair {
@@ -5317,7 +5671,7 @@ The following WDL namespaces exist:
     * A call is itself a namespace that equals the name of the called task or subworkflow by default, but may be aliased using the `as $identifier` syntax.
     * A call namespace contains the output declarations of the called task or workflow.
     * A call to a subworkflow also contains the names of calls made in the body of that workflow.
-* A [`struct` instance](#struct-definition): is a namespace consisting of the members defined in the `Struct`.
+* A [`struct` instance](#struct-definition): is a namespace consisting of the members defined in the `Struct`. This also applies to `Object` instances.
 
 All members of a namespace must be unique within that namespace. For example:
 
