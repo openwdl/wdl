@@ -1,4 +1,4 @@
-lexer grammar WdlV1Lexer;
+lexer grammar WdlV2Lexer;
 
 channels { COMMENTS }
 
@@ -78,8 +78,8 @@ META
   : 'meta' -> mode(Meta)
   ;
 
-COMMAND
-  : 'command'-> mode(Command)
+HINTS
+  : 'hints' -> mode(Meta)
   ;
 
 RUNTIME
@@ -106,6 +106,10 @@ FILE
   : 'File'
   ;
 
+DIRECTORY
+  : 'Directory'
+  ;
+
 ARRAY
   : 'Array'
   ;
@@ -114,45 +118,41 @@ MAP
   : 'Map'
   ;
 
+OBJECTLITERAL
+  : 'Object'
+  ;
+
 PAIR
   : 'Pair'
   ;
 
-OBJECT
-  : 'Object'
+AFTER
+  : 'after'
   ;
 
-OBJECTLITERAL
-  : 'object'
+COMMAND
+  : 'command'-> mode(Command)
   ;
-
-SEP
-  : 'sep'
-  ;
-
-DEFAULT
-  : 'default'
-  ;
-
 
 // Primitive Literals
+NONELITERAL
+  : 'None'
+  ;
 
 IntLiteral
-  : Digits
-  ;
+	: Digits
+	;
 
 FloatLiteral
-  : FloatFragment
-  ;
+	: FloatFragment
+	;
 
 BoolLiteral
-  : 'true'
-  | 'false'
-  ;
-
+	: 'true'
+	| 'false'
+	;
 
 // Symbols
-
 LPAREN
   : '('
   ;
@@ -278,14 +278,13 @@ DQUOTE
   ;
 
 WHITESPACE
-  : [ \t\r\n]+ -> channel(HIDDEN)
-  ;
+	: [ \t\r\n]+ -> channel(HIDDEN)
+	;
 
 Identifier
   : CompleteIdentifier
   ;
 
-// lexer mode for single-quoted strings with placeholders
 mode SquoteInterpolatedString;
 
 SQuoteEscapedChar
@@ -320,7 +319,6 @@ StringPart
   : ~[$~{\r\n']+
   ;
 
-// lexer mode for double-quoted strings with placeholders
 mode DquoteInterpolatedString;
 
 DQuoteEscapedChar
@@ -355,11 +353,10 @@ DQuoteStringPart
   : ~[$~{\r\n"]+ -> type(StringPart)
   ;
 
-// parent lexer mode for command block
 mode Command;
 
 BeginWhitespace
-  : [ \t\r\n]* -> channel(HIDDEN)
+  : [ \t\r\n]+ -> channel(HIDDEN)
   ;
 
 BeginHereDoc
@@ -370,7 +367,6 @@ BeginLBrace
   : '{' -> mode(CurlyCommand)
   ;
 
-// lexer mode for command block within <<< >>>
 mode HereDocCommand;
 
 HereDocUnicodeEscape
@@ -409,7 +405,6 @@ HereDocStringPart
   : ~[~{>]+ -> type(CommandStringPart)
   ;
 
-// lexer mode for command block within { }
 mode CurlyCommand;
 
 CommandEscapedChar
@@ -444,7 +439,6 @@ CommandStringPart
   : ~[$~{}]+
   ;
 
-// lexer mode for version statement
 mode Version;
 
 VersionWhitespace
@@ -455,7 +449,6 @@ ReleaseVersion
   : [a-zA-Z0-9.-]+ -> popMode
   ;
 
-// parent lexer mode for meta/parameter_meta sections
 mode Meta;
 
 BeginMeta
@@ -466,7 +459,6 @@ MetaWhitespace
   : [ \t\r\n]+ -> channel(HIDDEN)
   ;
 
-// lexer mode for meta/parameter_meta body
 mode MetaBody;
 
 MetaBodyComment
@@ -489,7 +481,6 @@ MetaBodyWhitespace
   : [ \t\r\n]+ -> channel(HIDDEN)
   ;
 
-// lexer mode for meta value
 mode MetaValue;
 
 MetaValueComment
@@ -540,7 +531,6 @@ MetaValueWhitespace
   : [ \t\r\n]+ -> channel(HIDDEN)
   ;
 
-// lexer mode for single-quoted string within meta/parameter_meta (placeholders are not allowed)
 mode MetaSquoteString;
 
 MetaSquoteEscapedChar
@@ -559,7 +549,6 @@ MetaStringPart
   : ~[\r\n']+
   ;
 
-// lexer mode for double-quoted string within meta/parameter_meta (placeholders are not allowed)
 mode MetaDquoteString;
 
 MetaDquoteEscapedChar
@@ -578,7 +567,6 @@ MetaDquoteStringPart
   : ~[\r\n"]+ -> type(MetaStringPart)
   ;
 
-// lexer mode for array literal within meta/parameter_meta
 mode MetaArray;
 
 MetaArrayComment
@@ -601,7 +589,6 @@ MetaArrayWhitespace
   : [ \t\r\n]+ -> channel(HIDDEN)
   ;
 
-// lexer mode for object literal within meta/parameter_meta
 mode MetaObject;
 
 MetaObjectComment
@@ -635,16 +622,16 @@ MetaObjectWhitespace
 // Fragments
 
 fragment CompleteIdentifier
-  : IdentifierStart IdentifierFollow*
-  ;
+	: IdentifierStart IdentifierFollow*
+	;
 
 fragment IdentifierStart
-  : [a-zA-Z]
-  ;
+	: [a-zA-Z]
+	;
 
 fragment IdentifierFollow
-  : [a-zA-Z0-9_]+
-  ;
+	: [a-zA-Z0-9_]+
+	;
 
 fragment EscapeSequence
   : '\\' [btnfr"'\\]
@@ -661,31 +648,30 @@ fragment HexDigit
   ;
 
 fragment Digit
-  : [0-9]
-  ;
+	: [0-9]
+	;
 
 fragment Digits
-  : Digit+
-  ;
+	: Digit+
+	;
 
 fragment Decimals
-  : Digits '.' Digits?
-  | '.' Digits
-  ;
+	: Digits '.' Digits? | '.' Digits
+	;
 
 fragment SignedDigits
-  : ('+' | '-' ) Digits
-  ;
+	: ('+' | '-' ) Digits
+	;
 
 fragment FloatFragment
-  : Digits EXP?
-  | Decimals EXP?
-  ;
+	: Digits EXP?
+	| Decimals EXP?
+	;
 
 fragment SignedFloatFragment
-  : ('+' |'e') FloatFragment
-  ;
+	: ('+' |'e') FloatFragment
+	;
 
 fragment EXP
-  : ('e'|'E') SignedDigits
-  ;
+	: ('e'|'E') SignedDigits
+	;

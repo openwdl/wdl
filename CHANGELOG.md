@@ -19,6 +19,9 @@ Keep the changelog pleasant to read in the text editor:
 
 version development
 ---------------------------
++ Updates ANTLR4 grammar - all the updates in 1.0.0 plus
+  + Handle hints section identically to meta sections
+  + Add object literal (as per PR 368)
 
 + Runtime section no longer accepts arbitrary keys. Added new hints section for arbitrary runtime hints.
   [PR 315](https://github.com/openwdl/wdl/pull/315) by @patmagee
@@ -134,6 +137,7 @@ version 1.0.0
 + Rename `WdlComments` channel to `COMMENTS`
 + Remove `SkipChannel`
 + Rename `COMMENT` -> `LINE_COMMENT`, emit comments to `COMMENTS` channel
++ Object literal keys can be strings or identifiers
 + Add `Meta` mode for parsing meta sections
 + Parse whitespace between `command` and opening `{`/`<<<` within `Command` mode, so that it is emitted to the `HIDDEN` channel
 + Ignore trailing commas
@@ -146,4 +150,3 @@ draft-2
 ---------------------------
 
 + Added ANTLR4 grammar
-

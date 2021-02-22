@@ -1,6 +1,6 @@
-parser grammar WdlV1Parser;
+parser grammar WdlV2Parser;
 
-options { tokenVocab=WdlV1Lexer; }
+options { tokenVocab=WdlV2Lexer; }
 
 map_type
   : MAP LBRACK wdl_type COMMA wdl_type RBRACK
@@ -18,7 +18,7 @@ type_base
   : array_type
   | map_type
   | pair_type
-  | (STRING | FILE | BOOLEAN | OBJECT | INT | FLOAT | Identifier)
+  | (STRING | FILE | DIRECTORY | BOOLEAN | INT | FLOAT | Identifier)
   ;
 
 wdl_type
@@ -43,18 +43,12 @@ number
   | FloatLiteral
   ;
 
-expression_placeholder_option
-  : BoolLiteral EQUAL string
-  | DEFAULT EQUAL string
-  | SEP EQUAL string
-  ;
-
 string_part
   : StringPart*
   ;
 
 string_expr_part
-  : StringCommandStart (expression_placeholder_option)* expr RBRACE
+  : StringCommandStart expr RBRACE
   ;
 
 string_expr_with_string_part
@@ -70,6 +64,7 @@ primitive_literal
   : BoolLiteral
   | number
   | string
+  | NONELITERAL
   | Identifier
   ;
 
@@ -128,6 +123,7 @@ expr_core
   | LPAREN expr COMMA expr RPAREN #pair_literal
   | LBRACE (expr COLON expr (COMMA expr COLON expr)* COMMA?)* RBRACE #map_literal
   | OBJECTLITERAL LBRACE (object_literal_key COLON expr (COMMA object_literal_key COLON expr)* COMMA?)* RBRACE #object_literal
+  | Identifier LBRACE (Identifier COLON expr (COMMA Identifier COLON expr)* COMMA?)* RBRACE #struct_literal
   | IF expr THEN expr ELSE expr #ifthenelse
   | LPAREN expr RPAREN #expression_group
   | expr_core LBRACK expr RBRACK #at
@@ -200,15 +196,23 @@ parameter_meta
   ;
 
 meta
-  :  META BeginMeta meta_kv* EndMeta
+  :	META BeginMeta meta_kv* EndMeta
   ;
 
+// note: only specific keys are allowed in runtime, but enumerating
+// them here means they can't be used as identifiers elsewhere, so
+// we instead leave to the parser to validate that the identifier is 
+// from among the allowed set 
 task_runtime_kv
   : Identifier COLON expr
   ;
 
 task_runtime
   : RUNTIME LBRACE (task_runtime_kv)* RBRACE
+  ;
+
+task_hints
+  :	HINTS BeginMeta meta_kv* EndMeta
   ;
 
 task_input
@@ -219,21 +223,21 @@ task_output
   : OUTPUT LBRACE (bound_decls)* RBRACE
   ;
 
+task_command
+  : COMMAND BeginLBrace task_command_string_part task_command_expr_with_string* EndCommand
+  | COMMAND BeginHereDoc task_command_string_part task_command_expr_with_string* EndCommand
+  ;
+
 task_command_string_part
   : CommandStringPart*
   ;
 
 task_command_expr_part
-  : StringCommandStart (expression_placeholder_option)* expr RBRACE
+  : StringCommandStart expr RBRACE
   ;
 
 task_command_expr_with_string
   : task_command_expr_part task_command_string_part
-  ;
-
-task_command
-  : COMMAND BeginLBrace task_command_string_part task_command_expr_with_string* EndCommand
-  | COMMAND BeginHereDoc task_command_string_part task_command_expr_with_string* EndCommand
   ;
 
 task_element
@@ -241,6 +245,7 @@ task_element
   | task_output
   | task_command
   | task_runtime
+  | task_hints
   | bound_decls
   | parameter_meta
   | meta
@@ -273,12 +278,16 @@ call_body
   : LBRACE call_inputs? RBRACE
   ;
 
+call_after
+  : AFTER Identifier
+  ;
+
 call_name
   : Identifier (DOT Identifier)*
   ;
 
 call
-  : CALL call_name call_alias?  call_body?
+  : CALL call_name call_alias? (call_after)*  call_body?
   ;
 
 scatter

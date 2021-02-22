@@ -4,5 +4,6 @@ target
 .artifactory
 .DS_Store
 gen/
+*.tokens
 __pycache__
 *iml

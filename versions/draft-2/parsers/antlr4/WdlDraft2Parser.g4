@@ -44,9 +44,9 @@ number
   ;
 
 expression_placeholder_option
-  : BoolLiteral EQUAL (string | number)
-  | DEFAULT EQUAL (string | number)
-  | SEP EQUAL (string | number)
+  : BoolLiteral EQUAL string
+  | DEFAULT EQUAL string
+  | SEP EQUAL string
   ;
 
 string_part
@@ -118,12 +118,16 @@ expr_infix5
   : expr_core
   ;
 
+object_literal_key
+  : Identifier
+  ;
+
 expr_core
     : Identifier LPAREN (expr (COMMA expr)* COMMA?)? RPAREN #apply
     | LBRACK (expr (COMMA expr)* COMMA?)* RBRACK #array_literal
     | LPAREN expr COMMA expr RPAREN #pair_literal
     | LBRACE (expr COLON expr (COMMA expr COLON expr)* COMMA?)* RBRACE #map_literal
-    | OBJECT_LITERAL LBRACE (Identifier COLON expr (COMMA Identifier COLON expr)* COMMA?)* RBRACE #object_literal
+    | OBJECTLITERAL LBRACE (object_literal_key COLON expr (COMMA object_literal_key COLON expr)* COMMA?)* RBRACE #object_literal
     | IF expr THEN expr ELSE expr #ifthenelse
     | LPAREN expr RPAREN #expression_group
     | expr_core LBRACK expr RBRACK #at
