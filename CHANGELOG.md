@@ -38,6 +38,8 @@ version development
 version 1.1.0
 ---------------------------
 
++ Added [Errata](versions/1.1/Errata.md).
+ 
 + Clarified that the `sub` function requires a POSIX Extended Regular Expression (ERE).
   [PR 243](https://github.com/openwdl/wdl/pull/243) by @rhpvorderman
 
