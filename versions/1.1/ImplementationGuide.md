@@ -1,4 +1,3 @@
-
 # WDL Implementation Guide
 
 ## Task Execution
