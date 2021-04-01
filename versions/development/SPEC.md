@@ -349,8 +349,8 @@ A string literal may contain any unicode characters between single or double-quo
 |`\\`|`\`|`\x5C`||
 |`\n`|newline|`\x0A`||
 |`\t`|tab|`\x09`||
-|`\'`|single quote|`\x22`|within a single-quoted string|
-|`\"`|double quote|`\x27`|within a double-quoted string|
+|`\'`|single quote|`\x27`|within a single-quoted string|
+|`\"`|double quote|`\x22`|within a double-quoted string|
 
 Strings can also contain the following types of escape sequences:
 
