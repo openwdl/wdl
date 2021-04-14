@@ -54,6 +54,10 @@ WDL is not executable in and of itself, but requires an execution engine to run.
 - Atom: [Language-WDL](https://atom.io/packages/language-wdl)
 - Vim: [vim-wdl](https://github.com/broadinstitute/vim-wdl)
 
+### Documentation
+
+- [wdldoc](https://github.com/stjudecloud/wdldoc)
+
 ### Test tools
 
 - [Pytest-workflow](https://github.com/LUMC/pytest-workflow) - workflow-engine agnostic workflow tester. Can be used with both Cromwell and MiniWDL. Tests are specified in YAML format. Uses pytest as underlying test framework. Allows for using python 
