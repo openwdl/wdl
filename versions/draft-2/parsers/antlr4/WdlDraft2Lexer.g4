@@ -107,7 +107,7 @@ DQuoteStringPart: ~[${\r\n"]+ -> type(StringPart);
 
 mode Command;
 
-BeginWhitespace: [ \t\r\n]* -> channel(HIDDEN);
+BeginWhitespace: [ \t\r\n]+ -> channel(HIDDEN);
 BeginHereDoc: '<<<' -> mode(HereDocCommand);
 BeginLBrace: '{' -> mode(CurlyCommand);
 

@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version development
 ---------------------------
 
++ Lexer rule BeginWhitespace now matches non-empty string.
+  [PR 440](https://github.com/openwdl/wdl/pull/440) by @yunhailuo
+
 + Runtime section no longer accepts arbitrary keys. Added new hints section for arbitrary runtime hints.
   [PR 315](https://github.com/openwdl/wdl/pull/315) by @patmagee
 
