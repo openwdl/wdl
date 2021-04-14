@@ -358,6 +358,29 @@ Strings can also contain the following types of escape sequences:
 * A hexadecimal escape code starts with `\x`, followed by 2 hexadecimal digits `0-9a-fA-F`. 
 * A unicode code point starts with `\u` followed by 4 hexadecimal characters or `\U` followed by 8 hexadecimal characters `0-9a-fA-F`.
 
+Strings that begin and end with three adjacent single- or double-quotes may span multiple lines. By default, all whitespace between the last non-whitespace character on one line and the first non-whitespace character on the next line is replaced by a single space. For example, the values of all four declarations below are identical:
+
+```wdl
+String single_line_dquote = "this is a single-line double-quoted string"
+String multi_line_dquote = """this is a
+                              multi-line double-quoted string"""
+String single_line_squote = 'this is a single-line single-quoted string'
+String multi_line_squote = '''this is a
+                              multi-line single-quoted string'''
+```
+
+To preserve both newlines and indenting, begin each line with the `>` character. To preserve newlines, but not indenting, begin each line with the `|` character. For example:
+
+```wdl
+String newline_only = """This string has a
+                         |single newline but no indent"""
+String newline_and_indent = """
+  >This string has
+  >newlines and indents"""
+```
+
+In this example, the string `newline_only` has the value `This string has a\nsingle newline but no indent` and the string `newline_and_indent` has the value ```\n   This string has\n   newlines and indents```. Note that in the second instance, the `>` character is replaced by a space.
+
 ### Comments
 
 Comments can be used to provide helpful information such as workflow usage, requirements, copyright, etc. A comment is prepended by `#` and can be placed at the start of a line or at the end of any line of WDL code. Any text following the `#` will be completely ignored by the execution engine, with one exception: within the `command` section, *ALL* text will be included in the evaluated script - even lines prepended by `#`.
