@@ -1392,11 +1392,11 @@ Inputs with default initializers are implicitly optional: callers may omit the i
 
 In detail, if a caller omits an input from the call `input:` section, then the default initializer applies whether or not the input type is declared optional. But if the caller explicitly supplies `None` for the input (either literally or by passing an optional value), then the default initializer applies only if the declared type isn't optional. This table illustrates the value taken by an input `x` depending on what the caller supplies:
 
-|       declared input:|`Int x = 1`|`Int? x = 1`|
-|----------------------|-----------|------------|
-|call input: *omitted* |          1|           1|
-|call input: `x = 42`  |         42|          42|
-|call input: `x = None`|          1|      `None`|
+|    input declaration:|`Int x = 1`|`Int? x = 1`|`Int? x`|`Int x`|
+|----------------------|-----------|------------|--------|-------|
+|call input: `x = 42`  |         42|          42|      42|     42|
+|call input: `x = None`|          1|      `None`|  `None`|*error*|
+|call input: *omitted* |          1|           1|  `None`|*error*|
 
 ### Private Declarations
 
