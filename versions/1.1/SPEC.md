@@ -2,9 +2,18 @@
 
 This is version 1.1 of the Workflow Description Language (WDL) specification. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.0](../1.0/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in the [next major WDL version](../development/SPEC.md) (denoted by the 🗑 symbol).
 
+## Revisions
+
+Revisions to this specification are made periodically in order to correct errors, clarify language, or add additional examples. No functionality is added or removed after the initial revision of the specification (rev0) is ratified.
+
+* [rev1](https://github.com/openwdl/wdl/blob/main/versions/1.1/SPEC.md): current version of the specification
+* [rev0](https://github.com/openwdl/wdl/blob/1.1/versions/1.1/SPEC.md): 2021-01-29
+  * [errata](https://github.com/openwdl/wdl/blob/1.1/versions/1.1/Errata.md)
+
 ## Table of Contents
 
 - [Workflow Description Language (WDL)](#workflow-description-language-wdl)
+  - [Revisions](#revisions)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
     - [An Example WDL Workflow](#an-example-wdl-workflow)
@@ -29,8 +38,10 @@ This is version 1.1 of the Workflow Description Language (WDL) specification. It
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
+          - [Order of Precedence](#order-of-precedence)
           - [Coercion of Optional Types](#coercion-of-optional-types)
           - [Struct/Object coercion from Map](#structobject-coercion-from-map)
+          - [🗑 Limited exceptions](#-limited-exceptions)
     - [Declarations](#declarations)
     - [Expressions](#expressions)
       - [Built-in Operators](#built-in-operators)
@@ -654,14 +665,42 @@ The table below lists all globally valid coercions. The "target" type is the typ
 |`Float`|`Int`|May cause overflow error|
 |`Y?`|`X`|`X` must be coercible to `Y`|
 |`Array[Y]`|`Array[X]`|`X` must be coercible to `Y`|
+|`Array[Y]`|`Array[X]+`|`X` must be coercible to `Y`|
 |`Map[X,Z]`|`Map[W,Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
 |`Pair[X,Z]`|`Pair[W,Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
-|`Struct`    |`Map[String,Y]`|`Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`|
+|`Struct`|`Map[String,Y]`|`Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`|
 |`Map[String,Y]`|`Struct`|All `Struct` members must be coercible to `Y`|
 |`Object`|`Map[String,Y]`|🗑|
 |`Map[String,Y]`|`Object`|🗑 All object values must be coercible to `Y`|
 |`Object`|`Struct`|🗑|
 |`Struct`|`Object`|🗑 `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types|
+
+Note that the [`read_lines`](#arraystring-read_linesstringfile) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
+
+###### Order of Precedence
+
+During string interpolation, there are some operators for which it is possible to coerce the same arguments in multiple different ways. For such operators, it is necessary to define the order of preference so that a single function prototype can be selected from among the available options for any given set of arguments.
+
+The `+` operator is overloaded for both numeric addition and `String` concatenation. This can lead to the following kinds of situations:
+
+```
+String s = "1.0"
+Float f = 2.0
+String x = "${s + f}"
+```
+
+There are two possible ways to evaluate the `s + f` expression:
+
+1. Coerce `s` to `Float` and perform floating point addition, then coerce to `String` with the result being `x = "3.0"`.
+2. Coerce `f` to `String` and perform string concatenation with result being `x = "1.02.0"`.
+
+Similarly, the equality/inequality operators can be applied to any primitive type.
+
+The order of precedence is:
+
+1. `Int`, `Float`: `Int` coerces to `Float`
+2. `X`, `Y`: For any primitive types `X` != `Y`, both are coerced to `String`
+3. If applying `+` to two values of the same type that cannot otherwise be summed/concatenated (i.e. `Boolean`, `File`, `Directory`), both values are first coerced to `String`
 
 ###### Coercion of Optional Types
 
@@ -705,6 +744,20 @@ Words map_coercion = {
 
 - If a `Struct` (or `Object`) declaration is initialized using the struct-literal (or object-literal) syntax `Words literal_syntax = Words { a: ...` then the keys will be `"a"`, `"b"` and `"c"`.
 - If a `Struct` (or `Object`) declaration is initialized using the map-literal syntax `Words map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
+
+###### 🗑 Limited exceptions
+
+Implementers may choose to allow limited exceptions to the above rules, with the understanding that workflows depending on these exceptions may not be portable. These exceptions are provided for backward-compatibility, are considered deprecated, and will be removed in a future version of WDL.
+
+* `Float` to `Int`, when the coercion can be performed with no loss of precision, e.g. `1.0 -> 1`.
+* `String` to `Int`/`Float`, when the coercion can be performed with no loss of precision.
+* `X?` may be coerced to `X`, and an error is raised if the value is undefined.
+* `Array[X]` to `Array[X]+`, when the array is non-empty (an error is raised otherwise).
+* `Map[W, X]` to `Array[Pair[Y, Z]]`, in the case where `W` is coercible to `Y` and `X` is coercible to `Z`.
+* `Array[Pair[W, X]]` to `Map[Y, Z]`, in the case where `W` is coercible to `Y` and `X` is coercible to `Z`.
+* `Map` to `Object`, in the case of `Map[String, X]`.
+* `Map` to struct, in the case of `Map[String, X]` where all members of the struct have type `X`.
+* `Object` to `Map[String, X]`, in the case where all object values are of (or are coercible to) the same type.
 
 ### Declarations
 
@@ -2633,8 +2686,8 @@ workflow wf {
   call other.other_workflow
   call other.other_workflow as other_workflow2
   output {
-    test.results
-    foobar.results
+    File test.results
+    File foobar.results
   }
   scatter(x in arr) {
     call test as scattered_test {
@@ -5335,7 +5388,7 @@ Where `/jobs/564758/bams.json` would contain:
 
 `read_lines()` will return an `Array[String]` where each element in the array is a line in the file.
 
-This return value can be auto converted to other `Array` values.  For example:
+This return value can be immediately coerced to an `Array[P]` value, where `P` is another primitive type. For example:
 
 ```wdl
 task test {
@@ -5358,6 +5411,8 @@ task test {
 ```
 
 `my_ints` would contain ten random integers ranging from 0 to 10.
+
+It is strongly recommended to instead use `read_json` to read a JSON file containing an array, as described in the next section.
 
 #### Array deserialization using read_json()
 
