@@ -4,10 +4,10 @@ This is version 1.1 of the Workflow Description Language (WDL) specification. It
 
 ## Revisions
 
-Revisions to this specification are made periodically in order to correct errors, clarify language, or add additional examples. No functionality is added or removed after the initial revision of the specification (rev0) is ratified.
+Revisions to this specification are made periodically in order to correct errors, clarify language, or add additional examples. Revisions are released as "patches" to the specification, i.e. the third number in the version is incremented. No functionality is added or removed after the initial revision of the specification is ratified.
 
-* [rev1](https://github.com/openwdl/wdl/blob/main/versions/1.1/SPEC.md): current version of the specification
-* [rev0](https://github.com/openwdl/wdl/blob/1.1/versions/1.1/SPEC.md): 2021-01-29
+* [1.1.1](https://github.com/openwdl/wdl/blob/main/versions/1.1/SPEC.md): current version of the specification
+* [1.1.0](https://github.com/openwdl/wdl/blob/1.1/versions/1.1/SPEC.md): 2021-01-29
   * [errata](https://github.com/openwdl/wdl/blob/1.1/versions/1.1/Errata.md)
 
 ## Table of Contents
@@ -1384,6 +1384,8 @@ version 1.1
 ```
 
 A WDL file that does not have a `version` statement must be treated as `draft-2`.
+
+Since patches to the WDL specification do not change any functionality, all revisions that carry the same major and minor version numbers are considered equivalent. For example, `version 1.1` is used for a WDL document that adheres to the `1.1.x` specification, regardless of the value of `x`.
 
 ## Import Statements
 
