@@ -30,6 +30,49 @@ And the WDL would be:
 Array[Int] ints = read_json("ints.json")
 ```
 
+## Workflow Definition
+
+### Workflow Outputs
+
+The example for `main.wdl` incorrectly uses workflow output syntax that was deprecated in Draft-2 and removed in 1.0. It should be:
+
+```wdl
+import "other.wdl" as other
+
+task test {
+  input {
+    String my_var
+  }
+  command <<<
+    ./script ~{my_var}
+  >>>
+  output {
+    File results = stdout()
+  }
+  runtime {
+    container: "my_image:latest"
+  }
+}
+
+workflow wf {
+  Array[String] arr = ["a", "b", "c"]
+  call test
+  call test as test2
+  call other.foobar
+  call other.other_workflow
+  call other.other_workflow as other_workflow2
+  output {
+    File test_results = test.results
+    File foobar_results = foobar.results
+  }
+  scatter(x in arr) {
+    call test as scattered_test {
+      input: my_var = x
+    }
+  }
+}
+```
+
 ### Missing sections
 
 The following sub-sections are missing from the Type Coercions section of the spec.
