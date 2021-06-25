@@ -256,7 +256,8 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
   </summary>
    
   <p>
-  Example input: 
+  Example input:
+  
   ```json
   {
     "wf.infile": "greetings.txt",
@@ -265,6 +266,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
   ```
    
   Example output:
+
   ```json
   {
     "expected output": ["hello world", "hello nurse"]
