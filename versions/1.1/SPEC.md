@@ -269,7 +269,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
 
   ```json
   {
-    "wf.output": ["hello world", "hello nurse"]
+    "wf.matches": ["hello world", "hello nurse"]
   }
   ``` 
   </p>
@@ -288,24 +288,24 @@ To execute this workflow, a WDL execution engine must be used (sometimes called 
 
 Along with the WDL file, the user must provide the execution engine with values for the two input parameters. While implementations may provide their own mechanisms for launching workflows, all implementations minimally accept [inputs as JSON format](#json-input-format), which requires that the input arguments be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example:
 
-|Variable     |Value    |
-|-------------|---------|
-|wf.pattern   |^[a-z]+$ |
-|wf.infile    |/file.txt|
+|Variable     |Value        |
+|-------------|-------------|
+|wf.pattern   |hello.*      |
+|wf.infile    |greetings.txt|
 
 Or, in JSON format:
 
 ```json
 {
-  "wf.pattern": "^[a-z]+$",
-  "wf.infile": "/file.txt"
+  "wf.pattern": "hello.*",
+  "wf.infile": "greetings.txt"
 }
 ```
 
 Running `workflow wf` with these inputs would yield the following command line from the call to `task hello`:
 
 ```sh
-egrep '^[a-z]+$' '/file.txt'
+egrep 'hello.*' 'greetings.txt'
 ```
 
 And would result in (JSON) output that looks like:
@@ -313,8 +313,8 @@ And would result in (JSON) output that looks like:
 ```json
 {
   "wf.matches": [
-    "hello",
-    "world"
+    "hello world",
+    "hello nurse"
   ]
 }
 ```
