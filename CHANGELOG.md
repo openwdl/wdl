@@ -35,6 +35,13 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
+version 1.1.1
+---------------------------
+
++ Applied [Errata](versions/1.1/Errata.md) to the [1.1.0 spec](versions/1.1/SPEC.md).
+ 
++ Added section describing revisions to the specification. 
+
 version 1.1.0
 ---------------------------
 
