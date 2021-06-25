@@ -213,41 +213,65 @@ Here is provided a short example of WDL, after which are several sections that p
 
 Below is the code for the "Hello World" workflow in WDL. This is just meant to give a flavor of WDL syntax and capabilities - all WDL elements are described in detail in the [Language Specification](#wdl-language-specification).
 
-```wdl
-task hello {
-  input {
-    File infile
-    String pattern
+<details>
+  <summary>
+  Example: hello.wdl
+      
+  ```wdl
+  task hello {
+    input {
+      File infile
+      String pattern
+    }
+
+    command <<<
+      egrep '~{pattern}' '~{infile}'
+    >>>
+
+    runtime {
+      container: "my_image:latest"
+    }
+
+    output {
+      Array[String] matches = read_lines(stdout())
+    }
   }
 
-  command <<<
-    egrep '~{pattern}' '~{infile}'
-  >>>
+  workflow wf {
+    input {
+      File infile
+      String pattern
+    }
 
-  runtime {
-    container: "my_image:latest"
-  }
+    call hello {
+      input: infile, pattern
+    }
 
-  output {
-    Array[String] matches = read_lines(stdout())
+    output {
+      Array[String] matches = hello.matches
+    }
   }
-}
-
-workflow wf {
-  input {
-    File infile
-    String pattern
+  ```
+   
+  </summary>
+   
+  <p>
+  Example input: 
+  ```json
+  {
+    "wf.infile": "greetings.txt",
+    "wf.pattern": "hello.*"
   }
-
-  call hello {
-    input: infile, pattern
+  ```
+   
+  Example output:
+  ```json
+  {
+    "expected output": ["hello world", "hello nurse"]
   }
-
-  output {
-    Array[String] matches = hello.matches
-  }
-}
-```
+  ``` 
+  </p>
+</details>
 
 This WDL document describes a `task`, called `hello`, and a `workflow`, called `wf`.
 
