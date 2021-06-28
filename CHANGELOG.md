@@ -35,6 +35,9 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
++ Clarify how inputs with defaults are implicitly optional
+  [PR 464](https://github.com/openwdl/wdl/pull/464) by @mlin
+
 version 1.1.0
 ---------------------------
 
