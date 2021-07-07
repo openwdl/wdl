@@ -60,7 +60,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [`sep`](#sep)
         - [`true` and `false`](#true-and-false)
         - [`default`](#default)
-    - [Static and Dynamic Evaluation](#static-and-dynamic-evaluation)
+    - [Static Analysis and Dynamic Evaluation](#static-analysis-and-dynamic-evaluation)
   - [WDL Documents](#wdl-documents)
   - [Versioning](#versioning)
   - [Import Statements](#import-statements)
@@ -1374,14 +1374,14 @@ task default_example {
 }
 ```
 
-### Static and Dynamic Evaluation
+### Static Analysis and Dynamic Evaluation
 
-As with any strongly typed programming language, WDL has two distinct types of evaluation that are performed by the implementation: static and dynamic.
+As with any strongly typed programming language, WDL is processed in two distinct phases by the implementation: static analysis and dynamic evaluation.
 
-* Static evaluation is the process of parsing the WDL document and performing type inference - that is, making sure the WDL is syntactically correct, and that there is compatibility between the expected and actual types of all declarations, expressions, and calls.
+* Static analysis is the process of parsing the WDL document and performing type inference - that is, making sure the WDL is syntactically correct, and that there is compatibility between the expected and actual types of all declarations, expressions, and calls.
 * Dynamic evaluation is the process of evaluating all WDL expressions and calls at runtime, when all of the user-specified inputs are available.
 
-An implementation should raise an error as early as possible when evaluating a WDL document. For example, in the following task the `sub` function is being called with an `Int` argument rather than a `String`. This function call cannot be evaluated successfully, so the implementation should raise an error during static evaluation, rather than waiting until runtime.
+An implementation should raise an error as early as possible when processing a WDL document. For example, in the following task the `sub` function is being called with an `Int` argument rather than a `String`. This function call cannot be evaluated successfully, so the implementation should raise an error during static analysis, rather than waiting until runtime.
 
 ```wdl
 task bad_sub {
@@ -1810,12 +1810,12 @@ task test {
 }
 ```
 
-Like any other WDL string, the command section is subject to the rules of [string interpolation](#expression-placeholders-and-string-interpolation): all placeholders must contain expressions that are valid when evaluated statically, and that can be converted to a `String` value when evaluated dynamically. However, the evaluation of placeholder expressions during command instantiation is more lenient than typical dynamic evaluation in two respects:
+Like any other WDL string, the command section is subject to the rules of [string interpolation](#expression-placeholders-and-string-interpolation): all placeholders must contain expressions that are valid when analyzed statically, and that can be converted to a `String` value when evaluated dynamically. However, the evaluation of placeholder expressions during command instantiation is more lenient than typical dynamic evaluation in two respects:
 
 * The type conversion rules are relaxed so that any primitive placeholder value is automatically converted to a `String`. Compound values must be somehow converted to primitive values. In some cases, this is not possible, and the only available mechanism is to write the complex output to a file. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for details.
 * If any part of a placeholder expression evaluates to an undefined value, the entire placeholder is replaced by the empty string rather than raising an error.
 
-Note that the implementation is *not* responsible for interpreting the contents of the command section to check that it is a valid Bash script, ignore comment lines, etc. For example, in the following task the `greeting` declaration is commented out, so `greeting` is not a valid identifier in the task's scope. However, the placeholder in the command section refers to `greeting`, so the implementation will raise an error during static evaluation. The fact that the placeholder occurs in a commented line of the Bash script doesn't matter.
+Note that the implementation is *not* responsible for interpreting the contents of the command section to check that it is a valid Bash script, ignore comment lines, etc. For example, in the following task the `greeting` declaration is commented out, so `greeting` is not a valid identifier in the task's scope. However, the placeholder in the command section refers to `greeting`, so the implementation will raise an error during static analysis. The fact that the placeholder occurs in a commented line of the Bash script doesn't matter.
 
 ```wdl
 task missing_declaration {
