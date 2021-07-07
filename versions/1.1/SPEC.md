@@ -60,6 +60,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [`sep`](#sep)
         - [`true` and `false`](#true-and-false)
         - [`default`](#default)
+    - [Static and Dynamic Evaluation](#static-and-dynamic-evaluation)
   - [WDL Documents](#wdl-documents)
   - [Versioning](#versioning)
   - [Import Statements](#import-statements)
@@ -1373,6 +1374,34 @@ task default_example {
 }
 ```
 
+### Static and Dynamic Evaluation
+
+As with any strongly typed programming language, WDL has two distinct types of evaluation that are performed by the implementation: static and dynamic.
+
+* Static evaluation is the process of parsing the WDL document and performing type inference - that is, making sure the WDL is syntactically correct, and that there is compatibility between the expected and actual types of all declarations, expressions, and calls.
+* Dynamic evaluation is the process of evaluating all WDL expressions and calls at runtime, when all of the user-specified inputs are available.
+
+An implementation should raise an error as early as possible when evaluating a WDL document. For example, in the following task the `sub` function is being called with an `Int` argument rather than a `String`. This function call cannot be evaluated successfully, so the implementation should raise an error during static evaluation, rather than waiting until runtime.
+
+```wdl
+task bad_sub {
+  Int i = 111222333
+  String s = sub(i, "2", "4")
+}
+```
+
+On the other hand, in the following example all of the types are compatible, but if the `hello.txt` file does not exist at runtime (when the implementation instantiates the command and tries to evaluate the call to `read_lines`), then an error will be raised.
+
+```wdl
+task missing_file {
+  File f = "hello.txt"
+
+  command <<<
+  echo "~{sep(","), read_lines(f)}"
+  >>>
+}
+```
+
 ## WDL Documents
 
 A WDL document is a file that contains valid WDL definitions.
@@ -1781,11 +1810,26 @@ task test {
 }
 ```
 
-Keep in mind that the command section is still subject to the rules of [string interpolation](#expression-placeholders-and-string-interpolation): ultimately, the value of the placeholder must be converted to a string. This is immediately possible for primitive values, but compound values must be somehow converted to primitive values. In some cases, this is not possible, and the only available mechanism is to write the complex output to a file. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for details.
+Like any other WDL string, the command section is subject to the rules of [string interpolation](#expression-placeholders-and-string-interpolation): all placeholders must contain expressions that are valid when evaluated statically, and that can be converted to a `String` value when evaluated dynamically. However, the evaluation of placeholder expressions during command instantiation is more lenient than typical dynamic evaluation in two respects:
+
+* The type conversion rules are relaxed so that any primitive placeholder value is automatically converted to a `String`. Compound values must be somehow converted to primitive values. In some cases, this is not possible, and the only available mechanism is to write the complex output to a file. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for details.
+* If any part of a placeholder expression evaluates to an undefined value, the entire placeholder is replaced by the empty string rather than raising an exception.
+
+Note that the implementation is *not* responsible for interpreting the contents of the command section to check that it is a valid Bash script, ignore comment lines, etc. For example, the following task would result in an error when evaluated statically. The command section is treated as a `String`, and so the implementation expects the `greeting` identifier in the placeholder to refer to a WDL declaration; however, the declaration of `greeting` is commented out so the WDL parser ignores it. The implementation is not responsible for determining that the line of the Bash script that references `greeting` is commented out.
+
+```wdl
+task missing_declaration {
+  # String greeting = "hello"
+
+  command <<<
+  # echo "~{greeting} John!"
+  >>>
+}
+```
 
 #### Stripping Leading Whitespace
 
-When a command template is evaluate, the execution engine first strips out all *common leading whitespace*.
+When a command template is evaluated, the execution engine first strips out all *common leading whitespace*.
 
 For example, consider a task that calls the `python` interpreter with an in-line Python script:
 
