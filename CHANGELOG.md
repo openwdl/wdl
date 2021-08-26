@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version development
 ---------------------------
 
++ Fixed description of ternary operator to say that the type, not the value,
+  of the if-then-else is the same regardless of which side is evaluated.
+
 + Lexer rule BeginWhitespace now matches non-empty string.
   [PR 440](https://github.com/openwdl/wdl/pull/440) by @yunhailuo
 
