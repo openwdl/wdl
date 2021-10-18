@@ -219,7 +219,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
   Example: hello.wdl
       
   ```wdl
-  task hello {
+  task hello_task {
     input {
       File infile
       String pattern
@@ -230,7 +230,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
     >>>
 
     runtime {
-      container: "my_image:latest"
+      container: "ubuntu:latest"
     }
 
     output {
@@ -238,31 +238,29 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
     }
   }
 
-  workflow wf {
+  workflow hello {
     input {
       File infile
       String pattern
     }
 
-    call hello {
+    call hello_task {
       input: infile, pattern
     }
 
     output {
-      Array[String] matches = hello.matches
+      Array[String] matches = hello_task.matches
     }
   }
   ```
-   
   </summary>
-   
   <p>
   Example input:
 
   ```json
   {
-    "wf.infile": "greetings.txt",
-    "wf.pattern": "hello.*"
+    "hello.infile": "greetings.txt",
+    "hello.pattern": "hello.*"
   }
   ```
    
@@ -270,18 +268,20 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
 
   ```json
   {
-    "wf.matches": ["hello world", "hello nurse"]
+    "hello.matches": ["hello world", "hello nurse"]
   }
   ``` 
   </p>
 </details>
 
-This WDL document describes a `task`, called `hello`, and a `workflow`, called `wf`.
+*Note*: you can click the arrow next to the name of any example to expand it and see supplementary information, such as example inputs and outputs.
+
+This WDL document describes a `task`, called `hello_task`, and a `workflow`, called `hello`.
 
 * A `task` encapsulates a Bash script and a UNIX environment and presents them as a reusable function.
 * A `workflow` encapsulates a (directed, acyclic) graph of task calls that transforms input data to the desired outputs.
 
-Both workflows and tasks can accept input parameters and produce outputs. For example, `workflow wf` has two input parameters, `File infile` and `String pattern`, and one output parameter, `Array[String] matches`. This simple workflow calls `task hello`, passing through the workflow inputs to the task inputs, and using the results of `call hello` as the workflow output.
+Both workflows and tasks can accept input parameters and produce outputs. For example, `workflow hello` has two input parameters, `File infile` and `String pattern`, and one output parameter, `Array[String] matches`. This simple workflow calls `task hello_task`, passing through the workflow inputs to the task inputs, and using the results of `call hello_task` as the workflow output.
 
 ### Executing a WDL Workflow
 
@@ -289,73 +289,71 @@ To execute this workflow, a WDL execution engine must be used (sometimes called 
 
 Along with the WDL file, the user must provide the execution engine with values for the two input parameters. While implementations may provide their own mechanisms for launching workflows, all implementations minimally accept [inputs as JSON format](#json-input-format), which requires that the input arguments be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example:
 
-|Variable     |Value        |
-|-------------|-------------|
-|wf.pattern   |hello.*      |
-|wf.infile    |greetings.txt|
+| Variable      | Value         |
+| ------------- | ------------- |
+| hello.pattern | hello.*       |
+| hello.infile  | greetings.txt |
 
-Or, in JSON format:
-
-```json
-{
-  "wf.pattern": "hello.*",
-  "wf.infile": "greetings.txt"
-}
-```
-
-Running `workflow wf` with these inputs would yield the following command line from the call to `task hello`:
+Running `workflow hello` with these inputs would yield the following command line from the call to `task hello_task`:
 
 ```sh
 egrep 'hello.*' 'greetings.txt'
 ```
 
-And would result in (JSON) output that looks like:
-
-```json
-{
-  "wf.matches": [
-    "hello world",
-    "hello nurse"
-  ]
-}
-```
-
 ### Advanced WDL Features
 
-WDL also provides features for implementing more complex workflows. For example, `task hello` introduced in the previous example can be called in parallel across many different input files using the well-known [scatter-gather](https://en.wikipedia.org/wiki/Vectored_I/O#:~:text=In%20computing%2C%20vectored%20I%2FO,in%20a%20vector%20of%20buffers) pattern:
+WDL also provides features for implementing more complex workflows. For example, `hello_task` introduced in the previous example can be called in parallel across many different input files using the well-known [scatter-gather](https://en.wikipedia.org/wiki/Vectored_I/O#:~:text=In%20computing%2C%20vectored%20I%2FO,in%20a%20vector%20of%20buffers) pattern:
 
-```wdl
-workflow wf_parallel {
-  input {
-    Array[File] files
-    String pattern
-  }
+<details>
+  <summary>
+  Example: hello_parallel.wdl
   
-  scatter (path in files) {
-    call hello {
-      input: 
-        infile = path,
-        pattern = pattern
+  ```wdl
+  import hello.wdl
+
+  workflow hello_parallel {
+    input {
+      Array[File] files
+      String pattern
+    }
+    
+    scatter (path in files) {
+      call hello.hello_task {
+        input: 
+          infile = path,
+          pattern = pattern
+      }
+    }
+
+    output {
+      # WDL implicitly implements the 'gather' step, so the output of 
+      # a scatter is always an array with the elements in the same 
+      # order as the input array. Since hello_task.matches is an array,
+      # all the results will be gathered into an array-of-arrays.
+      Array[Array[String]] all_matches = hello_task.matches
     }
   }
-
-  output {
-    # WDL implicitly implements the 'gather' step, so
-    # the output of a scatter is always an array with
-    # elements in the same order as the input array
-    Array[Array[String]] all_matches = hello.matches
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {
+    "hello_parallel.pattern": "^[a-z_]+$",
+    "hello_parallel.infile": ["/greetings.txt", "greetings2.txt"]
   }
-}
-```
-
-The inputs to this workflow might look like:
-
-```json
-{
-  "wf_parallel.pattern": "^[a-z]+$",
-  "wf_parallel.infile": ["/file1.txt", "/file2.txt"]
-}
-```
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "hello.matches": [["hi_world"], ["hi_pal"]]
+  }
+  ```
+  </p>
+</details>
 
 # WDL Language Specification
 
@@ -382,19 +380,19 @@ $string = "([^\\\"\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-
 $string = '([^\\\'\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'
 ```
 
-Tasks and workflow inputs may be passed in from an external source, or they may be specified in the WDL document itself using literal values. Input, output, and other declaration values may also be constructed at runtime using [expressions](#expressions) that consist of literals, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), built-in [operators](#operator-precedence-table), and [standard library functions](#standard-library).
+Task and workflow inputs may be passed in from an external source, or they may be specified in the WDL document itself using literal values. Input, output, and other declaration values may also be constructed at runtime using [expressions](#expressions) that consist of literals, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), built-in [operators](#operator-precedence-table), and [standard library functions](#standard-library).
 
 #### Strings
 
 A string literal may contain any unicode characters between single or double-quotes, with the exception of a few special characters that must be escaped:
 
-| Escape Sequence | Meaning | \x Equivalent | Context |
-|----|---|------|--|
-|`\\`|`\`|`\x5C`||
-|`\n`|newline|`\x0A`||
-|`\t`|tab|`\x09`||
-|`\'`|single quote|`\x22`|within a single-quoted string|
-|`\"`|double quote|`\x27`|within a double-quoted string|
+| Escape Sequence | Meaning      | \x Equivalent | Context                       |
+| --------------- | ------------ | ------------- | ----------------------------- |
+| `\\`            | `\`          | `\x5C`        |                               |
+| `\n`            | newline      | `\x0A`        |                               |
+| `\t`            | tab          | `\x09`        |                               |
+| `\'`            | single quote | `\x22`        | within a single-quoted string |
+| `\"`            | double quote | `\x27`        | within a double-quoted string |
 
 Strings can also contain the following types of escape sequences:
 
@@ -408,56 +406,82 @@ Comments can be used to provide helpful information such as workflow usage, requ
 
 There is no special syntax for multi-line comments - simply use a `#` at the start of each line.
 
-```wdl
-# Comments are allowed before versions
-
-version 1.0
-
-# This is how you would
-# write a long
-# multiline
-# comment
-
-task test {
-  #This comment will not be included within the command
-  command <<<
-    #This comment WILL be included within the command after it has been parsed
-    echo 'Hello World'
-  >>>
-
-  output {
-    String result = read_string(stdout())
-  }
-    
-  runtime {
-    container: "my_image:latest"
-  }
-}
-
-workflow wf {
-  input {
-    Int number  #This comment comes after a variable declaration
-  }
-
-  #You can have comments anywhere in the workflow
-  call test
+<details>
+  <summary>
+  Example: workflow_with_comments.wdl
   
-  output { #You can also put comments after braces
-    String result = test.result
+  ```wdl
+  # Comments are allowed before version
+  version 1.0
+
+  # This is how you
+  # write a long
+  # multiline
+  # comment
+
+  task task_with_comments {
+    input {
+      Int number  #This comment comes after a variable declaration
+    }
+
+    #This comment will not be included within the command
+    command <<<
+      #This comment WILL be included within the command after it has been parsed
+      cat ~{number * 2}
+    >>>
+
+    output {
+      Int result = read_int(stdout())
+    }
+      
+    runtime {
+      container: "ubuntu:latest"
+    }
   }
-}
-```
+
+  workflow workflow_with_comments {
+    input {
+      Int number
+    }
+
+    #You can have comments anywhere in the workflow
+    call task_with_comments { input: number }
+    
+    output { #You can also put comments after braces
+      Int result = task_with_comments.result
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {
+    "workflow_with_comments.number": 1
+  }
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "workflow_with_comments.result": 2
+  }
+  ```
+  </p>
+</details>
 
 ### Reserved Keywords
 
-The following language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, or struct types & aliases.
+The following language keywords (case-sensitive) are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, or struct types & aliases.
 
 ```
 Array Boolean Float Int Map None Object Pair String
 
 alias as call command else false if in import input 
 left meta object output parameter_meta right runtime 
-scatter struct task then true workflow
+scatter struct task then true version workflow
 ```
 
 The following keywords should also be considered as reserved - they are not used in the current version of the specification, but they will be used in a future version:
@@ -469,7 +493,7 @@ The following keywords should also be considered as reserved - they are not used
 
 A [declaration](#declarations) is a name that the user reserves in a given [scope](#appendix-b-wdl-namespaces-and-scopes) to hold a value of a certain type. In WDL *all* declarations (including inputs and outputs) must be typed. This means that the information about the type of data that may be held by each declarations must be specified explicitly.
 
-In WDL *all* types represent immutable values. For example, a `File` represent a logical "snapshot" of the file at the time when the value was created. It's impossible for a task to change an upstream value that has been provided as an input - even if it modifies its local copy, the original value is unaffected.
+In WDL *all* types represent immutable values. For example, a `File` represents a logical "snapshot" of the file at the time when the value was created. It is impossible for a task to change an upstream value that has been provided as an input - even if it modifies its local copy, the original value is unaffected.
 
 #### Primitive Types
 
@@ -486,35 +510,110 @@ The following primitive types exist in WDL:
 
 Examples:
 
-```wdl
-Boolean b = true 
-Int i = 0
-Float f = 27.3
-String s = "hello, world"
-File f = "path/to/file"
-```
+<details>
+  <summary>
+  Example: primitive_literals.wdl
+  
+  ```wdl
+  task primitive_literals_task {
+    command <<<
+    echo "hello" > foo.txt
+    >>>
+
+    output {
+      Boolean b = true 
+      Int i = 0
+      Float f = 27.3
+      String s = "hello, world"
+      File x = "foo.txt"
+    }
+  }
+
+  workflow primitive_literals {
+    call primitive_literals_task as p
+
+    output {
+      Boolean b = p.b
+      Int i = p.i
+      Float f = p.f
+      String s = p.s
+      File x = p.x
+    }  
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {}
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "primitive_literals.b": true,
+    "primitive_literals.i": 0,
+    "primitive_literals.f": 27.3,
+    "primitive_literals.s": "hello, world",
+    "primitive_literals.x": "foo.txt"
+  }
+  ```
+  </p>
+</details>
 
 #### Optional Types and None
 
-A type may have a `?` postfix quantifier, which means that its value is allowed to be undefined without causing an error. It can only be used in calls or functions that accept optional values.
+A type may have a `?` postfix quantifier, which means that its value is allowed to be undefined without causing an error. A declaration with an optional type can only be used in calls or functions that accept optional values.
 
 WDL has a special value `None` whose meaning is "an undefined value". The type of the `None` value is `Any`, meaning `None` can be assigned to an optional declaration of any type. The `None` value is the only value that can be of type `Any`.
 
 An optional declaration has a default initialization of `None`, which indicates that it is undefined. An optional declaration may be initialized to any literal or expression of the correct type, including the special `None` value.
 
-```wdl
-Int certainly_five = 5      # an non-optional declaration
-Int? maybe_five_and_is = 5  # a defined optional declaration
+<details>
+  <summary>
+  Example: optionals.wdl
+  
+  ```wdl
+  workflow optionals {
+    input {
+      Int certainly_five = 5      # an non-optional declaration
+      Int? maybe_five_and_is = 5  # a defined optional declaration
 
-# the following are equivalent undefined optional declarations
-String? maybe_five_but_is_not
-String? maybe_five_but_is_not = None
+      # the following are equivalent undefined optional declarations
+      String? maybe_five_but_is_not
+      String? also_maybe_five_but_is_not = None
+    }
 
-Boolean test_defined = defined(maybe_five_but_is_not) # Evaluates to false
-Boolean test_defined2 = defined(maybe_five_and_is)    # Evaluates to true
-Boolean test_is_none = maybe_five_but_is_not == None  # Evaluates to true
-Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false
-```
+    output {
+      Boolean test_defined = defined(maybe_five_but_is_not) # Evaluates to false
+      Boolean test_defined2 = defined(maybe_five_and_is)    # Evaluates to true
+      Boolean test_is_none = maybe_five_but_is_not == None  # Evaluates to true
+      Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {}
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "optionals.test_defined": false,
+    "optionals.test_defined2": true,
+    "optionals.test_is_none": true,
+    "optionals.test_not_none": false,
+  }
+  ```
+  </p>
+</details>
 
 For more details, see the sections on [Input Type Constraints](#input-type-constraints) and [Optional Inputs with Defaults](#optional-inputs-with-defaults).
 
@@ -528,14 +627,71 @@ An `Array` represents an ordered list of elements that are all of the same type.
 
 An array value can be initialized with an array literal - a comma-separated list of values in brackets (`[]`). A specific zero-based index of an `Array` can be accessed by placing the index in brackets after the declaration name. Accessing a non-existent index of an `Array` results in an error.
 
-```wdl
-Array[File] files = ["/path/to/file1", "/path/to/file2"]
-File f = files[0]  # evaluates to "/path/to/file1"
+<details>
+  <summary>
+  Example: array_access.wdl
+  
+  ```wdl
+  workflow array_access {
+    input {
+      Array[String] strings
+      Int index
+    }
 
-Array[Int] empty = []
-# this causes an error - trying to access a non-existent array element
-Int i = empty[0]
-```
+    output {
+      String s = strings[index]
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {
+    "array_access.strings": ["hello", "world"],
+    "array_access.index": 0
+  }
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "array_access.s": "hello"
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: empty_array_fail.wdl
+  
+  ```wdl
+  workflow empty_array_fail {
+    Array[Int] empty = []
+    
+    output {
+      # this causes an error - trying to access a non-existent array element
+      Int i = empty[0]
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {}
+  ```
+  
+  Example output:
+  
+  ```json
+  ```
+  </p>
+</details>
 
 An `Array` may have an empty value (i.e. an array of length zero), unless it is declared using `+`, the non-empty postfix quantifier, which represents a constraint that the `Array` value must contain one-or-more elements. For example, the following task operates on an `Array` of `File`s and it requires at least one file to function:
 
@@ -686,21 +842,21 @@ File f = path
 
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
-|Target Type |Source Type     |Notes/Constraints |
-|------------|----------------|------------------|
-|`File`|`String`||
-|`Float`|`Int`|May cause overflow error|
-|`Y?`|`X`|`X` must be coercible to `Y`|
-|`Array[Y]`|`Array[X]`|`X` must be coercible to `Y`|
-|`Array[Y]`|`Array[X]+`|`X` must be coercible to `Y`|
-|`Map[X,Z]`|`Map[W,Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
-|`Pair[X,Z]`|`Pair[W,Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
-|`Struct`|`Map[String,Y]`|`Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`|
-|`Map[String,Y]`|`Struct`|All `Struct` members must be coercible to `Y`|
-|`Object`|`Map[String,Y]`|🗑|
-|`Map[String,Y]`|`Object`|🗑 All object values must be coercible to `Y`|
-|`Object`|`Struct`|🗑|
-|`Struct`|`Object`|🗑 `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types|
+| Target Type     | Source Type     | Notes/Constraints                                                                                                |
+| --------------- | --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `File`          | `String`        |                                                                                                                  |
+| `Float`         | `Int`           | May cause overflow error                                                                                         |
+| `Y?`            | `X`             | `X` must be coercible to `Y`                                                                                     |
+| `Array[Y]`      | `Array[X]`      | `X` must be coercible to `Y`                                                                                     |
+| `Array[Y]`      | `Array[X]+`     | `X` must be coercible to `Y`                                                                                     |
+| `Map[X,Z]`      | `Map[W,Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                    |
+| `Pair[X,Z]`     | `Pair[W,Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                    |
+| `Struct`        | `Map[String,Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`           |
+| `Map[String,Y]` | `Struct`        | All `Struct` members must be coercible to `Y`                                                                    |
+| `Object`        | `Map[String,Y]` | 🗑                                                                                                                |
+| `Map[String,Y]` | `Object`        | 🗑 All object values must be coercible to `Y`                                                                     |
+| `Object`        | `Struct`        | 🗑                                                                                                                |
+| `Struct`        | `Object`        | 🗑 `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
 
 Note that the [`read_lines`](#arraystring-read_linesstringfile) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
 
@@ -935,85 +1091,85 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 
 ##### Unary Operators
 
-|Operator|RHS Type|Result|
-|--------|--------|------|
-|`-`|`Float`|`Float`|
-|`-`|`Int`|`Int`|
-|`!`|`Boolean`|`Boolean`|
+| Operator | RHS Type  | Result    |
+| -------- | --------- | --------- |
+| `-`      | `Float`   | `Float`   |
+| `-`      | `Int`     | `Int`     |
+| `!`      | `Boolean` | `Boolean` |
 
 ##### Binary Operators on Primitive Types
 
-|LHS Type|Operator|RHS Type|Result|Semantics|
-|--------|--------|--------|------|---------|
-|`Boolean`|`==`|`Boolean`|`Boolean`||
-|`Boolean`|`!=`|`Boolean`|`Boolean`||
-|`Boolean`|`\|\|`|`Boolean`|`Boolean`||
-|`Boolean`|`&&`|`Boolean`|`Boolean`||
-|🗑 `Boolean`|`>`|`Boolean`|`Boolean`|true is greater than false|
-|🗑 `Boolean`|`>=`|`Boolean`|`Boolean`|true is greater than false|
-|🗑 `Boolean`|`<`|`Boolean`|`Boolean`|true is greater than false|
-|🗑 `Boolean`|`<=`|`Boolean`|`Boolean`|true is greater than false|
-|`Int`|`+`|`Int`|`Int`||
-|`Int`|`-`|`Int`|`Int`||
-|`Int`|`*`|`Int`|`Int`||
-|`Int`|`/`|`Int`|`Int`|Integer division|
-|`Int`|`%`|`Int`|`Int`|Integer division, return remainder|
-|`Int`|`==`|`Int`|`Boolean`||
-|`Int`|`!=`|`Int`|`Boolean`||
-|`Int`|`>`|`Int`|`Boolean`||
-|`Int`|`>=`|`Int`|`Boolean`||
-|`Int`|`<`|`Int`|`Boolean`||
-|`Int`|`<=`|`Int`|`Boolean`||
-|🗑 `Int`|`+`|`String`|`String`||
-|`Int`|`+`|`Float`|`Float`||
-|`Int`|`-`|`Float`|`Float`||
-|`Int`|`*`|`Float`|`Float`||
-|`Int`|`/`|`Float`|`Float`||
-|`Int`|`==`|`Float`|`Boolean`||
-|`Int`|`!=`|`Float`|`Boolean`||
-|`Int`|`>`|`Float`|`Boolean`||
-|`Int`|`>=`|`Float`|`Boolean`||
-|`Int`|`<`|`Float`|`Boolean`||
-|`Int`|`<=`|`Float`|`Boolean`||
-|`Float`|`+`|`Float`|`Float`||
-|`Float`|`-`|`Float`|`Float`||
-|`Float`|`*`|`Float`|`Float`||
-|`Float`|`/`|`Float`|`Float`||
-|`Float`|`%`|`Float`|`Float`||
-|`Float`|`==`|`Float`|`Boolean`||
-|`Float`|`!=`|`Float`|`Boolean`||
-|`Float`|`>`|`Float`|`Boolean`||
-|`Float`|`>=`|`Float`|`Boolean`||
-|`Float`|`<`|`Float`|`Boolean`||
-|`Float`|`<=`|`Float`|`Boolean`||
-|🗑 `Float`|`+`|`String`|`String`||
-|`Float`|`+`|`Int`|`Float`||
-|`Float`|`-`|`Int`|`Float`||
-|`Float`|`*`|`Int`|`Float`||
-|`Float`|`/`|`Int`|`Float`||
-|`Float`|`%`|`Int`|`Float`||
-|`Float`|`==`|`Int`|`Boolean`||
-|`Float`|`!=`|`Int`|`Boolean`||
-|`Float`|`>`|`Int`|`Boolean`||
-|`Float`|`>=`|`Int`|`Boolean`||
-|`Float`|`<`|`Int`|`Boolean`||
-|`Float`|`<=`|`Int`|`Boolean`||
-|`String`|`+`|`String`|`String`|Concatenation|
-|`String`|`+`|`File`|`File`||
-|`String`|`==`|`String`|`Boolean`|Unicode comparison|
-|`String`|`!=`|`String`|`Boolean`|Unicode comparison|
-|`String`|`>`|`String`|`Boolean`|Unicode comparison|
-|`String`|`>=`|`String`|`Boolean`|Unicode comparison|
-|`String`|`<`|`String`|`Boolean`|Unicode comparison|
-|`String`|`<=`|`String`|`Boolean`|Unicode comparison|
-|🗑 `String`|`+`|`Int`|`String`||
-|🗑 `String`|`+`|`Float`|`String`||
-|`File`|`==`|`File`|`Boolean`||
-|`File`|`!=`|`File`|`Boolean`||
-|`File`|`==`|`String`|`Boolean`||
-|`File`|`!=`|`String`|`Boolean`||
-|🗑 `File`|`+`|`File`|`File`|append file paths - error if second path is not relative|
-|🗑 `File`|`+`|`String`|`File`|append file paths - error if second path is not relative|
+| LHS Type    | Operator | RHS Type  | Result    | Semantics                                                |
+| ----------- | -------- | --------- | --------- | -------------------------------------------------------- |
+| `Boolean`   | `==`     | `Boolean` | `Boolean` |                                                          |
+| `Boolean`   | `!=`     | `Boolean` | `Boolean` |                                                          |
+| `Boolean`   | `\|\|`   | `Boolean` | `Boolean` |                                                          |
+| `Boolean`   | `&&`     | `Boolean` | `Boolean` |                                                          |
+| 🗑 `Boolean` | `>`      | `Boolean` | `Boolean` | true is greater than false                               |
+| 🗑 `Boolean` | `>=`     | `Boolean` | `Boolean` | true is greater than false                               |
+| 🗑 `Boolean` | `<`      | `Boolean` | `Boolean` | true is greater than false                               |
+| 🗑 `Boolean` | `<=`     | `Boolean` | `Boolean` | true is greater than false                               |
+| `Int`       | `+`      | `Int`     | `Int`     |                                                          |
+| `Int`       | `-`      | `Int`     | `Int`     |                                                          |
+| `Int`       | `*`      | `Int`     | `Int`     |                                                          |
+| `Int`       | `/`      | `Int`     | `Int`     | Integer division                                         |
+| `Int`       | `%`      | `Int`     | `Int`     | Integer division, return remainder                       |
+| `Int`       | `==`     | `Int`     | `Boolean` |                                                          |
+| `Int`       | `!=`     | `Int`     | `Boolean` |                                                          |
+| `Int`       | `>`      | `Int`     | `Boolean` |                                                          |
+| `Int`       | `>=`     | `Int`     | `Boolean` |                                                          |
+| `Int`       | `<`      | `Int`     | `Boolean` |                                                          |
+| `Int`       | `<=`     | `Int`     | `Boolean` |                                                          |
+| 🗑 `Int`     | `+`      | `String`  | `String`  |                                                          |
+| `Int`       | `+`      | `Float`   | `Float`   |                                                          |
+| `Int`       | `-`      | `Float`   | `Float`   |                                                          |
+| `Int`       | `*`      | `Float`   | `Float`   |                                                          |
+| `Int`       | `/`      | `Float`   | `Float`   |                                                          |
+| `Int`       | `==`     | `Float`   | `Boolean` |                                                          |
+| `Int`       | `!=`     | `Float`   | `Boolean` |                                                          |
+| `Int`       | `>`      | `Float`   | `Boolean` |                                                          |
+| `Int`       | `>=`     | `Float`   | `Boolean` |                                                          |
+| `Int`       | `<`      | `Float`   | `Boolean` |                                                          |
+| `Int`       | `<=`     | `Float`   | `Boolean` |                                                          |
+| `Float`     | `+`      | `Float`   | `Float`   |                                                          |
+| `Float`     | `-`      | `Float`   | `Float`   |                                                          |
+| `Float`     | `*`      | `Float`   | `Float`   |                                                          |
+| `Float`     | `/`      | `Float`   | `Float`   |                                                          |
+| `Float`     | `%`      | `Float`   | `Float`   |                                                          |
+| `Float`     | `==`     | `Float`   | `Boolean` |                                                          |
+| `Float`     | `!=`     | `Float`   | `Boolean` |                                                          |
+| `Float`     | `>`      | `Float`   | `Boolean` |                                                          |
+| `Float`     | `>=`     | `Float`   | `Boolean` |                                                          |
+| `Float`     | `<`      | `Float`   | `Boolean` |                                                          |
+| `Float`     | `<=`     | `Float`   | `Boolean` |                                                          |
+| 🗑 `Float`   | `+`      | `String`  | `String`  |                                                          |
+| `Float`     | `+`      | `Int`     | `Float`   |                                                          |
+| `Float`     | `-`      | `Int`     | `Float`   |                                                          |
+| `Float`     | `*`      | `Int`     | `Float`   |                                                          |
+| `Float`     | `/`      | `Int`     | `Float`   |                                                          |
+| `Float`     | `%`      | `Int`     | `Float`   |                                                          |
+| `Float`     | `==`     | `Int`     | `Boolean` |                                                          |
+| `Float`     | `!=`     | `Int`     | `Boolean` |                                                          |
+| `Float`     | `>`      | `Int`     | `Boolean` |                                                          |
+| `Float`     | `>=`     | `Int`     | `Boolean` |                                                          |
+| `Float`     | `<`      | `Int`     | `Boolean` |                                                          |
+| `Float`     | `<=`     | `Int`     | `Boolean` |                                                          |
+| `String`    | `+`      | `String`  | `String`  | Concatenation                                            |
+| `String`    | `+`      | `File`    | `File`    |                                                          |
+| `String`    | `==`     | `String`  | `Boolean` | Unicode comparison                                       |
+| `String`    | `!=`     | `String`  | `Boolean` | Unicode comparison                                       |
+| `String`    | `>`      | `String`  | `Boolean` | Unicode comparison                                       |
+| `String`    | `>=`     | `String`  | `Boolean` | Unicode comparison                                       |
+| `String`    | `<`      | `String`  | `Boolean` | Unicode comparison                                       |
+| `String`    | `<=`     | `String`  | `Boolean` | Unicode comparison                                       |
+| 🗑 `String`  | `+`      | `Int`     | `String`  |                                                          |
+| 🗑 `String`  | `+`      | `Float`   | `String`  |                                                          |
+| `File`      | `==`     | `File`    | `Boolean` |                                                          |
+| `File`      | `!=`     | `File`    | `Boolean` |                                                          |
+| `File`      | `==`     | `String`  | `Boolean` |                                                          |
+| `File`      | `!=`     | `String`  | `Boolean` |                                                          |
+| 🗑 `File`    | `+`      | `File`    | `File`    | append file paths - error if second path is not relative |
+| 🗑 `File`    | `+`      | `String`  | `File`    | append file paths - error if second path is not relative |
 
 WDL `String`s are compared by the unicode values of their corresponding characters. Character `a` is less than character `b` if it has a lower unicode value.
 
@@ -1021,18 +1177,18 @@ Except for `String + File`, all concatenations between `String` and non-`String`
 
 ##### Equality of Compound Types
 
-|LHS Type|Operator|RHS Type|Result|
-|--------|--------|--------|------|
-|`Array`|`==`|`Array`|`Boolean`|
-|`Array`|`!=`|`Array`|`Boolean`|
-|`Map`|`==`|`Map`|`Boolean`|
-|`Map`|`!=`|`Map`|`Boolean`|
-|`Pair`|`==`|`Pair`|`Boolean`|
-|`Pair`|`!=`|`Pair`|`Boolean`|
-|`Struct`|`==`|`Struct`|`Boolean`|
-|`Struct`|`!=`|`Struct`|`Boolean`|
-|🗑`Object`|`==`|`Object`|`Boolean`|
-|🗑`Object`|`!=`|`Object`|`Boolean`|
+| LHS Type  | Operator | RHS Type | Result    |
+| --------- | -------- | -------- | --------- |
+| `Array`   | `==`     | `Array`  | `Boolean` |
+| `Array`   | `!=`     | `Array`  | `Boolean` |
+| `Map`     | `==`     | `Map`    | `Boolean` |
+| `Map`     | `!=`     | `Map`    | `Boolean` |
+| `Pair`    | `==`     | `Pair`   | `Boolean` |
+| `Pair`    | `!=`     | `Pair`   | `Boolean` |
+| `Struct`  | `==`     | `Struct` | `Boolean` |
+| `Struct`  | `!=`     | `Struct` | `Boolean` |
+| 🗑`Object` | `==`     | `Object` | `Boolean` |
+| 🗑`Object` | `!=`     | `Object` | `Boolean` |
 
 In general, two compound values are equal if-and-only-if all of the following are true:
 
@@ -1085,27 +1241,27 @@ Boolean is_false2 j == k
 
 #### Operator Precedence Table
 
-| Precedence | Operator type         | Associativity | Example              |
-|------------|-----------------------|---------------|----------------------|
-| 11         | Grouping              | n/a           | (x)                  |
-| 10         | Member Access         | left-to-right | x.y                  |
-| 9          | Index                 | left-to-right | x[y]                 |
-| 8          | Function Call         | left-to-right | x(y,z,...)           |
-| 7          | Logical NOT           | right-to-left | !x                   |
-|            | Unary Negation        | right-to-left | -x                   |
-| 6          | Multiplication        | left-to-right | x*y                  |
-|            | Division              | left-to-right | x/y                  |
-|            | Remainder             | left-to-right | x%y                  |
-| 5          | Addition              | left-to-right | x+y                  |
-|            | Subtraction           | left-to-right | x-y                  |
-| 4          | Less Than             | left-to-right | x<y                  |
-|            | Less Than Or Equal    | left-to-right | x<=y                 |
-|            | Greater Than          | left-to-right | x>y                  |
-|            | Greater Than Or Equal | left-to-right | x>=y                 |
-| 3          | Equality              | left-to-right | x==y                 |
-|            | Inequality            | left-to-right | x!=y                 |
-| 2          | Logical AND           | left-to-right | x&&y                 |
-| 1          | Logical OR            | left-to-right | x\|\|y               |
+| Precedence | Operator type         | Associativity | Example    |
+| ---------- | --------------------- | ------------- | ---------- |
+| 11         | Grouping              | n/a           | (x)        |
+| 10         | Member Access         | left-to-right | x.y        |
+| 9          | Index                 | left-to-right | x[y]       |
+| 8          | Function Call         | left-to-right | x(y,z,...) |
+| 7          | Logical NOT           | right-to-left | !x         |
+|            | Unary Negation        | right-to-left | -x         |
+| 6          | Multiplication        | left-to-right | x*y        |
+|            | Division              | left-to-right | x/y        |
+|            | Remainder             | left-to-right | x%y        |
+| 5          | Addition              | left-to-right | x+y        |
+|            | Subtraction           | left-to-right | x-y        |
+| 4          | Less Than             | left-to-right | x<y        |
+|            | Less Than Or Equal    | left-to-right | x<=y       |
+|            | Greater Than          | left-to-right | x>y        |
+|            | Greater Than Or Equal | left-to-right | x>=y       |
+| 3          | Equality              | left-to-right | x==y       |
+|            | Inequality            | left-to-right | x!=y       |
+| 2          | Logical AND           | left-to-right | x&&y       |
+| 1          | Logical OR            | left-to-right | x\|\|y     |
 
 #### Member Access
 
@@ -1485,11 +1641,11 @@ In the event that there is no protocol specified, the import is resolved **relat
 Some examples of correct import resolution:
 
 | Root Workflow Location                                | Imported Path                      | Resolved Path                                           |
-|-------------------------------------------------------|------------------------------------|--------------------------------------------------------|
-| /foo/bar/baz/qux.wdl                                  | some/task.wdl                      | /foo/bar/baz/some/task.wdl                               |
+| ----------------------------------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| /foo/bar/baz/qux.wdl                                  | some/task.wdl                      | /foo/bar/baz/some/task.wdl                              |
 | http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | subworkflow.wdl                    | http://www.github.com/openwdl/coolwdls/subworkflow.wdl  |
 | http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | /openwdl/otherwdls/subworkflow.wdl | http://www.github.com/openwdl/otherwdls/subworkflow.wdl |
-| /some/path/hello.wdl                                  | /another/path/world.wdl            | /another/path/world.wdl                                  |
+| /some/path/hello.wdl                                  | /another/path/world.wdl            | /another/path/world.wdl                                 |
 
 `Import` statements also support aliasing of structs using the `x as y` syntax. See [struct namespacing](#struct-namespacing) for details.
 
@@ -1557,14 +1713,38 @@ task t {
 
 #### Task Input Localization
 
-`File` inputs must be treated specially since they may require localization to the execution directory. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
+`File` inputs must be treated specially since they may require localization to the execution environment. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
 
-- Files are localized into the execution directory prior to the task execution commencing.
+- Files are localized into the execution environment prior to the task execution commencing.
 - When localizing a `File`, the engine may choose to place the file wherever it likes so long as it adheres to these rules:
   - The original file name must be preserved even if the path to it has changed.
   - Two input files with the same name must be located separately, to avoid name collision.
-  - Two input files that originated in the same storage directory must also be localized into the same directory for task execution (see the special case handling for Versioning Filesystems below).
+  - Two input files that have the same parent location must be localized into the same directory for task execution. For example, `http://foo.com/bar/a.txt` and `http://foo.com/bar/b.txt` have the same parent (`http://foo.com/bar/`), so they must be localized into the same directory. See below for special-case handling for Versioning Filesystems.
 - When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted when that declaration is referenced in the command template.
+
+Note that the above rules do not guarnatee that two files will be localized to the same directory unless they originate from the same parent location. If you are writing a task for a tool that assumes two files will be co-located, then it is safest to manually co-locate them prior to running the tool. For example, the following task runs a variant caller (`varcall`) on a BAM file and expects the BAM's index file (`.bai` extension) to be in the same directory as the BAM file.
+
+```wdl
+task call_variants_safe {
+  input {
+    File bam
+    File bai
+  }
+  
+  String filename = basename(bam, ".bam")
+
+  command <<<
+  mkdir workdir
+  ln -s ~{bam} workdir/~{filename}.bam
+  ln -s ~{bai} workdir/~{filename}.bai
+  varcall --bam workdir/~{filename}.bam > ~{filename}.vcf
+  >>>
+
+  output {
+    File vcf = "${filename}.vcf"
+  }
+}
+```
 
 ##### Special Case: Versioning Filesystem
 
@@ -1609,19 +1789,19 @@ task test {
 
 If these input values are provided:
 
-|input |value|
-|------|-----|
-|test.a|["1", "2", "3"]|
-|test.b|[]|
+| input  | value           |
+| ------ | --------------- |
+| test.a | ["1", "2", "3"] |
+| test.b | []              |
 
 It will result in an error, since `test.b` is required to have at least one element.
 
 On the other hand, if these input values are provided:
 
-|var   |value|
-|------|-----|
-|test.a|["1", "2", "3"]|
-|test.b|["x"]|
+| var    | value           |
+| ------ | --------------- |
+| test.a | ["1", "2", "3"] |
+| test.b | ["x"]           |
 
 The task will run successfully, because `test.c` is not required. Given these values, the command would be instantiated as:
 
@@ -1633,11 +1813,11 @@ The task will run successfully, because `test.c` is not required. Given these va
 
 If the inputs were:
 
-|var   |value|
-|------|-----|
-|test.a|["1", "2", "3"]|
-|test.b|["x","y"]|
-|test.c|["a","b","c","d"]|
+| var    | value             |
+| ------ | ----------------- |
+| test.a | ["1", "2", "3"]   |
+| test.b | ["x","y"]         |
+| test.c | ["a","b","c","d"] |
 
 Then the command would be instantiated as:
 
@@ -1751,10 +1931,10 @@ The body of the command section (i.e. the command "template") can be though of a
 
 There are two different syntaxes that can be used to define command expression placeholders, depending on which style of command section definition is used:
 
-|Command Definition Style|Placeholder Style|
-|---|---|
-|`command <<< >>>`|`~{}` only|
-|`command { ... }`|`~{}` (preferred) or `${}`|
+| Command Definition Style | Placeholder Style          |
+| ------------------------ | -------------------------- |
+| `command <<< >>>`        | `~{}` only                 |
+| `command { ... }`        | `~{}` (preferred) or `${}` |
 
 Note that the `~{}` and `${}` styles may be used interchangably in other string expressions.
 
@@ -2534,10 +2714,10 @@ task tmap_tool {
 
 Given the following inputs:
 
-|Variable|Value|
-|--------|-----|
-|reads   |/path/to/fastq|
-|stages  |["stage1 map1 --min-seq-length 20 map2 --min-seq-length 20", "stage2 map1 --max-seq-length 20 --min-seq-length 10 --seed-length 16  map2 --max-seed-hits -1 --max-seq-length 20 --min-seq-length 10"]|
+| Variable | Value                                                                                                                                                                                                 |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| reads    | /path/to/fastq                                                                                                                                                                                        |
+| stages   | ["stage1 map1 --min-seq-length 20 map2 --min-seq-length 20", "stage2 map1 --max-seq-length 20 --min-seq-length 10 --seed-length 16  map2 --max-seed-hits -1 --max-seq-length 20 --min-seq-length 10"] |
 
 This task produces a command line like this:
 
@@ -4032,11 +4212,11 @@ value_1\tvalue_2\tvalue_3
 
 Which are read into an `Object` with the following members:
 
-|Attribute|Value|
-|---------|-----|
-|key_1    |"value_1"|
-|key_2    |"value_2"|
-|key_3    |"value_3"|
+| Attribute | Value     |
+| --------- | --------- |
+| key_1     | "value_1" |
+| key_2     | "value_2" |
+| key_3     | "value_3" |
 
 ## 🗑 Array[Object] read_objects(String|File)
 
@@ -4085,30 +4265,30 @@ value_1\tvalue_2\tvalue_3
 
 Which are read into an `Array[Object]` with the following elements:
 
-|Index|Attribute|Value|
-|-----|---------|-----|
-|0    |key_1    |"value_1"|
-|     |key_2    |"value_2"|
-|     |key_3    |"value_3"|
-|1    |key_1    |"value_1"|
-|     |key_2    |"value_2"|
-|     |key_3    |"value_3"|
-|2    |key_1    |"value_1"|
-|     |key_2    |"value_2"|
-|     |key_3    |"value_3"|
+| Index | Attribute | Value     |
+| ----- | --------- | --------- |
+| 0     | key_1     | "value_1" |
+|       | key_2     | "value_2" |
+|       | key_3     | "value_3" |
+| 1     | key_1     | "value_1" |
+|       | key_2     | "value_2" |
+|       | key_3     | "value_3" |
+| 2     | key_1     | "value_1" |
+|       | key_2     | "value_2" |
+|       | key_3     | "value_3" |
 
 ## R read_json(String|File)
 
 Reads a JSON file into a WDL value whose type depends on the file's contents. The mapping of JSON type to WDL type is:
 
-|JSON Type|WDL Type|
-|---------|--------|
-|object|`Object`|
-|array|`Array[X]`|
-|number|`Int` or `Float`|
-|string|`String`|
-|boolean|`Boolean`|
-|null|`None`|
+| JSON Type | WDL Type         |
+| --------- | ---------------- |
+| object    | `Object`         |
+| array     | `Array[X]`       |
+| number    | `Int` or `Float` |
+| string    | `String`         |
+| boolean   | `Boolean`        |
+| null      | `None`           |
 
 The return value must be used in a context where it can be coerced to the expected type, or an error is raised. For example, if the JSON file contains `null`, then the return type will be `None`, meaning the value can only be used in a context where an optional type is expected.
 
@@ -4405,11 +4585,11 @@ The actual command line might look like:
 
 If `obj` has the following members:
 
-|Attribute|Value|
-|---------|-----|
-|key_1    |"value_1"|
-|key_2    |"value_2"|
-|key_3    |"value_3"|
+| Attribute | Value     |
+| --------- | --------- |
+| key_1     | "value_1" |
+| key_2     | "value_2" |
+| key_3     | "value_3" |
 
 Then `/path/to/input.tsv` will contain:
 
@@ -4462,17 +4642,17 @@ The actual command line might look like:
 
 If `obj_array` has the items:
 
-|Index|Attribute|Value|
-|-----|---------|-----|
-|0    |key_1    |"value_1"|
-|     |key_2    |"value_2"|
-|     |key_3    |"value_3"|
-|1    |key_1    |"value_4"|
-|     |key_2    |"value_5"|
-|     |key_3    |"value_6"|
-|2    |key_1    |"value_7"|
-|     |key_2    |"value_8"|
-|     |key_3    |"value_9"|
+| Index | Attribute | Value     |
+| ----- | --------- | --------- |
+| 0     | key_1     | "value_1" |
+|       | key_2     | "value_2" |
+|       | key_3     | "value_3" |
+| 1     | key_1     | "value_4" |
+|       | key_2     | "value_5" |
+|       | key_3     | "value_6" |
+| 2     | key_1     | "value_7" |
+|       | key_2     | "value_8" |
+|       | key_3     | "value_9" |
 
 
 The `/path/to/input.tsv` will contain:
@@ -4488,18 +4668,18 @@ value_7\tvalue_8\tvalue_9
 
 Writes a JSON file with the serialized form of a WDL value. The following WDL types can be serialized:
 
-|WDL Type|JSON Type|
-|--------|--------|
-|`Struct`        |object |
-|`Object`        |object |
-|`Map[String, X]`|object |
-|`Array[X]`      |array  |
-|`Int`           |number |
-|`Float`         |number |
-|`String`        |string |
-|`File`          |string |
-|`Boolean`       |boolean|
-|`None`          |null   |
+| WDL Type         | JSON Type |
+| ---------------- | --------- |
+| `Struct`         | object    |
+| `Object`         | object    |
+| `Map[String, X]` | object    |
+| `Array[X]`       | array     |
+| `Int`            | number    |
+| `Float`          | number    |
+| `String`         | string    |
+| `File`           | string    |
+| `Boolean`        | boolean   |
+| `None`           | null      |
 
 When serializing compound types, all nested types must be serializable or an error is raised. For example the following value could not be written to JSON:
 
@@ -5192,14 +5372,14 @@ To differentiate runtime attributes from task inputs, the `runtime` namespace is
 
 All primitive WDL types serialize naturally to JSON values:
 
-|WDL Type        |JSON Type|
-|----------------|---------|
-|`Int`           |number   |
-|`Float`         |number   |
-|`Boolean`       |boolean  |
-|`String`        |string   |
-|`File`          |string   |
-|`None`          |null     |
+| WDL Type  | JSON Type |
+| --------- | --------- |
+| `Int`     | number    |
+| `Float`   | number    |
+| `Boolean` | boolean   |
+| `String`  | string    |
+| `File`    | string    |
+| `None`    | null      |
 
 JSON has a single numeric type - it does not differentiate between integral and floating point values. A JSON `number` is always deserialized to a WDL `Float`, which may then be coerced to an `Int` if necessary.
 
@@ -5362,11 +5542,11 @@ task test {
 
 If passed an array for the value of `bams`:
 
-|Element       |
-|--------------|
-|/path/to/1.bam|
-|/path/to/2.bam|
-|/path/to/3.bam|
+| Element        |
+| -------------- |
+| /path/to/1.bam |
+| /path/to/2.bam |
+| /path/to/3.bam |
 
 Would produce the command `python script.py --bams=/path/to/1.bam,/path/to/2.bam,/path/to/1.bam`
 
@@ -5392,11 +5572,11 @@ task test {
 
 If `bams` is given this array:
 
-|Element       |
-|--------------|
-|/path/to/1.bam|
-|/path/to/2.bam|
-|/path/to/3.bam|
+| Element        |
+| -------------- |
+| /path/to/1.bam |
+| /path/to/2.bam |
+| /path/to/3.bam |
 
 Then, the resulting command line might be:
 
@@ -5434,11 +5614,11 @@ task test {
 
 If `bams` is given this array:
 
-|Element       |
-|--------------|
-|/path/to/1.bam|
-|/path/to/2.bam|
-|/path/to/3.bam|
+| Element        |
+| -------------- |
+| /path/to/1.bam |
+| /path/to/2.bam |
+| /path/to/3.bam |
 
 Then, the resulting command line might look like:
 
@@ -5590,11 +5770,11 @@ task test {
 
 If `sample_quality_scores` were a `Map` with these members:
 
-|Key    |Value |
-|-------|------|
-|sample1|98    |
-|sample2|95    |
-|sample3|75    |
+| Key     | Value |
+| ------- | ----- |
+| sample1 | 98    |
+| sample2 | 95    |
+| sample3 | 75    |
 
 Then, the resulting command line might look like:
 
@@ -5632,11 +5812,11 @@ task test {
 
 If `sample_quality_scores` were a `Map` with these members:
 
-|Key    |Value |
-|-------|------|
-|sample1|98    |
-|sample2|95    |
-|sample3|75    |
+| Key     | Value |
+| ------- | ----- |
+| sample1 | 98    |
+| sample2 | 95    |
+| sample3 | 75    |
 
 Then, the resulting command line might look like:
 
@@ -5681,11 +5861,11 @@ task test {
 
 `my_ints` will be a `Map[String, Int]` with members:
 
-|Key  |Value |
-|-----|------|
-|key_0|0     |
-|key_1|1     |
-|key_2|2     |
+| Key   | Value |
+| ----- | ----- |
+| key_0 | 0     |
+| key_1 | 1     |
+| key_2 | 2     |
 
 #### Map deserialization using read_json()
 
@@ -5709,9 +5889,9 @@ task test {
 
 `my_map` will be a `Map[String, String]` with members:
 
-|Key |Value |
-|----|------|
-|foo |bar   |
+| Key | Value |
+| --- | ----- |
+| foo | bar   |
 
 Note that using `write_json`/`read_json` to serialize to/from a `Map` can cause suble issues due to the fact that `Map` is ordered whereas `Object` is not. For example:
 
