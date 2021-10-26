@@ -415,7 +415,7 @@ workflow wf {
 The following language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, or struct types & aliases.
 
 ```
-Array Boolean Float Int Map None Object Pair String
+Array Boolean Float Int Map None Object Pair String File
 
 alias as call command else false if in import input 
 left meta object output parameter_meta right runtime 
