@@ -15,9 +15,9 @@ Current core team members are:
 | Geraldine Van der Auwera | Broad Institute | [vdauwera](https://github.com/vdauwera) |
 | Christopher Llanwarne | Broad Institute | [cjllanwarne](https://github.com/cjllanwarne) |
 | John Didion | DNAnexus | [jdidion](https://github.com/jdidion) |
-| Michael Franklin | Australian Centre for Population Genomics | [illusional](https://github.com/illusional) |
+| Michael Franklin | Centre for Population Genomics | [illusional](https://github.com/illusional) |
 | Amy Paguirigan | Fred Hutch | [vortexing](https://github.com/vortexing) |
-| Ruben Vorderman | BioWDL | [rhpvorderman](https://github.com/rhpvorderman) |
+| Ruben Vorderman | Leiden University Medical Center | [rhpvorderman](https://github.com/rhpvorderman) |
 
 
 At the core group's discretion a new member may be added by a majority vote. This addition will be done to recognize **significant** contributions to the community. *Contributions* include such things as:
