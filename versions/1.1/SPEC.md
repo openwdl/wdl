@@ -477,7 +477,7 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
 The following language keywords (case-sensitive) are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, or struct types & aliases.
 
 ```
-Array Boolean Float Int Map None Object Pair String
+Array Boolean File Float Int Map None Object Pair String
 
 alias as call command else false if in import input 
 left meta object output parameter_meta right runtime 
@@ -2884,7 +2884,7 @@ workflow wf {
 
 In this example, the call statement uses the fully-qualified name `ns.mytask` to refer to task `mytask` in namespace `ns`, which is the alias given to `other.wdl` when it is imported. We can then refer to the outputs of this call using its alias `mytask` (see the [Call Statement](#call-statement) section for details on call aliasing). `mytask.result.foo` is a namespaced identifier referring to the member `foo` of the `Struct`-typed output declaration `result` of the call `mytask`.
 
-In the following more extensive example, all of the fully-qualified names that exist within the top-level workflow are listed exhaustively:
+In the following more extensive example, all of the fully-qualified names that exist within the top-level workflow are listed exhaustively.
 
 `other.wdl`
 ```wdl
@@ -2959,7 +2959,7 @@ The following fully-qualified names exist within `workflow wf` in main.wdl:
 * `wf.test2.my_var` - References the `String` input of second call to task `test`
 * `wf.test2.results` - References the `File` output of second call to task `test`
 * `wf.foobar.results` - References the `File` output of the call to `other.foobar`
-* `wf.foobar.input` - References the `File` input of the call to `other.foobar`
+* `wf.foobar.infile` - References the `File` input of the call to `other.foobar`
 * `wf.other_workflow` - References the first call to subworkflow `other.other_workflow`
 * `wf.other_workflow.bool` - References the `Boolean` input of the first call to subworkflow `other.other_workflow`
 * `wf.other_workflow.foobar.results` - References the `File` output of the call to `foobar` inside the first call to subworkflow `other.other_workflow`
