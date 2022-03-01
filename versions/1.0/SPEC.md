@@ -912,7 +912,7 @@ Additional explanation for these command part options follows:
 
 'sep' is interpreted as the separator string used to join multiple parameters together.  `sep` is only valid if the expression evaluates to an `Array`.
 
-For example, if there were a declaration `Array[Int] ints = [1,2,3]`, the command `python script.py ${sep=',' numbers}` would yield the command line:
+For example, if there were a declaration `Array[Int] numbers = [1,2,3]`, the command `python script.py ${sep=',' numbers}` would yield the command line:
 
 ```
 python script.py 1,2,3
