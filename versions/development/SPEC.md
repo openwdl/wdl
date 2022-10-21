@@ -364,24 +364,20 @@ Strings can also contain the following types of escape sequences:
 Strings that begin and end with three consecutive single- or double-quotes may span multiple lines. The opening quotes of a multi-line string may be followed by whitespace (optional) and must have a newline before the first non-whitespace character; these leading whitespace/newline characters are removed. All subsequent non-empty lines are then used to determine the multi-line string's *common leading whitespace* - the minimum number of whitespace characters occuring before the first non-whitespace character in a line or the end of the line, whichever comes first. This common leading whitespace is stripped from the beginning of all the lines in the multi-line string.
 
 ```wdl
-# These strings are equivalent. The middle lines of strings B, C, and D ire empty and so do 
-# not count towards the common leading whitespace determination.
+# These three strings are equivalent. The middle line of each is empty and so does not count
+# towards the common leading whitespace determination.
 
-String multi_line_A = """
-    this is a
-  a multi-line string"""
-
-String multi_line_B = '''
+String multi_line_A = '''
         this is a
 
           multi-line string'''
 
-String multi_line_C = """
+String multi_line_B = """
   this is a
 
     multi-line string"""
 
-String multi_line_D = """
+String multi_line_C = """
 this is a
 
   multi-line string"""
@@ -401,10 +397,12 @@ String multi_line_escaped = """
 Keep in mind that if the ending quotes are on a line by themselves and are preceeded by whitespace, that line is included when determining the common leading whitespace.
 
 ```wdl
-# The following two strings are equivalent. Even though the first line of `s2` is indented by six 
-# spaces, the common leading whitespace in this string is 2, due to the two spaces preceeding the 
-# closing quotes.
+# The following two strings are equivalent:
+
 String s1 = "    text indented by 4 spaces"
+
+# Even though the first line of this string is indented by six spaces, the common leading
+# whitespace in this string is 2, due to the two spaces preceeding the closing quotes.
 String s2 = """
       text indented by 4 spaces
   """
@@ -1621,7 +1619,7 @@ Keep in mind that the command section is still subject to the rules of [string i
 
 #### Stripping Leading Whitespace
 
-When a command template is evaluated, the execution engine first strips out all *common leading whitespace* (just like [multi-line strings](#multi-line-strings)).
+When a command template is evaluate, the execution engine first strips out all *common leading whitespace* (just like [multi-line strings](#multi-line-strings)).
 
 For example, consider a task that calls the `python` interpreter with an in-line Python script:
 
@@ -1654,7 +1652,7 @@ python <<CODE
 CODE
 ```
 
-If the user mixes tabs and spaces, the behavior is undefined. The execution engine should, at a minimum, issue a warning and leave the whitespace unmodified, though it may choose to raise an exception or to substitute e.g. 4 spaces per tab.
+Each whitespace character is counted regardless of whether it is a space or tab, so care should be taken when mixing whitespace characters. For example, if a command block has two lines, and the first line begins with `<space><space><space><space>`, and the second line begins with `<tab>` then only one whitespace character is removed from each line.
 
 ### Task Outputs
 
