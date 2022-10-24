@@ -3770,8 +3770,8 @@ Access to elements of compound members can be chained into a single expression. 
 
 ```wdl
 struct Experiment {
-  Array[File] experimentFiles
-  Map[String, String] experimentData
+  Array[File] experiment_files
+  Map[String, String] experiment_data
 }
 ```
 
@@ -3780,10 +3780,10 @@ struct Experiment {
 ```wdl
 workflow workflow_a {
   input {
-    Experiment myExperiment
+    Experiment my_experiment
   }
-  File firstFile = myExperiment.experimentFiles[0]
-  String experimentName = myExperiment.experimentData["name"]
+  File first_file = my_experiment.experiment_files[0]
+  String experiment_name = my_experiment.experiment_data["name"]
 }
 ```
 
@@ -3792,11 +3792,11 @@ workflow workflow_a {
 ```wdl
 workflow workflow_a {
   input {
-    Array[Experiment] myExperiments
+    Array[Experiment] my_experiments
   }
 
-  File firstFileFromFirstExperiment = myExperiments[0].experimentFiles[0]
-  File experimentNameFromFirstExperiment = myExperiments[0].experimentData["name"]
+  File first_file_from_first_experiment = my_experiments[0].experiment_files[0]
+  File experiment_name_from_first_experiment = my_experiments[0].experiment_data["name"]
   ....
 }
 ```
