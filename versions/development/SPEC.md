@@ -382,7 +382,9 @@ this is a
 
   multi-line string"""
 ```
-
+String multi_line_D = """
+    this is a
+  a multi-line string"""
 Newline characters are not stripped out unless they are escaped, i.e. when the last character of a line is `\`.
 
 ```wdl
