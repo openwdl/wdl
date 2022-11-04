@@ -364,27 +364,29 @@ Strings can also contain the following types of escape sequences:
 Strings that begin and end with three consecutive single- or double-quotes may span multiple lines. The opening quotes of a multi-line string may be followed by whitespace (optional) and must have a newline before the first non-whitespace character; these leading whitespace/newline characters are removed. All subsequent non-empty lines are then used to determine the multi-line string's *common leading whitespace* - the minimum number of whitespace characters occuring before the first non-whitespace character in a line or the end of the line, whichever comes first. This common leading whitespace is stripped from the beginning of all the lines in the multi-line string.
 
 ```wdl
-# These three strings are equivalent. The middle line of each is empty and so does not count
+# These strings are equivalent. The middle lines strings B, C, and D are empty and so do not count
 # towards the common leading whitespace determination.
 
-String multi_line_A = '''
+String multi_line_A = """
+    this is a
+  a multi-line string"""
+
+String multi_line_B = '''
         this is a
 
           multi-line string'''
 
-String multi_line_B = """
+String multi_line_C = """
   this is a
 
     multi-line string"""
 
-String multi_line_C = """
+String multi_line_D = """
 this is a
 
   multi-line string"""
 ```
-String multi_line_D = """
-    this is a
-  a multi-line string"""
+
 Newline characters are not stripped out unless they are escaped, i.e. when the last character of a line is `\`.
 
 ```wdl
