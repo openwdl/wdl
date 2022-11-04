@@ -399,12 +399,10 @@ String multi_line_escaped = """
 Keep in mind that if the ending quotes are on a line by themselves and are preceeded by whitespace, that line is included when determining the common leading whitespace.
 
 ```wdl
-# The following two strings are equivalent:
-
+# The following two strings are equivalent. Even though the first line of `s2` is indented by six 
+# spaces, the common leading whitespace in this string is 2, due to the two spaces preceeding the 
+# closing quotes.
 String s1 = "    text indented by 4 spaces"
-
-# Even though the first line of this string is indented by six spaces, the common leading
-# whitespace in this string is 2, due to the two spaces preceeding the closing quotes.
 String s2 = """
       text indented by 4 spaces
   """
