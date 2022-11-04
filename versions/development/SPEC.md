@@ -1621,7 +1621,7 @@ Keep in mind that the command section is still subject to the rules of [string i
 
 #### Stripping Leading Whitespace
 
-When a command template is evaluate, the execution engine first strips out all *common leading whitespace* (just like [multi-line strings](#multi-line-strings)).
+When a command template is evaluated, the execution engine first strips out all *common leading whitespace* (just like [multi-line strings](#multi-line-strings)).
 
 For example, consider a task that calls the `python` interpreter with an in-line Python script:
 
