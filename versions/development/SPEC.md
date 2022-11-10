@@ -56,7 +56,7 @@ This is the development version of the Workflow Description Language (WDL) speci
         - [Optional inputs with defaults](#optional-inputs-with-defaults)
     - [Private Declarations](#private-declarations)
     - [Command Section](#command-section)
-      - [Stripping Leading Whitespace](#stripping-leading-whitespace)
+      - [Stripping Common Leading Whitespace](#stripping-common-leading-whitespace)
       - [Expression Placeholders](#expression-placeholders)
     - [Task Outputs](#task-outputs)
       - [File, Directory, and Optional Outputs](#file-directory-and-optional-outputs)
@@ -361,61 +361,98 @@ Strings can also contain the following types of escape sequences:
 
 ##### Multi-line Strings
 
-Strings that begin and end with three consecutive single- or double-quotes may span multiple lines. The opening quotes of a multi-line string may be followed by whitespace (optional) and must have a newline before the first non-whitespace character; these leading whitespace/newline characters are removed. All subsequent non-empty lines are then used to determine the multi-line string's *common leading whitespace* - the minimum number of whitespace characters occuring before the first non-whitespace character in a line or the end of the line, whichever comes first. This common leading whitespace is stripped from the beginning of all the lines in the multi-line string.
+Strings that begin with `<<<` and end with `>>>` may span multiple lines.
 
 ```wdl
-# These strings are equivalent. The middle lines strings B, C, and D are empty and so do not count
-# towards the common leading whitespace determination.
+String s = <<<
+  This is a
+  multi-line string!
+>>>
 
-String multi_line_A = """
-  this is a
-    multi-line string"""
+When a multi-line string is evaluated, all whitespace following the opening `<<<`, up to and including a newline (if any), and all whitespace preceeding the closing `>>>`, up to and including a newline (if any), is first stripped.
 
-String multi_line_B = '''
+```wdl# all of these strings evaluate to "hello world"
+String hw1 = <<<hello world>>>
+String hw2 = <<<   hello world   >>>
+String hw3 = <<<   
+    hello world>>>
+String hw4 = <<<   
+    hello world
+    >>>
+```
+
+A multi-line string may contain empty lines and blank lines. An *empty* line contains no characters except a newline. A *blank* line contains only whitespace characers.
+
+After stripping the leading and trailing whitespace, all non-empty lines are used to determine the multi-line string's *common leading whitespace* - the minimum number of whitespace characters occuring before the first non-whitespace character in a line, or the end of the line if the line is blank. This common leading whitespace is stripped from the beginning of all the lines in the multi-line string.
+
+```wdl
+# These strings are all equivalent. The middle lines are empty and so do not count towards the
+# common leading whitespace determination.
+String multi_line_A = <<<
         this is a
 
-          multi-line string'''
-
-String multi_line_C = """
+          multi-line string
+>>>
+String multi_line_B = <<<
   this is a
 
-    multi-line string"""
-
-String multi_line_D = """
+    multi-line string
+>>>
+String multi_line_C = <<<
 this is a
 
-  multi-line string"""
+  multi-line string
+>>>
+
+# This string contains a blank line with 2 spaces, so even though the other two lines are 
+# indented 4 spaces, the common leading whitespace is 2.
+String multi_line_D = <<<
+    this is a
+  
+    multi-line string
+>>>
 ```
 
-Newline characters are not stripped out unless they are escaped, i.e. when the last character of a line is `\`.
+Each whitespace character is counted once regardless of whether it is a space or tab, so care should be taken when mixing whitespace characters.
+
+A newline character in a multi-line string is left as-is unless it is immediately preceeded by a
+line continuation (`\`), in which case it is removed along with all the whitespace preceeding the next non-whitespace character or end of line (whichever comes first). In other words, a continued line can be considered as part of the previous line, and so it does not contribute to determining the common leading whitespace.
 
 ```wdl
-# These two strings are equivalent:
-String single_line = "this is a double-quoted string that contains no newlines"
-String multi_line_escaped = """
+# These two strings are equivalent
+String single_line = "this is a string that contains no newlines"
+String multi_line = <<<
   this is a \
-  double-quoted string \
-  that contains no newlines"""
+    string that \
+ contains no newlines
+>>>
 ```
 
-Keep in mind that if the ending quotes are on a line by themselves, that line is included when determining the common leading whitespace.
+Empty or blank lines may be used in a multi-line string to ensure that it begins/ends with a newline.
 
 ```wdl
-# The following two strings are equivalent. Even though the first line of `s2` is indented by six 
-# spaces, the common leading whitespace in this string is 2, due to the two spaces preceeding the 
-# closing quotes.
+# The following strings are equivalent. String `s2` has an empty line, which ensures that it
+# ends in a newline. Even though the first line of `s3` is indented by 6 spaces, the common 
+# leading whitespace is 2 and the string ends in a newline due to the second (blank) line
+# containing 2 spaces.
 String s1 = "    text indented by 4 spaces\n"
-String s2 = """
+String s2 = <<<
+    text indented by 4 spaces
+
+>>>
+String s3 = <<<
       text indented by 4 spaces
-  """
+  
+>>>
 ```
 
 Single- and double-quotes do not need to be escaped within a multi-line string.
 
 ```wdl
-String multi_line_with_quotes = """
-          multi-line string \
-          with 'single' and "double" quotes"""
+String multi_line_with_quotes = <<<
+  multi-line string \
+  with 'single' and "double" quotes
+>>>
 ```
 
 ### Comments
@@ -1128,9 +1165,16 @@ Placeholders are evaluated in multi-line strings exactly the same as in regular 
 leading whitespace is stripped from a multi-line string *before* placeholder expressions are evaluated.
 
 ```wdl
-String multi_line = """
-  Hello ~{name}
-  Welcome to ~{company}"""
+String spaces = "  "
+String name = "Henry"
+String company = "Acme"
+# This string evaluates to: "  Hello Henry\n  Welcome to Acme!"
+# The string still has spaces because the placeholders are evaluated after removing the common
+# leading whitespace.
+String multi_line = <<<
+  ~{spaces}Hello ~{name},
+  ~{spaces}Welcome to ~{company}!
+>>>
 ```
 
 ##### Expression Placeholder Coercion
@@ -1156,9 +1200,17 @@ Boolean is_true5 = "~{3.141 * 1E-10}" == "0.000000"
 Boolean is_true6 = "~{3.141 * 1E10}" == "31410000000.000000"
 ```
 
-Compound types cannot be implicitly converted to strings. To convert an `Array` to a string, use the [`sep`](#-string-sepstring-arraystring) function: `~{sep(",", str_array)}`.
+Compound types cannot be implicitly converted to strings. To convert an `Array` to a string, use the [`sep`](#-string-sepstring-arraystring) function: `~{sep(",", str_array)}`. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for more details and examples.
 
-If an expression within a placeholder evaluates to `None`, then the placeholder is replaced by the empty string.
+If an expression within a placeholder evaluates to `None` and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string.
+
+```wdl
+String? foo = None
+# The expression in this string results in an error (calling `select_first` on an array containing
+# no non-`None` values) and so the placeholder evaluates to the empty string and `s` evalutes to:
+# "Foo is "
+String s = "Foo is ~{select_first([foo])}"
+```
 
 ##### Concatenation of Optional Values
 
@@ -1550,14 +1602,32 @@ command <<< ... >>>
 command { ... }
 ```
 
-The command template is evaluated *after* all of the inputs are staged and before the outputs are evaluated. Command template evaluation has two steps that are performed in order:
+The command template is evaluated *after* all of the inputs are staged and before the outputs are evaluated. The command template is evaluated similarly to a multi-line string - whitespace stripping and placeholder evaluation are performed in exactly the same way with one exception: line continuations are left as-is in the command whereas they are stripped out in a multi-line string. Commands are otherwise not modified by the execution engine.
 
-1. Common leading whitespace is [stripped](#stripping-leading-whitespace)
-2. String interpolation is performed on the entire command section to replace [expression placeholders](#expression-placeholders) with their actual values.
+```wdl
+String s = <<<
+  This string has \
+  no newlines
+>>>
 
-Commands are otherwise not modified by the execution engine.
+command <<<
+  echo "~{s}"
+  echo "This command has line continuations \
+    that still appear in the Bash script \
+    after evaluation"
+>>>
+```
 
-#### Stripping Leading Whitespace
+When the above command template is evaluated the resulting Bash script is:
+
+```sh
+echo "This string has no newlines"
+echo "This command has line continuations \
+  that still appear in the Bash script \
+  after evaluation"
+```
+
+#### Stripping Common Leading Whitespace
 
 When a command template is evaluated, the execution engine first strips out all *common leading whitespace* (just like [multi-line strings](#multi-line-strings)).
 
@@ -1569,19 +1639,19 @@ task heredoc {
     File infile
   }
 
-  command<<<
-  python <<CODE
-    with open("~{in}") as fp:
-      for line in fp:
-        if not line.startswith('#'):
-          print(line.strip())
-  CODE
+  command <<<
+    python <<CODE
+      with open("~{in}") as fp:
+        for line in fp:
+          if not line.startswith('#'):
+            print(line.strip())
+    CODE
   >>>
   ....
 }
 ```
 
-Given an `infile` value of `/path/to/file`, the execution engine will produce the following Bash script, which has removed the two spaces that were common to the beginning of each line:
+Given an `infile` value of `/path/to/file`, the execution engine produces the following Bash script, which has removed the 4 spaces that were common to the beginning of each line:
 
 ```sh
 python <<CODE
@@ -1592,11 +1662,11 @@ python <<CODE
 CODE
 ```
 
-Each whitespace character is counted regardless of whether it is a space or tab, so care should be taken when mixing whitespace characters. For example, if a command block has two lines, and the first line begins with `<space><space><space><space>`, and the second line begins with `<tab>` then only one whitespace character is removed from each line.
+Each whitespace character is counted once regardless of whether it is a space or tab, so care should be taken when mixing whitespace characters. For example, if a command block has two lines, and the first line begins with `<space><space><space><space>`, and the second line begins with `<tab>` then only one whitespace character is removed from each line.
 
 #### Expression Placeholders
 
-The body of the command section (i.e. the command "template") can be thought of as a single string expression, which (like all string expressions) may contain placeholders.
+The command template can be thought of as a single string expression, which (like all string expressions) may contain placeholders.
 
 There are two different syntaxes that can be used to define command expression placeholders, depending on which style of command section definition is used:
 
