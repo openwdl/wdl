@@ -56,7 +56,6 @@ This is the development version of the Workflow Description Language (WDL) speci
         - [Optional inputs with defaults](#optional-inputs-with-defaults)
     - [Private Declarations](#private-declarations)
     - [Command Section](#command-section)
-      - [Stripping Common Leading Whitespace](#stripping-common-leading-whitespace)
       - [Expression Placeholders](#expression-placeholders)
     - [Task Outputs](#task-outputs)
       - [File, Directory, and Optional Outputs](#file-directory-and-optional-outputs)
@@ -369,80 +368,84 @@ String s = <<<
   multi-line string!
 >>>
 
-When a multi-line string is evaluated, all whitespace following the opening `<<<`, up to and including a newline (if any), and all whitespace preceeding the closing `>>>`, up to and including a newline (if any), is first stripped.
+In multi-line strings, leading *whitespace* is removed according to the following rules. In the context of multi-line strings, whitespace refers to space (`\x20`) and tab characters only and is treated differently from newline characters.
 
-```wdl# all of these strings evaluate to "hello world"
-String hw1 = <<<hello world>>>
-String hw2 = <<<   hello world   >>>
+1. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
+2. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
+3 Remove all line continuations and subsequent white space.
+  * A line continuation (`\`) comes at the end of a line (i.e. immediately preceding a newline) and indicates that two consecutive lines are actually the same line (e.g. when breaking a long line for better readability).
+  * Removing a line continuation means removing the `\` character, the immediately following newline, all the whitespace preceeding the next non-whitespace character or end of line (whichever comes first).
+4. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
+  * A blank line contains zero or more whitespace characters followed by a newline.
+  * Common leading whitespace is the minimum number of whitespace characters occuring before the first non-whitespace character in a non-blank line.
+  * Each whitespace character is counted once regardless of whether it is a space or tab, so care should be taken when mixing whitespace characters.
+5. Remove common leading whitespace from each line.
+
+```wdl
+# all of these strings evaluate to "hello world"
+String hw0 = "hello  world"
+String hw1 = <<<hello  world>>>
+String hw2 = <<<   hello  world   >>>
 String hw3 = <<<   
     hello world>>>
 String hw4 = <<<   
-    hello world
+    hello  world
     >>>
+String hw5 = <<<   
+    hello  world
+>>>
+# the line continuation causes the newline and all whitespace preceding 'world' to be removed -
+# to put two spaces between 'hello' and world' we need to put them before the line continuation
+String hw6 = <<<
+    hello  \
+        world
+>>>
 ```
 
-A multi-line string may contain empty lines and blank lines. An *empty* line contains no characters except a newline. A *blank* line contains only whitespace characers.
-
-After stripping the leading and trailing whitespace, all non-empty lines are used to determine the multi-line string's *common leading whitespace* - the minimum number of whitespace characters occuring before the first non-whitespace character in a line, or the end of the line if the line is blank. This common leading whitespace is stripped from the beginning of all the lines in the multi-line string.
+Common leading whitespace is also removed from blank lines that contain whitespace characters; newlines are *not* removed from blank lines. This means blank lines may be used to ensure that a multi-line string begins/ends with a newline.
 
 ```wdl
-# These strings are all equivalent. The middle lines are empty and so do not count towards the
-# common leading whitespace determination.
-String multi_line_A = <<<
-        this is a
+# These strings are all equivalent. In strings B, C, and D, the middle lines are blank and so do
+# not count towards the common leading whitespace determination.
 
-          multi-line string
->>>
+String multi_line_A = "\nthis is a\n\n  multi-line string\n"
+
+# This string's common leading whitespace is 0.
 String multi_line_B = <<<
-  this is a
 
-    multi-line string
->>>
-String multi_line_C = <<<
 this is a
 
   multi-line string
+
+>>>
+
+# This string's common leading whitespace is 2. The middle blank line contains two spaces that are
+# also removed.
+String multi_line_C = <<<
+
+  this is a
+  
+    multi-line string
+
+>>>
+
+# This string's common leading whitespace is 8.
+String multi_line_D = <<<
+
+        this is a
+
+          multi-line string
+
 >>>
 
 # This string contains a blank line with 2 spaces, so even though the other two lines are 
 # indented 4 spaces, the common leading whitespace is 2.
 String multi_line_D = <<<
+
     this is a
   
     multi-line string
->>>
-```
 
-Each whitespace character is counted once regardless of whether it is a space or tab, so care should be taken when mixing whitespace characters.
-
-A newline character in a multi-line string is left as-is unless it is immediately preceeded by a
-line continuation (`\`), in which case it is removed along with all the whitespace preceeding the next non-whitespace character or end of line (whichever comes first). In other words, a continued line can be considered as part of the previous line, and so it does not contribute to determining the common leading whitespace.
-
-```wdl
-# These two strings are equivalent
-String single_line = "this is a string that contains no newlines"
-String multi_line = <<<
-  this is a \
-    string that \
- contains no newlines
->>>
-```
-
-Empty or blank lines may be used in a multi-line string to ensure that it begins/ends with a newline.
-
-```wdl
-# The following strings are equivalent. String `s2` has an empty line, which ensures that it
-# ends in a newline. Even though the first line of `s3` is indented by 6 spaces, the common 
-# leading whitespace is 2 and the string ends in a newline due to the second (blank) line
-# containing 2 spaces.
-String s1 = "    text indented by 4 spaces\n"
-String s2 = <<<
-    text indented by 4 spaces
-
->>>
-String s3 = <<<
-      text indented by 4 spaces
-  
 >>>
 ```
 
@@ -1128,7 +1131,7 @@ WDL provides a [standard library](#standard-library) of functions. These functio
 
 #### Expression Placeholders and String Interpolation
 
-Any WDL string expression may contain one or more "placeholders" of the form `~{*expression*}`, each of which contains a single expression. Placeholders of the form `${*expression*}` may also be used interchangably, but their use is discouraged for reasons discussed in the [command section](#expression-placeholders) and may be deprecated in a future version of the specification.
+Any WDL string expression may contain one or more "placeholders" of the form `~{*expression*}`, each of which contains a single expression.
 
 When a string expression is evaluated, its placeholders are evaluated first, and their values are then substituted for the placeholders in the containing string.
 
@@ -1158,7 +1161,7 @@ Placeholders may contain other placeholders to any level of nesting, and placeho
 Int i = 3
 Boolean b = true
 # s evaluates to "4", but would be "0" if b were false
-String s = "~{if b then '${1 + i}' else 0}"
+String s = "~{if b then '~{1 + i}' else 0}"
 ```
 
 Placeholders are evaluated in multi-line strings exactly the same as in regular strings. Common
@@ -1168,7 +1171,7 @@ leading whitespace is stripped from a multi-line string *before* placeholder exp
 String spaces = "  "
 String name = "Henry"
 String company = "Acme"
-# This string evaluates to: "  Hello Henry\n  Welcome to Acme!"
+# This string evaluates to: "  Hello Henry,\n  Welcome to Acme!"
 # The string still has spaces because the placeholders are evaluated after removing the common
 # leading whitespace.
 String multi_line = <<<
@@ -1261,7 +1264,7 @@ python script.py --val=
 The latter case is very likely an error case, and this `--val=` part should be left off if a value for `val` is omitted. To solve this problem, modify the expression inside the template tag as follows:
 
 ```
-python script.py ${"--val=" + val}
+python script.py ~{"--val=" + val}
 ```
 
 ## WDL Documents
@@ -1519,7 +1522,7 @@ task say_hello {
   }
   command <<< >>>
   output {
-    String greeting = if defined(saluation) then "${saluation} ${name}" else name
+    String greeting = if defined(saluation) then "~{saluation} ~{name}" else name
   }
 }
 
@@ -1592,17 +1595,24 @@ workflow wf {
 The `command` section is the only required task section. It defines the command template that is evaluated and executed when the task is called. The command template is a `bash` script that may
 contain placeholder expressions. There may be any number of commands within a command section.
 
-There are two different syntaxes that can be used to define the command section:
-
 ```wdl
-# HEREDOC style - this way is preferred
-command <<< ... >>>
-
-# older style - may be preferable in some cases
-command { ... }
+command <<<
+  echo 'hello world'
+  cat ~{myfile} > tempfile
+  python myscript.py tempfile
+>>>
 ```
 
-The command template is evaluated *after* all of the inputs are staged and before the outputs are evaluated. The command template is evaluated similarly to a multi-line string - whitespace stripping and placeholder evaluation are performed in exactly the same way with one exception: line continuations are left as-is in the command whereas they are stripped out in a multi-line string. Commands are otherwise not modified by the execution engine.
+The command template is evaluated *after* all of the inputs are staged and before the outputs are evaluated. The command template is evaluated similarly to [multi-line strings](#multi-line-strings):
+
+1. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
+2. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
+3. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
+4. Remove common leading whitespace from each line.
+5. Evaluate placeholder expressions.
+
+Notice that there is one major difference between the evaluation of multi-line strings vs the command template: line continuations are removed in the former but left as-is in the latter. This also means that continued lines are considered when determining common leading whitespace, and that
+common leading whitespace is removed from continued lines as well.
 
 ```wdl
 String s = <<<
@@ -1627,11 +1637,7 @@ echo "This command has line continuations \
   after evaluation"
 ```
 
-#### Stripping Common Leading Whitespace
-
-When a command template is evaluated, the execution engine first strips out all *common leading whitespace* (just like [multi-line strings](#multi-line-strings)).
-
-For example, consider a task that calls the `python` interpreter with an in-line Python script:
+For another example, consider a task that calls the `python` interpreter with an in-line Python script:
 
 ```wdl
 task heredoc {
@@ -1668,15 +1674,6 @@ Each whitespace character is counted once regardless of whether it is a space or
 
 The command template can be thought of as a single string expression, which (like all string expressions) may contain placeholders.
 
-There are two different syntaxes that can be used to define command expression placeholders, depending on which style of command section definition is used:
-
-| Command Definition Style | Placeholder Style          |
-| ------------------------ | -------------------------- |
-| `command <<< >>>`        | `~{}` only                 |
-| `command { ... }`        | `~{}` (preferred) or `${}` |
-
-The `~{}` and `${}` styles may be used interchangably in other string expressions.
-
 Any valid WDL expression may be used within a placeholder. For example, a command might reference an input to the task, like this:
 
 ```wdl
@@ -1707,25 +1704,6 @@ task write_array {
     # the unix "cat" command
     cat ~{write_lines(str_array)}
   >>>
-}
-```
-
-In most cases, the `~{}` style of placeholder is preferred, to avoid ambiguity between WDL placeholders and Bash variables, which are of the form `$name` or `${name}`. If the `command { ... }` style is used, then `${name}` is always interpreted as a WDL placeholder, so care must be taken to only use `$name` style Bash variables. If the `command <<< ... >>>` style is used, then only `~{name}` is interpreted as a WDL placeholder, so either style of Bash variable may be used.
-
-```wdl
-task test {
-  input {
-    File infile
-  }
-  command {
-    # store value of WDL declaration "infile" to Bash variable "f"
-    f=${infile}
-    # cat the file referenced by Bash variable "f"
-    cat $f
-    # this causes an error since "f" is not a WDL declaration
-    cat ${f}
-  }
-  ....
 }
 ```
 
@@ -4944,7 +4922,7 @@ A JSON `object` is deserialized to a generic object value value, and each member
 
 # Appendix A: WDL Value Serialization and Deserialization
 
-This section provides suggestions for ways to deal with primitive and compound values in the task [command section](#command-section). When a WDL execution engine instantiates a command specified in the `command` section of a `task`, it must evaluate all expression placeholders (`~{...}` and `${...}`) in the command and coerce their values to strings. There are multiple different ways that WDL values can be communicated to the command(s) being called in the command section, and the best method will vary by command.
+This section provides suggestions for ways to deal with primitive and compound values in the task [command section](#command-section). When a WDL execution engine instantiates a command specified in the `command` section of a `task`, it must evaluate all expression placeholders (`~{...}`) in the command and coerce their values to strings. There are multiple different ways that WDL values can be communicated to the command(s) being called in the command section, and the best method will vary by command.
 
 For example, a task that wraps a tool that operates on an `Array` of FASTQ files has several ways that it can specify the list of files to the tool:
 
