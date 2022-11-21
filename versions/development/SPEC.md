@@ -378,7 +378,7 @@ In multi-line strings, leading *whitespace* is removed according to the followin
 4. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
   * A blank line contains zero or more whitespace characters followed by a newline.
   * Common leading whitespace is the minimum number of whitespace characters occuring before the first non-whitespace character in a non-blank line.
-  * Each whitespace character is counted once regardless of whether it is a space or tab, so care should be taken when mixing whitespace characters.
+  * Each whitespace character is counted once regardless of whether it is a space or tab (so care should be taken when mixing whitespace characters).
 5. Remove common leading whitespace from each line.
 
 ```wdl
