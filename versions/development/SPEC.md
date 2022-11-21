@@ -1582,8 +1582,7 @@ workflow wf {
 
 ### Command Section
 
-The `command` section is the only required task section. It defines the command template that is evaluated and executed when the task is called. The command template is a `bash` script that may
-contain placeholder expressions. There may be any number of commands within a command section.
+The `command` section is the only required task section. It defines the command template that is evaluated and executed when the task is called. The command template is a `bash` script that may contain placeholder expressions. There may be any number of commands within a command section.
 
 ```wdl
 command <<<
