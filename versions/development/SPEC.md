@@ -437,16 +437,6 @@ String multi_line_D = <<<
           multi-line string
 
 >>>
-
-# This string contains a blank line with 2 spaces, so even though the other two lines are 
-# indented 4 spaces, the common leading whitespace is 2.
-String multi_line_D = <<<
-
-    this is a
-  
-    multi-line string
-
->>>
 ```
 
 Single- and double-quotes do not need to be escaped within a multi-line string.
