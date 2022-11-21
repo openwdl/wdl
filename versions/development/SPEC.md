@@ -374,7 +374,7 @@ In multi-line strings, leading *whitespace* is removed according to the followin
 2. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
 3 Remove all line continuations and subsequent white space.
   * A line continuation (`\`) comes at the end of a line (i.e. immediately preceding a newline) and indicates that two consecutive lines are actually the same line (e.g. when breaking a long line for better readability).
-  * Removing a line continuation means removing the `\` character, the immediately following newline, all the whitespace preceeding the next non-whitespace character or end of line (whichever comes first).
+  * Removing a line continuation means removing the `\` character, the immediately following newline, and all the whitespace preceeding the next non-whitespace character or end of line (whichever comes first).
 4. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
   * A blank line contains zero or more whitespace characters followed by a newline.
   * Common leading whitespace is the minimum number of whitespace characters occuring before the first non-whitespace character in a non-blank line.
