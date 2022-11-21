@@ -1600,8 +1600,7 @@ The command template is evaluated *after* all of the inputs are staged and befor
 4. Remove common leading whitespace from each line.
 5. Evaluate placeholder expressions.
 
-Notice that there is one major difference between the evaluation of multi-line strings vs the command template: line continuations are removed in the former but left as-is in the latter. This also means that continued lines are considered when determining common leading whitespace, and that
-common leading whitespace is removed from continued lines as well.
+Notice that there is one major difference between the evaluation of multi-line strings vs the command template: line continuations are removed in the former but left as-is in the latter. This also means that continued lines are considered when determining common leading whitespace, and that common leading whitespace is removed from continued lines as well.
 
 ```wdl
 String s = <<<
