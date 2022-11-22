@@ -1154,8 +1154,7 @@ Boolean b = true
 String s = "~{if b then '~{1 + i}' else 0}"
 ```
 
-Placeholders are evaluated in multi-line strings exactly the same as in regular strings. Common
-leading whitespace is stripped from a multi-line string *before* placeholder expressions are evaluated.
+Placeholders are evaluated in multi-line strings exactly the same as in regular strings. Common leading whitespace is stripped from a multi-line string *before* placeholder expressions are evaluated.
 
 ```wdl
 String spaces = "  "
