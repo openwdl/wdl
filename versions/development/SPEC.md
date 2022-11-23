@@ -370,11 +370,12 @@ String s = <<<
 
 In multi-line strings, leading *whitespace* is removed according to the following rules. In the context of multi-line strings, whitespace refers to space (`\x20`) and tab characters only and is treated differently from newline characters.
 
-1. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
-2. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
-3 Remove all line continuations and subsequent white space.
-  * A line continuation (`\`) comes at the end of a line (i.e. immediately preceding a newline) and indicates that two consecutive lines are actually the same line (e.g. when breaking a long line for better readability).
-  * Removing a line continuation means removing the `\` character, the immediately following newline, and all the whitespace preceeding the next non-whitespace character or end of line (whichever comes first).
+1. Remove all line continuations and subsequent white space.
+  * A line continuation is a backslash (`\`) immediately preceding the newline. A line continuation indicates that two consecutive lines are actually the same line (e.g. when breaking a long line for better readability).
+  * If a line ends in multiple `\` then standard character escaping applies. Each pair of consecutive backslashes (`\\`) is an escaped backslash. So a line is continued only if it ends in an odd number of backslashes.
+  * Removing a line continuation means removing the last `\` character, the immediately following newline, and all the whitespace preceeding the next non-whitespace character or end of line (whichever comes first).
+2. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
+3. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
 4. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
   * A blank line contains zero or more whitespace characters followed by a newline.
   * Common leading whitespace is the minimum number of whitespace characters occuring before the first non-whitespace character in a non-blank line.
@@ -382,7 +383,7 @@ In multi-line strings, leading *whitespace* is removed according to the followin
 5. Remove common leading whitespace from each line.
 
 ```wdl
-# all of these strings evaluate to "hello world"
+# all of these strings evaluate to "hello  world"
 String hw0 = "hello  world"
 String hw1 = <<<hello  world>>>
 String hw2 = <<<   hello  world   >>>
@@ -399,6 +400,13 @@ String hw5 = <<<
 String hw6 = <<<
     hello  \
         world
+>>>
+
+# This string is not equivalent - the first line ends in two backslashes, which is an escaped
+# backslash, not a line continuation. So this string evaluates to "hello \\\n  world"
+String not_equivalent = <<<
+hello \\
+  world
 >>>
 ```
 
