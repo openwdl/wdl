@@ -367,6 +367,7 @@ String s = <<<
   This is a
   multi-line string!
 >>>
+```
 
 In multi-line strings, leading *whitespace* is removed according to the following rules. In the context of multi-line strings, whitespace refers to space (`\x20`) and tab characters only and is treated differently from newline characters.
 
