@@ -15,6 +15,7 @@ This is the development version of the Workflow Description Language (WDL) speci
     - [Whitespace](#whitespace)
     - [Literals](#literals)
       - [Strings](#strings)
+        - [Multi-line Strings](#multi-line-strings)
     - [Comments](#comments)
     - [Reserved Keywords](#reserved-keywords)
     - [Types](#types)
@@ -56,7 +57,6 @@ This is the development version of the Workflow Description Language (WDL) speci
     - [Private Declarations](#private-declarations)
     - [Command Section](#command-section)
       - [Expression Placeholders](#expression-placeholders)
-      - [Stripping Leading Whitespace](#stripping-leading-whitespace)
     - [Task Outputs](#task-outputs)
       - [File, Directory, and Optional Outputs](#file-directory-and-optional-outputs)
         - [Soft link resolution example](#soft-link-resolution-example)
@@ -357,6 +357,105 @@ Strings can also contain the following types of escape sequences:
 * An octal escape code starts with `\`, followed by 3 digits of value 0 through 7 inclusive.
 * A hexadecimal escape code starts with `\x`, followed by 2 hexadecimal digits `0-9a-fA-F`. 
 * A unicode code point starts with `\u` followed by 4 hexadecimal characters or `\U` followed by 8 hexadecimal characters `0-9a-fA-F`.
+
+##### Multi-line Strings
+
+Strings that begin with `<<<` and end with `>>>` may span multiple lines.
+
+```wdl
+String s = <<<
+  This is a
+  multi-line string!
+>>>
+```
+
+In multi-line strings, leading *whitespace* is removed according to the following rules. In the context of multi-line strings, whitespace refers to space (`\x20`) and tab characters only and is treated differently from newline characters.
+
+1. Remove all line continuations and subsequent white space.
+  * A line continuation is a backslash (`\`) immediately preceding the newline. A line continuation indicates that two consecutive lines are actually the same line (e.g. when breaking a long line for better readability).
+  * If a line ends in multiple `\` then standard character escaping applies. Each pair of consecutive backslashes (`\\`) is an escaped backslash. So a line is continued only if it ends in an odd number of backslashes.
+  * Removing a line continuation means removing the last `\` character, the immediately following newline, and all the whitespace preceeding the next non-whitespace character or end of line (whichever comes first).
+2. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
+3. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
+4. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
+  * A blank line contains zero or more whitespace characters followed by a newline.
+  * Common leading whitespace is the minimum number of whitespace characters occuring before the first non-whitespace character in a non-blank line.
+  * Each whitespace character is counted once regardless of whether it is a space or tab (so care should be taken when mixing whitespace characters).
+5. Remove common leading whitespace from each line.
+
+```wdl
+# all of these strings evaluate to "hello  world"
+String hw0 = "hello  world"
+String hw1 = <<<hello  world>>>
+String hw2 = <<<   hello  world   >>>
+String hw3 = <<<   
+    hello world>>>
+String hw4 = <<<   
+    hello  world
+    >>>
+String hw5 = <<<   
+    hello  world
+>>>
+# the line continuation causes the newline and all whitespace preceding 'world' to be removed -
+# to put two spaces between 'hello' and world' we need to put them before the line continuation
+String hw6 = <<<
+    hello  \
+        world
+>>>
+
+# This string is not equivalent - the first line ends in two backslashes, which is an escaped
+# backslash, not a line continuation. So this string evaluates to "hello \\\n  world"
+String not_equivalent = <<<
+hello \\
+  world
+>>>
+```
+
+Common leading whitespace is also removed from blank lines that contain whitespace characters; newlines are *not* removed from blank lines. This means blank lines may be used to ensure that a multi-line string begins/ends with a newline.
+
+```wdl
+# These strings are all equivalent. In strings B, C, and D, the middle lines are blank and so do
+# not count towards the common leading whitespace determination.
+
+String multi_line_A = "\nthis is a\n\n  multi-line string\n"
+
+# This string's common leading whitespace is 0.
+String multi_line_B = <<<
+
+this is a
+
+  multi-line string
+
+>>>
+
+# This string's common leading whitespace is 2. The middle blank line contains two spaces that are
+# also removed.
+String multi_line_C = <<<
+
+  this is a
+  
+    multi-line string
+
+>>>
+
+# This string's common leading whitespace is 8.
+String multi_line_D = <<<
+
+        this is a
+
+          multi-line string
+
+>>>
+```
+
+Single- and double-quotes do not need to be escaped within a multi-line string.
+
+```wdl
+String multi_line_with_quotes = <<<
+  multi-line string \
+  with 'single' and "double" quotes
+>>>
+```
 
 ### Comments
 
@@ -821,7 +920,7 @@ String s = read_string("/path/to/file")
 
 WDL provides the standard unary and binary mathematical and logical operators. The following table lists the valid operand and result type combinations for each operator. Using an operator with unsupported types results in an error.
 
-In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type is first cast to a `Float`; the result type is always `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by the `Float`. Note that a `Float` can be converted to an `Int` with the [`ceil`, `round`, or `floor`](#int-floorfloat-int-ceilfloat-and-int-roundfloat) functions.
+In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type is first cast to a `Float`; the result type is always `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by the `Float`. A `Float` can be converted to an `Int` with the [`ceil`, `round`, or `floor`](#int-floorfloat-int-ceilfloat-and-int-roundfloat) functions.
 
 ##### Unary Operators
 
@@ -928,7 +1027,7 @@ Boolean is_false1 = [1, 2, 3] == [2, 1, 3]
 Boolean is_false2 = {"a": 1, "b": 2} == {"b": 2, "a": 1}
 ```
 
-Note that [type coercion](#type-coercion) can be employed to compare values of different but compatible types. For example:
+[Type coercion](#type-coercion) can be employed to compare values of different but compatible types. For example:
 
 ```wdl
 Array[Int] i = [1,2,3]
@@ -1031,7 +1130,7 @@ WDL provides a [standard library](#standard-library) of functions. These functio
 
 #### Expression Placeholders and String Interpolation
 
-Any WDL string expression may contain one or more "placeholders" of the form `~{*expression*}`, each of which contains a single expression. Note that placeholders of the form `${*expression*}` may also be used interchangably, but their use is discouraged for reasons discussed in the [command section](#expression-placeholders) and may be deprecated in a future version of the specification.
+Any WDL string expression may contain one or more "placeholders" of the form `~{*expression*}`, each of which contains a single expression.
 
 When a string expression is evaluated, its placeholders are evaluated first, and their values are then substituted for the placeholders in the containing string.
 
@@ -1061,7 +1160,22 @@ Placeholders may contain other placeholders to any level of nesting, and placeho
 Int i = 3
 Boolean b = true
 # s evaluates to "4", but would be "0" if b were false
-String s = "~{if b then '${1 + i}' else 0}"
+String s = "~{if b then '~{1 + i}' else 0}"
+```
+
+Placeholders are evaluated in multi-line strings exactly the same as in regular strings. Common leading whitespace is stripped from a multi-line string *before* placeholder expressions are evaluated.
+
+```wdl
+String spaces = "  "
+String name = "Henry"
+String company = "Acme"
+# This string evaluates to: "  Hello Henry,\n  Welcome to Acme!"
+# The string still has spaces because the placeholders are evaluated after removing the common
+# leading whitespace.
+String multi_line = <<<
+  ~{spaces}Hello ~{name},
+  ~{spaces}Welcome to ~{company}!
+>>>
 ```
 
 ##### Expression Placeholder Coercion
@@ -1087,9 +1201,17 @@ Boolean is_true5 = "~{3.141 * 1E-10}" == "0.000000"
 Boolean is_true6 = "~{3.141 * 1E10}" == "31410000000.000000"
 ```
 
-Compound types cannot be implicitly converted to strings. To convert an `Array` to a string, use the [`sep`](#-string-sepstring-arraystring) function: `~{sep(",", str_array)}`.
+Compound types cannot be implicitly converted to strings. To convert an `Array` to a string, use the [`sep`](#-string-sepstring-arraystring) function: `~{sep(",", str_array)}`. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for more details and examples.
 
-If an expression within a placeholder evaluates to `None`, then the placeholder is replaced by the empty string.
+If an expression within a placeholder evaluates to `None` and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string.
+
+```wdl
+String? foo = None
+# The expression in this string results in an error (calling `select_first` on an array containing
+# no non-`None` values) and so the placeholder evaluates to the empty string and `s` evalutes to:
+# "Foo is "
+String s = "Foo is ~{select_first([foo])}"
+```
 
 ##### Concatenation of Optional Values
 
@@ -1140,7 +1262,7 @@ python script.py --val=
 The latter case is very likely an error case, and this `--val=` part should be left off if a value for `val` is omitted. To solve this problem, modify the expression inside the template tag as follows:
 
 ```
-python script.py ${"--val=" + val}
+python script.py ~{"--val=" + val}
 ```
 
 ## WDL Documents
@@ -1398,7 +1520,7 @@ task say_hello {
   }
   command <<< >>>
   output {
-    String greeting = if defined(saluation) then "${saluation} ${name}" else name
+    String greeting = if defined(saluation) then "~{saluation} ~{name}" else name
   }
 }
 
@@ -1468,34 +1590,85 @@ workflow wf {
 
 ### Command Section
 
-The `command` section is the only required task section. It defines the command template that is evaluated and executed when the task is called. Specifically, the commands are executed after all of the inputs are staged and before the outputs are evaluated.
-
-There are two different syntaxes that can be used to define the command section:
+The `command` section is the only required task section. It defines the command template that is evaluated and executed when the task is called. The command template is a `bash` script that may contain placeholder expressions. There may be any number of commands within a command section.
 
 ```wdl
-# HEREDOC style - this way is preferred
-command <<< ... >>>
-
-# older style - may be preferable in some cases
-command { ... }
+command <<<
+  echo 'hello world'
+  cat ~{myfile} > tempfile
+  python myscript.py tempfile
+>>>
 ```
 
-There may be any number of commands within a command section. Commands are not modified by the execution engine, with the following exceptions:
-- Common leading whitespace is [stripped](#stripping-leading-whitespace)
-- String interpolation is performed on the entire command section to replace [expression placeholders](#expression-placeholders) with their actual values.
+The command template is evaluated *after* all of the inputs are staged and before the outputs are evaluated. The command template is evaluated similarly to [multi-line strings](#multi-line-strings):
+
+1. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
+2. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
+3. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
+4. Remove common leading whitespace from each line.
+5. Evaluate placeholder expressions.
+
+Notice that there is one major difference between the evaluation of multi-line strings vs the command template: line continuations are removed in the former but left as-is in the latter. This also means that continued lines are considered when determining common leading whitespace, and that common leading whitespace is removed from continued lines as well.
+
+```wdl
+String s = <<<
+  This string has \
+  no newlines
+>>>
+
+command <<<
+  echo "~{s}"
+  echo "This command has line continuations \
+    that still appear in the Bash script \
+    after evaluation"
+>>>
+```
+
+When the above command template is evaluated the resulting Bash script is:
+
+```sh
+echo "This string has no newlines"
+echo "This command has line continuations \
+  that still appear in the Bash script \
+  after evaluation"
+```
+
+For another example, consider a task that calls the `python` interpreter with an in-line Python script:
+
+```wdl
+task heredoc {
+  input {
+    File infile
+  }
+
+  command <<<
+    python <<CODE
+      with open("~{in}") as fp:
+        for line in fp:
+          if not line.startswith('#'):
+            print(line.strip())
+    CODE
+  >>>
+  ....
+}
+```
+
+Given an `infile` value of `/path/to/file`, the execution engine produces the following Bash script, which has removed the 4 spaces that were common to the beginning of each line:
+
+```sh
+python <<CODE
+  with open("/path/to/file") as fp:
+    for line in fp:
+      if not line.startswith('#'):
+        print(line.strip())
+CODE
+```
+
+Each whitespace character is counted once regardless of whether it is a space or tab, so care should be taken when mixing whitespace characters. For example, if a command block has two lines, and the first line begins with `<space><space><space><space>`, and the second line begins with `<tab>` then only one whitespace character is removed from each line.
 
 #### Expression Placeholders
 
-The body of the command section (i.e. the command "template") can be though of as a single string expression, which (like all string expressions) may contain placeholders.
-
-There are two different syntaxes that can be used to define command expression placeholders, depending on which style of command section definition is used:
-
-| Command Definition Style | Placeholder Style          |
-| ------------------------ | -------------------------- |
-| `command <<< >>>`        | `~{}` only                 |
-| `command { ... }`        | `~{}` (preferred) or `${}` |
-
-Note that the `~{}` and `${}` styles may be used interchangably in other string expressions.
+The command template can be thought of as a single string expression, which (like all string expressions) may contain placeholders.
 
 Any valid WDL expression may be used within a placeholder. For example, a command might reference an input to the task, like this:
 
@@ -1530,63 +1703,7 @@ task write_array {
 }
 ```
 
-In most cases, the `~{}` style of placeholder is preferred, to avoid ambiguity between WDL placeholders and Bash variables, which are of the form `$name` or `${name}`. If the `command { ... }` style is used, then `${name}` is always interpreted as a WDL placeholder, so care must be taken to only use `$name` style Bash variables. If the `command <<< ... >>>` style is used, then only `~{name}` is interpreted as a WDL placeholder, so either style of Bash variable may be used.
-
-```wdl
-task test {
-  input {
-    File infile
-  }
-  command {
-    # store value of WDL declaration "infile" to Bash variable "f"
-    f=${infile}
-    # cat the file referenced by Bash variable "f"
-    cat $f
-    # this causes an error since "f" is not a WDL declaration
-    cat ${f}
-  }
-  ....
-}
-```
-
 Keep in mind that the command section is still subject to the rules of [string interpolation](#expression-placeholders-and-string-interpolation): ultimately, the value of the placeholder must be converted to a string. This is immediately possible for primitive values, but compound values must be somehow converted to primitive values. In some cases, this is not possible, and the only available mechanism is to write the complex output to a file. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for details.
-
-#### Stripping Leading Whitespace
-
-When a command template is evaluate, the execution engine first strips out all *common leading whitespace*.
-
-For example, consider a task that calls the `python` interpreter with an in-line Python script:
-
-```wdl
-task heredoc {
-  input {
-    File infile
-  }
-
-  command<<<
-  python <<CODE
-    with open("~{in}") as fp:
-      for line in fp:
-        if not line.startswith('#'):
-          print(line.strip())
-  CODE
-  >>>
-  ....
-}
-```
-
-Given an `infile` value of `/path/to/file`, the execution engine will produce the following Bash script, which has removed the two spaces that were common to the beginning of each line:
-
-```sh
-python <<CODE
-  with open("/path/to/file") as fp:
-    for line in fp:
-      if not line.startswith('#'):
-        print(line.strip())
-CODE
-```
-
-If the user mixes tabs and spaces, the behavior is undefined. The execution engine should, at a minimum, issue a warning and leave the whitespace unmodified, though it may choose to raise an exception or to substitute e.g. 4 spaces per tab.
 
 ### Task Outputs
 
@@ -2593,7 +2710,7 @@ workflow wf {
 }
 ```
 
-Note that there is no mechanism for a workflow to set a value for a nested input when calling a subworkflow. For example, the following workflow is invalid:
+There is no mechanism for a workflow to set a value for a nested input when calling a subworkflow. For example, the following workflow is invalid:
 
 `sub.wdl`
 ```wdl
@@ -2642,7 +2759,7 @@ workflow abbrev {
 
 Calls may be executed as soon as all their inputs are available. If `call x`'s inputs are based on `call y`'s outputs, this means that `call x` can be run as soon as `call y` has completed. 
 
-As soon as the execution of a called task completes, the call outputs are available to be used as inputs to other calls in the workflow or as workflow outputs. Note that the only task declarations that are accessible outside of the task are its output declarations, i.e. call inputs cannot be referenced. To expose a call input, add an output to the task that simply copies the input:
+As soon as the execution of a called task completes, the call outputs are available to be used as inputs to other calls in the workflow or as workflow outputs. The only task declarations that are accessible outside of the task are its output declarations, i.e. call inputs cannot be referenced. To expose a call input, add an output to the task that simply copies the input:
 
 ```wdl
 task copy_input {
@@ -2669,7 +2786,7 @@ workflow test {
 }
 ```
 
-To add a dependency from x to y that isn't based on outputs, you can use the `after` keyword, such as `call x after y after z`. But note that this is only required if `x` doesn't already depend on an output from `y`.
+To add a dependency from x to y that isn't based on outputs, you can use the `after` keyword, such as `call x after y after z`. However, this is only required if `x` doesn't already depend on an output from `y`.
 
 ```wdl
 task my_task {
@@ -3103,7 +3220,7 @@ workflow cond_test {
 
 The scoping rules for conditionals are similar to those for scatters. Any declarations or call outputs inside a conditional body are accessible within that conditional and any nested scatter or conditional blocks. After a conditional block has been evaluated, its declarations and call outputs are "exported" to the enclosing scope. However, because the statements within a conditional block may or may not be evaluated during any given execution of the workflow, the type of each exported declarations or call output is implicitly `X?`, where `X` is the type of the declaration or call output within the conditional body.
 
-Note that, even though a conditional body is only evaluated if its conditional expression evaluates to `true`, all of the potential declarations and call outputs in the conditional body are always exported, regardless of the value of the conditional expression. In the case that the conditional expression evaluates to `false`, all of the exported declarations and call outputs are undefined (i.e. have a value of `None`).
+Even though a conditional body is only evaluated if its conditional expression evaluates to `true`, all of the potential declarations and call outputs in the conditional body are always exported, regardless of the value of the conditional expression. In the case that the conditional expression evaluates to `false`, all of the exported declarations and call outputs are undefined (i.e. have a value of `None`).
 
 ```wdl
 workflow foo {
@@ -3125,7 +3242,7 @@ workflow foo {
 }
 ```
 
-Also note that it is impossible to have a multi-level optional type, e.g. `Int??`; thus, the outputs of a conditional block are only ever single-level optionals, even when there are nested conditionals.
+It is impossible to have a multi-level optional type, e.g. `Int??`; thus, the outputs of a conditional block are only ever single-level optionals, even when there are nested conditionals.
 
 ```wdl
 workflow foo {
@@ -3467,7 +3584,7 @@ workflow max_test {
 
 Given 3 String parameters `input`, `pattern`, `replace`, this function replaces all non-overlapping occurrences of `pattern` in `input` by `replace`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) that will be evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 
-Note that regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
+Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
 
 ```wdl
 String s1 = "hello\tBob"
@@ -3807,7 +3924,7 @@ task do_stuff {
 
 Reads an entire file as a string, with any trailing end-of-line characters (`\r` and `\n`) stripped off. If the file is empty, an empty string is returned.
 
-Note that if the file contains any internal newline characters, they are left intact. For example:
+If the file contains any internal newline characters, they are left intact. For example:
 
 ```wdl
 # this file will contain "this\nfile\nhas\nfive\nlines\n"
@@ -4801,7 +4918,7 @@ A JSON `object` is deserialized to a generic object value value, and each member
 
 # Appendix A: WDL Value Serialization and Deserialization
 
-This section provides suggestions for ways to deal with primitive and compound values in the task [command section](#command-section). When a WDL execution engine instantiates a command specified in the `command` section of a `task`, it must evaluate all expression placeholders (`~{...}` and `${...}`) in the command and coerce their values to strings. There are multiple different ways that WDL values can be communicated to the command(s) being called in the command section, and the best method will vary by command.
+This section provides suggestions for ways to deal with primitive and compound values in the task [command section](#command-section). When a WDL execution engine instantiates a command specified in the `command` section of a `task`, it must evaluate all expression placeholders (`~{...}`) in the command and coerce their values to strings. There are multiple different ways that WDL values can be communicated to the command(s) being called in the command section, and the best method will vary by command.
 
 For example, a task that wraps a tool that operates on an `Array` of FASTQ files has several ways that it can specify the list of files to the tool:
 
@@ -5232,7 +5349,7 @@ task test {
 | --- | ----- |
 | foo | bar   |
 
-Note that using `write_json`/`read_json` to serialize to/from a `Map` can cause subtle issues due to the fact that `Map` is ordered whereas an object value is not. For example:
+Using `write_json`/`read_json` to serialize to/from a `Map` can lead to subtle issues due to the fact that `Map` is ordered whereas an object value is not. For example:
 
 ```wdl
 Map[String, Int] s2i = {"b": 2, "a": 1}
