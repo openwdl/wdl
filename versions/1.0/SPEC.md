@@ -2309,7 +2309,7 @@ workflow wf {
   scatter (i in integers) {
     call inc {input: i=i}
   }
-  call sum {input: ints = inc.increment}
+  call sum {input: ints = inc.incremented}
 }
 ```
 
@@ -2326,7 +2326,7 @@ workflow wf {
     call inc {input: i=i}
     call inc as inc2 {input: i=inc.incremented}
   }
-  call sum {input: ints = inc2.increment}
+  call sum {input: ints = inc2.incremented}
 }
 ```
 
