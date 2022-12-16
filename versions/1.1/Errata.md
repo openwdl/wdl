@@ -1,5 +1,14 @@
 # WDL Specification v1.1 Errata
 
+## Strings
+
+The table of escape characters is missing `~` and `$`, which are required to be able to write literal `~{` and `${` characters in a string (i.e. to have them not recognized as placeholders).
+
+| Escape Sequence | Meaning | \x Equivalent | Context |
+|----|---|------|--|
+|`\~`|`~`|`\x7E`||
+|`\$`|`$`|`\x24`||
+
 ## Type coercions
 
 The following coercions are missing from the [table](https://github.com/openwdl/wdl/blob/main/versions/1.1/SPEC.md#type-coercion):
