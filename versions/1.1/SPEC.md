@@ -393,6 +393,8 @@ A string literal may contain any unicode characters between single or double-quo
 | `\t`            | tab          | `\x09`        |                               |
 | `\'`            | single quote | `\x22`        | within a single-quoted string |
 | `\"`            | double quote | `\x27`        | within a double-quoted string |
+| `~`             | tilde        | `\x7E`        | literal `"~{"`                |
+| `$`             | dollar sign  | `\x24`        | literal `"${"`                |
 
 Strings can also contain the following types of escape sequences:
 
