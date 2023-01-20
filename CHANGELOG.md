@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 version development
 ---------------------------
 
++ Fixed various typos in the copies of the documents (including historical),
+  and provided codespell configuration and workflow to catch any new typo.
+  [PR 530](https://github.com/openwdl/wdl/pull/530) by @yarikoptic.
+
 + Fixed description of ternary operator to say that the type, not the value,
   of the if-then-else is the same regardless of which side is evaluated.
   [PR 476](https://github.com/openwdl/wdl/pull/476) by @notestaff
