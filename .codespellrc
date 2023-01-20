@@ -1,0 +1,4 @@
+[codespell]
+skip = *.css*,package-lock.json,.git
+# dne - abbreviation used in an example, so no fixes
+ignore-words-list = dne
