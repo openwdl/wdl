@@ -44,7 +44,7 @@ For each language please refer to the corresponding directory for build instruct
 
 ### Contributing new Target Languages
 
-Adding new language support for additional targets is relatively easy. Simply select one fo the 8 languages supported by `ANTLR` create a new directory, and then implement the `WDLBaseLexer` in that language according. If the target language does not use `this` or `self` then you may need to add a new `lexer` with the appropriate instance references.
+Adding new language support for additional targets is relatively easy. Simply select one of the 8 languages supported by `ANTLR` create a new directory, and then implement the `WDLBaseLexer` in that language according. If the target language does not use `this` or `self` then you may need to add a new `lexer` with the appropriate instance references.
 
 ## Visitors and Listeners
 
