@@ -2032,7 +2032,7 @@ workflow workflow_a {
     Array[Experiment] myExperiments
 
     File firstFileFromFirstExperiment = myExperiments[0].experimentFiles[0]
-    File eperimentNameFromFirstExperiment = bams[0].experimentData["name"]
+    File experimentNameFromFirstExperiment = bams[0].experimentData["name"]
     ....
 }
 
