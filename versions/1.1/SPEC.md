@@ -1036,7 +1036,7 @@ The syntax `x.y` refers to member access. `x` must be a call in a workflow, or a
 call foo
 String x = foo.y
 
-Stuct MyType {
+Struct MyType {
   String b
 }
 MyType z = MyType { z: 'hello' }
@@ -1075,7 +1075,7 @@ WDL provides a [standard library](#standard-library) of functions. These functio
 
 #### Expression Placeholders and String Interpolation
 
-Any WDL string expression may contain one or more "placeholders" of the form `~{*expression*}`, each of which contains a single expression. Note that placeholders of the form `${*expression*}` may also be used interchangably, but their use is discouraged for reasons discussed in the [command section](#expression-placeholders) and may be deprecated in a future version of the specification.
+Any WDL string expression may contain one or more "placeholders" of the form `~{*expression*}`, each of which contains a single expression. Note that placeholders of the form `${*expression*}` may also be used interchangeably, but their use is discouraged for reasons discussed in the [command section](#expression-placeholders) and may be deprecated in a future version of the specification.
 
 When a string expression is evaluated, its placeholders are evaluated first, and their values are then substituted for the placeholders in the containing string.
 
@@ -1150,7 +1150,7 @@ String? name2 = "Fred"
 String greeting1 = "~{salutation + ' ' + name1 + ' '}nice to meet you!"
 
 # since name2 is defined, the evaluation of the
-# expression in the placeholder succeedes, and the
+# expression in the placeholder succeeds, and the
 # value of greeting2 = "hello Fred, nice to meet you!"
 String greeting2 = "~{salutation + ' ' + name2 + ', '}nice to meet you!"
 ```
@@ -1646,7 +1646,7 @@ There are two different syntaxes that can be used to define command expression p
 |`command <<< >>>`|`~{}` only|
 |`command { ... }`|`~{}` (preferred) or `${}`|
 
-Note that the `~{}` and `${}` styles may be used interchangably in other string expressions.
+Note that the `~{}` and `${}` styles may be used interchangeably in other string expressions.
 
 Any valid WDL expression may be used within a placeholder. For example, a command might reference an input to the task, like this:
 
@@ -5586,7 +5586,7 @@ task test {
 |----|------|
 |foo |bar   |
 
-Note that using `write_json`/`read_json` to serialize to/from a `Map` can cause suble issues due to the fact that `Map` is ordered whereas `Object` is not. For example:
+Note that using `write_json`/`read_json` to serialize to/from a `Map` can cause subtle issues due to the fact that `Map` is ordered whereas `Object` is not. For example:
 
 ```wdl
 Map[String, Int] s2i = {"b": 2, "a": 1}

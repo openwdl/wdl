@@ -379,7 +379,7 @@ In multi-line strings, leading *whitespace* is removed according to the followin
 3. Remove all whitespace preceding the closing `>>>`, up to and including a newline (if any).
 4. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
   * A blank line contains zero or more whitespace characters followed by a newline.
-  * Common leading whitespace is the minimum number of whitespace characters occuring before the first non-whitespace character in a non-blank line.
+  * Common leading whitespace is the minimum number of whitespace characters occurring before the first non-whitespace character in a non-blank line.
   * Each whitespace character is counted once regardless of whether it is a space or tab (so care should be taken when mixing whitespace characters).
 5. Remove common leading whitespace from each line.
 
@@ -1091,7 +1091,7 @@ The syntax `x.y` refers to member access. `x` must be a call in a workflow, or a
 call foo
 String x = foo.y
 
-Stuct MyType {
+Struct MyType {
   String b
 }
 MyType z = MyType { z: 'hello' }
@@ -1208,7 +1208,7 @@ If an expression within a placeholder evaluates to `None` and either causes the 
 ```wdl
 String? foo = None
 # The expression in this string results in an error (calling `select_first` on an array containing
-# no non-`None` values) and so the placeholder evaluates to the empty string and `s` evalutes to:
+# no non-`None` values) and so the placeholder evaluates to the empty string and `s` evaluates to:
 # "Foo is "
 String s = "Foo is ~{select_first([foo])}"
 ```
@@ -1228,7 +1228,7 @@ String? name2 = "Fred"
 String greeting1 = "~{salutation + ' ' + name1 + ' '}nice to meet you!"
 
 # since name2 is defined, the evaluation of the
-# expression in the placeholder succeedes, and the
+# expression in the placeholder succeeds, and the
 # value of greeting2 = "hello Fred, nice to meet you!"
 String greeting2 = "~{salutation + ' ' + name2 + ', '}nice to meet you!"
 ```

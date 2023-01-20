@@ -217,7 +217,7 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 * Any character not in set: `\\`, `"` (or `'` for single-quoted string), `\n`
 * An escape sequence starting with `\\`, followed by one of the following characters: `\\`, `"`, `'`, `[nrbtfav]`, `?`
 * An escape sequence starting with `\\`, followed by 1 to 3 digits of value 0 through 7 inclusive.  This specifies an octal escape code.
-* An escape sequence starting with `\\x`, followed by hexadecimal characters `0-9a-fA-F`.  This specifies a hexidecimal escape code.
+* An escape sequence starting with `\\x`, followed by hexadecimal characters `0-9a-fA-F`.  This specifies a hexadecimal escape code.
 * An escape sequence starting with `\\u` or `\\U` followed by either 4 or 8 hexadecimal characters `0-9a-fA-F`.  This specifies a unicode code point
 
 ### Types
@@ -557,7 +557,7 @@ Array[Int] b = [0,1,2]
 
 ### Map Literals
 
-Maps values can be specified using a similar Python-like sytntax:
+Maps values can be specified using a similar Python-like syntax:
 
 ```
 Map[Int, Int] = {1: 10, 2: 11}
@@ -1465,7 +1465,7 @@ Inside of this task, there exists only one expression: `write_lines(strings)`.  
 
 ## Workflow-Level Resolution
 
-In a workflow, resolution works by traversing the scope heirarchy starting from expression that references the variable.
+In a workflow, resolution works by traversing the scope hierarchy starting from expression that references the variable.
 
 ```wdl
 workflow wf {
@@ -1594,7 +1594,7 @@ Once workflow inputs are computed (see previous section), the value for each of 
 }
 ```
 
-It's important to note that the type in JSON must be coercable to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "3"`, this coercion from string to integer is not valid and would result in a type error.  See the section on [Type Coercion](#type-coercion) for more details.
+It's important to note that the type in JSON must be coercible to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "3"`, this coercion from string to integer is not valid and would result in a type error.  See the section on [Type Coercion](#type-coercion) for more details.
 
 # Type Coercion
 
@@ -1608,8 +1608,8 @@ Within WDL files as well as converting from JSON types to WDL types, there are s
 |`File`       |JSON String   |Interpreted opaquely as file path|
 |             |`String`      |Interpreted opaquely as file path|
 |`String`     |JSON String   ||
-|`Array[T]`   |JSON Array    |Elements must be coercable to `T`|
-|`Map[K, V]`  |JSON Object   |keys and values must be coercable to `K` and `V`, respectively|
+|`Array[T]`   |JSON Array    |Elements must be coercible to `T`|
+|`Map[K, V]`  |JSON Object   |keys and values must be coercible to `K` and `V`, respectively|
 
 # Standard Library
 

@@ -238,7 +238,7 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 * Any character not in set: `\\`, `"` (or `'` for single-quoted string), `\n`
 * An escape sequence starting with `\\`, followed by one of the following characters: `\\`, `"`, `'`, `[nrbtfav]`, `?`
 * An escape sequence starting with `\\`, followed by 1 to 3 digits of value 0 through 7 inclusive.  This specifies an octal escape code.
-* An escape sequence starting with `\\x`, followed by hexadecimal characters `0-9a-fA-F`.  This specifies a hexidecimal escape code.
+* An escape sequence starting with `\\x`, followed by hexadecimal characters `0-9a-fA-F`.  This specifies a hexadecimal escape code.
 * An escape sequence starting with `\\u` or `\\U` followed by either 4 or 8 hexadecimal characters `0-9a-fA-F`.  This specifies a unicode code point
 
 ### Types
@@ -624,7 +624,7 @@ Array[Int] b = [0,1,2]
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
-Maps values can be specified using a similar Python-like sytntax:
+Maps values can be specified using a similar Python-like syntax:
 
 ```
 Map[Int, Int] = {1: 10, 2: 11}
@@ -1036,7 +1036,7 @@ task docker_test {
 
 Memory requirements for this task.  Two kinds of values are supported for this attributes:
 
-* `Int` - Intepreted as bytes
+* `Int` - Interpreted as bytes
 * `String` - This should be a decimal value with suffixes like `B`, `KB`, `MB` or binary suffixes `KiB`, `MiB`.  For example: `6.2 GB`, `5MB`, `2GiB`.
 
 ```wdl
@@ -1466,7 +1466,7 @@ $wf_parameter_meta_kv = $identifier $ws* '=' $ws* $string
 
 This purely optional section contains key/value pairs where the keys are names of parameters and the values are string descriptions for those parameters.
 
-> *Additional requirement*: Any key in this section MUST correspond to a worflow input
+> *Additional requirement*: Any key in this section MUST correspond to a workflow input
 
 As an example:
 ```
@@ -1888,7 +1888,7 @@ Inside of this task, there exists only one expression: `write_lines(strings)`.  
 
 :pig2: [Cromwell supported](https://github.com/broadinstitute/cromwell#wdl-support) :white_check_mark:
 
-In a workflow, resolution works by traversing the scope heirarchy starting from expression that references the variable.
+In a workflow, resolution works by traversing the scope hierarchy starting from expression that references the variable.
 
 ```wdl
 workflow wf {
@@ -2025,7 +2025,7 @@ Once workflow inputs are computed (see previous section), the value for each of 
 }
 ```
 
-It's important to note that the type in JSON must be coercable to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "3"`, this coercion from string to integer is not valid and would result in a type error.  See the section on [Type Coercion](#type-coercion) for more details.
+It's important to note that the type in JSON must be coercible to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "3"`, this coercion from string to integer is not valid and would result in a type error.  See the section on [Type Coercion](#type-coercion) for more details.
 
 # Type Coercion
 
@@ -2052,10 +2052,10 @@ WDL values can be created from either JSON values or from native language values
 |`Boolean`|JSON Boolean||
 |         |Boolean-like||
 |         |`Boolean`|Identity coercion|
-|`Array[T]`|JSON Array|Elements must be coercable to `T`|
-|          |Array-like|Elements must be coercable to `T`|
-|`Map[K, V]`|JSON Object|keys and values must be coercable to `K` and `V`, respectively|
-|           |Map-like|keys and values must be coercable to `K` and `V`, respectively|
+|`Array[T]`|JSON Array|Elements must be coercible to `T`|
+|          |Array-like|Elements must be coercible to `T`|
+|`Map[K, V]`|JSON Object|keys and values must be coercible to `K` and `V`, respectively|
+|           |Map-like|keys and values must be coercible to `K` and `V`, respectively|
 
 # Standard Library
 

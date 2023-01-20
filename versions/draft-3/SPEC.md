@@ -263,7 +263,7 @@ $float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
 * Any character not in set: `\\`, `"` (or `'` for single-quoted string), `\n`
 * An escape sequence starting with `\\`, followed by one of the following characters: `\\`, `"`, `'`, `[nrbtfav]`, `?`
 * An escape sequence starting with `\\`, followed by 1 to 3 digits of value 0 through 7 inclusive.  This specifies an octal escape code.
-* An escape sequence starting with `\\x`, followed by hexadecimal characters `0-9a-fA-F`.  This specifies a hexidecimal escape code.
+* An escape sequence starting with `\\x`, followed by hexadecimal characters `0-9a-fA-F`.  This specifies a hexadecimal escape code.
 * An escape sequence starting with `\\u` or `\\U` followed by either 4 or 8 hexadecimal characters `0-9a-fA-F`.  This specifies a unicode code point
 
 ### Types
@@ -646,7 +646,7 @@ Array[Int] b = [0,1,2]
 
 ### Map Literals
 
-Maps values can be specified using a similar Python-like sytntax:
+Maps values can be specified using a similar Python-like syntax:
 
 ```
 Map[Int, Int] = {1: 10, 2: 11}
@@ -880,7 +880,7 @@ task test {
 
 > **NOTE**: the expression result must ultimately be converted to a string in order to take the place of the placeholder in the command script.
 This is immediately possible for WDL primitive types (e.g. not `Array`, `Map`, or `Object`).
-To place an array into the command block a separater character must be specified using `sep` (eg `${sep=", " int_array}`).
+To place an array into the command block a separator character must be specified using `sep` (eg `${sep=", " int_array}`).
 
 
 As another example, consider how the parser would parse the following command:
@@ -1153,7 +1153,7 @@ task docker_test {
 
 Memory requirements for this task.  Two kinds of values are supported for this attributes:
 
-* `Int` - Intepreted as bytes
+* `Int` - Interpreted as bytes
 * `String` - This should be a decimal value with suffixes like `B`, `KB`, `MB` or binary suffixes `KiB`, `MiB`.  For example: `6.2 GB`, `5MB`, `2GiB`.
 
 ```wdl
@@ -1898,7 +1898,7 @@ In this example `t_out` has an `Array[String]` result type, because `call t` is 
 
 #### Omitting Workflow Outputs
 
-If the `output {...}` section is omitted from a top-level workfow then the workflow engine should include all outputs from all calls in its final output.
+If the `output {...}` section is omitted from a top-level workflow then the workflow engine should include all outputs from all calls in its final output.
 
 However, if a workflow is intended to be called as a subworkflow, it is required that outputs are named and specified using expressions in the outputs block, just like task outputs. The rationale here is:
 - To present the same interface when calling subworkflows as when calling tasks.
@@ -2355,7 +2355,7 @@ Inside of this task, there exists only one expression: `write_lines(strings)`.  
 
 ## Workflow-Level Resolution
 
-In a workflow, resolution works by traversing the scope heirarchy starting from expression that references the variable.
+In a workflow, resolution works by traversing the scope hierarchy starting from expression that references the variable.
 
 ```wdl
 workflow wf {
@@ -2403,7 +2403,7 @@ Workflows have inputs that must be satisfied to run them, just like tasks. Input
 * If a workflow is to be used as a sub-workflow it must ensure that all of the inputs to its calls are satisfied.
 * If a workflow will only ever be submitted as a top-level workflow, it may optionally leave its tasks' inputs unsatisfied. This then forces the engine to additionally supply those inputs at run time. In this case, the inputs' names must be qualified in the inputs as `workflow_name.task_name.input_name`.
 
-Any declaration that appears outside the `input` section is considered an intermediate value and **not** a workflow input. Any declaration can always be moved inside the `input` block to make it overrideable.
+Any declaration that appears outside the `input` section is considered an intermediate value and **not** a workflow input. Any declaration can always be moved inside the `input` block to make it overridable.
 
 Consider the following workflow:
 
@@ -2501,7 +2501,7 @@ In JSON, the inputs to the workflow in the previous section might be:
 }
 ```
 
-It's important to note that the type in JSON must be coercable to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "three"`, this coercion from string to integer is not valid and would result in a coercion error.  See the section on [Type Coercion](#type-coercion) for more details.
+It's important to note that the type in JSON must be coercible to the WDL type.  For example `wf.int_val` expects an integer, but if we specified it in JSON as `"wf.int_val": "three"`, this coercion from string to integer is not valid and would result in a coercion error.  See the section on [Type Coercion](#type-coercion) for more details.
 
 # Type Coercion
 
@@ -2526,10 +2526,10 @@ WDL values can be created from either JSON values or from native language values
 |`Boolean`|JSON Boolean||
 |         |Boolean-like||
 |         |`Boolean`|Identity coercion|
-|`Array[T]`|JSON Array|Elements must be coercable to `T`|
-|          |Array-like|Elements must be coercable to `T`|
-|`Map[K, V]`|JSON Object|keys and values must be coercable to `K` and `V`, respectively|
-|           |Map-like|keys and values must be coercable to `K` and `V`, respectively|
+|`Array[T]`|JSON Array|Elements must be coercible to `T`|
+|          |Array-like|Elements must be coercible to `T`|
+|`Map[K, V]`|JSON Object|keys and values must be coercible to `K` and `V`, respectively|
+|           |Map-like|keys and values must be coercible to `K` and `V`, respectively|
 
 # Standard Library
 
@@ -2590,7 +2590,7 @@ task do_stuff {
 
 Then when the task finishes, to fulfull the `outputs_table` variable, `./results/file_list.tsv` must be a valid TSV file or an error will be reported.
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Map[String, String] read_map(String|File)
 
@@ -2615,7 +2615,7 @@ task do_stuff {
 }
 ```
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Object read_object(String|File)
 
@@ -2650,7 +2650,7 @@ Which would be turned into an `Object` in WDL that would look like this:
 |key_2    |"value_2"|
 |key_3    |"value_3"|
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Array[Object] read_objects(String|File)
 
@@ -2695,7 +2695,7 @@ Which would be turned into an `Array[Object]` in WDL that would look like this:
 |     |key_2    |"value_2"|
 |     |key_3    |"value_3"|
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## mixed read_json(String|File)
 
@@ -2730,7 +2730,7 @@ task do_stuff {
 
 Then when the task finishes, to fulfull the `output_table` variable, `./results/file_list.json` must be a valid TSV file or an error will be reported.
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Int read_int(String|File)
 
@@ -2744,19 +2744,19 @@ The `read_string()` function takes a file path which is expected to contain 1 li
 
 No trailing newline characters should be included
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Float read_float(String|File)
 
 The `read_float()` function takes a file path which is expected to contain 1 line with 1 floating point number on it.  This function returns that float.
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## Boolean read_boolean(String|File)
 
 The `read_boolean()` function takes a file path which is expected to contain 1 line with 1 Boolean value (either "true" or "false" on it).  This function returns that Boolean value.
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limted to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
+If the entire contents of the file can not be read for any reason, the calling task or workflow will be considered to have failed. Examples of failure include but are not limited to not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation imposed file size limits.
 
 ## File write_lines(Array[String])
 

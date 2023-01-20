@@ -72,7 +72,7 @@ code tests in case the standard simple YAML tests are not sufficient.
 
 # Contributing
 
-WDL only advances through community contributions. While submitting an issue is a great way to report a bug in the spec, or create disscussion around current or new features, it will ultimately not translate into an actual change in the spec. The best way to make changes is by submitting a PR. For more information on how you can contribute, please see the [Contributing](CONTRIBUTING.md) readme. 
+WDL only advances through community contributions. While submitting an issue is a great way to report a bug in the spec, or create discussion around current or new features, it will ultimately not translate into an actual change in the spec. The best way to make changes is by submitting a PR. For more information on how you can contribute, please see the [Contributing](CONTRIBUTING.md) readme. 
 
 Additionally, once a PR has been submitted, it will be subjected to our [RFC Process](RFC.md).
 
