@@ -1273,7 +1273,7 @@ workflow wf {
 [Types](#types) can be optionally suffixed with a `?` or `+` in certain cases.
 
 * `?` means that the parameter is optional.  A user does not need to specify a value for the parameter in order to satisfy all the inputs to the workflow.
-* `+` applies only to `Array` types and it represents a constraint that the `Array` value must containe one-or-more elements.
+* `+` applies only to `Array` types and it represents a constraint that the `Array` value must contain one-or-more elements.
 
 ```
 task test {
