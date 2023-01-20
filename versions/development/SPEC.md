@@ -374,9 +374,9 @@ In multi-line strings, leading *whitespace* is removed according to the followin
 1. Remove all line continuations and subsequent white space.
   * A line continuation is a backslash (`\`) immediately preceding the newline. A line continuation indicates that two consecutive lines are actually the same line (e.g. when breaking a long line for better readability).
   * If a line ends in multiple `\` then standard character escaping applies. Each pair of consecutive backslashes (`\\`) is an escaped backslash. So a line is continued only if it ends in an odd number of backslashes.
-  * Removing a line continuation means removing the last `\` character, the immediately following newline, and all the whitespace preceeding the next non-whitespace character or end of line (whichever comes first).
+  * Removing a line continuation means removing the last `\` character, the immediately following newline, and all the whitespace preceding the next non-whitespace character or end of line (whichever comes first).
 2. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
-3. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
+3. Remove all whitespace preceding the closing `>>>`, up to and including a newline (if any).
 4. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
   * A blank line contains zero or more whitespace characters followed by a newline.
   * Common leading whitespace is the minimum number of whitespace characters occuring before the first non-whitespace character in a non-blank line.
@@ -1603,7 +1603,7 @@ command <<<
 The command template is evaluated *after* all of the inputs are staged and before the outputs are evaluated. The command template is evaluated similarly to [multi-line strings](#multi-line-strings):
 
 1. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
-2. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
+2. Remove all whitespace preceding the closing `>>>`, up to and including a newline (if any).
 3. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
 4. Remove common leading whitespace from each line.
 5. Evaluate placeholder expressions.
