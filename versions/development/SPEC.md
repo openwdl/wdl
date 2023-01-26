@@ -21,9 +21,9 @@ This is the development version of the Workflow Description Language (WDL) speci
       - [Primitive Types](#primitive-types)
       - [Optional Types and None](#optional-types-and-none)
       - [Compound Types](#compound-types)
-        - [Array[X]](#arrayx)
-        - [Pair[X, Y]](#pairx-y)
-        - [Map[P, Y]](#mapp-y)
+        - [Array\[X\]](#arrayx)
+        - [Pair\[X, Y\]](#pairx-y)
+        - [Map\[P, Y\]](#mapp-y)
         - [Custom Types (Structs)](#custom-types-structs)
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
@@ -90,7 +90,7 @@ This is the development version of the Workflow Description Language (WDL) speci
     - [Workflow Inputs](#workflow-inputs)
     - [Workflow Outputs](#workflow-outputs)
     - [Evaluation of Workflow Elements](#evaluation-of-workflow-elements)
-    - [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
+    - [Fully Qualified Names \& Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
     - [Call Statement](#call-statement)
       - [Computing Call Inputs](#computing-call-inputs)
     - [Scatter](#scatter)
@@ -106,41 +106,41 @@ This is the development version of the Workflow Description Language (WDL) speci
   - [String sub(String, String, String)](#string-substring-string-string)
   - [File stdout()](#file-stdout)
   - [File stderr()](#file-stderr)
-  - [Array[File] glob(String)](#arrayfile-globstring)
+  - [Array\[File\] glob(String)](#arrayfile-globstring)
     - [Non-standard Bash](#non-standard-bash)
-  - [String basename(String|File, [String])](#string-basenamestringfile-string)
-  - [Array[String] read_lines(String|File)](#arraystring-read_linesstringfile)
-  - [Array[Array[String]] read_tsv(String|File)](#arrayarraystring-read_tsvstringfile)
-  - [Map[String, String] read_map(String|File)](#mapstring-string-read_mapstringfile)
-  - [R read_json(String|File)](#r-read_jsonstringfile)
-  - [String read_string(String|File)](#string-read_stringstringfile)
-  - [Int read_int(String|File)](#int-read_intstringfile)
-  - [Float read_float(String|File)](#float-read_floatstringfile)
-  - [Boolean read_boolean(String|File)](#boolean-read_booleanstringfile)
-  - [File write_lines(Array[String])](#file-write_linesarraystring)
-  - [File write_tsv(Array[Array[String]])](#file-write_tsvarrayarraystring)
-  - [File write_map(Map[String, String])](#file-write_mapmapstring-string)
-  - [File write_json(X)](#file-write_jsonx)
-  - [Float size(File?|Array[File?], [String])](#float-sizefilearrayfile-string)
-  - [Int length(Array[X])](#int-lengtharrayx)
-  - [Array[Int] range(Int)](#arrayint-rangeint)
-  - [Array[Array[X]] transpose(Array[Array[X]])](#arrayarrayx-transposearrayarrayx)
-  - [Array[Pair[X,Y]] zip(Array[X], Array[Y])](#arraypairxy-ziparrayx-arrayy)
-  - [✨ Pair[Array[X], Array[Y]] unzip(Array[Pair[X, Y]])](#-pairarrayx-arrayy-unziparraypairx-y)
-  - [Array[Pair[X,Y]] cross(Array[X], Array[Y])](#arraypairxy-crossarrayx-arrayy)
-  - [Array[X] flatten(Array[Array[X]])](#arrayx-flattenarrayarrayx)
-  - [Array[String] prefix(String, Array[P])](#arraystring-prefixstring-arrayp)
-  - [✨ Array[String] suffix(String, Array[X])](#-arraystring-suffixstring-arrayx)
-  - [✨ Array[String] quote(Array[P])](#-arraystring-quotearrayp)
-  - [✨ Array[String] squote(Array[X])](#-arraystring-squotearrayx)
-  - [✨ String sep(String, Array[String])](#-string-sepstring-arraystring)
-  - [✨ Array[Pair[P, Y]] as_pairs(Map[P, Y])](#-arraypairp-y-as_pairsmapp-y)
-  - [✨ Map[P, Y] as_map(Array[Pair[P, Y]])](#-mapp-y-as_maparraypairp-y)
-  - [✨ Array[P] keys(Map[P, Y])](#-arrayp-keysmapp-y)
-  - [✨ Map[P, Array[Y]] collect_by_key(Array[Pair[P, Y]])](#-mapp-arrayy-collect_by_keyarraypairp-y)
+  - [String basename(String|File, \[String\])](#string-basenamestringfile-string)
+  - [Array\[String\] read\_lines(String|File)](#arraystring-read_linesstringfile)
+  - [Array\[Array\[String\]\] read\_tsv(String|File)](#arrayarraystring-read_tsvstringfile)
+  - [Map\[String, String\] read\_map(String|File)](#mapstring-string-read_mapstringfile)
+  - [R read\_json(String|File)](#r-read_jsonstringfile)
+  - [String read\_string(String|File)](#string-read_stringstringfile)
+  - [Int read\_int(String|File)](#int-read_intstringfile)
+  - [Float read\_float(String|File)](#float-read_floatstringfile)
+  - [Boolean read\_boolean(String|File)](#boolean-read_booleanstringfile)
+  - [File write\_lines(Array\[String\])](#file-write_linesarraystring)
+  - [File write\_tsv(Array\[Array\[String\]\])](#file-write_tsvarrayarraystring)
+  - [File write\_map(Map\[String, String\])](#file-write_mapmapstring-string)
+  - [File write\_json(X)](#file-write_jsonx)
+  - [Float size(File?|Array\[File?\], \[String\])](#float-sizefilearrayfile-string)
+  - [Int length(Array\[X\])](#int-lengtharrayx)
+  - [Array\[Int\] range(Int)](#arrayint-rangeint)
+  - [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
+  - [Array\[Pair\[X,Y\]\] zip(Array\[X\], Array\[Y\])](#arraypairxy-ziparrayx-arrayy)
+  - [✨ Pair\[Array\[X\], Array\[Y\]\] unzip(Array\[Pair\[X, Y\]\])](#-pairarrayx-arrayy-unziparraypairx-y)
+  - [Array\[Pair\[X,Y\]\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
+  - [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
+  - [Array\[String\] prefix(String, Array\[P\])](#arraystring-prefixstring-arrayp)
+  - [✨ Array\[String\] suffix(String, Array\[X\])](#-arraystring-suffixstring-arrayx)
+  - [✨ Array\[String\] quote(Array\[P\])](#-arraystring-quotearrayp)
+  - [✨ Array\[String\] squote(Array\[X\])](#-arraystring-squotearrayx)
+  - [✨ String sep(String, Array\[String\])](#-string-sepstring-arraystring)
+  - [✨ Array\[Pair\[P, Y\]\] as\_pairs(Map\[P, Y\])](#-arraypairp-y-as_pairsmapp-y)
+  - [✨ Map\[P, Y\] as\_map(Array\[Pair\[P, Y\]\])](#-mapp-y-as_maparraypairp-y)
+  - [✨ Array\[P\] keys(Map\[P, Y\])](#-arrayp-keysmapp-y)
+  - [✨ Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#-mapp-arrayy-collect_by_keyarraypairp-y)
   - [Boolean defined(X?)](#boolean-definedx)
-  - [X select_first(Array[X?]+)](#x-select_firstarrayx)
-  - [Array[X] select_all(Array[X?])](#arrayx-select_allarrayx)
+  - [X select\_first(Array\[X?\]+)](#x-select_firstarrayx)
+  - [Array\[X\] select\_all(Array\[X?\])](#arrayx-select_allarrayx)
 - [Input and Output Formats](#input-and-output-formats)
   - [JSON Input Format](#json-input-format)
     - [Optional Inputs](#optional-inputs)
@@ -157,17 +157,17 @@ This is the development version of the Workflow Description Language (WDL) speci
   - [Compound Values](#compound-values)
     - [Array](#array-1)
       - [Array serialization by expansion](#array-serialization-by-expansion)
-      - [Array serialization using write_lines()](#array-serialization-using-write_lines)
-      - [Array serialization using write_json()](#array-serialization-using-write_json)
-      - [Array deserialization using read_lines()](#array-deserialization-using-read_lines)
-      - [Array deserialization using read_json()](#array-deserialization-using-read_json)
+      - [Array serialization using write\_lines()](#array-serialization-using-write_lines)
+      - [Array serialization using write\_json()](#array-serialization-using-write_json)
+      - [Array deserialization using read\_lines()](#array-deserialization-using-read_lines)
+      - [Array deserialization using read\_json()](#array-deserialization-using-read_json)
     - [Struct](#struct-1)
-      - [Struct serialization using write_json()](#struct-serialization-using-write_json)
+      - [Struct serialization using write\_json()](#struct-serialization-using-write_json)
     - [Map](#map-1)
-      - [Map serialization using write_map()](#map-serialization-using-write_map)
-      - [Map serialization using write_json()](#map-serialization-using-write_json)
-      - [Map deserialization using read_map()](#map-deserialization-using-read_map)
-      - [Map deserialization using read_json()](#map-deserialization-using-read_json)
+      - [Map serialization using write\_map()](#map-serialization-using-write_map)
+      - [Map serialization using write\_json()](#map-serialization-using-write_json)
+      - [Map deserialization using read\_map()](#map-deserialization-using-read_map)
+      - [Map deserialization using read\_json()](#map-deserialization-using-read_json)
     - [Pair](#pair-1)
 - [Appendix B: WDL Namespaces and Scopes](#appendix-b-wdl-namespaces-and-scopes)
   - [Namespaces](#namespaces)
@@ -245,10 +245,10 @@ To execute this workflow, a WDL execution engine must be used (sometimes called 
 
 Along with the WDL file, the user must provide the execution engine with values for the two input parameters. While implementations may provide their own mechanisms for launching workflows, all implementations minimally accept [inputs as JSON format](#json-input-format), which requires that the input arguments be fully qualified according to the namespacing rules described in the [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) section. For example:
 
-|Variable     |Value    |
-|-------------|---------|
-|wf.pattern   |^[a-z]+$ |
-|wf.infile    |/file.txt|
+| Variable   | Value     |
+| ---------- | --------- |
+| wf.pattern | ^[a-z]+$  |
+| wf.infile  | /file.txt |
 
 Or, in JSON format:
 
@@ -344,13 +344,13 @@ Tasks and workflow inputs may be passed in from an external source, or they may 
 
 A string literal may contain any unicode characters between single or double-quotes, with the exception of a few special characters that must be escaped:
 
-| Escape Sequence | Meaning | \x Equivalent | Context |
-|----|---|------|--|
-|`\\`|`\`|`\x5C`||
-|`\n`|newline|`\x0A`||
-|`\t`|tab|`\x09`||
-|`\'`|single quote|`\x22`|within a single-quoted string|
-|`\"`|double quote|`\x27`|within a double-quoted string|
+| Escape Sequence | Meaning      | \x Equivalent | Context                       |
+| --------------- | ------------ | ------------- | ----------------------------- |
+| `\\`            | `\`          | `\x5C`        |                               |
+| `\n`            | newline      | `\x0A`        |                               |
+| `\t`            | tab          | `\x09`        |                               |
+| `\'`            | single quote | `\x22`        | within a single-quoted string |
+| `\"`            | double quote | `\x27`        | within a double-quoted string |
 
 Strings can also contain the following types of escape sequences:
 
@@ -622,17 +622,17 @@ File f = path
 
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
-|Target Type |Source Type     |Notes/Constraints |
-|------------|----------------|------------------|
-|`File`|`String`||
-|`Directory`|`String`||
-|`Float`|`Int`|May cause overflow error|
-|`Y?`|`X`|`X` must be coercible to `Y`|
-|`Array[Y]`|`Array[X]`|`X` must be coercible to `Y`|
-|`Map[X,Z]`|`Map[W,Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
-|`Pair[X,Z]`|`Pair[W,Y]`|`W` must be coercible to `X` and `Y` must be coercible to `Z`|
-|`Struct`    |`Map[String,Y]`|`Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`|
-|`Map[String,Y]`|`Struct`|All `Struct` members must be coercible to `Y`|
+| Target Type     | Source Type     | Notes/Constraints                                                                                      |
+| --------------- | --------------- | ------------------------------------------------------------------------------------------------------ |
+| `File`          | `String`        |                                                                                                        |
+| `Directory`     | `String`        |                                                                                                        |
+| `Float`         | `Int`           | May cause overflow error                                                                               |
+| `Y?`            | `X`             | `X` must be coercible to `Y`                                                                           |
+| `Array[Y]`      | `Array[X]`      | `X` must be coercible to `Y`                                                                           |
+| `Map[X,Z]`      | `Map[W,Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                          |
+| `Pair[X,Z]`     | `Pair[W,Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                          |
+| `Struct`        | `Map[String,Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y` |
+| `Map[String,Y]` | `Struct`        | All `Struct` members must be coercible to `Y`                                                          |
 
 ###### Coercion of Optional Types
 
@@ -825,90 +825,90 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 
 ##### Unary Operators
 
-|Operator|RHS Type|Result|
-|--------|--------|------|
-|`-`|`Float`|`Float`|
-|`-`|`Int`|`Int`|
-|`!`|`Boolean`|`Boolean`|
+| Operator | RHS Type  | Result    |
+| -------- | --------- | --------- |
+| `-`      | `Float`   | `Float`   |
+| `-`      | `Int`     | `Int`     |
+| `!`      | `Boolean` | `Boolean` |
 
 ##### Binary Operators on Primitive Types
 
-|LHS Type|Operator|RHS Type|Result|Semantics|
-|--------|--------|--------|------|---------|
-|`Boolean`|`==`|`Boolean`|`Boolean`||
-|`Boolean`|`!=`|`Boolean`|`Boolean`||
-|`Boolean`|`\|\|`|`Boolean`|`Boolean`||
-|`Boolean`|`&&`|`Boolean`|`Boolean`||
-|`Int`|`+`|`Int`|`Int`||
-|`Int`|`-`|`Int`|`Int`||
-|`Int`|`*`|`Int`|`Int`||
-|`Int`|`/`|`Int`|`Int`|Integer division|
-|`Int`|`%`|`Int`|`Int`|Integer division, return remainder|
-|`Int`|`==`|`Int`|`Boolean`||
-|`Int`|`!=`|`Int`|`Boolean`||
-|`Int`|`>`|`Int`|`Boolean`||
-|`Int`|`>=`|`Int`|`Boolean`||
-|`Int`|`<`|`Int`|`Boolean`||
-|`Int`|`<=`|`Int`|`Boolean`||
-|`Int`|`+`|`Float`|`Float`||
-|`Int`|`-`|`Float`|`Float`||
-|`Int`|`*`|`Float`|`Float`||
-|`Int`|`/`|`Float`|`Float`||
-|`Int`|`==`|`Float`|`Boolean`||
-|`Int`|`!=`|`Float`|`Boolean`||
-|`Int`|`>`|`Float`|`Boolean`||
-|`Int`|`>=`|`Float`|`Boolean`||
-|`Int`|`<`|`Float`|`Boolean`||
-|`Int`|`<=`|`Float`|`Boolean`||
-|`Float`|`+`|`Float`|`Float`||
-|`Float`|`-`|`Float`|`Float`||
-|`Float`|`*`|`Float`|`Float`||
-|`Float`|`/`|`Float`|`Float`||
-|`Float`|`%`|`Float`|`Float`||
-|`Float`|`==`|`Float`|`Boolean`||
-|`Float`|`!=`|`Float`|`Boolean`||
-|`Float`|`>`|`Float`|`Boolean`||
-|`Float`|`>=`|`Float`|`Boolean`||
-|`Float`|`<`|`Float`|`Boolean`||
-|`Float`|`<=`|`Float`|`Boolean`||
-|`Float`|`+`|`Int`|`Float`||
-|`Float`|`-`|`Int`|`Float`||
-|`Float`|`*`|`Int`|`Float`||
-|`Float`|`/`|`Int`|`Float`||
-|`Float`|`%`|`Int`|`Float`||
-|`Float`|`==`|`Int`|`Boolean`||
-|`Float`|`!=`|`Int`|`Boolean`||
-|`Float`|`>`|`Int`|`Boolean`||
-|`Float`|`>=`|`Int`|`Boolean`||
-|`Float`|`<`|`Int`|`Boolean`||
-|`Float`|`<=`|`Int`|`Boolean`||
-|`String`|`+`|`String`|`String`|Concatenation|
-|`String`|`+`|`File`|`File`||
-|`String`|`==`|`String`|`Boolean`|Unicode comparison|
-|`String`|`!=`|`String`|`Boolean`|Unicode comparison|
-|`String`|`>`|`String`|`Boolean`|Unicode comparison|
-|`String`|`>=`|`String`|`Boolean`|Unicode comparison|
-|`String`|`<`|`String`|`Boolean`|Unicode comparison|
-|`String`|`<=`|`String`|`Boolean`|Unicode comparison|
-|`File`|`==`|`File`|`Boolean`||
-|`File`|`!=`|`File`|`Boolean`||
-|`File`|`==`|`String`|`Boolean`||
-|`File`|`!=`|`String`|`Boolean`||
+| LHS Type  | Operator | RHS Type  | Result    | Semantics                          |
+| --------- | -------- | --------- | --------- | ---------------------------------- |
+| `Boolean` | `==`     | `Boolean` | `Boolean` |                                    |
+| `Boolean` | `!=`     | `Boolean` | `Boolean` |                                    |
+| `Boolean` | `\|\|`   | `Boolean` | `Boolean` |                                    |
+| `Boolean` | `&&`     | `Boolean` | `Boolean` |                                    |
+| `Int`     | `+`      | `Int`     | `Int`     |                                    |
+| `Int`     | `-`      | `Int`     | `Int`     |                                    |
+| `Int`     | `*`      | `Int`     | `Int`     |                                    |
+| `Int`     | `/`      | `Int`     | `Int`     | Integer division                   |
+| `Int`     | `%`      | `Int`     | `Int`     | Integer division, return remainder |
+| `Int`     | `==`     | `Int`     | `Boolean` |                                    |
+| `Int`     | `!=`     | `Int`     | `Boolean` |                                    |
+| `Int`     | `>`      | `Int`     | `Boolean` |                                    |
+| `Int`     | `>=`     | `Int`     | `Boolean` |                                    |
+| `Int`     | `<`      | `Int`     | `Boolean` |                                    |
+| `Int`     | `<=`     | `Int`     | `Boolean` |                                    |
+| `Int`     | `+`      | `Float`   | `Float`   |                                    |
+| `Int`     | `-`      | `Float`   | `Float`   |                                    |
+| `Int`     | `*`      | `Float`   | `Float`   |                                    |
+| `Int`     | `/`      | `Float`   | `Float`   |                                    |
+| `Int`     | `==`     | `Float`   | `Boolean` |                                    |
+| `Int`     | `!=`     | `Float`   | `Boolean` |                                    |
+| `Int`     | `>`      | `Float`   | `Boolean` |                                    |
+| `Int`     | `>=`     | `Float`   | `Boolean` |                                    |
+| `Int`     | `<`      | `Float`   | `Boolean` |                                    |
+| `Int`     | `<=`     | `Float`   | `Boolean` |                                    |
+| `Float`   | `+`      | `Float`   | `Float`   |                                    |
+| `Float`   | `-`      | `Float`   | `Float`   |                                    |
+| `Float`   | `*`      | `Float`   | `Float`   |                                    |
+| `Float`   | `/`      | `Float`   | `Float`   |                                    |
+| `Float`   | `%`      | `Float`   | `Float`   |                                    |
+| `Float`   | `==`     | `Float`   | `Boolean` |                                    |
+| `Float`   | `!=`     | `Float`   | `Boolean` |                                    |
+| `Float`   | `>`      | `Float`   | `Boolean` |                                    |
+| `Float`   | `>=`     | `Float`   | `Boolean` |                                    |
+| `Float`   | `<`      | `Float`   | `Boolean` |                                    |
+| `Float`   | `<=`     | `Float`   | `Boolean` |                                    |
+| `Float`   | `+`      | `Int`     | `Float`   |                                    |
+| `Float`   | `-`      | `Int`     | `Float`   |                                    |
+| `Float`   | `*`      | `Int`     | `Float`   |                                    |
+| `Float`   | `/`      | `Int`     | `Float`   |                                    |
+| `Float`   | `%`      | `Int`     | `Float`   |                                    |
+| `Float`   | `==`     | `Int`     | `Boolean` |                                    |
+| `Float`   | `!=`     | `Int`     | `Boolean` |                                    |
+| `Float`   | `>`      | `Int`     | `Boolean` |                                    |
+| `Float`   | `>=`     | `Int`     | `Boolean` |                                    |
+| `Float`   | `<`      | `Int`     | `Boolean` |                                    |
+| `Float`   | `<=`     | `Int`     | `Boolean` |                                    |
+| `String`  | `+`      | `String`  | `String`  | Concatenation                      |
+| `String`  | `+`      | `File`    | `File`    |                                    |
+| `String`  | `==`     | `String`  | `Boolean` | Unicode comparison                 |
+| `String`  | `!=`     | `String`  | `Boolean` | Unicode comparison                 |
+| `String`  | `>`      | `String`  | `Boolean` | Unicode comparison                 |
+| `String`  | `>=`     | `String`  | `Boolean` | Unicode comparison                 |
+| `String`  | `<`      | `String`  | `Boolean` | Unicode comparison                 |
+| `String`  | `<=`     | `String`  | `Boolean` | Unicode comparison                 |
+| `File`    | `==`     | `File`    | `Boolean` |                                    |
+| `File`    | `!=`     | `File`    | `Boolean` |                                    |
+| `File`    | `==`     | `String`  | `Boolean` |                                    |
+| `File`    | `!=`     | `String`  | `Boolean` |                                    |
 
 WDL `String`s are compared by the unicode values of their corresponding characters. Character `a` is less than character `b` if it has a lower unicode value.
 
 ##### Equality of Compound Types
 
-|LHS Type|Operator|RHS Type|Result|
-|--------|--------|--------|------|
-|`Array`|`==`|`Array`|`Boolean`|
-|`Array`|`!=`|`Array`|`Boolean`|
-|`Map`|`==`|`Map`|`Boolean`|
-|`Map`|`!=`|`Map`|`Boolean`|
-|`Pair`|`==`|`Pair`|`Boolean`|
-|`Pair`|`!=`|`Pair`|`Boolean`|
-|`Struct`|`==`|`Struct`|`Boolean`|
-|`Struct`|`!=`|`Struct`|`Boolean`|
+| LHS Type | Operator | RHS Type | Result    |
+| -------- | -------- | -------- | --------- |
+| `Array`  | `==`     | `Array`  | `Boolean` |
+| `Array`  | `!=`     | `Array`  | `Boolean` |
+| `Map`    | `==`     | `Map`    | `Boolean` |
+| `Map`    | `!=`     | `Map`    | `Boolean` |
+| `Pair`   | `==`     | `Pair`   | `Boolean` |
+| `Pair`   | `!=`     | `Pair`   | `Boolean` |
+| `Struct` | `==`     | `Struct` | `Boolean` |
+| `Struct` | `!=`     | `Struct` | `Boolean` |
 
 In general, two compound values are equal if-and-only-if all of the following are true:
 
@@ -961,27 +961,27 @@ Boolean is_false2 j == k
 
 #### Operator Precedence Table
 
-| Precedence | Operator type         | Associativity | Example              |
-|------------|-----------------------|---------------|----------------------|
-| 11         | Grouping              | n/a           | (x)                  |
-| 10         | Member Access         | left-to-right | x.y                  |
-| 9          | Index                 | left-to-right | x[y]                 |
-| 8          | Function Call         | left-to-right | x(y,z,...)           |
-| 7          | Logical NOT           | right-to-left | !x                   |
-|            | Unary Negation        | right-to-left | -x                   |
-| 6          | Multiplication        | left-to-right | x*y                  |
-|            | Division              | left-to-right | x/y                  |
-|            | Remainder             | left-to-right | x%y                  |
-| 5          | Addition              | left-to-right | x+y                  |
-|            | Subtraction           | left-to-right | x-y                  |
-| 4          | Less Than             | left-to-right | x<y                  |
-|            | Less Than Or Equal    | left-to-right | x<=y                 |
-|            | Greater Than          | left-to-right | x>y                  |
-|            | Greater Than Or Equal | left-to-right | x>=y                 |
-| 3          | Equality              | left-to-right | x==y                 |
-|            | Inequality            | left-to-right | x!=y                 |
-| 2          | Logical AND           | left-to-right | x&&y                 |
-| 1          | Logical OR            | left-to-right | x\|\|y               |
+| Precedence | Operator type         | Associativity | Example    |
+| ---------- | --------------------- | ------------- | ---------- |
+| 11         | Grouping              | n/a           | (x)        |
+| 10         | Member Access         | left-to-right | x.y        |
+| 9          | Index                 | left-to-right | x[y]       |
+| 8          | Function Call         | left-to-right | x(y,z,...) |
+| 7          | Logical NOT           | right-to-left | !x         |
+|            | Unary Negation        | right-to-left | -x         |
+| 6          | Multiplication        | left-to-right | x*y        |
+|            | Division              | left-to-right | x/y        |
+|            | Remainder             | left-to-right | x%y        |
+| 5          | Addition              | left-to-right | x+y        |
+|            | Subtraction           | left-to-right | x-y        |
+| 4          | Less Than             | left-to-right | x<y        |
+|            | Less Than Or Equal    | left-to-right | x<=y       |
+|            | Greater Than          | left-to-right | x>y        |
+|            | Greater Than Or Equal | left-to-right | x>=y       |
+| 3          | Equality              | left-to-right | x==y       |
+|            | Inequality            | left-to-right | x!=y       |
+| 2          | Logical AND           | left-to-right | x&&y       |
+| 1          | Logical OR            | left-to-right | x\|\|y     |
 
 #### Member Access
 
@@ -1223,11 +1223,11 @@ In the event that there is no protocol specified, the import is resolved **relat
 Some examples of correct import resolution:
 
 | Root Workflow Location                                | Imported Path                      | Resolved Path                                           |
-|-------------------------------------------------------|------------------------------------|--------------------------------------------------------|
-| /foo/bar/baz/qux.wdl                                  | some/task.wdl                      | /foo/bar/baz/some/task.wdl                               |
+| ----------------------------------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| /foo/bar/baz/qux.wdl                                  | some/task.wdl                      | /foo/bar/baz/some/task.wdl                              |
 | http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | subworkflow.wdl                    | http://www.github.com/openwdl/coolwdls/subworkflow.wdl  |
 | http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | /openwdl/otherwdls/subworkflow.wdl | http://www.github.com/openwdl/otherwdls/subworkflow.wdl |
-| /some/path/hello.wdl                                  | /another/path/world.wdl            | /another/path/world.wdl                                  |
+| /some/path/hello.wdl                                  | /another/path/world.wdl            | /another/path/world.wdl                                 |
 
 `Import` statements also support aliasing of structs using the `x as y` syntax. See [struct namespacing](#struct-namespacing) for details.
 
@@ -1348,19 +1348,19 @@ task test {
 
 If these input values are provided:
 
-|input |value|
-|------|-----|
-|test.a|["1", "2", "3"]|
-|test.b|[]|
+| input  | value           |
+| ------ | --------------- |
+| test.a | ["1", "2", "3"] |
+| test.b | []              |
 
 It will result in an error, since `test.b` is required to have at least one element.
 
 On the other hand, if these input values are provided:
 
-|var   |value|
-|------|-----|
-|test.a|["1", "2", "3"]|
-|test.b|["x"]|
+| var    | value           |
+| ------ | --------------- |
+| test.a | ["1", "2", "3"] |
+| test.b | ["x"]           |
 
 The task will run successfully, because `test.c` is not required. Given these values, the command would be instantiated as:
 
@@ -1372,11 +1372,11 @@ The task will run successfully, because `test.c` is not required. Given these va
 
 If the inputs were:
 
-|var   |value|
-|------|-----|
-|test.a|["1", "2", "3"]|
-|test.b|["x","y"]|
-|test.c|["a","b","c","d"]|
+| var    | value             |
+| ------ | ----------------- |
+| test.a | ["1", "2", "3"]   |
+| test.b | ["x","y"]         |
+| test.c | ["a","b","c","d"] |
 
 Then the command would be instantiated as:
 
@@ -1490,10 +1490,10 @@ The body of the command section (i.e. the command "template") can be though of a
 
 There are two different syntaxes that can be used to define command expression placeholders, depending on which style of command section definition is used:
 
-|Command Definition Style|Placeholder Style|
-|---|---|
-|`command <<< >>>`|`~{}` only|
-|`command { ... }`|`~{}` (preferred) or `${}`|
+| Command Definition Style | Placeholder Style          |
+| ------------------------ | -------------------------- |
+| `command <<< >>>`        | `~{}` only                 |
+| `command { ... }`        | `~{}` (preferred) or `${}` |
 
 Note that the `~{}` and `${}` styles may be used interchangably in other string expressions.
 
@@ -2289,10 +2289,10 @@ task tmap_tool {
 
 Given the following inputs:
 
-|Variable|Value|
-|--------|-----|
-|reads   |/path/to/fastq|
-|stages  |["stage1 map1 --min-seq-length 20 map2 --min-seq-length 20", "stage2 map1 --max-seq-length 20 --min-seq-length 10 --seed-length 16  map2 --max-seed-hits -1 --max-seq-length 20 --min-seq-length 10"]|
+| Variable | Value                                                                                                                                                                                                 |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| reads    | /path/to/fastq                                                                                                                                                                                        |
+| stages   | ["stage1 map1 --min-seq-length 20 map2 --min-seq-length 20", "stage2 map1 --max-seq-length 20 --min-seq-length 10 --seed-length 16  map2 --max-seed-hits -1 --max-seq-length 20 --min-seq-length 10"] |
 
 This task produces a command line like this:
 
@@ -3197,8 +3197,8 @@ struct Person {
 Invalid `struct`:
 ```wdl
 struct Invalid {
-  String myString = "Cannot do this"
-  Int myInt
+  String my_string = "Cannot do this"
+  Int my_int
 }
 ```
 
@@ -3509,7 +3509,7 @@ task example {
   >>>
 
   output {
-    File outputFile = output_file_name
+    File output_file = output_file_name
   }
   
   runtime {
@@ -3739,14 +3739,14 @@ task do_stuff {
 
 Reads a JSON file into a WDL value whose type depends on the file's contents. The mapping of JSON type to WDL type is:
 
-|JSON Type|WDL Type|
-|---------|--------|
-|null|`None`|
-|boolean|`Boolean`|
-|number|`Int` or `Float`|
-|string|`String`|
-|array|`Array[X]`|
-|object|object literal|
+| JSON Type | WDL Type         |
+| --------- | ---------------- |
+| null      | `None`           |
+| boolean   | `Boolean`        |
+| number    | `Int` or `Float` |
+| string    | `String`         |
+| array     | `Array[X]`       |
+| object    | object literal   |
 
 The return value must be used in a context where it can be coerced to the expected type, or an error is raised. For example, if the JSON file contains `null`, then the return type will be `None`, meaning the value can only be used in a context where an optional type is expected.
 
@@ -4005,17 +4005,17 @@ key2\tvalue2
 
 Writes a JSON file with the serialized form of a WDL value. The following WDL types can be serialized:
 
-|WDL Type|JSON Type|
-|--------|--------|
-|`None`          |null   |
-|`Boolean`       |boolean|
-|`Int`           |number |
-|`Float`         |number |
-|`String`        |string |
-|`File`          |string |
-|`Array[X]`      |array  |
-|`Struct`        |object |
-|`Map[String, X]`|object |
+| WDL Type         | JSON Type |
+| ---------------- | --------- |
+| `None`           | null      |
+| `Boolean`        | boolean   |
+| `Int`            | number    |
+| `Float`          | number    |
+| `String`         | string    |
+| `File`           | string    |
+| `Array[X]`       | array     |
+| `Struct`         | object    |
+| `Map[String, X]` | object    |
 
 When serializing compound types, all nested types must be serializable or an error is raised. For example the following value could not be written to JSON:
 
@@ -4713,14 +4713,14 @@ It is recommended (but not required) that JSON outputs be "pretty printed" to be
 
 All primitive WDL types serialize naturally to JSON values:
 
-|WDL Type        |JSON Type|
-|----------------|---------|
-|`Int`           |number   |
-|`Float`         |number   |
-|`Boolean`       |boolean  |
-|`String`        |string   |
-|`File`          |string   |
-|`None`          |null     |
+| WDL Type  | JSON Type |
+| --------- | --------- |
+| `Int`     | number    |
+| `Float`   | number    |
+| `Boolean` | boolean   |
+| `String`  | string    |
+| `File`    | string    |
+| `None`    | null      |
 
 JSON has a single numeric type - it does not differentiate between integral and floating point values. A JSON `number` is always deserialized to a WDL `Float`, which may then be coerced to an `Int` if necessary.
 
@@ -4883,11 +4883,11 @@ task test {
 
 If passed an array for the value of `bams`:
 
-|Element       |
-|--------------|
-|/path/to/1.bam|
-|/path/to/2.bam|
-|/path/to/3.bam|
+| Element        |
+| -------------- |
+| /path/to/1.bam |
+| /path/to/2.bam |
+| /path/to/3.bam |
 
 Would produce the command `python script.py --bams=/path/to/1.bam,/path/to/2.bam,/path/to/1.bam`
 
@@ -4913,11 +4913,11 @@ task test {
 
 If `bams` is given this array:
 
-|Element       |
-|--------------|
-|/path/to/1.bam|
-|/path/to/2.bam|
-|/path/to/3.bam|
+| Element        |
+| -------------- |
+| /path/to/1.bam |
+| /path/to/2.bam |
+| /path/to/3.bam |
 
 Then, the resulting command line might be:
 
@@ -4955,11 +4955,11 @@ task test {
 
 If `bams` is given this array:
 
-|Element       |
-|--------------|
-|/path/to/1.bam|
-|/path/to/2.bam|
-|/path/to/3.bam|
+| Element        |
+| -------------- |
+| /path/to/1.bam |
+| /path/to/2.bam |
+| /path/to/3.bam |
 
 Then, the resulting command line might look like:
 
@@ -5109,11 +5109,11 @@ task test {
 
 If `sample_quality_scores` were a `Map` with these members:
 
-|Key    |Value |
-|-------|------|
-|sample1|98    |
-|sample2|95    |
-|sample3|75    |
+| Key     | Value |
+| ------- | ----- |
+| sample1 | 98    |
+| sample2 | 95    |
+| sample3 | 75    |
 
 Then, the resulting command line might look like:
 
@@ -5151,11 +5151,11 @@ task test {
 
 If `sample_quality_scores` were a `Map` with these members:
 
-|Key    |Value |
-|-------|------|
-|sample1|98    |
-|sample2|95    |
-|sample3|75    |
+| Key     | Value |
+| ------- | ----- |
+| sample1 | 98    |
+| sample2 | 95    |
+| sample3 | 75    |
 
 Then, the resulting command line might look like:
 
@@ -5200,11 +5200,11 @@ task test {
 
 `my_ints` will be a `Map[String, Int]` with members:
 
-|Key  |Value |
-|-----|------|
-|key_0|0     |
-|key_1|1     |
-|key_2|2     |
+| Key   | Value |
+| ----- | ----- |
+| key_0 | 0     |
+| key_1 | 1     |
+| key_2 | 2     |
 
 #### Map deserialization using read_json()
 
@@ -5228,9 +5228,9 @@ task test {
 
 `my_map` will be a `Map[String, String]` with members:
 
-|Key |Value |
-|----|------|
-|foo |bar   |
+| Key | Value |
+| --- | ----- |
+| foo | bar   |
 
 Note that using `write_json`/`read_json` to serialize to/from a `Map` can cause subtle issues due to the fact that `Map` is ordered whereas an object value is not. For example:
 
