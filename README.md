@@ -5,7 +5,7 @@ The **Workflow Description Language (WDL)** is a way to specify data processing 
 
 # Language Specifications:
 
-The current version of the WDL language is **1.0**. The [1.0 specification](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md) contains all relevant information for users, developers, and engine developers. Upcoming features which have previously been accepted can be viewed as part of the [development spec](https://github.com/openwdl/wdl/blob/main/versions/development/SPEC.md). 
+The current version of the WDL language is **1.1**. The [1.1 specification](https://github.com/openwdl/wdl/blob/main/versions/1.1/SPEC.md) contains all relevant information for users, developers, and engine developers. Upcoming features which have previously been accepted can be viewed as part of the [development spec](https://github.com/openwdl/wdl/blob/main/versions/development/SPEC.md). 
 
 There are a number of draft versions (draft 1 - 3) which correspond to our initial efforts at creating WDL. While these are functional specifications, they should not be considered feature complete and contain many bugs and irregularities. Unless absolutely necessary, we would recommend that users should start with the current version of the language.
 
@@ -23,7 +23,7 @@ There are a number of places to ask questions and get involved within the WDL co
 
 # Published Workflows 
 
-There are many WDL's that have previously been published which provide a good starting point to extend or use as is to fit your workflow needs. While many of these workflows are scattered across the web and in many different repositories, you can find a great selection of high quality, published WDL's available at [Dockstore](https://dockstore.org/search?_type=workflow&descriptorType=wdl&searchMode=files) as well as a large number of workflows and tasks at [BioWDL](https://github.com/biowdl).
+There are many WDL's that have previously been published which provide a good starting point to extend or use as is to fit your workflow needs. While many of these workflows are scattered across the web and in many different repositories, you can find a great selection of high quality, published WDL's available at [Dockstore](https://dockstore.org/search?entryType=workflows&descriptorType=WDL&searchMode=files) as well as a large number of workflows and tasks at [BioWDL](https://github.com/biowdl).
 
 Additionally, you can view and test out a number of different workflow's using [Terra](https://app.terra.bio). Please note, that you have to register with Terra in order to view the workflows.
 

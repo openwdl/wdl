@@ -1,5 +1,14 @@
 # WDL Specification v1.1 Errata
 
+## Strings
+
+The table of escape characters is missing `~` and `$`, which are required to be able to write literal `~{` and `${` characters in a string (i.e. to have them not recognized as placeholders).
+
+| Escape Sequence | Meaning | \x Equivalent | Context |
+|----|---|------|--|
+|`\~`|`~`|`\x7E`||
+|`\$`|`$`|`\x24`||
+
 ## Type coercions
 
 The following coercions are missing from the [table](https://github.com/openwdl/wdl/blob/main/versions/1.1/SPEC.md#type-coercion):
@@ -28,6 +37,49 @@ And the WDL would be:
 
 ```wdl
 Array[Int] ints = read_json("ints.json")
+```
+
+## Workflow Definition
+
+### Workflow Outputs
+
+The example for `main.wdl` incorrectly uses workflow output syntax that was deprecated in Draft-2 and removed in 1.0. It should be:
+
+```wdl
+import "other.wdl" as other
+
+task test {
+  input {
+    String my_var
+  }
+  command <<<
+    ./script ~{my_var}
+  >>>
+  output {
+    File results = stdout()
+  }
+  runtime {
+    container: "my_image:latest"
+  }
+}
+
+workflow wf {
+  Array[String] arr = ["a", "b", "c"]
+  call test
+  call test as test2
+  call other.foobar
+  call other.other_workflow
+  call other.other_workflow as other_workflow2
+  output {
+    File test_results = test.results
+    File foobar_results = foobar.results
+  }
+  scatter(x in arr) {
+    call test as scattered_test {
+      input: my_var = x
+    }
+  }
+}
 ```
 
 ### Missing sections

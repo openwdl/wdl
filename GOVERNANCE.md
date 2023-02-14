@@ -9,12 +9,15 @@ Current core team members are:
 | Name               | Organization            | github                  |
 |:-------------------|:-------------|:------------------
 | Jeff Gentry        | Foundation Medicine                 | [geoffjentry](https://github.com/geoffjentry) |
-| Mike Lin           | DNAnexus                        | [mlin](https://github.com/mlin) |
+| Mike Lin           | Chan Zuckerberg Initiative        | [mlin](https://github.com/mlin) |
 | Patrick Magee      | DNAstack                        | [patmagee](https://github.com/patmagee) |
 | Brian O'Connor     | University of California, Santa Cruz | [briandoconnor](https://github.com/briandoconnor) |
 | Geraldine Van der Auwera | Broad Institute | [vdauwera](https://github.com/vdauwera) |
 | Christopher Llanwarne | Broad Institute | [cjllanwarne](https://github.com/cjllanwarne) |
 | John Didion | DNAnexus | [jdidion](https://github.com/jdidion) |
+| Michael Franklin | Centre for Population Genomics | [illusional](https://github.com/illusional) |
+| Amy Paguirigan | Fred Hutch | [vortexing](https://github.com/vortexing) |
+| Ruben Vorderman | Leiden University Medical Center | [rhpvorderman](https://github.com/rhpvorderman) |
 
 
 At the core group's discretion a new member may be added by a majority vote. This addition will be done to recognize **significant** contributions to the community. *Contributions* include such things as:

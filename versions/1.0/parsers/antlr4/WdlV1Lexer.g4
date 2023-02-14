@@ -359,7 +359,7 @@ DQuoteStringPart
 mode Command;
 
 BeginWhitespace
-  : [ \t\r\n]* -> channel(HIDDEN)
+  : [ \t\r\n]+ -> channel(HIDDEN)
   ;
 
 BeginHereDoc
