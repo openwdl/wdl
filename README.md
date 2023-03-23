@@ -3,17 +3,37 @@ Workflow Description Language (WDL)
 
 The **Workflow Description Language (WDL)** is a way to specify data processing workflows with a human-readable and writeable syntax. WDL makes it straightforward to define complex analysis tasks, chain them together in workflows, and parallelize their execution. The language makes common patterns simple to express, while also admitting uncommon or complicated behavior; and strives to achieve portability not only across execution platforms, but also different types of users. Whether one is an analyst, a programmer, an operator of a production system, or any other sort of user, WDL should be accessible and understandable.
 
-# Language Specifications:
+# Versioning
 
-The current version of the WDL language is **1.1**. The [1.1 specification](https://github.com/openwdl/wdl/blob/main/versions/1.1/SPEC.md) contains all relevant information for users, developers, and engine developers. Upcoming features which have previously been accepted can be viewed as part of the [development spec](https://github.com/openwdl/wdl/blob/main/versions/development/SPEC.md). 
+WDL versioning follows [semantic versioning](https://semver.org) conventions.
+
+The WDL *language* has a two-number version (e.g. 1.1). An increase in the minor (second) version number (e.g., 1.0 to 1.1) indicates the addition of, or non-breaking changes to, the language or the standard library functions. An increase in the major (first) version number (e.g., 1.0 to 2.0) indicates that breaking changes have been made.
+
+The WDL *specification* has a three-number version (e.g. 1.1.1). The specification version tracks the language version, but there may also be patch releases (indicated by a change to the patch, or third, version number) that include fixes for typos, additional examples, or non-breaking clarifications of ambiguous language.
+
+# Language Specifications
+
+The WDL specification contains all relevant information for users, developers, and engine developers. This GitHub project uses the branch for the current version of the specification as its primary branch, so you will always see the current version of the specification so long as you visit this project's [root URL](https://github.com/openwdl/wdl).
+
+This branch is for version **1.1** of the [WDL language specification](https://github.com/openwdl/wdl/blob/wdl-1.1/SPEC.md).
+
+Previous versions of the spec can be found here:
+
+* [1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md)
 
 There are a number of draft versions (draft 1 - 3) which correspond to our initial efforts at creating WDL. While these are functional specifications, they should not be considered feature complete and contain many bugs and irregularities. Unless absolutely necessary, we would recommend that users should start with the current version of the language.
 
+* [draft-3](https://github.com/openwdl/wdl/blob/main/versions/draft-3/SPEC.md)
+* [draft-2](https://github.com/openwdl/wdl/blob/main/versions/draft-2/SPEC.md)
+* [draft-1](https://github.com/openwdl/wdl/blob/main/versions/draft-1/SPEC.md)
+
+The next *minor* version of the specification is [1.2](https://github.com/openwdl/wdl/blob/wdl-1.2/SPEC.md). All development of new *non-breaking* features should be done against that branch.
+
+The next *major* version of the specification is [2.0](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md). All development of new *breaking* features should be done against that branch.
 
 # Community and Support
 
 There are a number of places to ask questions and get involved within the WDL community. Our community thrives the more you get involved and we encourage you to ask questions, provide answers, and make contributions.
-
 
 - [Mailing list](https://groups.google.com/a/openwdl.org/forum/#!forum/community) - Joining our google group allows you to stay up to date with recent developments, be informed when new PR's are ready for voting, and participate in broader discussions about the language.
 - [Issues](https://github.com/OpenWDL/wdl/issues) - Any bugs, ambiguity, or problems with the specification you encounter should be reported here. You can also create issues which are feature requests, however the most likely way to get a feature into the spec is by creating a PR yourself.
@@ -27,7 +47,6 @@ There are many WDL's that have previously been published which provide a good st
 
 Additionally, you can view and test out a number of different workflow's using [Terra](https://app.terra.bio). Please note, that you have to register with Terra in order to view the workflows.
 
-
 # Software and Tools
 
 ### Execution Engines
@@ -37,7 +56,6 @@ WDL is not executable in and of itself, but requires an execution engine to run.
 - [Cromwell](https://github.com/broadinstitute/cromwell)
 - [MiniWDL](https://github.com/chanzuckerberg/miniwdl)
 - [dxWDL](https://github.com/dnanexus/dxWDL)
-
 
 ### Parsers and Language Support
 
