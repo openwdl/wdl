@@ -7,7 +7,7 @@ The **Workflow Description Language (WDL)** is a way to specify data processing 
 
 WDL versioning follows [semantic versioning](https://semver.org) conventions.
 
-The WDL *language* has a two-number version (e.g. 1.1). An increase in the minor (second) version number (e.g., 1.0 to 1.1) indicates the addition of, or non-breaking changes to, the language or the standard library functions. An increase in the major (first) version number (e.g., 1.0 to 2.0) indicates that breaking changes have been made.
+The WDL *language* has a two-number version (e.g., 1.1). An increase in the minor (second) version number (e.g., 1.0 to 1.1) indicates the addition of, or non-breaking changes to, the language or the standard library functions. An increase in the major (first) version number (e.g., 1.0 to 2.0) indicates that breaking changes have been made.
 
 The WDL *specification* has a three-number version (e.g. 1.1.1). The specification version tracks the language version, but there may also be patch releases (indicated by a change to the patch, or third, version number) that include fixes for typos, additional examples, or non-breaking clarifications of ambiguous language.
 
