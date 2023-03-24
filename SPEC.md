@@ -143,10 +143,9 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Array\[Pair\[P, Y\]\] as\_pairs(Map\[P, Y\])](#arraypairp-y-as_pairsmapp-y)
   - [Map\[P, Y\] as\_map(Array\[Pair\[P, Y\]\])](#mapp-y-as_maparraypairp-y)
   - [Array\[P\] keys(Map\[P, Y\])](#arrayp-keysmapp-y)
-  - [✨ Boolean contains\_key(Map\[P, Y\], P), Boolean contains\_key(Map\[P?, Y\], P?)](#-boolean-contains_keymapp-y-p-boolean-contains_keymapp-y-p)
   - [Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#mapp-arrayy-collect_by_keyarraypairp-y)
   - [Boolean defined(X?)](#boolean-definedx)
-  - [Boolean contains(Array\[P\], P), Boolean contains(Array\[P?\], P?)](#boolean-containsarrayp-p-boolean-containsarrayp-p)
+  - [✨ Boolean contains(Array\[P\], P), Boolean contains(Array\[P?\], P?)](#-boolean-containsarrayp-p-boolean-containsarrayp-p)
   - [X select\_first(Array\[X?\]+)](#x-select_firstarrayx)
   - [Array\[X\] select\_all(Array\[X?\])](#arrayx-select_allarrayx)
 - [Input and Output Formats](#input-and-output-formats)
@@ -4827,34 +4826,6 @@ workflow foo {
 }
 ```
 
-## ✨ Boolean contains_key(Map[P, Y], P), Boolean contains_key(Map[P?, Y], P?)
-
-Tests whether the given map contains an entry with the given key.
-
-**Parameters**
-
-1. `Map[P, Y]` or `Map[P?, Y]`: `Map` to search for the key.
-2. `P` or `P?`: The key to search, of the same type as the `Map`'s key type. If the `Map`'s key type is optional then the key may also be optional.
-
-**Returns**: `true` if the `Map` contains the key, otherwise false.
-
-**Example**
-
-```wdl
-version 1.2
-
-task get_file {
-  input {
-    Map[String?, File] m
-    String s
-  }
-
-  output {
-    File? f = m[s] if contains_key(m, s) else None
-  }
-}
-```
-
 ## Map[P, Array[Y]] collect_by_key(Array[Pair[P, Y]])
 
 Given an `Array` of `Pair`s, creates a `Map` in which the right elements of the `Pair`s are grouped by the left elements. In other words, the input `Array` may have multiple `Pair`s with the same (primitive) key - rather than causing an error (as would happen with [`as_map`](#-mapp-y-as_maparraypairp-y)), all the values with the same key are grouped together into an `Array`.
@@ -4912,7 +4883,7 @@ workflow wf {
 }
 ```
 
-## Boolean contains(Array[P], P), Boolean contains(Array[P?], P?)
+## ✨ Boolean contains(Array[P], P), Boolean contains(Array[P?], P?)
 
 Tests whether the given array contains at least one occurrence of the given value.
 
