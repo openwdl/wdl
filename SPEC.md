@@ -145,6 +145,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [✨ Array\[P\] keys(Map\[P, Y\])](#-arrayp-keysmapp-y)
   - [✨ Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#-mapp-arrayy-collect_by_keyarraypairp-y)
   - [Boolean defined(X?)](#boolean-definedx)
+  - [Boolean contains(Array\[P\], P), Boolean contains(Array\[P?\], P?)](#boolean-containsarrayp-p-boolean-containsarrayp-p)
   - [X select\_first(Array\[X?\]+)](#x-select_firstarrayx)
   - [Array\[X\] select\_all(Array\[X?\])](#arrayx-select_allarrayx)
 - [Input and Output Formats](#input-and-output-formats)
@@ -4878,6 +4879,55 @@ workflow wf {
   }
   if (defined(s)) {
     call say_hello { input: name = select_first([s]) }
+  }
+}
+```
+
+## Boolean contains(Array[P], P), Boolean contains(Array[P?], P?)
+
+Tests whether the given array contains at least one occurrence of the given value.
+
+**Parameters**
+
+1. `Array[P]` or `Array[P?]`: an array of any primitive type.
+2. `P` or `P?`: a primitive value of the same type as the array. If the array's type is optional, then the value may also be optional.
+
+**Returns**: `true` if the array contains at least one occurrence of the value, otherwise `false`.
+
+**Example**
+
+```wdl
+version 1.2
+
+task null_sample {
+  command <<<
+  echo "Sample array contains a null value!"
+  exit 1
+  >>>
+}
+
+task missing_sample {
+  input {
+    String name
+  }
+
+  command <<<
+  echo "Sample ~{name} is missing!"
+  exit 1
+  >>>
+}
+
+workflow if_contains {
+  input {
+    Array[String?] samples
+    String name
+  }
+
+  if (contains(samples, None)) {
+    call null_sample
+  }
+  if (!contains(samples, name)) {
+    call missing_sample { input: name }
   }
 }
 ```
