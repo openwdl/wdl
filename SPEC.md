@@ -143,6 +143,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Array\[Pair\[P, Y\]\] as\_pairs(Map\[P, Y\])](#arraypairp-y-as_pairsmapp-y)
   - [Map\[P, Y\] as\_map(Array\[Pair\[P, Y\]\])](#mapp-y-as_maparraypairp-y)
   - [Array\[P\] keys(Map\[P, Y\])](#arrayp-keysmapp-y)
+  - [✨ Boolean contains\_key(Map\[P, Y\], P), Boolean contains\_key(Map\[P?, Y\], P?)](#-boolean-contains_keymapp-y-p-boolean-contains_keymapp-y-p)
   - [Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#mapp-arrayy-collect_by_keyarraypairp-y)
   - [Boolean defined(X?)](#boolean-definedx)
   - [X select\_first(Array\[X?\]+)](#x-select_firstarrayx)
@@ -4822,6 +4823,34 @@ workflow foo {
   }
   Array[String] str_to_files_keys = key
   Boolean is_truew = str_to_files_keys == keys(str_to_files)
+}
+```
+
+## ✨ Boolean contains_key(Map[P, Y], P), Boolean contains_key(Map[P?, Y], P?)
+
+Tests whether the given map contains an entry with the given key.
+
+**Parameters**
+
+1. `Map[P, Y]` or `Map[P?, Y]`: `Map` to search for the key.
+2. `P` or `P?`: The key to search, of the same type as the `Map`'s key type. If the `Map`'s key type is optional then the key may also be optional.
+
+**Returns**: `true` if the `Map` contains the key, otherwise false.
+
+**Example**
+
+```wdl
+version 1.2
+
+task get_file {
+  input {
+    Map[String?, File] m
+    String s
+  }
+
+  output {
+    File? f = m[s] if contains_key(m, s) else None
+  }
 }
 ```
 
