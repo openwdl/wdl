@@ -103,8 +103,8 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
     - [Struct Usage](#struct-usage)
 - [Standard Library](#standard-library)
   - [Int floor(Float), Int ceil(Float) and Int round(Float)](#int-floorfloat-int-ceilfloat-and-int-roundfloat)
-  - [✨ Int min(Int, Int), Float min(Float, Float), Float min(Int, Float), Float min(Float, Int)](#-int-minint-int-float-minfloat-float-float-minint-float-float-minfloat-int)
-  - [✨ Int max(Int, Int), Float max(Float, Float), Float max(Int, Float), Float max(Float, Int)](#-int-maxint-int-float-maxfloat-float-float-maxint-float-float-maxfloat-int)
+  - [Int min(Int, Int), Float min(Float, Float), Float min(Int, Float), Float min(Float, Int)](#int-minint-int-float-minfloat-float-float-minint-float-float-minfloat-int)
+  - [Int max(Int, Int), Float max(Float, Float), Float max(Int, Float), Float max(Float, Int)](#int-maxint-int-float-maxfloat-float-float-maxint-float-float-maxfloat-int)
   - [String sub(String, String, String)](#string-substring-string-string)
   - [File stdout()](#file-stdout)
   - [File stderr()](#file-stderr)
@@ -132,18 +132,18 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Array\[Int\] range(Int)](#arrayint-rangeint)
   - [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
   - [Array\[Pair\[X,Y\]\] zip(Array\[X\], Array\[Y\])](#arraypairxy-ziparrayx-arrayy)
-  - [✨ Pair\[Array\[X\], Array\[Y\]\] unzip(Array\[Pair\[X, Y\]\])](#-pairarrayx-arrayy-unziparraypairx-y)
+  - [Pair\[Array\[X\], Array\[Y\]\] unzip(Array\[Pair\[X, Y\]\])](#pairarrayx-arrayy-unziparraypairx-y)
   - [Array\[Pair\[X,Y\]\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
   - [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
   - [Array\[String\] prefix(String, Array\[P\])](#arraystring-prefixstring-arrayp)
-  - [✨ Array\[String\] suffix(String, Array\[P\])](#-arraystring-suffixstring-arrayp)
-  - [✨ Array\[String\] quote(Array\[P\])](#-arraystring-quotearrayp)
-  - [✨ Array\[String\] squote(Array\[P\])](#-arraystring-squotearrayp)
-  - [✨ String sep(String, Array\[String\])](#-string-sepstring-arraystring)
-  - [✨ Array\[Pair\[P, Y\]\] as\_pairs(Map\[P, Y\])](#-arraypairp-y-as_pairsmapp-y)
-  - [✨ Map\[P, Y\] as\_map(Array\[Pair\[P, Y\]\])](#-mapp-y-as_maparraypairp-y)
-  - [✨ Array\[P\] keys(Map\[P, Y\])](#-arrayp-keysmapp-y)
-  - [✨ Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#-mapp-arrayy-collect_by_keyarraypairp-y)
+  - [Array\[String\] suffix(String, Array\[P\])](#arraystring-suffixstring-arrayp)
+  - [Array\[String\] quote(Array\[P\])](#arraystring-quotearrayp)
+  - [Array\[String\] squote(Array\[P\])](#arraystring-squotearrayp)
+  - [String sep(String, Array\[String\])](#string-sepstring-arraystring)
+  - [Array\[Pair\[P, Y\]\] as\_pairs(Map\[P, Y\])](#arraypairp-y-as_pairsmapp-y)
+  - [Map\[P, Y\] as\_map(Array\[Pair\[P, Y\]\])](#mapp-y-as_maparraypairp-y)
+  - [Array\[P\] keys(Map\[P, Y\])](#arrayp-keysmapp-y)
+  - [Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#mapp-arrayy-collect_by_keyarraypairp-y)
   - [Boolean defined(X?)](#boolean-definedx)
   - [X select\_first(Array\[X?\]+)](#x-select_firstarrayx)
   - [Array\[X\] select\_all(Array\[X?\])](#arrayx-select_allarrayx)
@@ -567,7 +567,7 @@ Int b = string_to_int["b"]  # evaluates to 2
 Int c = string_to_int["c"]  # error - "c" is not a key in the map
 ```
 
-A `Map` is insertion ordered, meaning the order in which elements are added to the `Map` is preserved, for example when [✨ converting a `Map` to an array of `Pair`s](#-arraypairp-y-as_pairsmapp-y).
+A `Map` is insertion ordered, meaning the order in which elements are added to the `Map` is preserved, for example when [converting a `Map` to an array of `Pair`s](#-arraypairp-y-as_pairsmapp-y).
 
 ```wdl
 # declaration using a map literal
@@ -1214,7 +1214,7 @@ Alternatively, if the command were `"python script.py ~{sep=' ' numbers}"` it wo
 > 1. `sep` MUST accept only a string as its value
 > 2. `sep` is only allowed if the type of the expression is `Array[P]`
 
-The `sep` option can be replaced with a call to the ✨ [`sep`](#-string-sepstring-arraystring) function:
+The `sep` option can be replaced with a call to the [`sep`](#-string-sepstring-arraystring) function:
 
 ```wdl
 task sep_example {
@@ -3536,7 +3536,7 @@ Boolean all_true = [
 ]
 ```
 
-## ✨ Int min(Int, Int), Float min(Float, Float), Float min(Int, Float), Float min(Float, Int)
+## Int min(Int, Int), Float min(Float, Float), Float min(Int, Float), Float min(Float, Int)
 
 Returns the smaller of two values. If both values are `Int`s, the return value is an `Int`, otherwise it is a `Float`.
 
@@ -3563,7 +3563,7 @@ workflow min_test {
 }
 ``` 
 
-## ✨ Int max(Int, Int), Float max(Float, Float), Float max(Int, Float), Float max(Float, Int)
+## Int max(Int, Int), Float max(Float, Float), Float max(Int, Float), Float max(Float, Int)
 
 Returns the larger of two values. If both values are `Int`s, the return value is an `Int`, otherwise it is a `Float`.
 
@@ -4561,7 +4561,7 @@ Boolean is_true = zipped == [ (1, "a"), (2, "b"), (3, "c") ]
 Array[Pair[Int, String]] bad = zip(xs, zs)
 ```
 
-## ✨ Pair[Array[X], Array[Y]] unzip(Array[Pair[X, Y]])
+## Pair[Array[X], Array[Y]] unzip(Array[Pair[X, Y]])
 
 Creates a `Pair` of `Arrays`, the first containing the elements from the `left` members of an `Array` of `Pair`s, and the second containing the `right` members. This is the inverse of the `zip` function.
 
@@ -4659,7 +4659,7 @@ Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
 Array[String] bad = prefix("-x ", env3)
 ```
 
-## ✨ Array[String] suffix(String, Array[P])
+## Array[String] suffix(String, Array[P])
 
 Adds a suffix to each element of the input array of primitive values. Equivalent to evaluating `"~{array[i]}~{suffix}"` for each `i` in `range(length(array))`.
 
@@ -4684,7 +4684,7 @@ Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
 Array[String] bad = suffix("-z", env3)  
 ```
 
-## ✨ Array[String] quote(Array[P])
+## Array[String] quote(Array[P])
 
 Adds double-quotes (`"`) around each element of the input array of primitive values. Equivalent to evaluating `'"~{array[i]}"'` for each `i` in `range(length(array))`.
 
@@ -4704,7 +4704,7 @@ Array[Int] env2 = [1, 2, 3]
 Array[String] env2_quoted = quote(env2) # ['"1"', '"2"', '"3"']
 ``` 
 
-## ✨ Array[String] squote(Array[P])
+## Array[String] squote(Array[P])
 
 Adds single-quotes (`'`) around each element of the input array of primitive values. Equivalent to evaluating `"'~{array[i]}'"` for each `i` in `range(length(array))`.
 
@@ -4724,7 +4724,7 @@ Array[Int] env2 = [1, 2, 3]
 Array[String] env2_quoted = squote(env2) # ["'1'", "'2'", "'3'"]
 ``` 
 
-## ✨ String sep(String, Array[String])
+## String sep(String, Array[String])
 
 Concatenates the elements of an array together into a string with the given separator between consecutive elements. There are always `N-1` separators in the output string, where `N` is the length of the input array. A separator is never added after the last element.
 
@@ -4748,7 +4748,7 @@ Boolean all_true = [
 ]
 ```
 
-## ✨ Array[Pair[P, Y]] as_pairs(Map[P, Y])
+## Array[Pair[P, Y]] as_pairs(Map[P, Y])
 
 Converts a `Map` with primitive keys into an `Array` of `Pair`s. Since `Map`s are ordered, the output array will always have elements in the same order they were added to the `Map`.
 
@@ -4776,7 +4776,7 @@ workflow foo {
 }
 ```
 
-## ✨ Map[P, Y] as_map(Array[Pair[P, Y]])
+## Map[P, Y] as_map(Array[Pair[P, Y]])
 
 Converts an `Array` of `Pair`s into a `Map` in which the left elements of the `Pair`s are the (primitive) keys and the right elements the values. All the keys must be unique, or an error is raised. The order of the key/value pairs in the output `Map` is the same as the order of the `Pair`s in the `Array`.
 
@@ -4799,7 +4799,7 @@ Boolean is_true2 = as_map(y) == {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai"
 Boolean bad = as_map([("a", 1), ("a", 2)])  
 ```
 
-## ✨ Array[P] keys(Map[P, Y])
+## Array[P] keys(Map[P, Y])
 
 Creates an `Array` of the keys from the input `Map`, in the same order as the elements in the map.
 
@@ -4825,7 +4825,7 @@ workflow foo {
 }
 ```
 
-## ✨ Map[P, Array[Y]] collect_by_key(Array[Pair[P, Y]])
+## Map[P, Array[Y]] collect_by_key(Array[Pair[P, Y]])
 
 Given an `Array` of `Pair`s, creates a `Map` in which the right elements of the `Pair`s are grouped by the left elements. In other words, the input `Array` may have multiple `Pair`s with the same (primitive) key - rather than causing an error (as would happen with [`as_map`](#-mapp-y-as_maparraypairp-y)), all the values with the same key are grouped together into an `Array`.
 
