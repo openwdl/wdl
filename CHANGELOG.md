@@ -46,8 +46,23 @@ version 1.1.1
 ---------------------------
 
 + Applied [Errata]([versions/1.1/Errata.md](https://github.com/openwdl/wdl/blob/main/versions/1.1/Errata.md)) to the 1.1.0 spec.
- 
-+ Added section describing revisions to the specification. 
+
++ Added missing `File` and `version` keywords to the list of reserved words.
+
++ Added new sections or materially expanded existing sections:
+  + "Limited exceptions" to type coercion rules
+  + "Static Analysis and Dynamic Evaluation"
+  + "Task Input Localization"
+  + "Expression Placeholders" under "Command Section"
+
++ Added `tests` folder with documentation on adding/converting examples in the specification to a format compatible with automated testing.
+
++ Reformatted all tables.
+
++ Provided codespell configuration and workflow to catch typos.
+  [PR 530](https://github.com/openwdl/wdl/pull/530) by @yarikoptic.
+
++ Fixed typos, thanks to @yarikoptic, @sejyoti, @mmterpstra, @j23414, @jdavcs, @beukueb, @notestaff!
 
 version 1.1.0
 ---------------------------
