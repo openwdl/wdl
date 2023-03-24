@@ -897,7 +897,7 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | `Object`        | `Struct`        | 🗑                                                                                                                |
 | `Struct`        | `Object`        | 🗑 `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
 
-Note that the [`read_lines`](#arraystring-read_linesstringfile) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
+The [`read_lines`](#arraystring-read_linesstringfile) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
 
 ###### Order of Precedence
 
@@ -908,7 +908,7 @@ The `+` operator is overloaded for both numeric addition and `String` concatenat
 ```
 String s = "1.0"
 Float f = 2.0
-String x = "${s + f}"
+String x = "~{s + f}"
 ```
 
 There are two possible ways to evaluate the `s + f` expression:
@@ -1126,7 +1126,7 @@ String s = read_string("/path/to/file")
 
 WDL provides the standard unary and binary mathematical and logical operators. The following table lists the valid operand and result type combinations for each operator. Using an operator with unsupported types results in an error.
 
-In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type is first cast to a `Float`; the result type is always `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by the `Float`. Note that a `Float` can be converted to an `Int` with the [`ceil`, `round`, or `floor`](#int-floorfloat-int-ceilfloat-and-int-roundfloat) functions.
+In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type is first cast to a `Float`; the result type is always `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by the `Float`. A `Float` can be converted to an `Int` with the [`ceil`, `round`, or `floor`](#int-floorfloat-int-ceilfloat-and-int-roundfloat) functions.
 
 ##### Unary Operators
 
@@ -1247,7 +1247,7 @@ Boolean is_false1 = [1, 2, 3] == [2, 1, 3]
 Boolean is_false2 = {"a": 1, "b": 2} == {"b": 2, "a": 1}
 ```
 
-Note that [type coercion](#type-coercion) can be employed to compare values of different but compatible types. For example:
+[Type coercion](#type-coercion) can be employed to compare values of different but compatible types. For example:
 
 ```wdl
 Array[Int] i = [1,2,3]
@@ -1350,7 +1350,7 @@ WDL provides a [standard library](#standard-library) of functions. These functio
 
 #### Expression Placeholders and String Interpolation
 
-Any WDL string expression may contain one or more "placeholders" of the form `~{*expression*}`, each of which contains a single expression. Note that placeholders of the form `${*expression*}` may also be used interchangably, but their use is discouraged for reasons discussed in the [command section](#expression-placeholders) and may be deprecated in a future version of the specification.
+Any WDL string expression may contain one or more "placeholders" of the form `~{*expression*}`, each of which contains a single expression. Placeholders of the form `${*expression*}` may also be used interchangably, but their use is discouraged for reasons discussed in the [command section](#expression-placeholders) and may be deprecated in a future version of the specification.
 
 When a string expression is evaluated, its placeholders are evaluated first, and their values are then substituted for the placeholders in the containing string.
 
@@ -1380,7 +1380,7 @@ Placeholders may contain other placeholders to any level of nesting, and placeho
 Int i = 3
 Boolean b = true
 # s evaluates to "4", but would be "0" if b were false
-String s = "~{if b then '${1 + i}' else 0}"
+String s = "~{if b then '~{1 + i}' else 0}"
 ```
 
 ##### Expression Placeholder Coercion
@@ -1459,7 +1459,7 @@ python script.py --val=
 The latter case is very likely an error case, and this `--val=` part should be left off if a value for `val` is omitted. To solve this problem, modify the expression inside the template tag as follows:
 
 ```
-python script.py ${"--val=" + val}
+python script.py ~{"--val=" + val}
 ```
  
 #### 🗑 Expression Placeholder Options
@@ -1499,7 +1499,7 @@ task sep_example {
   }
   command <<<
     echo ~{sep(' ', str_array)}
-    echo ${sep(',', quote(int_array))}
+    echo ~{sep(',', quote(int_array))}
   >>>
 }
 ```
@@ -1562,7 +1562,7 @@ task default_example {
     String? s
   }
   command <<<
-    .my_cmd ~{if defined(s) then "--opt ${s}" else "foobar"}"foobar"}
+    .my_cmd ~{if defined(s) then "--opt ~{s}" else "foobar"}"foobar"}
     # OR
     .my_cmd ~{select_first([s, "foobar"])}
   >>>
@@ -1780,7 +1780,7 @@ task call_variants_safe {
   >>>
 
   output {
-    File vcf = "${prefix}.vcf"
+    File vcf = "~{prefix}.vcf"
   }
 }
 ```
@@ -1878,7 +1878,7 @@ task say_hello {
   }
   command <<< >>>
   output {
-    String greeting = if defined(saluation) then "${saluation} ${name}" else name
+    String greeting = if defined(saluation) then "~{saluation} ~{name}" else name
   }
 }
 
