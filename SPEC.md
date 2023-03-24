@@ -1761,7 +1761,7 @@ task t {
   - Two input files that have the same parent location must be localized into the same directory for task execution. For example, `http://foo.com/bar/a.txt` and `http://foo.com/bar/b.txt` have the same parent (`http://foo.com/bar/`), so they must be localized into the same directory. See below for special-case handling for Versioning Filesystems.
 - When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted when that declaration is referenced in the command template.
 
-Note that the above rules do not guarantee that two files will be localized to the same directory unless they originate from the same parent location. If you are writing a task for a tool that assumes two files will be co-located, then it is safest to manually co-locate them prior to running the tool. For example, the following task runs a variant caller (`varcall`) on a BAM file and expects the BAM's index file (`.bai` extension) to be in the same directory as the BAM file.
+The above rules do *not* guarantee that two files will be localized to the same directory *unless* they originate from the same parent location. If you are writing a task for a tool that assumes two files will be co-located, then it is safest to manually co-locate them prior to running the tool. For example, the following task runs a variant caller (`varcall`) on a BAM file and expects the BAM's index file (`.bai` extension) to be in the same directory as the BAM file.
 
 ```wdl
 task call_variants_safe {
@@ -3054,7 +3054,7 @@ workflow wf {
 }
 ```
 
-Note that there is no mechanism for a workflow to set a value for a nested input when calling a subworkflow. For example, the following workflow is invalid:
+There is no mechanism for a workflow to set a value for a nested input when calling a subworkflow. For example, the following workflow is invalid:
 
 `sub.wdl`
 ```wdl
@@ -3103,7 +3103,7 @@ workflow abbrev {
 
 Calls may be executed as soon as all their inputs are available. If `call x`'s inputs are based on `call y`'s outputs, this means that `call x` can be run as soon as `call y` has completed. 
 
-As soon as the execution of a called task completes, the call outputs are available to be used as inputs to other calls in the workflow or as workflow outputs. Note that the only task declarations that are accessible outside of the task are its output declarations, i.e. call inputs cannot be referenced. To expose a call input, add an output to the task that simply copies the input:
+As soon as the execution of a called task completes, the call outputs are available to be used as inputs to other calls in the workflow or as workflow outputs. The only task declarations that are accessible outside of the task are its output declarations, i.e. call inputs cannot be referenced. To expose a call input, add an output to the task that simply copies the input:
 
 ```wdl
 task copy_input {
@@ -3130,7 +3130,7 @@ workflow test {
 }
 ```
 
-To add a dependency from x to y that isn't based on outputs, you can use the `after` keyword, such as `call x after y after z`. But note that this is only required if `x` doesn't already depend on an output from `y`.
+To add a dependency from x to y that isn't based on outputs, you can use the `after` keyword, such as `call x after y after z`. However, this is only required if `x` doesn't already depend on an output from `y`.
 
 ```wdl
 task my_task {
@@ -3564,7 +3564,7 @@ workflow cond_test {
 
 The scoping rules for conditionals are similar to those for scatters. Any declarations or call outputs inside a conditional body are accessible within that conditional and any nested scatter or conditional blocks. After a conditional block has been evaluated, its declarations and call outputs are "exported" to the enclosing scope. However, because the statements within a conditional block may or may not be evaluated during any given execution of the workflow, the type of each exported declarations or call output is implicitly `X?`, where `X` is the type of the declaration or call output within the conditional body.
 
-Note that, even though a conditional body is only evaluated if its conditional expression evaluates to `true`, all of the potential declarations and call outputs in the conditional body are always exported, regardless of the value of the conditional expression. In the case that the conditional expression evaluates to `false`, all of the exported declarations and call outputs are undefined (i.e. have a value of `None`).
+Even though a conditional body is only evaluated if its conditional expression evaluates to `true`, all of the potential declarations and call outputs in the conditional body are always exported, regardless of the value of the conditional expression. In the case that the conditional expression evaluates to `false`, all of the exported declarations and call outputs are undefined (i.e. have a value of `None`).
 
 ```wdl
 workflow foo {
@@ -3586,7 +3586,7 @@ workflow foo {
 }
 ```
 
-Also note that it is impossible to have a multi-level optional type, e.g. `Int??`; thus, the outputs of a conditional block are only ever single-level optionals, even when there are nested conditionals.
+It is impossible to have a multi-level optional type, e.g. `Int??`; thus, the outputs of a conditional block are only ever single-level optionals, even when there are nested conditionals.
 
 ```wdl
 workflow foo {
@@ -3935,7 +3935,7 @@ workflow max_test {
 
 Given 3 String parameters `input`, `pattern`, `replace`, this function replaces all non-overlapping occurrences of `pattern` in `input` by `replace`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) that will be evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 
-Note that regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
+Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
 
 ```wdl
 String s1 = "hello\tBob"
@@ -4330,7 +4330,7 @@ The return value must be used in a context where it can be coerced to the expect
 
 If the JSON file contains an array, then all the elements of the array must be of the same type or an error is raised.
 
-Note that the `read_json` function doesn't have access to any WDL type information, so it cannot return an instance of a specific `Struct` type. Instead, it returns a generic `Object` value that must be coerced to the desired `Struct` type. For example:
+The `read_json` function doesn't have access to any WDL type information, so it cannot return an instance of a specific `Struct` type. Instead, it returns a generic `Object` value that must be coerced to the desired `Struct` type. For example:
 
 `person.json`
 ```json
@@ -4385,7 +4385,7 @@ task do_stuff {
 
 Reads an entire file as a string, with any trailing end-of-line characters (`\r` and `\n`) stripped off. If the file is empty, an empty string is returned.
 
-Note that if the file contains any internal newline characters, they are left intact. For example:
+If the file contains any internal newline characters, they are left intact. For example:
 
 ```wdl
 # this file will contain "this\nfile\nhas\nfive\nlines\n"
@@ -5929,7 +5929,7 @@ task test {
 | --- | ----- |
 | foo | bar   |
 
-Note that using `write_json`/`read_json` to serialize to/from a `Map` can cause subtle issues due to the fact that `Map` is ordered whereas `Object` is not. For example:
+Using `write_json`/`read_json` to serialize to/from a `Map` can lead to subtle issues due to the fact that `Map` is ordered whereas `Object` is not. For example:
 
 ```wdl
 Map[String, Int] s2i = {"b": 2, "a": 1}
