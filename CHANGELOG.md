@@ -64,6 +64,8 @@ version 1.1.1
 
 + Fixed typos, thanks to @yarikoptic, @sejyoti, @mmterpstra, @j23414, @jdavcs, @beukueb, @notestaff, @alberto-mg, @mperf!
 
++ Added multiline strings.
+
 version 1.1.0
 ---------------------------
 
