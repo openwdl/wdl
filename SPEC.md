@@ -145,7 +145,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Array\[P\] keys(Map\[P, Y\])](#arrayp-keysmapp-y)
   - [Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#mapp-arrayy-collect_by_keyarraypairp-y)
   - [Boolean defined(X?)](#boolean-definedx)
-  - [X select\_first(Array\[X?\]+, \[X\])](#x-select_firstarrayx-x)
+  - [X select\_first(Array\[X?\]+), X select\_first(Array\[X?\], X)](#x-select_firstarrayx-x-select_firstarrayx-x)
   - [Array\[X\] select\_all(Array\[X?\])](#arrayx-select_allarrayx)
 - [Input and Output Formats](#input-and-output-formats)
   - [JSON Input Format](#json-input-format)
@@ -3749,7 +3749,7 @@ The optional second parameter specifies a literal suffix to remove from the file
 **Parameters**
 
 1. (`String`|`File`): Path of the file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
-2. `[String]`: Suffix to remove from the file name.
+2. `String`: (Optional) Suffix to remove from the file name.
  
 **Returns**: The file's basename as a `String`.
 
@@ -4440,7 +4440,7 @@ If the size can not be represented in the specified unit because the resulting v
 **Parameters**
 
 1. `File|File?|Array[File]|Array[File?]`: A file, or array of files, for which to determine the size.
-2. `[String]` The unit of storage; defaults to 'B'.
+2. `String`: (Optional) The unit of storage; defaults to 'B'.
 
 **Returns**: The size of the file(s) as a `Float`.
 
@@ -4882,16 +4882,16 @@ workflow wf {
 }
 ```
 
-## X select_first(Array[X?]+, [X])
+## X select_first(Array[X?]+), X select_first(Array[X?], X)
 
-Selects the first - i.e., left-most - non-`None` value from an `Array` of optional values. The optional second parameter provides a default value that is returned if the array is empty or contains only `None` values. If the default value is not provided, then it is an error if the array is empty or contains only `None` values. 
+Selects the first - i.e., left-most - non-`None` value from an `Array` of optional values. The optional second parameter provides a default value that is returned if the array is empty or contains only `None` values. If the default value is not provided and the array is empty or contains only `None` values, an error is raised.
 
 **Parameters**
 
-1. `Array[X?]+`: non-empty `Array` of optional values.
-2. `[X]`: default value.
+1. `Array[X?]`: An `Array` of optional values.
+2. `X`: (Optional) The default value.
 
-**Returns**: the first non-`None` value in the input array, or the default value if the array does not contain any non-`None` values and the default value is provided.
+**Returns**: the first non-`None` value in the input array, or the default value if it is provided and the array does not contain any non-`None` values.
 
 **Example**
 
