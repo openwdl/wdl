@@ -128,7 +128,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [🗑 File write\_objects(Array\[Object\])](#-file-write_objectsarrayobject)
   - [File write\_json(X)](#file-write_jsonx)
   - [Float size(File?|Array\[File?\], \[String\])](#float-sizefilearrayfile-string)
-  - [Int length(Array\[X\])](#int-lengtharrayx)
+  - [Int length(Array\[X\]|Map\[P, Y\])](#int-lengtharrayxmapp-y)
   - [Array\[Int\] range(Int)](#arrayint-rangeint)
   - [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
   - [Array\[Pair\[X,Y\]\] zip(Array\[X\], Array\[Y\])](#arraypairxy-ziparrayx-arrayy)
@@ -4468,26 +4468,29 @@ task example {
 }
 ```
 
-## Int length(Array[X])
+## Int length(Array[X]|Map[P, Y])
 
-Returns the number of elements in an array as an `Int`.
+Returns the number of elements in an `Array` or `Map` as an `Int`.
 
 **Parameters**
 
-1. `Array[X]`: An array with any element type.
+1. `Array[X]|Map[P, Y]`: An `Array` with any element type, or a `Map` with any key and value types.
 
-**Returns**: The length of the array as an `Int`.
+**Returns**: The length of the `Array` or `Map` as an `Int`.
 
 **Example**
 
 ```wdl
-Array[Int] xs = [ 1, 2, 3 ]
-Array[String] ys = [ "a", "b", "c" ]
-Array[String] zs = [ ]
+Array[Int] xs = [1, 2, 3]
+Array[String] ys = ["a", "b", "c"]
+Array[String] zs = []
 
 Int xlen = length(xs) # 3
 Int ylen = length(ys) # 3
 Int zlen = length(zs) # 0
+
+Map[String, File] m = {"a": "my/file1", "b": "my/file2"}
+Int mlen = length(m) # 2
 ```
 
 ## Array[Int] range(Int)
