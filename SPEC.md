@@ -143,6 +143,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Array\[Pair\[P, Y\]\] as\_pairs(Map\[P, Y\])](#arraypairp-y-as_pairsmapp-y)
   - [Map\[P, Y\] as\_map(Array\[Pair\[P, Y\]\])](#mapp-y-as_maparraypairp-y)
   - [Array\[P\] keys(Map\[P, Y\])](#arrayp-keysmapp-y)
+  - [Array\[Y\] values(Map\[P, Y\])](#arrayy-valuesmapp-y)
   - [Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#mapp-arrayy-collect_by_keyarraypairp-y)
   - [Boolean defined(X?)](#boolean-definedx)
   - [X select\_first(Array\[X?\]+)](#x-select_firstarrayx)
@@ -4813,15 +4814,39 @@ Creates an `Array` of the keys from the input `Map`, in the same order as the el
 
 ```wdl
 workflow foo {
-  Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
+  Map[String, Int] x = {"a": 1, "b": 2, "c": 3}
   Boolean is_true = keys(x) == ["a", "b", "c"]
 
   Map[String, Pair[File, File]] str_to_files = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
-  scatter (item in str_to_files) {
+  scatter (item in as_pairs(str_to_files)) {
     String key = item.left
   }
   Array[String] str_to_files_keys = key
-  Boolean is_truew = str_to_files_keys == keys(str_to_files)
+  Boolean is_true2 = str_to_files_keys == keys(str_to_files)
+}
+```
+
+## Array[Y] values(Map[P, Y])
+
+Creates an `Array` of the values from the input `Map`, in the same order as the elements in the map.
+
+**Parameters**
+
+1. `Map[P, Y]`: `Map` from which to extract values.
+
+**Returns**: `Array[Y]` of the input `Map`s values.
+
+**Example**
+
+```wdl
+workflow foo {
+  Map[String, Int] x = {"a": 1, "b": 2, "c": 3}
+  Boolean is_true = values(x) == [1, 2, 3]
+
+  Map[String, Pair[File, File]] str_to_files = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+  scatter (files in values(str_to_files)) {
+    call call_variants { input: bam=files.left, bai=item.right }
+  }
 }
 ```
 
