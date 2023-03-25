@@ -127,7 +127,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [🗑 File write\_object(Object)](#-file-write_objectobject)
   - [🗑 File write\_objects(Array\[Object\])](#-file-write_objectsarrayobject)
   - [File write\_json(X)](#file-write_jsonx)
-  - [Float size(File?|Array\[File?\], \[String\])](#float-sizefilearrayfile-string)
+  - [Float size(File|File?|X|X?, \[String\])](#float-sizefilefilexx-string)
   - [Int length(Array\[X\])](#int-lengtharrayx)
   - [Array\[Int\] range(Int)](#arrayint-rangeint)
   - [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
@@ -4425,31 +4425,29 @@ And `/local/fs/tmp/map.json` would contain:
 }
 ```
 
-## Float size(File?|Array[File?], [String])
+## Float size(File|File?|X|X?, [String])
 
-Determines the size of a file, or the sum total sizes of an array of files. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage).
+Determines the size of a file, or the sum total sizes of the files contained within a compound value. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage).
 
-There are four supported types for the first parameter:
-- `File`: Returns the size of the file.
-- `File?`: Returns the size of the file if it is defined, or 0.0 otherwise.
-- `Array[File]`: Returns the sum of sizes of the files in the array, or 0.0 if the array is empty.
-- `Array[File?]`: Returns the sum of sizes of all defined files in the array, or 0.0 if the array contains no defined files.
+The first parameter takes a value that is either a `File` or a compound type that contains files. For example, `Array[File]` or `Map[String, Pair[Int, File?]]`. The first parameter or any of its contained file parameters may be optional. This function determines the size of each non-`None` file contained within the value and returns the sum of those sizes, converted to the specified unit.
 
 If the size can not be represented in the specified unit because the resulting value is too large to fit in a `Float`, an error is raised. It is recommended to use a unit that will always be large enough to handle any expected inputs without numerical overflow.
 
 **Parameters**
 
-1. `File|File?|Array[File]|Array[File?]`: A file, or array of files, for which to determine the size.
-2. `[String]` The unit of storage; defaults to 'B'.
+1. `File|File?|X|X?`: A file, or a compound type that contains files, for which to determine the size.
+2. `String`: (Optional) The unit of storage; defaults to 'B'.
 
-**Returns**: The size of the file(s) as a `Float`.
+**Returns**: The size of the file(s) as a `Float`. Returns `0.0` if the first parameter is `None` or contains only `None` file values.
 
 **Example**
 
 ```wdl
 task example {
   input {
+    File? f = None
     Array[File] input_files
+    Map[String, Pair[Int, File?]] extra_files
   }
 
   command <<<
@@ -4457,13 +4455,15 @@ task example {
   >>>
 
   output {
+    Float file_size_kb = size(f, "KB") # 0.0
     Float input_files_gb = size(input_files, "GB")
+    Float extra_files_gb = size(extra_files, "GB")
     Float created_file_bytes = size("created_file") # 22.0
     Float created_file_kb = size("created_file", "K") # 0.022
   }
   
   runtime {
-    container: "my_image:latest"
+    container: "ubuntu:latest"
   }
 }
 ```
