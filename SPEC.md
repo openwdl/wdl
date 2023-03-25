@@ -145,7 +145,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Array\[P\] keys(Map\[P, Y\])](#arrayp-keysmapp-y)
   - [Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#mapp-arrayy-collect_by_keyarraypairp-y)
   - [Boolean defined(X?)](#boolean-definedx)
-  - [X select\_first(Array\[X?\]+)](#x-select_firstarrayx)
+  - [X select\_first(Array\[X?\]+, \[X\])](#x-select_firstarrayx-x)
   - [Array\[X\] select\_all(Array\[X?\])](#arrayx-select_allarrayx)
 - [Input and Output Formats](#input-and-output-formats)
   - [JSON Input Format](#json-input-format)
@@ -4882,15 +4882,16 @@ workflow wf {
 }
 ```
 
-## X select_first(Array[X?]+)
+## X select_first(Array[X?]+, [X])
 
-Selects the first - i.e. left-most - non-`None` value from an `Array` of optional values. It is an error if the array is empty, or if the array only contains `None` values. 
+Selects the first - i.e., left-most - non-`None` value from an `Array` of optional values. The optional second parameter provides a default value that is returned if the array is empty or contains only `None` values. If the default value is not provided, then it is an error if the array is empty or contains only `None` values. 
 
 **Parameters**
 
 1. `Array[X?]+`: non-empty `Array` of optional values.
+2. `[X]`: default value.
 
-**Returns**: the first non-`None` value in the input array.
+**Returns**: the first non-`None` value in the input array, or the default value if the array does not contain any non-`None` values and the default value is provided.
 
 **Example**
 
@@ -4901,12 +4902,17 @@ workflow SelectFirst {
     Int? maybe_four_but_is_not = None
     Int? maybe_three = 3
   }
-  # both of these statements evaluate to 5
-  Int five = select_first([maybe_five, maybe_four_but_is_not, maybe_three])
-  Int five = select_first([maybe_four_but_is_not, maybe_five, maybe_three])
 
-  select_first([maybe_four_but_is_not])  # error! array contains only None values
-  select_first([])  # error! array is empty
+  output {
+    # all of these statements evaluate to 5
+    Int fiveA = select_first([maybe_five, maybe_four_but_is_not, maybe_three])
+    Int fiveB = select_first([maybe_four_but_is_not, maybe_five, maybe_three])
+    Int fiveC = select_first([], 5)
+    Int fiveD = select_first([None], 5)
+
+    Int err1 = select_first([maybe_four_but_is_not])  # error! array contains only None values
+    Int err2 = select_first([])  # error! array is empty
+  }
 }
 ```
 
