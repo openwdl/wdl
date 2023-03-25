@@ -105,6 +105,8 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Int floor(Float), Int ceil(Float) and Int round(Float)](#int-floorfloat-int-ceilfloat-and-int-roundfloat)
   - [Int min(Int, Int), Float min(Float, Float), Float min(Int, Float), Float min(Float, Int)](#int-minint-int-float-minfloat-float-float-minint-float-float-minfloat-int)
   - [Int max(Int, Int), Float max(Float, Float), Float max(Int, Float), Float max(Float, Int)](#int-maxint-int-float-maxfloat-float-float-maxint-float-float-maxfloat-int)
+  - [✨ String? find(String, String)](#-string-findstring-string)
+  - [✨ Boolean matches(String, String)](#-boolean-matchesstring-string)
   - [String sub(String, String, String)](#string-substring-string-string)
   - [File stdout()](#file-stdout)
   - [File stderr()](#file-stderr)
@@ -3590,15 +3592,90 @@ workflow max_test {
 }
 ``` 
 
-## String sub(String, String, String)
+## ✨ String? find(String, String)
 
-Given 3 String parameters `input`, `pattern`, `replace`, this function replaces all non-overlapping occurrences of `pattern` in `input` by `replace`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) that will be evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
+Given two `String` parameters `input` and `pattern`, searches for the occurrence of `pattern` within `input` and returns the first match or `None` if there are no matches. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 
 Note that regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
 
 ```wdl
-String s1 = "hello\tBob"
-String s2 = sub(s1, "\\t", " ")
+String? first_match = find("hello\tBob", "\\t")
+```
+
+**Parameters**
+
+1. `String`: the input string to search.
+2. `String`: the pattern to search for.
+
+**Returns**: The contents of the first match, or `None` if `pattern` does not match `input`.
+
+**Example**
+
+```wdl
+version 1.2
+
+workflow find_string {
+  input {
+    String input = "hello world"
+    String pattern1 = "e..o"
+    String pattern2 = "goodbye"
+  }
+
+  output {
+    String? match1 = find(input, pattern1)  # "ello"
+    String? match2 = find(input, pattern2)  # None
+  }  
+}
+```
+
+## ✨ Boolean matches(String, String)
+
+Given two `String` parameters `input` and `pattern`, tests whether `pattern` matches `input` at least once. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
+
+To test whether `pattern` matches the entire `input`, make sure to begin and end the pattern with anchors. For example:
+
+```wdl
+Boolean full_match = matches("abc123", "^a.+3$")
+```
+
+Note that regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
+
+```wdl
+Boolean has_tab = matches("hello\tBob", "\\t")
+```
+
+**Parameters**
+
+1. `String`: the input string to search.
+2. `String`: the pattern to search for.
+
+**Returns**: `true` if `pattern` matches `input` at least once, otherwise `false`.
+
+**Example**
+
+```wdl
+version 1.2
+
+workflow contains_string {
+  input {
+    File fastq
+  }
+
+  output {
+    Boolean is_compressed = matches(basename(fastq), "\\.(gz|zip|zstd)")
+    Boolean is_read1 = matches(basename(fastq), "_R1")
+  }
+}
+```
+
+## String sub(String, String, String)
+
+Given three String parameters `input`, `pattern`, `replace`, this function replaces all non-overlapping occurrences of `pattern` in `input` by `replace`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
+
+Note that regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
+
+```wdl
+String no_tab = sub("hello\tBob", "\\t", " ")
 ```
 
 🗑 The option for execution engines to allow other regular expression grammars besides POSIX ERE is deprecated.
