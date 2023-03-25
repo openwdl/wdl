@@ -42,6 +42,11 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
+version 1.2.0
+---------------------------
+
++ Generalized `length` function to also accept a `Map` argument.
+
 version 1.1.0
 ---------------------------
 
