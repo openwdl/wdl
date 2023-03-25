@@ -42,6 +42,11 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
+version 1.2.0
+---------------------------
+
++ Added parameters to `read_tsv` that enable it to read field names from a header row or an `Array[String]` and return an `Array[Object]`.
+
 version 1.1.0
 ---------------------------
 

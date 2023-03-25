@@ -122,7 +122,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Float read\_float(String|File)](#float-read_floatstringfile)
   - [Boolean read\_boolean(String|File)](#boolean-read_booleanstringfile)
   - [File write\_lines(Array\[String\])](#file-write_linesarraystring)
-  - [File write\_tsv(Array\[Array\[String\]\])](#file-write_tsvarrayarraystring)
+  - [File write\_tsv(Array\[Array\[String\]\]|Array\[Struct\]), File write\_tsv(Array\[Array\[String\]\], true, Array\[String\]), File write\_tsv(Array\[Struct\], Boolean, Array\[String\])](#file-write_tsvarrayarraystringarraystruct-file-write_tsvarrayarraystring-true-arraystring-file-write_tsvarraystruct-boolean-arraystring)
   - [File write\_map(Map\[String, String\])](#file-write_mapmapstring-string)
   - [🗑 File write\_object(Object)](#-file-write_objectobject)
   - [🗑 File write\_objects(Array\[Object\])](#-file-write_objectsarrayobject)
@@ -3834,10 +3834,10 @@ task do_stuff {
     python do_stuff.py --header=true ~{file} > ~{prefix}.with_headers.tsv
   >>>
   output {
-    Array[Array[String]] output_table1 = read_tsv("~{prefix}.no_headers.tsv")
-    Array[Object] output_table2 = read_tsv(~{prefix}.no_headers.tsv, false, ["name", "value"])
-    Array[Object] output_table3 = read_tsv(~{prefix}.with_headers.tsv, true)
-    Array[Object] output_table4 = read_tsv(~{prefix}.with_headers.tsv, true, ["name", "value"])
+    Array[Array[String]] output_table = read_tsv("~{prefix}.no_headers.tsv")
+    Array[Object] output_objs1 = read_tsv(~{prefix}.no_headers.tsv, false, ["name", "value"])
+    Array[Object] output_objs2 = read_tsv(~{prefix}.with_headers.tsv, true)
+    Array[Object] output_objs3 = read_tsv(~{prefix}.with_headers.tsv, true, ["name", "value"])
   }
 }
 ```
@@ -4153,9 +4153,17 @@ And `/local/fs/tmp/array.txt` would contain:
 
 `first\nsecond\nthird`
 
-## File write_tsv(Array[Array[String]])
+## File write_tsv(Array[Array[String]]|Array[Struct]), File write_tsv(Array[Array[String]], true, Array[String]), File write_tsv(Array[Struct], Boolean, Array[String])
 
-Writes a tab-separated value (TSV) file with one line for each element in a `Array[Array[String]]`. Each element is concatenated into a single tab-delimited string. All lines are terminated by the newline (`\n`) character. If the `Array` is empty, an empty file is written.
+Given an `Array` of elements, writes a tab-separated value (TSV) file with one line for each element.
+
+There are three variants of this function:
+
+1. `File write_tsv(Array[Array[String]])`: Each element is concatenated using a tab ('\t') delimiter and written as a row in the file. There is no header row.
+2. `File write_tsv(Array[Array[String]], true, Array[String])`: The second argument must be `true` and the third argument provides an `Array` of column names. The column names are concatenated to create a header that is written as the first row of the file. All elements must be the same length as the header array.
+3. `File write_tsv(Array[Struct], [Boolean, [Array[String]]])`: Each element is a struct whose field values are concatenated in the order the fields are defined. The optional second argument specifies whether to write a header row. If it is `true`, then the header is created from the struct field names. If the second argument is `true`, then the optional third argument may be used to specify column names to use instead of the struct field names. 
+
+Each line is terminated by the newline (`\n`) character. 
 
 The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
 
@@ -4163,26 +4171,49 @@ If the entire contents of the file can not be written for any reason, the callin
 
 **Parameters**
 
-1. `Array[Array[String]]`: An array of rows, where each row is an array of column values.
+1. `Array[Array[String]] | Array[Struct]`: An array of rows, where each row is either an `Array` of column values or a struct whose values are the column values.
+2. `Boolean`: (Optional) Whether to write a header row.
+3. `Array[String]`: An array of column names. If the first argument is `Array[Array[String]]` and the second argument is `true` then it is required, otherwise it is optional. Ignored if the second argument is `false`.
 
 **Returns**: A `File`.
 
 **Example**
 
-This task writes a TSV file with two lines, and three columns in each line. It then calls a script using that file as input.
-
 ```wdl
+struct Numbers {
+  String first
+  String second
+  String third
+}
+
 task example {
   input {
     Array[Array[String]] array = [["one", "two", "three"], ["un", "deux", "trois"]]
+    Array[Numbers] structs = [
+      Numbers {
+        first: "one",
+        second: "two",
+        third: "three"
+      },
+      Numbers {
+        first: "un",
+        second: "deux",
+        third: "trois"
+      }
+    ]
   }
 
   command <<<
-    ./script --tsv=~{write_tsv(array)}
+    ./script --header=false --tsv=~{write_tsv(array)}
+    ./script --header=true --tsv=~{write_tsv(array, true, ["first", "second", "third"])}
+    ./script --header=false --tsv=~{write_tsv(structs)}
+    ./script --header=false --tsv=~{write_tsv(structs, false)}
+    ./script --header=true --tsv=~{write_tsv(structs, true)}
+    ./script --header=true --tsv=~{write_tsv(structs, true, ["no1", "no2", "no3"])}
   >>>
   
   runtime {
-    container: "my_image:latest"
+    container: "ubuntu:latest"
   }
 }
 ```
