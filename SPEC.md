@@ -143,7 +143,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Array\[Pair\[P, Y\]\] as\_pairs(Map\[P, Y\])](#arraypairp-y-as_pairsmapp-y)
   - [Map\[P, Y\] as\_map(Array\[Pair\[P, Y\]\])](#mapp-y-as_maparraypairp-y)
   - [Array\[P\] keys(Map\[P, Y\])](#arrayp-keysmapp-y)
-  - [✨ Boolean contains\_key(Map\[P, Y\], P), Boolean contains\_key(Map\[P?, Y\], P?)](#-boolean-contains_keymapp-y-p-boolean-contains_keymapp-y-p)
+  - [✨ Boolean contains\_key(Map\[P, Y\], P), Boolean contains\_key(Struct|Object, String)](#-boolean-contains_keymapp-y-p-boolean-contains_keystructobject-string)
   - [Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#mapp-arrayy-collect_by_keyarraypairp-y)
   - [Boolean defined(X?)](#boolean-definedx)
   - [X select\_first(Array\[X?\]+)](#x-select_firstarrayx)
@@ -3303,7 +3303,9 @@ workflow foo {
 
 A `Struct` type is a user-defined data type. Structs enable the creation of compound data types that bundle together related attributes in a more natural way than is possible using the general-purpose compound types like `Pair` or `Map`. Once defined, a `Struct` type can be used as the type of a declaration like any other data type.
 
-A `struct` definition is a top-level WDL element, meaning it is defined at the same level as tasks and workflows, and it cannot be defined within a task or workflow body. A struct is defined using the `struct` keyword, followed by a name that is unique within the WDL document, and a body containing a set of member declarations. Declarations in a `struct` body differ from those in a `task` or `workflow` in that `struct` members cannot have default initializers. `Struct` members may be optional.
+A `struct` definition is a top-level WDL element, meaning it is defined at the same level as tasks and workflows, and it cannot be defined within a task or workflow body.
+
+A struct is defined using the `struct` keyword, followed by a name that is unique within the WDL document, and a body containing a set of member declarations. Declarations in a `struct` body differ from those in a `task` or `workflow` in that `struct` members cannot have default initializers. `Struct` members may be optional.
 
 Valid `struct`:
 ```wdl
@@ -3335,7 +3337,9 @@ struct Sample {
 
 ### Struct Literals
 
-A struct literal is an instance of a specific `Struct` type that provides values for all of the non-optional members and any of the optional members. The members of a struct literal are validated against the `Struct`'s definition at the time of creation. Members do not need to be specified in any specific order. Once a struct literal is created, it is immutable like any other WDL value.
+A struct literal is an instance of a specific `Struct` type that provides values for all of the non-optional members and any of the optional members. Any optional members that are not initialized are given the value `None`.
+
+The members of a struct literal are validated against the `Struct`'s definition at the time of creation. Members do not need to be specified in any specific order. Once a struct literal is created, it is immutable like any other WDL value.
 
 A struct literal begins with the name of the `Struct` type, followed by name-value pairs for each of the members within braces.
 
@@ -3358,6 +3362,9 @@ task {
       pin_digits: [1, 2, 3, 4]
     }
 
+    # username is given the value of `None` so we can still access it
+    Boolean username_is_none = !defined(account1.username)
+
     # error! missing required account_number
     BankAccount account2 = BankAccount {
       routing_number: 611325474,
@@ -3377,6 +3384,7 @@ task {
 ```
 
 🗑 It is also possible to assign an `Object` or `Map[String, X]` value to a `Struct` declaration. In the either case:
+
 * The `Object`/`Map` must not have any members that are not declared for the struct.
 * The value of each object/map member must be coercible to the declared type of the struct member.
 * The `Object`/`Map` must at least contain values for all of the struct's non-optional members.
@@ -4826,33 +4834,88 @@ workflow foo {
 }
 ```
 
-## ✨ Boolean contains_key(Map[P, Y], P), Boolean contains_key(Map[P?, Y], P?)
+## ✨ Boolean contains_key(Map[P, Y], P), Boolean contains_key(Struct|Object, String)
 
-Tests whether the given map contains an entry with the given key.
+Given a key-value type collection (`Map`, `Struct`, or `Object`) and a key, tests whether the collection contains an entry with the given key.
+
+This function has two variants:
+
+1. `Boolean contains_key(Map[P, Y], P)`: Tests whether the `Map` has an entry with the given key. If `P` is an optional type (e.g., `String?`), then the second argument may be `None`.
+2. `Boolean contains_key(Struct|Object, String)`: Tests whether the `Struct` or `Object` has an entry with the given name. In the case of structs and `Object`s, this can be used to test the presence of an optional member, including nested elements.
+
+For the second variant, the key may specify a nested element of the form "foo.bar" (to any depth). In this case, the first argument is tested for the presence of an element whose key is "foo" and whose value is a key-value type collection (`Map`, `Struct`, or `Object`). If a "foo" element is present, then its value is tested for the presence of an element whose key is "bar". This only tests for the presence of the named element, *not* whether or not it is `defined`.
 
 **Parameters**
 
-1. `Map[P, Y]` or `Map[P?, Y]`: `Map` to search for the key.
-2. `P` or `P?`: The key to search, of the same type as the `Map`'s key type. If the `Map`'s key type is optional then the key may also be optional.
+1. `Map[P, Y]`|`Struct`|`Object`: Collection to search for the key.
+2. `P`: The key to search. If the first argument is a `Map`, then the key must be of the same type as the `Map`'s key type. If the `Map`'s key type is optional then the key may also be optional. If The first argument is a `Struct` or `Object`, then the key must be a `String`, and it may specify a nested element, e.g., "foo.bar".
 
-**Returns**: `true` if the `Map` contains the key, otherwise false.
+**Returns**: `true` if the collection contains the key, otherwise false.
 
 **Example**
 
-```wdl
-version 1.2
+<details>
+  <summary>
+  Example: get_values.wdl
+  
+  ```wdl
+  version 1.2
 
-task get_file {
-  input {
-    Map[String?, File] m
-    String s
+  struct Person {
+    String name
+    Map? details
   }
 
-  output {
-    File? f = m[s] if contains_key(m, s) else None
+  workflow get_ints_and_exts {
+    input {
+      Map[String, Int] m
+      String s1
+      String s2
+      Person p1
+      Person p2
+    }
+
+    output {
+      Int? i1 = m[s1] if contains_key(m, s1) else None
+      Int? i2 = m[s2] if contains_key(m, s2) else None
+      Int? phone1 = p1.details.phone if contains_key(p1, "details.phone")
+      Int? phone2 = p2.details.phone if contains_key(p2, "details.phone")
+    }
   }
-}
-```
+  ```
+  </summary>
+  <p>
+  Example input:
+
+  ```json
+  {
+    "get_values.m": {"a": 1, "b": 2},
+    "get_values.s1": "a",
+    "get_values.s2": "c",
+    "get_values.p1": {
+      "name": "John",
+      "details": {
+        "phone": "123-456-7890"
+      }
+    },
+    "get_values.p2": {
+      "name": "Agent X"
+    }
+  }
+  ```
+   
+  Example output:
+
+  ```json
+  {
+    "get_ints_and_exts.i1": 1,
+    "get_ints_and_exts.i2": null,
+    "get_ints_and_exts.phone1": "123-456-7890",
+    "get_ints_and_exts.phone2": null,
+  }
+  ``` 
+  </p>
+</details>
 
 ## Map[P, Array[Y]] collect_by_key(Array[Pair[P, Y]])
 
