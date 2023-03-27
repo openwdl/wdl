@@ -113,13 +113,18 @@ Revisions to this specification are made periodically in order to correct errors
     - [Struct Namespacing](#struct-namespacing)
     - [Struct Usage](#struct-usage)
 - [Standard Library](#standard-library)
-  - [Int floor(Float), Int ceil(Float) and Int round(Float)](#int-floorfloat-int-ceilfloat-and-int-roundfloat)
-  - [✨ Int min(Int, Int), Float min(Float, Float), Float min(Int, Float), Float min(Float, Int)](#-int-minint-int-float-minfloat-float-float-minint-float-float-minfloat-int)
-  - [✨ Int max(Int, Int), Float max(Float, Float), Float max(Int, Float), Float max(Float, Int)](#-int-maxint-int-float-maxfloat-float-float-maxint-float-float-maxfloat-int)
-  - [String sub(String, String, String)](#string-substring-string-string)
-  - [File stdout()](#file-stdout)
-  - [File stderr()](#file-stderr)
-  - [Array\[File\] glob(String)](#arrayfile-globstring)
+  - [Numeric Functions](#numeric-functions)
+    - [`floor`](#floor)
+    - [`ceil`](#ceil)
+    - [`round`](#round)
+    - [✨ `min`](#-min)
+    - [✨ `max`](#-max)
+  - [String Functions](#string-functions)
+    - [`sub`](#sub)
+  - [File I/O Operations](#file-io-operations)
+    - [`stdout`](#stdout)
+    - [`stderr`](#stderr)
+  - [`glob`](#glob)
     - [Non-standard Bash](#non-standard-bash)
   - [String basename(String|File, \[String\])](#string-basenamestringfile-string)
   - [Array\[String\] read\_lines(String|File)](#arraystring-read_linesstringfile)
@@ -1126,7 +1131,7 @@ String s = read_string("/path/to/file")
 
 WDL provides the standard unary and binary mathematical and logical operators. The following table lists the valid operand and result type combinations for each operator. Using an operator with unsupported types results in an error.
 
-In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type is first cast to a `Float`; the result type is always `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by the `Float`. A `Float` can be converted to an `Int` with the [`ceil`, `round`, or `floor`](#int-floorfloat-int-ceilfloat-and-int-roundfloat) functions.
+In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type is first cast to a `Float`; the result type is always `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by the `Float`. A `Float` can be converted to an `Int` with the [`ceil`](#int-ceilfloat), [`round`](#int-roundfloat), or [`floor`](#int-floorfloat) functions.
 
 ##### Unary Operators
 
@@ -3843,19 +3848,27 @@ The following functions are available to be called in WDL expressions. The signa
 
 A function is called using the following syntax: `R' val = func_name(arg1, arg2, ...)`, where `R'` is a type that is coercible from `R`, and `arg1`, `arg2`, ... are expressions whose types are coercible to `T1`, `T2`, ...
 
-Some functions accept arguments of multiple different types, denoted as a list of types separated by `|`.
+A function may be generic, which means that one or more of its parameters are generic. These functions are defined using letters (e.g. `X`, `Y`) for the type parameters, and the bounds of each type parameter is specified in the function description.
 
-Some functions are polymorphic, which means that they are actually multiple functions with the same name but different signatures. Such functions are defined with generic types (e.g. `X`, `Y`) instead of concrete types (e.g. `File` or `String`), and the bounds of each type parameter is specified in the function description.
+Some functions are polymorphic, which means that they are actually multiple functions ("variants") with the same name but different signatures. These functions may be defined using `|` to denote the set of alternative valid types, or they may have each variant defined separately.
+
+Functions are grouped by their argument types and restrictions. Some functions may be restricted to where they may be used. An unrestricted function may be used in any expression.
 
 Functions that are new in this version of the specification are denoted by ✨, and deprecated functions are denoted by 🗑.
 
-## Int floor(Float), Int ceil(Float) and Int round(Float)
+## Numeric Functions
 
-These functions convert a `Float` to an `Int` using different rounding methods:
+These functions all operate on numeric types.
 
-- `floor`: Rounds **down** to the next lower integer.
-- `ceil`: Rounds **up** to the next higher integer.
-- `round`: Rounds to the nearest integer based on standard rounding rules ("round half up").
+**Restrictions**: None
+
+### `floor`
+
+```
+Int floor(Float)
+```
+
+Rounds a floating point number **down** to the next lower integer.
 
 **Parameters**:
 
@@ -3863,21 +3876,162 @@ These functions convert a `Float` to an `Int` using different rounding methods:
 
 **Returns**: An integer.
 
-**Example**
+<details>
+<summary>
+Example: test_floor.wdl
 
 ```wdl
-# all these expressions evaluate to true
-Boolean all_true = [
-  floor(1.0) == 1,
-  floor(1.9) == 1,
-  ceil(2.0) == 2,
-  ceil(2.1) == 3,
-  round(1.49) == 1,
-  round(1.50) == 2
-]
+version 1.2
+
+workflow test_floor {
+  input {
+    Int i1
+  }
+
+  Int i2 = i1 - 1
+  Float f1 = i1
+  Float f2 = i - 0.1
+  
+  output {
+    Boolean all_true = [floor(f1) == i1, floor(f2) == i2]
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_floor.i1": 2
+}
+
+```
+Example output:
+
+```json
+{
+  "test_floor.all_true": true
+}
+```
+</p>
+</details>
+
+### `ceil`
+
+```
+Int ceil(Float)
 ```
 
-## ✨ Int min(Int, Int), Float min(Float, Float), Float min(Int, Float), Float min(Float, Int)
+Rounds a floating point number **up** to the next higher integer.
+
+**Parameters**:
+
+1. `Float`: the number to round.
+
+**Returns**: An integer.
+
+<details>
+<summary>
+Example: test_ceil.wdl
+
+```wdl
+version 1.2
+
+workflow test_ceil {
+  input {
+    Int i1
+  }
+
+  Int i2 = i1 + 1
+  Float f1 = i1
+  Float f2 = i + 0.1
+  
+  output {
+    Boolean all_true = [ceil(f1) == i1, ceil(f2) == i2]
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_ceil.i1": 2
+}
+```
+
+Example output:
+
+```json
+{
+  "test_ceil.all_true": true
+}
+```
+</p>
+</details>
+
+### `round`
+
+```
+Int round(Float)
+```
+
+Rounds a floating point number to the nearest integer based on standard rounding rules ("round half up").
+
+**Parameters**:
+
+1. `Float`: the number to round.
+
+**Returns**: An integer.
+
+<details>
+<summary>
+Example: test_round.wdl
+
+```wdl
+version 1.2
+
+workflow test_round {
+  input {
+    Int i1
+  }
+
+  Int i2 = i1 + 1
+  Float f1 = i1 + 0.49
+  Float f2 = i1 + 0.50
+  
+  output {
+    Boolean all_true = [round(f1) == i1, round(f2) == i2]
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_round.i1": 2
+}
+```
+
+Example output:
+
+```json
+{
+  "test_round.all_true": true
+}
+```
+</p>
+</details>
+
+### ✨ `min`
+
+```
+Int min(Int|Float, Int|Float)
+```
 
 Returns the smaller of two values. If both values are `Int`s, the return value is an `Int`, otherwise it is a `Float`.
 
@@ -3888,23 +4042,53 @@ Returns the smaller of two values. If both values are `Int`s, the return value i
 
 **Returns**: The smaller of the two arguments.
 
-**Example**
+<details>
+<summary>
+Example: test_min.wdl
 
 ```wdl
-workflow min_test {
+version 1.2
+
+workflow test_min {
   input {
     Int value1
     Float value2
   }
+
   output {
     # these two expressions are equivalent
     Float min1 = if value1 < value2 then value1 else value2
     Float min2 = min(value1, value2)
   }
 }
-``` 
+```
+</summary>
+<p>
+Example input:
 
-## ✨ Int max(Int, Int), Float max(Float, Float), Float max(Int, Float), Float max(Float, Int)
+```json
+{
+  "test_min.value1": 1,
+  "test_min.value2": 2.0
+}
+```
+
+Example output:
+
+```json
+{
+  "test_min.min1": 1.0,
+  "test_min.min2": 1.0
+}
+```
+</p>
+</details>
+
+### ✨ `max`
+
+```
+Int max(Int|Float, Int|Float)
+```
 
 Returns the larger of two values. If both values are `Int`s, the return value is an `Int`, otherwise it is a `Float`.
 
@@ -3915,25 +4099,61 @@ Returns the larger of two values. If both values are `Int`s, the return value is
 
 **Returns**: The larger of the two arguments.
 
-**Example**
+<details>
+<summary>
+Example: test_max.wdl
 
 ```wdl
-workflow max_test {
+version 1.2
+
+workflow test_max {
   input {
     Int value1
     Float value2
   }
+
   output {
     # these two expressions are equivalent
-    Float max1 = if value1 > value2 then value1 else value2
-    Float max2 = max(value1, value2)
+    Float min1 = if value1 > value2 then value1 else value2
+    Float min2 = max(value1, value2)
   }
 }
-``` 
+```
+</summary>
+<p>
+Example input:
 
-## String sub(String, String, String)
+```json
+{
+  "test_max.value1": 1,
+  "test_max.value2": 2.0
+}
+```
 
-Given 3 String parameters `input`, `pattern`, `replace`, this function replaces all non-overlapping occurrences of `pattern` in `input` by `replace`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) that will be evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
+Example output:
+
+```json
+{
+  "test_max.min1": 1.0,
+  "test_max.min2": 1.0
+}
+```
+</p>
+</details>
+
+## String Functions
+
+These functions operate on `String` arguments.
+
+**Restrictions**: None
+
+### `sub`
+
+```
+String sub(String, String, String)
+```
+
+Given 3 String parameters `input`, `pattern`, and `replace`, this function replaces all non-overlapping occurrences of `pattern` in `input` by `replace`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) that will be evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 
 Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
 
@@ -3952,66 +4172,157 @@ String s2 = sub(s1, "\\t", " ")
 
 **Returns**: the input string, with all occurrences of the pattern replaced by the replacement string.
 
-**Example**
+<details>
+<summary>
+Example: test_sub.wdl
 
 ```wdl
-String chocolike = "I like chocolate when it's late"
+version 1.2
 
-String chocolove = sub(chocolike, "like", "love") # I love chocolate when it's late
-String chocoearly = sub(chocolike, "late", "early") # I like chocoearly when it's early
-String chocolate = sub(chocolike, "late$", "early") # I like chocolate when it's early
-String chocoearlylate = sub(chocolike, "[^ ]late", "early") # I like chocearly when it's late
-String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate 4444 it's late
-```
-
-Any arguments are allowed so long as they can be coerced to `String`s. For example, this can be useful to swap the extension of a filename:
-
-```wdl
-task example {
-  input {
-    File input_file = "my_input_file.bam"
-    # the value of output_file_name is "my_input_file.index"
-    String output_file_name = sub(input_file, "\\.bam$", ".index")
-  }
-
-  command <<<
-    echo "I want an index instead" > ~{output_file_name}
-  >>>
+workflow test_sub {
+  String chocolike = "I like chocolate when it's late"
 
   output {
-    File outputFile = output_file_name
-  }
-  
-  runtime {
-    container: "my_image:latest"
+    String chocolove = sub(chocolike, "like", "love") # I love chocolate when it's late
+    String chocoearly = sub(chocolike, "late", "early") # I like chocoearly when it's early
+    String chocolate = sub(chocolike, "late$", "early") # I like chocolate when it's early
+    String chocoearlylate = sub(chocolike, "[^ ]late", "early") # I like chocearly when it's late
+    String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate 4444 it's late
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-## File stdout()
+```json
+{}
+```
 
-Returns the value of the executed command's standard output (stdout) as a `File`. The file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
+Example output:
+
+```json
+{
+  "test_sub.chocolove": "I love chocolate when it's late",
+  "test_sub.chocoearly": "I like chocoearly when it's early",
+  "test_sub.chocolate": "I like chocolate when it's early",
+  "test_sub.chocoearlylate": "I like chocearly when it's late",
+  "test_sub.choco4": "I 4444 chocolate 4444 it's late"
+}
+```
+</p>
+</details>
+
+Any arguments are allowed so long as they can be coerced to `String`s. For example, this can be useful to swap the extension of a filename:
+
+<details>
+<summary>
+Example: change_extension.wdl
+
+```wdl
+version 1.2
+
+task change_extension_task {
+  input {
+    String prefix
+  }
+
+  command <<<
+    echo "data" > ~{prefix}.data
+    echo "index" > ~{prefix}.index
+  >>>
+
+  output {
+    String data = read_string("~{prefix}.data")
+    String index = read_string(sub(data_file, "\\.data$", ".index"))
+  }
+
+  runtime {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "change_extension_task.prefix": "foo"
+}
+```
+
+Example output:
+
+```json
+{
+  "change_extension_task.data": "data",
+  "change_extension_task.index": "index"
+}
+```
+</p>
+</details>
+
+## File I/O Operations
+
+These functions have a `File` as an input and/or output.
+
+**Restrictions**
+
+1. A function that *reads* a file may only be called in a context where the input file exists. If the file is an input to a task or workflow, then it may be read anywhere in that task or worklow. If the file is created by a task, then it may only be read after it is written. For example, if the file is written during the execution of the `command`, then it may only be read in the `output` section.
+2. A function that *writes* a file may be called anywhere. However, writing a file in a workflow is discouraged since it may have the side-effect of creating a permanent output file that is not named in the output section. For example, calling `write_string` in a workflow and then passing the resulting `File` as input to a task may require the engine to persist that file to cloud storage.
+3. A function that reads an output stream (i.e. `stdout` and `stderr`) may only be called in a task `output` section.
+
+### `stdout`
+
+```
+File stdout()
+```
+
+Returns the value of the executed command's standard output (stdout) as a `File`. The engine should give the file a random name and write it in a temporary directory, so as not to conflict with any other task output files.
 
 **Parameters**: None
 
 **Returns**: A `File` reference to the stdout generated by the command of the task where the function is called.
 
-**Restrictions**: Can only be used within the `output` section of a `task`.
-
-**Example**
-
-This task echos a message to standard out, and then returns a `File` containing that message.
+<details>
+<summary>
+Example: echo_stdout.wdl
 
 ```wdl
-task echo {
+version 1.2
+
+task echo_stdout {
   command <<< echo "hello world" >>>
+
   output {
-    File message = stdout()
+    File message = read_string(stdout())
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-## File stderr()
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "echo_stdout.message": "hello world"
+}
+```
+</p>
+</details>
+
+### `stderr`
+
+```
+File stderr()
+```
 
 Returns the value of the executed command's standard error (stderr) as a `File`. The file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
 
@@ -4019,28 +4330,50 @@ Returns the value of the executed command's standard error (stderr) as a `File`.
 
 **Returns**: A `File` reference to the stderr generated by the command of the task where the function is called.
 
-**Restrictions**: Can only be used within the `output` section of a `task`.
-
-**Example**
-
-This task echos a message to standard error, and then returns a `File` containing that message.
+<details>
+<summary>
+Example: echo_stdout.wdl
 
 ```wdl
-task echo {
+version 1.2
+
+task echo_stdout {
   command <<< >&2 echo "hello world" >>>
+
   output {
-    File message = stderr()
+    File message = read_string(stderr())
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-## Array[File] glob(String)
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "echo_stdout.message": "hello world"
+}
+```
+</p>
+</details>
+
+## `glob`
+
+```
+Array[File] glob(String)
+```
 
 Returns the Bash expansion of the [glob string](https://en.wikipedia.org/wiki/Glob_(programming)) relative to the task's execution directory, and in the same order.
 
 `glob` finds all of the files (but not the directories) in the same order as would be matched by running `echo <glob>` in Bash from the task's execution directory.
 
-At least in standard Bash, glob expressions are not evaluated recursively, i.e. files in nested directories are not included. 
+At least in standard Bash, glob expressions are not evaluated recursively, i.e., files in nested directories are not included. 
 
 **Parameters**:
 
@@ -4048,21 +4381,51 @@ At least in standard Bash, glob expressions are not evaluated recursively, i.e. 
 
 **Returns**: A array of all files matched by the glob.
 
-**Restrictions**: Can only be used within a `task`.
 
-**Example**
+<details>
+<summary>
+Example: gen_files.wdl
 
 ```wdl
-task gen_files {
+version 1.2
+
+task gen_files_task {
+  input {
+    Int num_files
+  }
+
   command <<<
-    ./generate_files --num 4 --prefix "a"
+    for i in 1..~{num_files}; do
+      echo ~{i} > file_~{i}
+    done
   >>>
 
-  output {
-    Array[File] a_files = glob("a*")
+  Array[File] files = glob("file_*")
+
+  output {  
+    Int glob_len = length(files)
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "gen_files_task.num_files": 4
+}
+```
+
+Example output:
+
+```json
+{
+  "gen_files_task.glob_len": 4
+}
+```
+</p>
+</details>
 
 This command generates the following directory structure:
 
