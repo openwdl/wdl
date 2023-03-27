@@ -3376,9 +3376,11 @@ task {
 ```
 
 🗑 It is also possible to assign an `Object` or `Map[String, X]` value to a `Struct` declaration. In the either case:
-* The `Object`/`Map` must not have any members that are not declared for the struct.
+
 * The value of each object/map member must be coercible to the declared type of the struct member.
 * The `Object`/`Map` must at least contain values for all of the struct's non-optional members.
+
+Keys in the map/object that do not match any struct members are ignored.
 
 Note that the ability to assign non-`Struct` values to `Struct` declarations is deprecated and will be removed in WDL 2.0.
 
