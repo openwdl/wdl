@@ -120,7 +120,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [String read\_string(String|File)](#string-read_stringstringfile)
   - [Int read\_int(String|File)](#int-read_intstringfile)
   - [Float read\_float(String|File)](#float-read_floatstringfile)
-  - [Boolean read\_boolean(String|File)](#boolean-read_booleanstringfile)
+  - [Boolean read\_boolean(File)](#boolean-read_booleanfile)
   - [File write\_lines(Array\[String\])](#file-write_linesarraystring)
   - [File write\_tsv(Array\[Array\[String\]\])](#file-write_tsvarrayarraystring)
   - [File write\_map(Map\[String, String\])](#file-write_mapmapstring-string)
@@ -4086,17 +4086,60 @@ If the entire contents of the file can not be read for any reason, the calling t
 
 **Returns**: A `Float`.
 
-## Boolean read_boolean(String|File)
+## Boolean read_boolean(File)
 
-Reads a file that contains a single line containing only an boolean value and (optional) whitespace. If the line contains "true" or "false", that value is returned as a `Boolean`, otherwise an error is raised.
+Reads a file that contains a single line containing only an boolean value and (optional) whitespace. If the line contains "true" or "false", that value is returned as a `Boolean`, otherwise an error is raised. The comparison is case- and whitespace-insensitive.
 
 If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
 
 **Parameters**
 
-1. `String|File`: Path of the file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
+1. `File`: Path of the file to read.
 
 **Returns**: A `Boolean`.
+
+**Example**
+
+This task writes a boolean to a file and then converts it back to a boolean.
+
+<details>
+  <summary>
+  Example: write_read_bool_task.wdl
+      
+  ```wdl
+  version 1.2
+
+  task write_read_bool {
+    command <<<
+      echo "TRUE" > bool.txt
+    >>>
+
+    runtime {
+      container: "ubuntu:latest"
+    }
+
+    output {
+      Boolean b = read_boolean(stdout())
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+
+  ```json
+  {}
+  ```
+   
+  Example output:
+
+  ```json
+  {
+    "write_read_bool.b": true
+  }
+  ``` 
+  </p>
+</details>
 
 ## File write_lines(Array[String])
 
