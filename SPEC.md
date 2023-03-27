@@ -128,7 +128,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [🗑 File write\_objects(Array\[Object\])](#-file-write_objectsarrayobject)
   - [File write\_json(X)](#file-write_jsonx)
   - [Float size(File?|Array\[File?\], \[String\])](#float-sizefilearrayfile-string)
-  - [Int length(Array\[X\]|Map\[P, Y\])](#int-lengtharrayxmapp-y)
+  - [Int length(String|Array\[X\]|Map\[P, Y\])](#int-lengthstringarrayxmapp-y)
   - [Array\[Int\] range(Int)](#arrayint-rangeint)
   - [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
   - [Array\[Pair\[X,Y\]\] zip(Array\[X\], Array\[Y\])](#arraypairxy-ziparrayx-arrayy)
@@ -4468,15 +4468,15 @@ task example {
 }
 ```
 
-## Int length(Array[X]|Map[P, Y])
+## Int length(String|Array[X]|Map[P, Y])
 
-Returns the number of elements in an `Array` or `Map` as an `Int`.
+Returns the length of a sequence as an `Int`.
 
 **Parameters**
 
-1. `Array[X]|Map[P, Y]`: An `Array` with any element type, or a `Map` with any key and value types.
+1. `String|Array[X]|Map[P, Y]`: A `String`, an `Array` with any element type, or a `Map` with any key and value types.
 
-**Returns**: The length of the `Array` or `Map` as an `Int`.
+**Returns**: The number of characters in the `String`, or the number of elements in the `Array` or `Map` as an `Int`.
 
 **Example**
 
