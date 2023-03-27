@@ -935,6 +935,11 @@ In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type
 | 🗑 `File`    | `+`      | `File`    | `File`    | append file paths - error if second path is not relative |
 | 🗑 `File`    | `+`      | `String`  | `File`    | append file paths - error if second path is not relative |
 
+Boolean operator evaluation is minimal (or "short-circuiting"), meaning that:
+
+1. For `A && B`, if `A` evalutes to `false` then `B` is not evaluated
+2. For `A || B`, if `A` evaluates to `true` then `B` is not evaluated.
+
 WDL `String`s are compared by the unicode values of their corresponding characters. Character `a` is less than character `b` if it has a lower unicode value.
 
 Except for `String + File`, all concatenations between `String` and non-`String` types are deprecated and will be removed in WDL 2.0. The same effect can be achieved using [string interpolation](#expression-placeholders-and-string-interpolation).
