@@ -111,6 +111,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Array\[File\] glob(String)](#arrayfile-globstring)
     - [Non-standard Bash](#non-standard-bash)
   - [String basename(String|File, \[String\])](#string-basenamestringfile-string)
+  - [File join\_paths(File|String, File|String), File join\_paths(Array\[File\]+|Array\[String\]+)](#file-join_pathsfilestring-filestring-file-join_pathsarrayfilearraystring)
   - [Array\[String\] read\_lines(String|File)](#arraystring-read_linesstringfile)
   - [Array\[Array\[String\]\] read\_tsv(String|File)](#arrayarraystring-read_tsvstringfile)
   - [Map\[String, String\] read\_map(String|File)](#mapstring-string-read_mapstringfile)
@@ -3759,6 +3760,91 @@ The optional second parameter specifies a literal suffix to remove from the file
 Boolean is_true1 = basename("/path/to/file.txt") == "file.txt"`
 Boolean is_true2 = basename("/path/to/file.txt", ".txt") == "file"
 ```
+
+## File join_paths(File|String, File|String), File join_paths(Array[File]+|Array[String]+)
+
+Joins together two or more paths.
+
+There are two variants of this function:
+
+1. `File join_paths(File|String, File|String)`: Joins together exactly two paths. The first path may be either absolute or relative and must specify a directory; the second path is relative to the first path and may specify a file or directory.
+2. `File join_paths(Array[File]|Array[String])`: Joins together any number of paths. The array must not be empty. The *first* element of the array may be either absolute or relative; subsequent path(s) must be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
+
+An absolute path starts with `/` and indicates that the path is relative to the root of the container in which the task is executed. A relative path does not start with `/` and indicates the path is relative to its parent directory. By default, the parent directory of a relative path is the working directory in which the task is executed.
+
+**Parameters**
+
+1. `File|String|Array[File]+|Array[String]+`: Either a path or an array of paths.
+2. `File|String`: A relative path; only allowed if the first argument is not an array.
+
+**Returns**: A `File` resulting from joining all the paths.
+
+**Example**
+
+<details>
+  <summary>
+  Example: join_paths_task.wdl
+      
+  ```wdl
+  version 1.2
+
+  task resolve_paths_task {
+    input {
+      File abs_file = "/usr"
+      String abs_str = "/usr"
+      String rel_dir_str = "bin"
+      File rel_file = "echo"
+      File rel_dir_file = "mydir"
+      String rel_str = "mydata.txt"
+    }
+
+    # these are all equivalent to '/usr/bin/echo'
+    File bin1 = join_paths(abs_file, join_paths(rel_dir_str, rel_file))
+    File bin2 = join_paths(abs_str, join_paths(rel_dir_str, rel_file))
+    # this works because of automatic String -> File coercion
+    Array[File] paths = [abs_file, rel_dir_str, rel_file]
+    File bin3 = join_paths(paths)
+
+    # this resolves to '<working dir>/mydir/mydata.txt'
+    File data = join_paths(rel_dir_file, rel_str)
+    
+    # this resolves to '<working dir>/bin/echo', which is non-existent
+    File doesnt_exist = join_paths([rel_dir_str, rel_file])
+
+    command <<<
+      mkdir ~{rel_dir_file}
+      ~{bin1} -n "hello" > ~{data}
+    >>>
+
+    output {
+      Boolean bins_equal = (bin1 == bin2) && (bin1 == bin3)
+      String result = read_string(data)
+      File? missing_file = doesnt_exist
+    }
+
+    runtime {
+      container: "ubuntu:latest"
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+
+  ```json
+  {}
+  ```
+   
+  Example output:
+
+  ```json
+  {
+    "join_paths_task.bins_equal": true,
+    "join_paths_task.result": "hello"
+  }
+  ``` 
+  </p>
+</details>
 
 ## Array[String] read_lines(String|File)
 
