@@ -135,6 +135,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Pair\[Array\[X\], Array\[Y\]\] unzip(Array\[Pair\[X, Y\]\])](#pairarrayx-arrayy-unziparraypairx-y)
   - [Array\[Pair\[X,Y\]\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
   - [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
+  - [Array\[Array\[X\]\] split(Array\[X\], Int)](#arrayarrayx-splitarrayx-int)
   - [Array\[String\] prefix(String, Array\[P\])](#arraystring-prefixstring-arrayp)
   - [Array\[String\] suffix(String, Array\[P\])](#arraystring-suffixstring-arrayp)
   - [Array\[String\] quote(Array\[P\])](#arraystring-quotearrayp)
@@ -4633,6 +4634,71 @@ Map[Float, String] f2s = as_map(flatten(aap2D))
 Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
 Boolean is_true4 = flatten(ai3D) == [[1, 2], [3, 4], [5, 6], [7, 8]]
 ```
+
+## Array[Array[X]] split(Array[X], Int)
+
+Given an array and a length *n*, splits the array into consecutive, non-overlapping arrays of *n* elements. If the length of the array is not a multiple *n* then the final sub-array will have `length(array) % n` elements.
+
+This function is the inverse of `flatten`; i.e., `flatten`ing a `split` array will always yield the original array.
+
+**Parameters**
+
+1. `Array[X]`: The array to split. May be empty.
+2. `Int`: The desired length of the sub-arrays. Must be > 0.
+
+**Returns**: An array of sub-arrays, where each sub-array is the same length except possibly the last one.
+
+**Example**
+
+<details>
+  <summary>
+  Example: split_array.wdl
+      
+  ```wdl
+  version 1.2
+
+  workflow split_array {
+    Array[String] s1 = ["a", "b", "c", "d", "e", "f"]
+    Array[String] s2 = ["a", "b", "c", "d", "e"]
+    Array[String] s3 = ["a", "b"]
+    Array[String] s4 = []
+
+    scatter (a in split(s1, 3)) {
+      String concat = sep("", a)
+    }
+
+    output {
+      Boolean is_reversible = s1 == flatten(split(s1, 3))
+      Array[Array[String]] o1 = split(s1, 3)
+      Array[Array[String]] o2 = split(s2, 3)
+      Array[Array[String]] o3 = split(s3, 3)
+      Array[Array[String]] o4 = split(s4, 3)
+      Array[String] concats = concat
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+
+  ```json
+  {}
+  ```
+   
+  Example output:
+
+  ```json
+  {
+    "split_array.is_reversible": true,
+    "split_array.o1": [["a", "b", "c"], ["d", "e", "f"]],
+    "split_array.o2": [["a", "b", "c"], ["d", "e"]],
+    "split_array.o3": [["a", "b"]],
+    "split_array.o4": [[]],
+    "split_array.concats": ["abc", "def"]
+  }
+  ``` 
+  </p>
+</details>
 
 ## Array[String] prefix(String, Array[P])
 
