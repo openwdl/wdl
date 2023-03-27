@@ -143,7 +143,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Array\[Pair\[P, Y\]\] as\_pairs(Map\[P, Y\])](#arraypairp-y-as_pairsmapp-y)
   - [Map\[P, Y\] as\_map(Array\[Pair\[P, Y\]\])](#mapp-y-as_maparraypairp-y)
   - [Array\[P\] keys(Map\[P, Y\])](#arrayp-keysmapp-y)
-  - [✨ Boolean contains\_key(Map\[P, Y\], P), Boolean contains\_key(Struct|Object, String)](#-boolean-contains_keymapp-y-p-boolean-contains_keystructobject-string)
+  - [✨ Boolean contains\_key(Map\[P, Y\], P), Boolean contains\_key(Object, String), Boolean contains\_key(Map\[String, Y\]|Struct|Object, Array\[String\])](#-boolean-contains_keymapp-y-p-boolean-contains_keyobject-string-boolean-contains_keymapstring-ystructobject-arraystring)
   - [Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#mapp-arrayy-collect_by_keyarraypairp-y)
   - [Boolean defined(X?)](#boolean-definedx)
   - [X select\_first(Array\[X?\]+)](#x-select_firstarrayx)
@@ -4834,21 +4834,24 @@ workflow foo {
 }
 ```
 
-## ✨ Boolean contains_key(Map[P, Y], P), Boolean contains_key(Struct|Object, String)
+## ✨ Boolean contains_key(Map[P, Y], P), Boolean contains_key(Object, String), Boolean contains_key(Map[String, Y]|Struct|Object, Array[String])
 
 Given a key-value type collection (`Map`, `Struct`, or `Object`) and a key, tests whether the collection contains an entry with the given key.
 
-This function has two variants:
+This function has thre variants:
 
 1. `Boolean contains_key(Map[P, Y], P)`: Tests whether the `Map` has an entry with the given key. If `P` is an optional type (e.g., `String?`), then the second argument may be `None`.
-2. `Boolean contains_key(Struct|Object, String)`: Tests whether the `Struct` or `Object` has an entry with the given name. In the case of structs and `Object`s, this can be used to test the presence of an optional member, including nested elements.
+2. `Boolean contains_key(Object, String)`: Tests whether the `Object` has an entry with the given name.
+3. `Boolean contains_key(Map[String, Y]|Struct|Object, Array[String])`: Tests recursively for the presence of a compound key within a nested collection.
 
-For the second variant, the key may specify a nested element of the form "foo.bar" (to any depth). In this case, the first argument is tested for the presence of an element whose key is "foo" and whose value is a key-value type collection (`Map`, `Struct`, or `Object`). If a "foo" element is present, then its value is tested for the presence of an element whose key is "bar". This only tests for the presence of the named element, *not* whether or not it is `defined`.
+For the third variant, the first argument is a collection that may be nested to any level, i.e., contain values that are collections, which themselves may contain collections, and so on. The second argument is an array of keys that are resolved recursively. If the value associated with any except the last key in the array is `None` or not a collection type, this function returns `false`.
+
+For example, if the first argument is a `Map[String, Map[String, Int]]` and the second argument is `["foo", "bar"]`, then the outer `Map` is tested for the presence of key "foo", and if it is present, then its value is tested for the presence of key "bar". This only tests for the presence of the named element, *not* whether or not it is `defined`.
 
 **Parameters**
 
 1. `Map[P, Y]`|`Struct`|`Object`: Collection to search for the key.
-2. `P`: The key to search. If the first argument is a `Map`, then the key must be of the same type as the `Map`'s key type. If the `Map`'s key type is optional then the key may also be optional. If The first argument is a `Struct` or `Object`, then the key must be a `String`, and it may specify a nested element, e.g., "foo.bar".
+2. `P|Array[String]`: The key to search. If the first argument is a `Map`, then the key must be of the same type as the `Map`'s key type. If the `Map`'s key type is optional then the key may also be optional. If the first argument is a `Map[String, Y]`, `Struct`, or `Object`, then the key may be either a `String` or `Array[String]`.
 
 **Returns**: `true` if the collection contains the key, otherwise false.
 
@@ -4863,23 +4866,23 @@ For the second variant, the key may specify a nested element of the form "foo.ba
 
   struct Person {
     String name
-    Map? details
+    Map[String, String]? details
   }
 
   workflow get_ints_and_exts {
     input {
       Map[String, Int] m
-      String s1
-      String s2
+      String key1
+      String key2
       Person p1
       Person p2
     }
 
     output {
-      Int? i1 = m[s1] if contains_key(m, s1) else None
-      Int? i2 = m[s2] if contains_key(m, s2) else None
-      Int? phone1 = p1.details.phone if contains_key(p1, "details.phone")
-      Int? phone2 = p2.details.phone if contains_key(p2, "details.phone")
+      Int? i1 = m[s1] if contains_key(m, key1) else None
+      Int? i2 = m[s2] if contains_key(m, key2) else None
+      String? phone1 = p1.details["phone"] if contains_key(p1, ["details", "phone"]) else None
+      String? phone2 = p2.details["phone"] if contains_key(p2, ["details", "phone"]) else None
     }
   }
   ```
@@ -4890,8 +4893,8 @@ For the second variant, the key may specify a nested element of the form "foo.ba
   ```json
   {
     "get_values.m": {"a": 1, "b": 2},
-    "get_values.s1": "a",
-    "get_values.s2": "c",
+    "get_values.key1": "a",
+    "get_values.key2": "c",
     "get_values.p1": {
       "name": "John",
       "details": {
