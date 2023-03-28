@@ -45,7 +45,7 @@ version development
 version 1.1.1
 ---------------------------
 
-+ Applied [Errata]([versions/1.1/Errata.md](https://github.com/openwdl/wdl/blob/main/versions/1.1/Errata.md)) to the 1.1.0 spec.
++ Applied [Errata](https://github.com/openwdl/wdl/blob/main/versions/1.1/Errata.md) to the 1.1.0 spec.
 
 + Added missing `File` and `version` keywords to the list of reserved words.
 
@@ -58,6 +58,8 @@ version 1.1.1
 + Added `tests` folder with documentation on adding/converting examples in the specification to a format compatible with automated testing.
 
 + Reformatted all tables.
+
++ Reorganzied the standard library.
 
 + Provided codespell configuration and workflow to catch typos.
   [PR 530](https://github.com/openwdl/wdl/pull/530) by @yarikoptic.
