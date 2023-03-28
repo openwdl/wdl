@@ -5436,7 +5436,6 @@ value_0\tvalue_1\tvalue_2
 Which are read into an `Object` with the following members:
 
 | Attribute | Value     |
-| --------- | --------- |
 | key_0     | "value_0" |
 | key_1     | "value_1" |
 | key_2     | "value_2" |
