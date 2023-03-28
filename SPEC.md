@@ -65,16 +65,18 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
     - [Task Outputs](#task-outputs)
       - [Files and Optional Outputs](#files-and-optional-outputs)
     - [Evaluation of Task Declarations](#evaluation-of-task-declarations)
-    - [Runtime Section](#runtime-section)
+    - [✨ Requirements Section](#-requirements-section)
       - [Units of Storage](#units-of-storage)
-      - [Mandatory `runtime` attributes](#mandatory-runtime-attributes)
+      - [Requirements Attributes](#requirements-attributes)
         - [`container`](#container)
         - [`cpu`](#cpu)
         - [`memory`](#memory)
         - [`gpu`](#gpu)
         - [`disks`](#disks)
-        - [`maxRetries`](#maxretries)
-        - [`returnCodes`](#returncodes)
+        - [`max_retries`](#max_retries)
+        - [`return_codes`](#return_codes)
+    - [✨ Hints Section](#-hints-section)
+    - [🗑 Runtime Section](#-runtime-section)
       - [Reserved `runtime` hints](#reserved-runtime-hints)
       - [Conventions and Best Practices](#conventions-and-best-practices)
     - [Metadata Sections](#metadata-sections)
@@ -1841,54 +1843,81 @@ Input and private declarations may appear in any order within their respective s
 
 Declarations in the output section may reference any input and private declarations, and may also reference other output declarations.
 
-### Runtime Section
+### ✨ Requirements Section
 
 ```txt
-$runtime = 'runtime' $ws* '{' ($ws* $runtime_kv $ws*)* '}'
-$runtime_kv = $identifier $ws* '=' $ws* $expression
+$requirements = 'requirements' $ws* '{' ($ws* $requirements_kv $ws*)* '}'
+$requirements_kv = $identifier $ws* '=' $ws* $expression
 ```
 
-The `runtime` section defines a set of key/value pairs that represent the minimum requirements needed to run a task and the conditions under which a task should be interpreted as a failure or success. 
+The `requirements` section defines a set of key/value pairs that represent the minimum requirements needed to run a task and the conditions under which a task should be interpreted as a failure or success. The `requirements` section is limited to the attributes defined in this specification. Arbitrary key/value pairs are not allowed in the `requirements` section, and must instead be placed in the [`hints`](#-hints-section) section.
 
-During execution of a task, resource requirements within the `runtime` section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task immediately fails. 
+During execution of a task, all resource requirements within the `requirements` section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task immediately fails.
 
-There are a set of reserved attributes (described below) that must be supported by the execution engine, and which have well-defined meanings and default values. Default values for all optional standard attributes are directly defined by the WDL specification in order to encourage portability of workflows and tasks; execution engines should NOT provide additional mechanisms to set _default_ values for when no runtime attributes are defined.
+All attributes of the `requirements` section have well-defined meanings and default values. Default values for the optional attributes are directly defined by the WDL specification to encourage portability of workflows and tasks; execution engines should not provide additional mechanisms to set default values for when no requirements are defined.
 
-🗑 Additional arbitrary attributes may be specified in the `runtime` section, but these may be ignored by the execution engine. These non-standard attributes are called "hints". The use of hint attributes in the `runtime` section is deprecated; a later version of WDL will introduce a new `hints` section for arbitrary attributes and disallow non-standard attributes in the `runtime` section.
+The value of a `requirements` attribute may be any expression that evaluates to the expected type - and, in some cases, matches the accepted format - for that attribute. Expressions in the `requirements` section may reference input and private declarations.
 
-The value of a `runtime` attribute can be any expression that evaluates to the expected type - and in some cases matches the accepted format - for that attribute. Expressions in the `runtime` section may reference (non-output) declarations in the task:
+<details>
+<summary>
+Example: dynamic_container_task.wdl
 
 ```wdl
-task test {
+version 1.2
+
+task dynamic_container_task {
   input {
-    String ubuntu_version
+    String docker_image = "python:latest"
   }
 
   command <<<
-    python script.py
+    python --version
   >>>
+
+  output {
+    String python_version = read_string(stdout())
+  }
   
-  runtime {
-    container: ubuntu_version
+  requirements {
+    container: docker_image
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "dynamic_container_task.docker_imate": "python:3.10.10-slim"
+}
+```
+
+Example output:
+
+```json
+{
+  "dynamic_container_task.python_version": "3.10.10"
+}
+```
+</p>
+</details>
 
 #### Units of Storage
 
-Several of the `runtime` attributes can (and some [Standard Library](#standard-library) functions) accept a string value with an optional unit suffix, using one of the valid [SI or IEC abbreviations](https://en.wikipedia.org/wiki/Binary_prefix). At a minimum, execution engines must support the following suffices in a case-insensitive manner:
+Several of the `requirements` attributes (and some [Standard Library](#standard-library) functions) can accept a string value with an optional unit suffix, using one of the valid [SI or IEC abbreviations](https://en.wikipedia.org/wiki/Binary_prefix). At a minimum, execution engines must support the following suffices in a case-insensitive manner:
 
 * B (bytes)
 * Decimal: KB, MB, GB, TB
 * Binary: KiB, MiB, GiB, TiB
 
-An optional space is allowed between the number/expression and the suffix. For example: `6.2 GB`, `5MB`, `"~{ram}GiB"`.
+Optional whitespace is allowed between the number/expression and the suffix. For example: `6.2 GB`, `5MB`, `"~{ram}GiB"`.
 
 The decimal and binary units may be shortened by omitting the trailing "B". For example, "K" and "KB" are both interpreted as "kilobytes".
 
-#### Mandatory `runtime` attributes
+#### Requirements Attributes
 
-The following attributes must be supported by the execution engine. The value for each of these attributes must be defined - if it is not specified by the user, then it must be set to the specified default value. 
+The following attributes must be supported by the execution engine. The value for each of these attributes must be defined - if it is not specified by the user, then it must be set to the specified default value.
 
 ##### `container`
 
@@ -1896,7 +1925,7 @@ The following attributes must be supported by the execution engine. The value fo
     * `String`: A single container URI.
     * `Array[String]`: An array of container URIs.
 
-The `container` key accepts a URI string that describes a location where the execution engine can attempt to retrieve a container image to execute the task.
+The `container` attribute accepts a URI string that describes a location where the execution engine can attempt to retrieve a container image to execute the task.
 
 The user is strongly suggested to specify a `container` for every task. There is no default value for `container`. If `container` is not specified, the execution behavior is determined by the execution engine. Typically, the task is simply executed in the host environment. 
 
@@ -1904,30 +1933,72 @@ The user is strongly suggested to specify a `container` for every task. There is
 
 The format of a container URI string is `protocol://location`, where protocol is one of the protocols supported by the execution engine. Execution engines must, at a minimum, support the `docker://` protocol, and if no protocol is specified, it is assumed to be `docker://`. An execution engine should ignore any URI with a protocol it does not support.
 
+Container source locations use the syntax defined by the individual container repository. For example an image defined as `ubuntu:latest` would conventionally refer a docker image living on `DockerHub`, while an image defined as `quay.io/bitnami/python` would refer to a `quay.io` repository.
+
+The `container` attribute also accepts an array of URI strings. All of the locations must point to images that are equivalent, i.e., they must always produce the same final results when the task is run with the same inputs. It is the responsibility of the execution engine to specify the image sources it supports, and to determine which image is the "best" one to use at runtime. The ordering of the array does not imply any implicit preference or ordering of the containers. All images are expected to be the same, and therefore any choice is equally valid. Defining multiple images enables greater portability across a broad range of execution environments.
+
+<details>
+<summary>
+Example: test_containers.wdl
+
 ```wdl
-task single_image_test {
-  #....
-  runtime {
+version 1.2
+
+task single_image_task {
+  command <<< echo "hello" >>>
+
+  output {
+    String greeting = read_string(stdout())
+  }
+
+  requirements {
     container: "ubuntu:latest"
   }
-```
+}
 
-Container source locations should use the syntax defined by the individual container repository. For example an image defined as `ubuntu:latest` would conventionally refer a docker image living on `DockerHub`, while an image defined as `quay.io/bitnami/python` would refer to a `quay.io` repository.
+task multi_image_task {
+  command <<< echo "hello" >>>
 
-The `container` key also accepts an array of URI strings. All of the locations must point to images that are equivalent, i.e. they must always produce the same final results when the task is run with the same inputs. It is the responsibility of the execution engine to define the specific image sources it supports, and to determine which image is the "best" one to use at runtime. The ordering of the array does not imply any implicit preference or ordering of the containers. All images are expected to be the same, and therefore any choice would be equally valid. Defining multiple images enables greater portability across a broad range of execution environments.
+  output {
+    String greeting = read_string(stdout())
+  }
 
-```wdl
-task multiple_image_test {
-  #.....
-  runtime {
+  requirements {
     container: ["ubuntu:latest", "https://gcr.io/standard-images/ubuntu:latest"]
   }
 }
+
+workflow test_containers {
+  call single_image_task
+  call multi_image_task
+  output {
+    String single_greeting = single_image_task.greeting
+    String multi_greeting = multi_image_task.greeting
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
 ```
 
-The execution engine must cause the task to fail immediately if none of the container URIs can be successfully resolved to a runnable image.
+Example output:
 
-🗑 `docker` is supported as an alias for `container` with the exact same semantics. Exactly one of the `container` or `docker` is required. The `docker` alias will be dropped in WDL 2.0.
+```json
+{
+  "test_containers.single_greeting": "hello",
+  "test_containers.multi_greeting": "hello"
+}
+```
+</p>
+</details>
+
+The execution engine must cause the task to fail immediately if there is not a container URI that can be resolved successfully to a runnable image.
+
+🗑 `docker` is supported as an alias for `container` with the exact same semantics. Exactly one of the `container` or `docker` attributes is required. The `docker` alias will be dropped in WDL 2.0.
 
 ##### `cpu`
 
@@ -1938,14 +2009,45 @@ The execution engine must cause the task to fail immediately if none of the cont
 
 The `cpu` attribute defines the _minimum_ number of CPU cores required for this task, which must be available prior to instantiating the command. The execution engine must provision at least the requested number of CPU cores, but it may provision more. For example, if the request is `cpu: 0.5` but only discrete values are supported, then the execution engine might choose to provision `1.0` CPU instead.
 
+<details>
+<summary>
+Example: test_cpu_task.wdl
+
 ```wdl
-task cpu_example {
-  #....	
-  runtime {
-    cpu: 8
+version 1.2
+
+task test_cpu_task {
+  command <<<
+  cat /proc/cpuinfo | grep processor | wc -l
+  >>>
+
+  output {
+    Boolean at_least_two_cpu = read_int(stdout()) >= 2
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+    cpu: 2
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_cpu_task.at_least_two_cpu": true
+}
+```
+</p>
+</details>
 
 ##### `memory`
 
@@ -1956,14 +2058,44 @@ task cpu_example {
 
 The `memory` attribute defines the _minimum_ memory (RAM) required for this task, which must be available prior to instantiating the command. The execution engine must provision at least the requested amount of memory, but it may provision more. For example, if the request is `1 GB` but only blocks of `4 GB` are available, then the execution engine might choose to provision `4.0 GB` instead.
 
+<details>
+<summary>
+Example: test_memory_task.wdl
+
 ```wdl
-task memory_test {
-  #....
-  runtime {
-    memory: "2 GB"
+version 1.2
+
+task test_memory_task {
+  command <<<
+  free --bytes -t | tail -1 | sed -E 's/\s+/\t/g' | cut -f 2
+  >>>
+
+  output {
+    Boolean at_least_two_gb = read_int(stdout()) >= (2 * 1024 * 1024 * 1024)
+  }
+
+  requirements {
+    memory: "2 GiB"
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_memory_task.at_least_two_gb": true
+}
+```
+</p>
+</details>
 
 ##### `gpu`
 
@@ -1972,12 +2104,12 @@ task memory_test {
 
 The `gpu` attribute provides a way to accommodate modern workflows that are increasingly becoming reliant on GPU computations. This attribute simply indicates to the execution engine that a task requires a GPU to run to completion. A task with this flag set to `true` is guaranteed to only run if a GPU is a available within the runtime environment. It is the responsibility of the execution engine to check prior to execution whether a GPU is provisionable, and if not, preemptively fail the task.
 
-This attribute *cannot* request any specific quantity or types of GPUs to make available to the task. Any such information should be provided using an execution engine-specific attribute.
+This attribute *cannot* request any specific quantity or types of GPUs to make available to the task. Any such information should be provided using an execution engine-specific `hint`.
 
 ```wdl
 task gpu_test {
   #.....
-  runtime {
+  requirements {
     gpu: true
   }
 }
@@ -2000,20 +2132,20 @@ The `disks` attribute provides a way to request one or more persistent volumes o
  ```wdl
 task disks_test {
   #.....
-  runtime {
+  requirements {
     disks: 100
   }
 }
 ```
 
-This property does not specify exactly what type of persistent volume is being requested (e.g. SSD, HDD), but leaves this up to the engine to decide, based on what hardware is available or on another execution engine-specific attribute.
+This attribute does not specify exactly what type of persistent volume is being requested (e.g. SSD, HDD), but leaves this up to the engine to decide, based on what hardware is available or on another execution engine-specific `hint`.
 
 If a disk specification string is used to specify a mount point, then the mount point must be an absolute path to a location on the host machine. If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
 
 ```wdl
 task disks_test {
   #.....
-  runtime {
+  requirements {
     disks: "/mnt/outputs 500 GiB"
   }
 }
@@ -2024,49 +2156,51 @@ If an array of disk specifications is used to specify multiple disk mounts, only
 ```wdl
 task disks_test {
   #.....
-  runtime {
+  requirements {
   	# The first value will be mounted at the execution root
     disks: ["500", "/mnt/outputs 500 GiB", "/mnt/tmp 5 TB"]
   }
 }
 ```
 
-##### `maxRetries`
+##### `max_retries`
 
 * Accepted type: `Int`
 * Default value: `0`
+* Alais: `maxRetries`
 
-The `maxRetries` attribute provides a mechanism for a task to be retried in the event of a failure. If this attribute is defined, the execution engine must retry the task UP TO but not exceeding the number of attempts that it specifies.
+The `max_retries` attribute provides a mechanism for a task to be retried in the event of a failure. If this attribute is defined, the execution engine must retry the task UP TO but not exceeding the number of attempts that it specifies.
 
 The execution engine may choose to define an upper bound (>= 1) on the number of retry attempts that it permits.
 
 A value of `0` means that the task as not retryable, and therefore any failure in the task should never result in a retry by the execution engine, and the final status of the task should remain the same.
 
 ```wdl
-task maxRetries_test {
+task max_retries_test {
   #.....
-  runtime {
+  requirements {
     maxRetries: 4
   }
 }
 ```
 
-##### `returnCodes`
+##### `return_codes`
 
 * Accepted types:
     * `"*"`: This special value indicates that ALL returnCodes should be considered a success.
     * `Int`: Only the specified return code should be considered a success.
     * `Array[Int]`: Any of the return codes specified in the array should be considered a success.
 * Default value: `0`
+* Alias: `returnCodes`
 
-The `returnCodes` attribute provides a mechanism to specify the return code, or set of return codes, that indicates a successful execution of a task. The engine must honor the return codes specified within the runtime block and set the tasks status appropriately. 
+The `return_codes` attribute provides a mechanism to specify the return code, or set of return codes, that indicates a successful execution of a task. The engine must honor the return codes specified within the `requirements` section and set the tasks status appropriately. 
 
 **Single return code**
 
 ```wdl
 task maxRetries_test {
   #.....
-  runtime {
+  requirements {
     returnCodes: 1
   }
 }
@@ -2077,7 +2211,7 @@ task maxRetries_test {
 ```wdl
 task maxRetries_test {
   #.....
-  runtime {
+  requirements {
     returnCodes: [1,2,5,10]
   }
 }
@@ -2088,11 +2222,32 @@ task maxRetries_test {
 ```wdl
 task maxRetries_test {
   #.....
-  runtime {
+  requirements {
     returnCodes: "*"
   }
 }
 ```
+
+### ✨ Hints Section
+
+### 🗑 Runtime Section
+
+```txt
+$runtime = 'runtime' $ws* '{' ($ws* $runtime_kv $ws*)* '}'
+$runtime_kv = $identifier $ws* '=' $ws* $expression
+```
+
+Note: Use of the `runtime` section is deprecated and will be removed in WDL 2.0.
+
+The `runtime` section is essentially the same as the `requirements` section, with the only difference being that arbitrary attributes *are* allowed in the `runtime` section. All attributes defined in the `requirements` section have the same semantics when used in the `runtime` section and are considered as reserved.
+
+The `runtime` section is mutually exclusive with `requirements` and `hints` - i.e., if you use `runtime` in a task, you cannot also use `requirements` or `hints` in that task.
+
+
+
+
+
+
 
 #### Reserved `runtime` hints
 
