@@ -724,6 +724,10 @@ An array value can be initialized with an array literal - a comma-separated list
       # this causes an error - trying to access a non-existent array element
       Int i = empty[0]
     }
+
+    meta {
+     fail: true
+    }
   }
   ```
   </summary>
@@ -5275,7 +5279,11 @@ version 1.2
 workflow write_json_fail {
   Pair[Int, Map[Int, String]] x = (1, {2: "hello"})
   # this fails with an error - Map with Int keys is not serializable
-  File f = write_json(x)  
+  File f = write_json(x)
+  
+  meta {
+    fail: true
+  }
 }
 ```
 </summary>
@@ -5791,6 +5799,10 @@ workflow test_prefix_fail {
   Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
   # this fails with an error - env3 element type is not primitive
   Array[String] bad = prefix("-x ", env3)
+
+  meta {
+    fail: true
+  }
 }
 ```
 </summary>
@@ -5870,7 +5882,11 @@ version 1.2
 workflow test_suffix_fail {
   Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
   # this fails with an error - env3 element type is not primitive
-  Array[String] bad = suffix("-z", env3)  
+  Array[String] bad = suffix("-z", env3)
+  
+  meta {
+    fail: true
+  }
 }
 ```
 </summary>
@@ -6333,6 +6349,10 @@ workflow test_zip_fail {
   Array[String] zs = ["d", "e"]
   # this fails with an error - xs and zs are not the same length
   Array[Pair[Int, String]] bad = zip(xs, zs)
+
+  meta {
+    fail: true
+  }
 }
 ```
 </summary>
@@ -6525,9 +6545,13 @@ Example: select_first_only_none_fail.wdl
 ```wdl
 version 1.2
 
-workflow test_select_first {
+workflow select_first_only_none_fail {
   Int? maybe_four_but_is_not = None
   select_first([maybe_four_but_is_not])  # error! array contains only None values
+  
+  meta {
+    fail: true
+  }
 }
 ```
 </summary>
@@ -6553,8 +6577,12 @@ Example: select_first_empty_fail.wdl
 ```wdl
 version 1.2
 
-workflow test_select_first {
+workflow select_first_empty_fail {
   select_first([])  # error! array is empty
+  
+  meta {
+    fail: true
+  }
 }
 ```
 </summary>
@@ -6749,9 +6777,13 @@ Example: test_as_map_fail.wdl
 ```wdl
 version 1.2
 
-workflow test_as_map {
+workflow test_as_map_fail {
   # this fails with an error - the "a" key is duplicated
-  Boolean bad = as_map([("a", 1), ("a", 2)])  
+  Boolean bad = as_map([("a", 1), ("a", 2)])
+
+  meta {
+    fail: true
+  }
 }
 ```
 </summary>

@@ -29,7 +29,6 @@ All examples are written as a single WDL file. The file name is of the form:
 
 * `<workflow_name>.wdl` if the example contains a workflow.
 * `<task_name>_task.wdl` if the example only contains a task.
-* `<workflow_name>_fail.wdl` or `<task_name>_task_fail.wdl` if execution of the workflow/task is expected to fail.
 
 Examples must conform to the following rules:
 
@@ -62,6 +61,31 @@ An example can import another example using its file name.
 
   workflow example2 {
     ...
+  }
+  ```
+  </summary>
+  <p>...</p>
+</details>
+</pre>
+
+The `meta` section of the `task` or `workflow` can be used to specify test meadata. Currently, two attributes are supported:
+
+* `optional`: Boolean; whether an automated testing framework is allowed to skip the example or ignore a failure.
+* `fail`: Boolean; whether the task/workflow is expected to fail; defaults to `false`.
+
+<pre>
+<details>
+  <summary>
+  Example: optional_fail_task.wdl
+
+  ```wdl
+  optional_fail_task {
+    ...
+
+    meta {
+      optional: true,
+      fail: true
+    }
   }
   ```
   </summary>
