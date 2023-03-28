@@ -75,9 +75,16 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
         - [`disks`](#disks)
         - [`max_retries`](#max_retries)
         - [`return_codes`](#return_codes)
-    - [✨ Hints Section](#-hints-section)
     - [🗑 Runtime Section](#-runtime-section)
-      - [Reserved `runtime` hints](#reserved-runtime-hints)
+    - [Meta Values](#meta-values)
+    - [✨ Hints Section](#-hints-section)
+      - [Reserved Hints](#reserved-hints)
+        - [`max_cpu`](#max_cpu)
+        - [`max_memory`](#max_memory)
+        - [`short_task`](#short_task)
+        - [`localization_optional`](#localization_optional)
+        - [`inputs`](#inputs)
+        - [`outputs`](#outputs)
       - [Conventions and Best Practices](#conventions-and-best-practices)
     - [Metadata Sections](#metadata-sections)
       - [Task Metadata Section](#task-metadata-section)
@@ -2029,6 +2036,10 @@ task test_cpu_task {
     container: "ubuntu:latest"
     cpu: 2
   }
+
+  meta {
+    optional: true
+  }
 }
 ```
 </summary>
@@ -2077,6 +2088,10 @@ task test_memory_task {
   requirements {
     memory: "2 GiB"
   }
+
+  meta {
+    optional: true
+  }
 }
 ```
 </summary>
@@ -2106,14 +2121,48 @@ The `gpu` attribute provides a way to accommodate modern workflows that are incr
 
 This attribute *cannot* request any specific quantity or types of GPUs to make available to the task. Any such information should be provided using an execution engine-specific `hint`.
 
+<details>
+<summary>
+Example: test_gpu_task.wdl
+
 ```wdl
-task gpu_test {
-  #.....
+version 1.2
+
+task test_gpu_task {
+  command <<<
+  lspci -nn | grep ' \[03..\]: ' | wc -l
+  >>>
+
+  output {
+    Int at_least_one_gpu = read_int(stdout()) >= 1
+  }
+  
   requirements {
     gpu: true
   }
+
+  meta {
+    optional: true
+  }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_gpu_task.at_least_one_gpu": true
+}
+```
+</p>
+</details>
 
 ##### `disks`
 
@@ -2129,45 +2178,104 @@ task gpu_test {
 
 The `disks` attribute provides a way to request one or more persistent volumes of at least a specific size and mounted at a specific location. When the `disks` attribute is provided, the execution engine must guarantee the requested resources are available or immediately fail the task prior to instantiating the command.
 
- ```wdl
-task disks_test {
-  #.....
-  requirements {
-    disks: 100
-  }
-}
-```
-
 This attribute does not specify exactly what type of persistent volume is being requested (e.g. SSD, HDD), but leaves this up to the engine to decide, based on what hardware is available or on another execution engine-specific `hint`.
 
 If a disk specification string is used to specify a mount point, then the mount point must be an absolute path to a location on the host machine. If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
 
+<details>
+<summary>
+Example: one_mount_point_task.wdl
+
 ```wdl
-task disks_test {
-  #.....
+version 1.2
+
+task one_mount_point_task {
+  command <<<
+    findmnt -bno size /mnt/outputs
+  >>>
+  
+  output {
+    Boolean at_least_ten_gb = read_int(stdout()) >= (10 * 1024 * 1024 * 1024)
+  }
+
   requirements {
-    disks: "/mnt/outputs 500 GiB"
+    disks: "/mnt/outputs 10 GiB"
+  }
+
+  meta {
+    optional: true
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "one_mount_point_task.at_least_ten_gb": true
+}
+```
+</p>
+</details>
 
 If an array of disk specifications is used to specify multiple disk mounts, only one of them is allowed to omit the mount point.
 
+<details>
+<summary>
+Example: multi_mount_points_task.wdl
+
 ```wdl
-task disks_test {
-  #.....
+version 1.2
+
+task multi_mount_points_task {
+  command <<<
+    findmnt -bno size /
+  >>>
+  
+  output {
+    Boolean at_least_two_gb = read_int(stdout()) >= (2 * 1024 * 1024 * 1024)
+  }
+
   requirements {
   	# The first value will be mounted at the execution root
-    disks: ["500", "/mnt/outputs 500 GiB", "/mnt/tmp 5 TB"]
+    disks: ["2", "/mnt/outputs 4 GiB", "/mnt/tmp 1 GiB"]
+  }
+
+  meta {
+    optional: true
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "multi_mount_points_task.at_least_two_gb": true
+}
+```
+</p>
+</details>
 
 ##### `max_retries`
 
 * Accepted type: `Int`
 * Default value: `0`
-* Alais: `maxRetries`
+* Alias: `maxRetries`
 
 The `max_retries` attribute provides a mechanism for a task to be retried in the event of a failure. If this attribute is defined, the execution engine must retry the task UP TO but not exceeding the number of attempts that it specifies.
 
@@ -2195,40 +2303,109 @@ task max_retries_test {
 
 The `return_codes` attribute provides a mechanism to specify the return code, or set of return codes, that indicates a successful execution of a task. The engine must honor the return codes specified within the `requirements` section and set the tasks status appropriately. 
 
-**Single return code**
+<details>
+<summary>
+Example: single_return_code_task.wdl
 
 ```wdl
-task maxRetries_test {
-  #.....
+version 1.2
+
+task single_return_code_task {
+  command <<<
+  exit 1
+  >>>
+
   requirements {
-    returnCodes: 1
+    return_codes: 1
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-**Multiple return codes**
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: multi_return_code_task.wdl
 
 ```wdl
-task maxRetries_test {
-  #.....
+version 1.2
+
+task multi_return_code_task {
+  command <<<
+  exit 42
+  >>>
+
   requirements {
-    returnCodes: [1,2,5,10]
+    return_codes: [1, 2, 5, 10]
+  }
+
+  meta {
+    fail: true
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-**All return codes**
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+
+<details>
+<summary>
+Example: all_return_codes_task.wdl
 
 ```wdl
-task maxRetries_test {
-  #.....
+version 1.2
+
+task multi_return_code_task {
+  command <<<
+  exit 42
+  >>>
+
   requirements {
-    returnCodes: "*"
+    return_codes: "*"
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-### ✨ Hints Section
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
 
 ### 🗑 Runtime Section
 
@@ -2239,65 +2416,196 @@ $runtime_kv = $identifier $ws* '=' $ws* $expression
 
 Note: Use of the `runtime` section is deprecated and will be removed in WDL 2.0.
 
-The `runtime` section is essentially the same as the `requirements` section, with the only difference being that arbitrary attributes *are* allowed in the `runtime` section. All attributes defined in the `requirements` section have the same semantics when used in the `runtime` section and are considered as reserved.
+The `runtime` section is essentially the same as the [`requirements`](#-requirements-section) section, with the only difference being that arbitrary attributes *are* allowed in the `runtime` section. All attributes defined in the `requirements` section have the same semantics when used in the `runtime` section and are considered as reserved.
 
 The `runtime` section is mutually exclusive with `requirements` and `hints` - i.e., if you use `runtime` in a task, you cannot also use `requirements` or `hints` in that task.
 
+### Meta Values
 
+```txt
+$meta_kv = $identifier $ws* '=' $ws* $meta_value
+$meta_value = $string | $number | $boolean | 'null' | $meta_object | $meta_array
+$meta_object = '{}' | '{' $meta_kv (, $meta_kv)* '}'
+$meta_array = '[]' |  '[' $meta_value (, $meta_value)* ']'
+```
 
+The subsequent three sections (`hints`, `meta`, and `parameter_meta`) are all similar in that they can contain arbitrary key/value pairs. However, the values allowed in these sections ("meta values") are different than in `runtime` and other sections:
 
+* Only string, numeric, and boolean primitives are allowed.
+* Only array and object compound values are allowed.
+* The special value `null` is allowed for undefined attributes.
+* Expressions are not allowed.
 
+A meta object is similar to a struct literal, except:
 
+* A `Struct` type name is not required.
+* Its values must conform to the same metadata rules defined above.
 
-#### Reserved `runtime` hints
+Note that, unlike the WDL `Object` type, metadata objects are not deprecated and will continue to be supported in future versions.
 
-The following attributes are considered "hints" rather than requirements. They are optional for execution engines to support. The purpose of reserving these attributes is to encourage interoperability of tasks and workflows between different execution engines.
+<details>
+<summary>
+Example: test_meta_values.wdl
 
-In WDL 2.0, these attributes will move to the new `hints` section.
-
-* `maxCpu`: Specifies the maximum CPU to be provisioned for a task. The value of this hint has the same specification as `runtime.cpu`.
-* `maxMemory`: Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as `runtime.memory`.
-* `shortTask`: A `Boolean` value, for which `true` indicates that that this task is not expected to take long to execute. The execution engine can interpret this as permission to attempt to optimize the execution of the task - e.g. by batching together multiple `shortTask`s, or by using the cost-optimized instance types that many clouds provide, e.g. `preemptible` instances on `gcp` and `spot` instances on `aws`. "Short" is a bit relative, but should generally be interpreted as << 24h.
-* `localizationOptional`: A `Boolean` value, for which `true` indicates that, if possible, the `File` type input declarations for this task should not be (immediately) localized. For example, a task that processes its input file once in linear fashion could have that input streamed (e.g. using a `fifo`) rather than requiring the input file to be fully localized prior to execution. This directive must not have any impact on the success or failure of a task (i.e. a task should run with or without localization).
-* `inputs`: Provides input-specific hints in the form of a hints object. Each key within this hint should refer to an actual input defined for the current task.
-  * `inputs.<key>.localizationOptional`: Tells the execution engine that a specific `File` input does not need to be localized for this task.
-* `outputs`: Provides outputs specific hints in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task
-  
 ```wdl
-task foo {
+version 1.2
+
+workflow test_meta_values {
+  meta {
+    authors: ["Jim", "Bob"]
+    version: 1.1
+    citation: {
+      year: 2020,
+      doi: "1234/10.1010"
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+### ✨ Hints Section
+
+```txt
+$hints = 'hints' $ws* '{' ($ws* $meta_kv $ws*)* '}'
+```
+
+The `hints` section is optional and may contain any number of attributes (key/value pairs) that provide hints to the execution engine. Some hint keys are reserved and have well-defined values.
+
+The `requirements` and `hints` sections differ in two important ways:
+
+* A task execution must fail if the execution engine is not able to satisfy all of the requirements, but a task execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
+* The value of a `requirements` attribute may be any valid expression, while only meta values may be used in the `hints` section.
+
+#### Reserved Hints
+
+The following hints are reserved. An implementation is not required to support these attributes, but if it does support a reserved attribute it must enforce the semantics and allowed values defined below. The purpose of reserving these hints is to encourage interoperability of tasks and workflows between different execution engines.
+
+<details>
+<summary>
+Example: test_hints_task.wdl
+
+```wdl
+version 1.2
+
+task test_hints_task {
   input {
-    File bar
-  } 
-  ...
-  runtime {
+    File foo
+  }
+
+  command <<<
+  wc -l ~{foo}
+  >>>
+
+  output {
+    Int num_lines = read_int(stdout())
+  }
+
+  requirements {
     container: "ubuntu:latest"
-    maxMemory: "36 GB"
-    maxCpu: 24
-    shortTask: true
-    localizationOptional: false
-    inputs: object {
-      bar: object { 
-        localizationOptional: true
+  }
+
+  hints {
+    max_memory: "36 GB"
+    max_cpu: 24
+    short_task: true
+    localization_optional: false
+    inputs: {
+      foo: { 
+        localization_optional: true
       } 
     }
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_hints_task.foo": "greetings.txt"
+}
+```
+
+Example output:
+
+```json
+{
+  "test_hints_task.num_lines": 3
+}
+```
+</p>
+</details>
+
+##### `max_cpu`
+
+* Alias: `maxCpu`
+
+Specifies the maximum CPU to be provisioned for a task. The value of this hint has the same specification as [`requirements.cpu`](#cpu).
+
+##### `max_memory`
+
+* Alias: `maxMemory`
+
+Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as [`requirements.memory`](#memory).
+
+##### `short_task`
+
+* Allowed type: `Boolean`
+* Alias: `shortTask`
+
+A `Boolean` value, for which `true` indicates that that this task is not expected to take long to execute. The execution engine can interpret this as permission to attempt to optimize the execution of the task - e.g., by batching together multiple `short_task`s, or by using the cost-optimized instance types that many cloud vendors provide, e.g., `preemptible` instances on `GCP` and `spot` instances on `AWS`. "Short" is a bit ambiguous, but should generally be interpreted as << 24h.
+
+##### `localization_optional`
+
+* Allowed type: `Boolean`
+* Alias: `localizationOptional`
+
+A `Boolean` value, for which `true` indicates that, if possible, any `File` inputs for this task should not be (immediately) localized. For example, a task that processes its input file once in linear fashion could have that input streamed (e.g., using a `fifo`) rather than requiring the input file to be fully localized prior to execution. This directive must not have any impact on the success or failure of a task (i.e., a task must run the same with or without localization).
+
+##### `inputs`
+
+* Allowed type: `object`
+
+Provides input-specific hints in the form of a meta object. Each key within this hint should refer to an actual input defined for the current task.
+
+Reserved input-specific attributes:
+
+* `inputs.<key>.localization_optional`: Tells the execution engine that a specific `File` input does not need to be localized for this task.
+
+##### `outputs`
+
+* Allowed type: `object`
+
+Provides outputs specific hints in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task.
 
 #### Conventions and Best Practices
 
-In order to encourage interoperable workflows, WDL authors and execution engine implementors should view hints strictly as an optimization that can be made for a specific task at runtime; hints should not be interpreted as requirements for that task. By following this principle, we can guarantee that a workflow is runnable on all platforms assuming the `runtime` block has the required parameters, regardless of whether it contains any additional hints.
+To encourage interoperable workflows, WDL authors and execution engine implementors should view hints strictly as runtime optimizations. Hints must not be interpreted as requirements. Following this principle will ensure that a workflow is runnable on all platforms assuming the `requirements` section has the required attributes, regardless of whether it contains any additional hints.
 
-The following guidelines should be followed when using hints:
+Please observe the following guidelines when using hints:
 
-* A hint should never be required.
-* Less is more. Before adding a new hint key, ask yourself "do I really need another hint?", or "is there a better way to specify the behavior I require". If there is, then adding a hint is likely not the right way to achieve your aims.
-* Complexity is killer. By allowing any arbitrary keys, it is possible that the `runtime` section can get quite unruly and complex. This should be discouraged, and instead a pattern of simplicity should be stressed.
-* Sharing is caring. People tend to look for similar behavior between different execution engines. It is strongly encouraged that execution engines agree on common names and accepted values for hints that describe common usage patterns. A good example of hints that have conventions attached to them is cloud provider specific details:
+* A hint must never be required for successful task execution.
+* Before adding a new hint, ask yourself "do I really need another hint, or is there a better way to specify the behavior I require?".
+* Avoid unnecessary complexity. By allowing any arbitrary keys and compound values, it is possible for the `hints` section to become quite complex. Use the simplest value possible to achieve the desired outcome.
+* Sharing is caring. Users tend to look for similar behavior between different execution engines. It is strongly encouraged that execution engines agree on common names and accepted values for hints that describe common usage patterns. A good example of hints that have conventions attached to them is cloud provider-specific details:
     ```wdl
     task foo {
-      .... 
-      runtime {
+      hints {
         gcp: {
         ...
         }
@@ -2316,8 +2624,7 @@ The following guidelines should be followed when using hints:
 * Use objects to avoid collisions. If there are specific hints that are unlikely to ever be shared between execution engines, it is good practice to encapsulate these within their own execution engine-specific hints object:
     ```wdl
     task foo {
-      .... 
-      runtime {
+      hints {
         cromwell: {
           # cromwell specific 
           ...
@@ -2332,40 +2639,7 @@ The following guidelines should be followed when using hints:
 
 ### Metadata Sections
 
-```txt
-$meta_kv = $identifier $ws* '=' $ws* $meta_value
-$meta_value = $string | $number | $boolean | 'null' | $meta_object | $meta_array
-$meta_object = '{}' | '{' $meta_kv (, $meta_kv)* '}'
-$meta_array = '[]' |  '[' $meta_value (, $meta_value)* ']'
-```
-
-There are two purely optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are designed to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface. Any attributes that may influence execution behavior should go in the `runtime` section.
-
-Both of these sections can contain key/value pairs. Metadata values are different than in `runtime` and other sections:
-
-* Only string, numeric, and boolean primitives are allowed.
-* Only array and "meta object" compound values are allowed.
-* The special value `null` is allowed for undefined attributes.
-* Expressions are not allowed.
-
-A meta object is similar to a struct literal, except:
-* A `Struct` type name is not required.
-* Its values must conform to the same metadata rules defined above.
-
-```wdl
-task {
-  meta {
-    authors: ["Jim", "Bob"]
-    version: 1.1
-    citation: {
-      year: 2020,
-      doi: "1234/10.1010"
-    }
-  }
-}
-```
-
-Note that, unlike the WDL `Object` type, metadata objects are not deprecated and will continue to be supported in future versions.
+There are two optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are designed to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface. Any attributes that may influence execution behavior should go in the `runtime` section.
 
 #### Task Metadata Section
 
