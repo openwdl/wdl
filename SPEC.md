@@ -121,48 +121,52 @@ Revisions to this specification are made periodically in order to correct errors
     - [✨ `max`](#-max)
   - [String Functions](#string-functions)
     - [`sub`](#sub)
-  - [File I/O Operations](#file-io-operations)
+  - [File Functions](#file-functions)
+    - [`basename`](#basename)
+    - [`glob`](#glob)
+      - [Non-standard Bash](#non-standard-bash)
+    - [`size`](#size)
     - [`stdout`](#stdout)
     - [`stderr`](#stderr)
-  - [`glob`](#glob)
-    - [Non-standard Bash](#non-standard-bash)
-  - [String basename(String|File, \[String\])](#string-basenamestringfile-string)
-  - [Array\[String\] read\_lines(String|File)](#arraystring-read_linesstringfile)
-  - [Array\[Array\[String\]\] read\_tsv(String|File)](#arrayarraystring-read_tsvstringfile)
-  - [Map\[String, String\] read\_map(String|File)](#mapstring-string-read_mapstringfile)
-  - [🗑 Object read\_object(String|File)](#-object-read_objectstringfile)
-  - [🗑 Array\[Object\] read\_objects(String|File)](#-arrayobject-read_objectsstringfile)
-  - [R read\_json(String|File)](#r-read_jsonstringfile)
-  - [String read\_string(String|File)](#string-read_stringstringfile)
-  - [Int read\_int(String|File)](#int-read_intstringfile)
-  - [Float read\_float(String|File)](#float-read_floatstringfile)
-  - [Boolean read\_boolean(String|File)](#boolean-read_booleanstringfile)
-  - [File write\_lines(Array\[String\])](#file-write_linesarraystring)
-  - [File write\_tsv(Array\[Array\[String\]\])](#file-write_tsvarrayarraystring)
-  - [File write\_map(Map\[String, String\])](#file-write_mapmapstring-string)
-  - [🗑 File write\_object(Object)](#-file-write_objectobject)
-  - [🗑 File write\_objects(Array\[Object\])](#-file-write_objectsarrayobject)
-  - [File write\_json(X)](#file-write_jsonx)
-  - [Float size(File?|Array\[File?\], \[String\])](#float-sizefilearrayfile-string)
-  - [Int length(Array\[X\])](#int-lengtharrayx)
-  - [Array\[Int\] range(Int)](#arrayint-rangeint)
-  - [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
-  - [Array\[Pair\[X,Y\]\] zip(Array\[X\], Array\[Y\])](#arraypairxy-ziparrayx-arrayy)
-  - [✨ Pair\[Array\[X\], Array\[Y\]\] unzip(Array\[Pair\[X, Y\]\])](#-pairarrayx-arrayy-unziparraypairx-y)
-  - [Array\[Pair\[X,Y\]\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
-  - [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
-  - [Array\[String\] prefix(String, Array\[P\])](#arraystring-prefixstring-arrayp)
-  - [✨ Array\[String\] suffix(String, Array\[P\])](#-arraystring-suffixstring-arrayp)
-  - [✨ Array\[String\] quote(Array\[P\])](#-arraystring-quotearrayp)
-  - [✨ Array\[String\] squote(Array\[P\])](#-arraystring-squotearrayp)
-  - [✨ String sep(String, Array\[String\])](#-string-sepstring-arraystring)
-  - [✨ Array\[Pair\[P, Y\]\] as\_pairs(Map\[P, Y\])](#-arraypairp-y-as_pairsmapp-y)
-  - [✨ Map\[P, Y\] as\_map(Array\[Pair\[P, Y\]\])](#-mapp-y-as_maparraypairp-y)
-  - [✨ Array\[P\] keys(Map\[P, Y\])](#-arrayp-keysmapp-y)
-  - [✨ Map\[P, Array\[Y\]\] collect\_by\_key(Array\[Pair\[P, Y\]\])](#-mapp-arrayy-collect_by_keyarraypairp-y)
-  - [Boolean defined(X?)](#boolean-definedx)
-  - [X select\_first(Array\[X?\]+)](#x-select_firstarrayx)
-  - [Array\[X\] select\_all(Array\[X?\])](#arrayx-select_allarrayx)
+    - [`read_string`](#read_string)
+    - [`read_int`](#read_int)
+    - [`read_float`](#read_float)
+    - [`read_boolean`](#read_boolean)
+    - [`read_lines`](#read_lines)
+    - [`write_lines`](#write_lines)
+    - [`read_tsv`](#read_tsv)
+    - [`write_tsv`](#write_tsv)
+    - [`read_map`](#read_map)
+    - [`write_map`](#write_map)
+    - [`read_json`](#read_json)
+    - [`write_json`](#write_json)
+    - [🗑 `read_object`](#-read_object)
+    - [🗑 `read_objects`](#-read_objects)
+    - [🗑 `write_object`](#-write_object)
+    - [🗑 `write_objects`](#-write_objects)
+  - [String Array Functions](#string-array-functions)
+    - [`prefix`](#prefix)
+    - [✨ `suffix`](#-suffix)
+    - [✨ `quote`](#-quote)
+    - [✨ `squote`](#-squote)
+    - [✨ `sep`](#-sep)
+  - [Generic Array Functions](#generic-array-functions)
+    - [`length`](#length)
+    - [`range`](#range)
+    - [`transpose`](#transpose)
+    - [`cross`](#cross)
+    - [`zip`](#zip)
+    - [✨ `unzip`](#-unzip)
+    - [`flatten`](#flatten)
+    - [`select_first`](#select_first)
+    - [`select_all`](#select_all)
+  - [Map Functions](#map-functions)
+    - [✨ `as_pairs`](#-as_pairs)
+    - [✨ `as_map`](#-as_map)
+    - [✨ `keys`](#-keys)
+    - [✨ `collect_by_key`](#-collect_by_key)
+  - [Other Functions](#other-functions)
+    - [`defined`](#defined)
 - [Input and Output Formats](#input-and-output-formats)
   - [JSON Input Format](#json-input-format)
     - [Optional Inputs](#optional-inputs)
@@ -805,7 +809,7 @@ Int b = string_to_int["b"]  # evaluates to 2
 Int c = string_to_int["c"]  # error - "c" is not a key in the map
 ```
 
-A `Map` is insertion ordered, meaning the order in which elements are added to the `Map` is preserved, for example when [✨ converting a `Map` to an array of `Pair`s](#-arraypairp-y-as_pairsmapp-y).
+A `Map` is insertion ordered, meaning the order in which elements are added to the `Map` is preserved, for example when [✨ converting a `Map` to an array of `Pair`s](#-as_pairs).
 
 ```wdl
 # declaration using a map literal
@@ -855,7 +859,7 @@ Object f = object {
 Int i = f.a
 ```
 
-Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, **the `Object` type, the `object` literal syntax, and all of the [standard library functions](#-object-read_objectstringfile) with `Object` parameters or return values have been deprecated and will be removed in the next major version of the WDL specification**. All uses of `Object` can be replaced with [structs](#struct-definition).
+Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, **the `Object` type, the `object` literal syntax, and all of the [standard library functions](#-read_objects) with `Object` parameters or return values have been deprecated and will be removed in the next major version of the WDL specification**. All uses of `Object` can be replaced with [structs](#struct-definition).
 
 #### Type Conversion
 
@@ -902,7 +906,7 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | `Object`        | `Struct`        | 🗑                                                                                                                |
 | `Struct`        | `Object`        | 🗑 `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
 
-The [`read_lines`](#arraystring-read_linesstringfile) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
+The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
 
 ###### Order of Precedence
 
@@ -933,7 +937,7 @@ The order of precedence is:
 
 A non-optional type `T` can always be coerced to an optional type `T?`, but the reverse is not true - coercion from `T?` to `T` is not allowed because the latter cannot accept `None`.
 
-This constraint propagates into compound types. For example, an `Array[T?]` can contain both optional and non-optional elements. This facilitates the common idiom [`select_first([expr, default])`](#x-select_firstarrayx), where `expr` is of type `T?` and `default` is of type `T`, for converting an optional type to a non-optional type. However, an `Array[T?]` could not be passed to the [`sep`](#-string-sepstring-arraystring) function, which requires an `Array[T]`.
+This constraint propagates into compound types. For example, an `Array[T?]` can contain both optional and non-optional elements. This facilitates the common idiom [`select_first([expr, default])`](#select_first), where `expr` is of type `T?` and `default` is of type `T`, for converting an optional type to a non-optional type. However, an `Array[T?]` could not be passed to the [`sep`](#-sep) function, which requires an `Array[T]`.
 
 There are two exceptions where coercion from `T?` to `T` is allowed:
 * [String concatenation in expression placeholders](#concatenation-of-optional-values)
@@ -1131,7 +1135,7 @@ String s = read_string("/path/to/file")
 
 WDL provides the standard unary and binary mathematical and logical operators. The following table lists the valid operand and result type combinations for each operator. Using an operator with unsupported types results in an error.
 
-In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type is first cast to a `Float`; the result type is always `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by the `Float`. A `Float` can be converted to an `Int` with the [`ceil`](#int-ceilfloat), [`round`](#int-roundfloat), or [`floor`](#int-floorfloat) functions.
+In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type is first cast to a `Float`; the result type is always `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by the `Float`. A `Float` can be converted to an `Int` with the [`ceil`](#ceil), [`round`](#round), or [`floor`](#floor) functions.
 
 ##### Unary Operators
 
@@ -1411,7 +1415,7 @@ Boolean is_true5 = "~{3.141 * 1E-10}" == "0.000000"
 Boolean is_true6 = "~{3.141 * 1E10}" == "31410000000.000000"
 ```
 
-Compound types cannot be implicitly converted to strings. To convert an `Array` to a string, use the [`sep`](#-string-sepstring-arraystring) function: `~{sep(",", str_array)}`.
+Compound types cannot be implicitly converted to strings. To convert an `Array` to a string, use the [`sep`](#-sep) function: `~{sep(",", str_array)}`.
 
 If an expression within a placeholder evaluates to `None`, then the placeholder is replaced by the empty string.
 
@@ -1494,7 +1498,7 @@ Alternatively, if the command were `"python script.py ~{sep=' ' numbers}"` it wo
 > 1. `sep` MUST accept only a string as its value
 > 2. `sep` is only allowed if the type of the expression is `Array[P]`
 
-The `sep` option can be replaced with a call to the ✨ [`sep`](#-string-sepstring-arraystring) function:
+The `sep` option can be replaced with a call to the ✨ [`sep`](#-sep) function:
 
 ```wdl
 task sep_example {
@@ -1559,7 +1563,7 @@ task default_test {
 > 1. The type of the default value must match the type of the expression
 > 2. The type of the expression must be optional, i.e. it must have a `?` postfix quantifier
 
-The `default` option can be replaced in several ways - most commonly with an if-then-else expression or with a call to the [`select_first`](#x-select_firstarrayx) function.
+The `default` option can be replaced in several ways - most commonly with an if-then-else expression or with a call to the [`select_first`](#select_first) function.
 
 ```wdl
 task default_example {
@@ -2101,7 +2105,7 @@ output {
 
 After the command is executed, the following outputs are expected to be found in the task execution directory:
 - A file called "threshold.txt", which contains one line that consists of only an integer and whitespace.
-- One or more files (as indicated by the `+` postfix quantifier) with the `.csv` extension in the working directory that are collected into an array by the [`glob`](#arrayfile-globstring) function.
+- One or more files (as indicated by the `+` postfix quantifier) with the `.csv` extension in the working directory that are collected into an array by the [`glob`](#glob) function.
 - There may or may not be an output file at `path/to/outfile.txt` (relative to the execution directory) - if the file does not exist, the value of `outfile` will be undefined.
 
 See the [WDL Value Serialization](#appendix-a-wdl-value-serialization-and-deserialization) section for more details.
@@ -2136,7 +2140,7 @@ task example {
 
 If prefix were specified as `"foobar"`, then `"~{prefix}.out"` would be evaluated to `"foobar.out"`.
 
-Another common pattern is to use the [`glob`](#arrayfile-globstring) function to define outputs that might contain zero, one, or many files.
+Another common pattern is to use the [`glob`](#glob) function to define outputs that might contain zero, one, or many files.
 
 ```wdl
 output {
@@ -3844,15 +3848,15 @@ workflow workflow_a {
 
 # Standard Library
 
-The following functions are available to be called in WDL expressions. The signature of each function is given as `R func_name(T1, T2, ...)`, where `R` is the return type and `T1`, `T2`, ... are the parameter types. All function parameters must be specified in order, and all function parameters are required, with the exception that the last parameter of some functions is optional (denoted by the type in brackets `[]`).
+The following functions are available to be called in WDL expressions. The signature of each function is given as `R func_name(T1, T2, ...)`, where `R` is the return type and `T1`, `T2`, ... are the parameter types. All function parameters must be specified in order, and all function parameters are required, with the exception that the last parameter(s) of some functions is optional (denoted by the type in brackets `[]`).
 
 A function is called using the following syntax: `R' val = func_name(arg1, arg2, ...)`, where `R'` is a type that is coercible from `R`, and `arg1`, `arg2`, ... are expressions whose types are coercible to `T1`, `T2`, ...
 
-A function may be generic, which means that one or more of its parameters are generic. These functions are defined using letters (e.g. `X`, `Y`) for the type parameters, and the bounds of each type parameter is specified in the function description.
+A function may be generic, which means that one or more of its parameters and/or its return type are generic. These functions are defined using letters (e.g. `X`, `Y`) for the type parameters, and the bounds of each type parameter is specified in the function description.
 
-Some functions are polymorphic, which means that they are actually multiple functions ("variants") with the same name but different signatures. These functions may be defined using `|` to denote the set of alternative valid types, or they may have each variant defined separately.
+A function may be polymorphic, which means it is actually multiple functions ("variants") with the same name but different signatures. Such a function may be defined using `|` to denote the set of alternative valid types for one or more of its parameters, or it may have each variant defined separately.
 
-Functions are grouped by their argument types and restrictions. Some functions may be restricted to where they may be used. An unrestricted function may be used in any expression.
+Functions are grouped by their argument types and restrictions. Some functions may be restricted as to where they may be used. An unrestricted function may be used in any expression.
 
 Functions that are new in this version of the specification are denoted by ✨, and deprecated functions are denoted by 🗑.
 
@@ -4029,8 +4033,13 @@ Example output:
 
 ### ✨ `min`
 
+This function has four variants:
+
 ```
-Int min(Int|Float, Int|Float)
+* Int min(Int, Int)
+* Float min(Int, Float)
+* Float min(Float, Int)
+* Float min(Float, Float)
 ```
 
 Returns the smaller of two values. If both values are `Int`s, the return value is an `Int`, otherwise it is a `Float`.
@@ -4086,8 +4095,13 @@ Example output:
 
 ### ✨ `max`
 
+This function has four variants:
+
 ```
-Int max(Int|Float, Int|Float)
+* Int max(Int, Int)
+* Float max(Int, Float)
+* Float max(Float, Int)
+* Float max(Float, Float)
 ```
 
 Returns the larger of two values. If both values are `Int`s, the return value is an `Int`, otherwise it is a `Float`.
@@ -4155,12 +4169,7 @@ String sub(String, String, String)
 
 Given 3 String parameters `input`, `pattern`, and `replace`, this function replaces all non-overlapping occurrences of `pattern` in `input` by `replace`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) that will be evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 
-Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
-
-```wdl
-String s1 = "hello\tBob"
-String s2 = sub(s1, "\\t", " ")
-```
+Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped (e.g., `"\\t"`).
 
 🗑 The option for execution engines to allow other regular expression grammars besides POSIX ERE is deprecated.
 
@@ -4180,14 +4189,15 @@ Example: test_sub.wdl
 version 1.2
 
 workflow test_sub {
-  String chocolike = "I like chocolate when it's late"
+  String chocolike = "I like chocolate when\nit's late"
 
   output {
-    String chocolove = sub(chocolike, "like", "love") # I love chocolate when it's late
-    String chocoearly = sub(chocolike, "late", "early") # I like chocoearly when it's early
-    String chocolate = sub(chocolike, "late$", "early") # I like chocolate when it's early
-    String chocoearlylate = sub(chocolike, "[^ ]late", "early") # I like chocearly when it's late
-    String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate 4444 it's late
+    String chocolove = sub(chocolike, "like", "love") # I love chocolate when\nit's late
+    String chocoearly = sub(chocolike, "late", "early") # I like chocoearly when\nit's early
+    String chocolate = sub(chocolike, "late$", "early") # I like chocolate when\nit's early
+    String chocoearlylate = sub(chocolike, "[^ ]late", "early") # I like chocearly when\nit's late
+    String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate 4444\nit's late
+    String no_newline = sub(chocolike, "\\n", " ") "I like chocolate when it's late"
   }
 }
 ```
@@ -4203,11 +4213,12 @@ Example output:
 
 ```json
 {
-  "test_sub.chocolove": "I love chocolate when it's late",
-  "test_sub.chocoearly": "I like chocoearly when it's early",
-  "test_sub.chocolate": "I like chocolate when it's early",
-  "test_sub.chocoearlylate": "I like chocearly when it's late",
-  "test_sub.choco4": "I 4444 chocolate 4444 it's late"
+  "test_sub.chocolove": "I love chocolate when\nit's late",
+  "test_sub.chocoearly": "I like chocoearly when\nit's early",
+  "test_sub.chocolate": "I like chocolate when\nit's early",
+  "test_sub.chocoearlylate": "I like chocearly when\nit's late",
+  "test_sub.choco4": "I 4444 chocolate 4444\nit's late"
+  "test_sub.no_newline": "I like chocolate when it's late"
 }
 ```
 </p>
@@ -4263,15 +4274,212 @@ Example output:
 </p>
 </details>
 
-## File I/O Operations
+## File Functions
 
-These functions have a `File` as an input and/or output.
+These functions have a `File` as an input and/or output. Due to [type coercion](#type-coercion), `File` arguments may be specified as `String` values.
+
+For functions that read from or write to the file system, if the entire contents of the file cannot be read/written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having appropriate permissions, resource limitations (e.g., memory) when reading the file, and implementation-imposed file size limits.
+
+For functions that write to the file system, the implementatuion should generate a random file name in a temporary directory so as not to conflict with any other task output files.
 
 **Restrictions**
 
-1. A function that *reads* a file may only be called in a context where the input file exists. If the file is an input to a task or workflow, then it may be read anywhere in that task or worklow. If the file is created by a task, then it may only be read after it is written. For example, if the file is written during the execution of the `command`, then it may only be read in the `output` section.
-2. A function that *writes* a file may be called anywhere. However, writing a file in a workflow is discouraged since it may have the side-effect of creating a permanent output file that is not named in the output section. For example, calling `write_string` in a workflow and then passing the resulting `File` as input to a task may require the engine to persist that file to cloud storage.
-3. A function that reads an output stream (i.e. `stdout` and `stderr`) may only be called in a task `output` section.
+1. A function that only manipulates a path (i.e., doesn't require reading any of the file's attributes or contents) may be called anywhere, whether or not the file exists.
+2. A function that *reads* a file or its attributes may only be called in a context where the input file exists. If the file is an input to a task or workflow, then it may be read anywhere in that task or worklow. If the file is created by a task, then it may only be read after it is created. For example, if the file is written during the execution of the `command`, then it may only be read in the task's `output` section. This includes functions like `stdout` and `stderr` that read a task's output stream.
+3. A function that *writes* a file may be called anywhere. However, writing a file in a workflow is discouraged since it may have the side-effect of creating a permanent output file that is not named in the output section. For example, calling [`write_lines`](#write_lines) in a workflow and then passing the resulting `File` as input to a task may require the engine to persist that file to cloud storage.
+
+### `basename`
+
+```
+String basename(File, [String])
+```
+
+Returns the "basename" of a file - the name after the last directory separator in the file's path. 
+
+The optional second parameter specifies a literal suffix to remove from the file name.
+
+**Parameters**
+
+1. `File`: Path of the file to read.
+2. `String`: (Optional) Suffix to remove from the file name.
+ 
+**Returns**: The file's basename as a `String`.
+
+<details>
+<summary>
+Example: test_basename.wdl
+
+```wdl
+version 1.2
+
+workflow test_basename {
+  output {
+    Boolean is_true1 = basename("/path/to/file.txt") == "file.txt"`
+    Boolean is_true2 = basename("/path/to/file.txt", ".txt") == "file"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_basename.is_true1": true,
+  "test_basename.is_true2": true
+}
+```
+</p>
+</details>
+
+### `glob`
+
+```
+Array[File] glob(String)
+```
+
+Returns the Bash expansion of the [glob string](https://en.wikipedia.org/wiki/Glob_(programming)) relative to the task's execution directory, and in the same order.
+
+`glob` finds all of the files (but not the directories) in the same order as would be matched by running `echo <glob>` in Bash from the task's execution directory.
+
+At least in standard Bash, glob expressions are not evaluated recursively, i.e., files in nested directories are not included. 
+
+**Parameters**:
+
+1. `String`: The glob string.
+
+**Returns**: A array of all files matched by the glob.
+
+<details>
+<summary>
+Example: gen_files.wdl
+
+```wdl
+version 1.2
+
+task gen_files_task {
+  input {
+    Int num_files
+  }
+
+  command <<<
+    for i in 1..~{num_files}; do
+      echo ~{i} > a_file_~{i}.txt
+    done
+    mkdir a_dir
+    touch a_dir/a_inner.txt
+  >>>
+
+  Array[File] files = glob("a_*")
+
+  output {  
+    Int glob_len = length(files)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "gen_files_task.num_files": 2
+}
+```
+
+Example output:
+
+```json
+{
+  "gen_files_task.glob_len": 2
+}
+```
+</p>
+</details>
+
+This command generates the following directory structure:
+
+```txt
+<workdir>
+├── a_dir
+│   └─ a_inner.txt
+├── a_file_1.txt
+└── a_file_2.txt
+```
+
+Running `echo a_*` in the execution directory would expand to `a_dir`, `a_file_1.txt`, and `a_file_2.txt`, in that order. Since `glob` ignores directories, `a_dir` is discarded and the result of the expression is `["a_file_1.txt", "a_file_2.txt"]`.
+
+#### Non-standard Bash
+
+The runtime container may use a non-standard Bash shell that supports more complex glob strings, such as allowing expansions that include `a_inner.txt` in the example above. To ensure that a WDL task is portable when using `glob`, a container image should be provided and the WDL author should remember that `glob` results depend on coordination with the Bash implementation provided in that container.
+
+### `size`
+
+```
+Float size(File?|Array[File?], [String])
+```
+
+Determines the size of a file, or the sum total of the sizes of files in an array. The files may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage).
+
+If the size cannot be represented in the specified unit because the resulting value is too large to fit in a `Float`, an error is raised. It is recommended to use a unit that will always be large enough to handle any expected inputs without numerical overflow.
+
+**Parameters**
+
+1. `File?|Array[File?]`: A file, or array of files, for which to determine the size.
+2. `String`: (Optional) The unit of storage; defaults to 'B'.
+
+**Returns**: The size of the file(s) as a `Float`.
+
+<details>
+<summary>
+Example: file_sizes_task.wdl
+
+```wdl
+version 1.2
+
+task file_sizes_task {
+  command <<<
+    echo "this file is 22 bytes" > created_file
+  >>>
+
+  File? missing_file = None
+
+  output {
+    Float missing_file_bytes = size(missing_file) # 0.0
+    Float created_file_bytes = size("created_file", "B") # 22.0
+    Float multi_file_kb = size(["created_file", missing_file], "K") # 0.022
+  }
+  
+  runtime {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "file_sizes_task.missing_file_bytes": 0.0,
+  "file_sizes_task.created_file_bytes": 22.0,
+  "file_sizes_task.multi_file_kb": 0.022
+}
+```
+</p>
+</details>
 
 ### `stdout`
 
@@ -4283,7 +4491,7 @@ Returns the value of the executed command's standard output (stdout) as a `File`
 
 **Parameters**: None
 
-**Returns**: A `File` reference to the stdout generated by the command of the task where the function is called.
+**Returns**: A `File` whose contents are the stdout generated by the command of the task where the function is called.
 
 <details>
 <summary>
@@ -4328,16 +4536,16 @@ Returns the value of the executed command's standard error (stderr) as a `File`.
 
 **Parameters**: None
 
-**Returns**: A `File` reference to the stderr generated by the command of the task where the function is called.
+**Returns**: A `File` whose contents are the stderr generated by the command of the task where the function is called.
 
 <details>
 <summary>
-Example: echo_stdout.wdl
+Example: echo_stderr.wdl
 
 ```wdl
 version 1.2
 
-task echo_stdout {
+task echo_stderr {
   command <<< >&2 echo "hello world" >>>
 
   output {
@@ -4357,53 +4565,42 @@ Example output:
 
 ```json
 {
-  "echo_stdout.message": "hello world"
+  "echo_stderr.message": "hello world"
 }
 ```
 </p>
 </details>
 
-## `glob`
+### `read_string`
 
 ```
-Array[File] glob(String)
+String read_string(File)
 ```
 
-Returns the Bash expansion of the [glob string](https://en.wikipedia.org/wiki/Glob_(programming)) relative to the task's execution directory, and in the same order.
+Reads an entire file as a `String`, with any trailing end-of-line characters (`\r` and `\n`) stripped off. If the file is empty, an empty string is returned.
 
-`glob` finds all of the files (but not the directories) in the same order as would be matched by running `echo <glob>` in Bash from the task's execution directory.
+If the file contains any internal newline characters, they are left in tact.
 
-At least in standard Bash, glob expressions are not evaluated recursively, i.e., files in nested directories are not included. 
+**Parameters**
 
-**Parameters**:
+1. `File`: Path of the file to read.
 
-1. `String`: The glob string.
-
-**Returns**: A array of all files matched by the glob.
-
+**Returns**: A `String`.
 
 <details>
 <summary>
-Example: gen_files.wdl
+Example: read_string_task.wdl
 
 ```wdl
 version 1.2
 
-task gen_files_task {
-  input {
-    Int num_files
-  }
+task read_string_task {
+  # this file will contain "this\nfile\nhas\nfive\nlines\n"
+  File f = write_lines(["this", "file", "has", "file", "lines"])
 
-  command <<<
-    for i in 1..~{num_files}; do
-      echo ~{i} > file_~{i}
-    done
-  >>>
-
-  Array[File] files = glob("file_*")
-
-  output {  
-    Int glob_len = length(files)
+  output {
+    # s will contain "this\nfile\nhas\nfive\nlines"
+    String s = read_string(f)
   }
 }
 ```
@@ -4412,78 +4609,196 @@ task gen_files_task {
 Example input:
 
 ```json
-{
-  "gen_files_task.num_files": 4
-}
+{}
 ```
 
 Example output:
 
 ```json
 {
-  "gen_files_task.glob_len": 4
+  "read_string_task.s": "this\nfile\nhas\nfive\nlines"
 }
 ```
 </p>
 </details>
 
-This command generates the following directory structure:
+### `read_int`
 
-```txt
-execution_directory
-├── a1.txt
-├── ab.txt
-├── a_dir
-│   ├── a_inner.txt
-├── az.txt
+```
+Int read_int(File)
 ```
 
-Running `echo a*` in the execution directory would expand to `a1.txt`, `ab.txt`, `a_dir` and `az.txt`, in that order. Since `glob` ignores directories, `a_dir` is discarded and the result of the expression is `["a1.txt", "ab.txt", "az.txt"]`.
-
-### Non-standard Bash
-
-The runtime container may use a non-standard Bash shell that supports more complex glob strings, such as allowing expansions that include `a_inner.txt` in the example above. To ensure that a WDL is portable when using `glob`, a container image should be provided and the WDL author should remember that `glob` results depend on coordination with the Bash implementation provided in that container.
-
-## String basename(String|File, [String])
-
-Returns the "basename" of a file - the name after the last directory separator in the file's path. 
-
-The optional second parameter specifies a literal suffix to remove from the file name.
+Reads a file that contains a single line containing only an integer and (optional) whitespace. If the line contains a valid integer, that value is returned as an `Int`, otherwise an error is raised.
 
 **Parameters**
 
-1. (`String`|`File`): Path of the file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
-2. `[String]`: Suffix to remove from the file name.
- 
-**Returns**: The file's basename as a `String`.
+1. `File`: Path of the file to read.
 
-**Example**
+**Returns**: An `Int`.
+
+<details>
+<summary>
+Example: read_int_task.wdl
 
 ```wdl
-Boolean is_true1 = basename("/path/to/file.txt") == "file.txt"`
-Boolean is_true2 = basename("/path/to/file.txt", ".txt") == "file"
+version 1.2
+
+task read_int_task {
+  command <<<
+  echo "  1  \n" > int_file
+  >>>
+
+  output {
+    Int i = read_int("int_file")
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
 ```
 
-## Array[String] read_lines(String|File)
+Example output:
 
-Reads each line of a file as a `String`, and returns all lines in the file as an `Array[String]`. Line endings (`\r` and `\n`) are removed from every line.
+```json
+{
+  "read_int_task.i": 1
+}
+```
+</p>
+</details>
 
-The order of the lines in the returned `Array[String]` must be the order in which the lines appear in the file.
+### `read_float`
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
+```
+Float read_float(File)
+```
+
+Reads a file that contains only a numeric value and (optional) whitespace. If the line contains a valid floating point number, that value is returned as a `Float`, otherwise an error is raised.
 
 **Parameters**
 
-1. `String|File`: Path of the file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
+1. `File`: Path of the file to read.
+
+**Returns**: A `Float`.
+
+<details>
+<summary>
+Example: read_float_task.wdl
+
+```wdl
+version 1.2
+
+task read_float_task {
+  command <<<
+  echo "  1  \n" > int_file
+  echo "  2.0  \n" > float_file
+  >>>
+
+  output {
+    Float f1 = read_float("int_file")
+    Float f2 = read_float("float_file")
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "read_float_task.f1": 1.0,
+  "read_float_task.f2": 2.0
+}
+```
+</p>
+</details>
+
+### `read_boolean`
+
+```
+Boolean read_boolean(File)
+```
+
+Reads a file that contains a single line containing only a boolean value and (optional) whitespace. If the line contains "true" or "false", that value is returned as a `Boolean`, otherwise an error is raised.
+
+**Parameters**
+
+1. `File`: Path of the file to read.
+
+**Returns**: A `Boolean`.
+
+<details>
+<summary>
+Example: read_bool_task.wdl
+
+```wdl
+version 1.2
+
+task read_bool_task {
+  command <<<
+  echo "  true  \n" > true_file
+  echo "  FALSE  \n" > false_file
+  >>>
+
+  output {
+    Boolean b1 = read_boolean("true_file")
+    Boolean b2 = read_boolean("false_file")
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "read_bool_task.b1": true,
+  "read_bool_task.b2": false
+}
+```
+</p>
+</details>
+
+### `read_lines`
+
+```
+Array[String] read_lines(File)
+```
+
+Reads each line of a file as a `String`, and returns all lines in the file as an `Array[String]`. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
+
+The order of the lines in the returned `Array[String]` is the order in which the lines appear in the file.
+
+**Parameters**
+
+1. `File`: Path of the file to read.
 
 **Returns**: An `Array[String]` representation of the lines in the file.
 
-**Example**
-
-This task `grep`s through a file and returns all strings that match the given pattern:
+<details>
+<summary>
+Example: grep_task.wdl
 
 ```wdl
-task do_stuff {
+version 1.2
+
+task grep_task {
   input {
     String pattern
     File file
@@ -4498,185 +4813,360 @@ task do_stuff {
   }
   
   runtime {
-    container: "my_image:latest"
+    container: "ubuntu:latest"
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-## Array[Array[String]] read_tsv(String|File)
+```json
+{
+  "grep_task.pattern": "world",
+  "grep_task.file": "greetings.txt"
+}
+```
 
-Reads a tab-separated value (TSV) file as an `Array[Array[String]]` representing a table of values. Line endings (`\r` and `\n`) are removed from every line.
+Example output:
+
+```json
+{
+  "grep_task.matches": [
+    "hello world",
+    "hi_world"
+  ]
+}
+```
+</p>
+</details>
+
+### `write_lines`
+
+```
+File write_lines(Array[String])
+```
+
+Writes a file with one line for each element in a `Array[String]`. All lines are terminated by the newline (`\n`) character (following the [POSIX standard](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap03.html#tag_03_206)). If the `Array` is empty, an empty file is written.
+
+**Parameters**
+
+1. `Array[String]`: Array of strings to write.
+
+**Returns**: A `File`.
+
+<details>
+<summary>
+Example: write_lines_task.wdl
+
+```wdl
+version 1.2
+
+task write_lines_task {
+  input {
+    Array[String] array = ["first", "second", "third"]
+  }
+
+  command <<<
+    paste -s -d'\t' ~{write_lines(array)}
+  >>>
+
+  output {
+    String s = read_string(stdout())
+  }
+  
+  runtime {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "write_lines_task.s": "first\tsecond\tthird"
+}
+```
+</p>
+</details>
+
+The actual command line might look like:
+
+```sh
+paste -s -d'\t' /local/fs/tmp/array.txt
+```
+
+And `/local/fs/tmp/array.txt` would contain:
+
+`first\nsecond\nthird`
+
+### `read_tsv`
+
+```
+Array[Array[String]] read_tsv(File)
+```
+
+Reads a tab-separated value (TSV) file as an `Array[Array[String]]` representing a table of values. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
 
 There is no requirement that the rows of the table are all the same length.
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
-
 **Parameters**
 
-1. `String|File`: Path of the TSV file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
+1. `File`: Path of the TSV file to read.
 
 **Returns**: An `Array` of rows in the TSV file, where each row is an `Array[String]` of fields.
 
-**Example**
-
-The following task has a command that outputs a TSV file to `./results/file_list.tsv`. The output file is read and returned as a table.
+<details>
+<summary>
+Example: read_tsv_task.wdl
 
 ```wdl
-task do_stuff {
-  input {
-    File file
-  }
+version 1.2
+
+task read_tsv_task {
   command <<<
-    python do_stuff.py ~{file}
+    echo "row1\tvalue1" >> data.tsv
+    echo "row2\tvalue2" >> data.tsv
+    echo "row3\tvalue3" >> data.tsv
   >>>
+
   output {
-    Array[Array[String]] output_table = read_tsv("./results/file_list.tsv")
+    Array[Array[String]] output_table = read_tsv("data.tsv")
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-## Map[String, String] read_map(String|File)
+```json
+{}
+```
 
-Reads a tab-separated value (TSV) file representing a set of pairs. Every row must have exactly two columns, i.e. `col1\tcol2`. Line endings (`\r` and `\n`) are removed from every line.
+Example output:
 
-Each pair is added to a `Map[String, String]` in order. The values in the first column must be unique; if there are any duplicate keys, an error is raised.
+```json
+{
+  "read_tsv_task.output_table": [
+    ["row1", "value1"],
+    ["row2", "value2"],
+    ["row3", "value3"]
+  ]
+}
+```
+</p>
+</details>
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
+### `write_tsv`
+
+```
+File write_tsv(Array[Array[String]])
+```
+
+Writes a tab-separated value (TSV) file with one line for each element in a `Array[Array[String]]`. Each element is concatenated into a single tab-delimited string. Each line is terminated by the newline (`\n`) character. If the `Array` is empty, an empty file is written.
 
 **Parameters**
 
-1. `String|File`: Path of the two-column TSV file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
+1. `Array[Array[String]]`: An array of rows, where each row is an array of column values.
 
-**Returns**: A `Map[String, String]`, with one element for each unique key in the TSV file.
+**Returns**: A `File`.
 
-**Example**
-
-This task executes a command that writes a two-column TSV to standard out, and then reads that file into a `Map[String, String]`:
+<details>
+<summary>
+Example: write_tsv_task.wdl
 
 ```wdl
-task do_stuff {
+version 1.2
+
+task write_tsv_task {
   input {
-    String flags
-    File file
+    Array[Array[String]] array = [["one", "two", "three"], ["un", "deux", "trois"]]
   }
+
   command <<<
-    ./script --flags=~{flags} ~{file}
+    cut -f 1 ~{write_tsv(array)}
   >>>
+
+  output {
+    Array[String] ones = read_lines(stdout())
+  }
+  
+  runtime {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "write_tsv_task.ones": ["one", "un"]
+}
+```
+</p>
+</details>
+
+The actual command line might look like:
+
+```sh
+cut -f 1 /local/fs/tmp/array.tsv
+```
+
+And `/local/fs/tmp/array.tsv` would contain:
+
+```txt
+one\ttwo\tthree
+un\tdeux\ttrois
+```
+
+### `read_map`
+
+```
+Map[String, String] read_map(File)
+```
+
+Reads a tab-separated value (TSV) file representing a set of pairs. Each row must have exactly two columns, e.g., `col1\tcol2`. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
+
+Each pair is added to a `Map[String, String]` in order. The values in the first column must be unique; if there are any duplicate keys, an error is raised.
+
+**Parameters**
+
+1. `File`: Path of the two-column TSV file to read.
+
+**Returns**: A `Map[String, String]`, with one element for each row in the TSV file.
+
+<details>
+<summary>
+Example: read_map_task.wdl
+
+```wdl
+version 1.2
+
+task read_map_task {
+  command <<<
+    echo "key1\tvalue1" >> map_file
+    echo "key2\tvalue2" >> map_file
+  >>>
+  
   output {
     Map[String, String] mapping = read_map(stdout())
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-## 🗑 Object read_object(String|File)
+```json
+{}
+```
 
-Reads a tab-separated value (TSV) file representing the names and values of the members of an `Object`. There must be two rows, and each row must have the same number of elements. Line endings (`\r` and `\n`) are removed from every line.
+Example output:
 
-The first row specifies the object member names. The names in the first row must be unique; if there are any duplicate names, an error is raised.
-
-The second row specifies the object member values corresponding to the names in the first row. All of the `Object`'s values are of type `String`.
-
-If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
-
-**Parameters**
-
-1. `String|File`: Path of the two-row TSV file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
-
-**Returns**: An `Object`, with as many members as there are unique names in the TSV.
-
-**Example**
-
-This task writes a TSV file to standard out, then reads it into an `Object`.
-
-```wdl
-task test {
-  command <<<
-    python <<CODE
-    print('\t'.join(["key_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    CODE
-  >>>
-  output {
-    Object my_obj = read_object(stdout())
+```json
+{
+  "read_map_task.mapping": {
+    "key1": "value1",
+    "key2": "value2"
   }
 }
 ```
+</p>
+</details>
 
-The command outputs the following lines to stdout:
+### `write_map`
 
 ```
-key_1\tkey_2\tkey_3
-value_1\tvalue_2\tvalue_3
+File write_map(Map[String, String])
 ```
 
-Which are read into an `Object` with the following members:
+Writes a tab-separated value (TSV) file with one line for each element in a `Map[String, String]`. Each element is concatenated into a single tab-delimited string of the format `~{key}\t~{value}`. Each line is terminated by the newline (`\n`) character. If the `Map` is empty, an empty file is written.
 
-| Attribute | Value     |
-| --------- | --------- |
-| key_1     | "value_1" |
-| key_2     | "value_2" |
-| key_3     | "value_3" |
-
-## 🗑 Array[Object] read_objects(String|File)
-
-Reads a tab-separated value (TSV) file representing the names and values of the members of any number of `Object`s. Line endings (`\r` and `\n`) are removed from every line.
-
-There must be a header row with the names of the object members. The names in the first row must be unique; if there are any duplicate names, an error is raised.
-
-There are any number of additional rows, where each additional row contains the values of an object corresponding to the member names. Every row in the file must have the same number of elements. All of the `Object`'s values are of type `String`.
-
-If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
+Since `Map`s are ordered, the order of the lines in the file is guaranteed to be the same order that the elements were added to the `Map`.
 
 **Parameters**
 
-1. `String|File`: Path of the TSV file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
+1. `Map[String, String]`: A `Map`, where each element will be a row in the generated file.
 
-**Returns**: An `Array[Object]`, with N-1 elements, where N is the number of rows in the file.
+**Returns**: A `File`.
 
-**Example**
-
-This task writes a TSV file to standard out, then reads it into an `Array[Object]`.
+<details>
+<summary>
+Example: write_map_task.wdl
 
 ```wdl
-task test {
+version 1.2
+
+task write_map_task {
+  input {
+    Map[String, String] map = {"key1": "value1", "key2": "value2"}
+  }
+
   command <<<
-    python <<CODE
-    print('\t'.join(["key_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    print('\t'.join(["value_{}".format(i) for i in range(3)]))
-    CODE
+    cut -f 1 ~{write_map(map)}
   >>>
+  
   output {
-    Array[Object] my_obj = read_objects(stdout())
+    Array[String] keys = read_lines(stdout())
+  }
+
+  runtime {
+    container: "ubuntu:latest"
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-The command outputs the following lines to stdout:
-
-```
-key_1\tkey_2\tkey_3
-value_1\tvalue_2\tvalue_3
-value_1\tvalue_2\tvalue_3
-value_1\tvalue_2\tvalue_3
+```json
+{}
 ```
 
-Which are read into an `Array[Object]` with the following elements:
+Example output:
 
-| Index | Attribute | Value     |
-| ----- | --------- | --------- |
-| 0     | key_1     | "value_1" |
-|       | key_2     | "value_2" |
-|       | key_3     | "value_3" |
-| 1     | key_1     | "value_1" |
-|       | key_2     | "value_2" |
-|       | key_3     | "value_3" |
-| 2     | key_1     | "value_1" |
-|       | key_2     | "value_2" |
-|       | key_3     | "value_3" |
+```json
+{
+  "write_map_task.keys": ["key1", "key2"]
+}
+```
+</p>
+</details>
 
-## R read_json(String|File)
+The actual command line might look like:
+
+```sh
+cut -f 1 /local/fs/tmp/map.tsv
+```
+
+And `/local/fs/tmp/map.tsv` would contain:
+
+```txt
+key1\tvalue1
+key2\tvalue2
+```
+
+### `read_json`
+
+```
+X read_json(File)
+```
 
 Reads a JSON file into a WDL value whose type depends on the file's contents. The mapping of JSON type to WDL type is:
 
@@ -4691,266 +5181,372 @@ Reads a JSON file into a WDL value whose type depends on the file's contents. Th
 
 The return value must be used in a context where it can be coerced to the expected type, or an error is raised. For example, if the JSON file contains `null`, then the return type will be `None`, meaning the value can only be used in a context where an optional type is expected.
 
-If the JSON file contains an array, then all the elements of the array must be of the same type or an error is raised.
+If the JSON file contains an array, then all the elements of the array must be coercible to the same type, or an error is raised.
 
-The `read_json` function doesn't have access to any WDL type information, so it cannot return an instance of a specific `Struct` type. Instead, it returns a generic `Object` value that must be coerced to the desired `Struct` type. For example:
+The `read_json` function does not have access to any WDL type information, so it cannot return an instance of a specific `Struct` type. Instead, it returns a generic `Object` value that must be coerced to the desired `Struct` type.
 
-`person.json`
-```json
-{
-  "name": "John",
-  "age": 42
-}
-```
+**Parameters**
+
+1. `File`: Path of the JSON file to read.
+
+**Returns**: A value whose type is dependent on the contents of the JSON file.
+
+<details>
+<summary>
+Example: read_person.wdl
 
 ```wdl
+version 1.2
+
 struct Person {
   String name
   Int age
 }
-File json_file = "person.json"
-Person p = read_json(json_file)
-```
 
-If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
-
-**Parameters**
-
-1. `String|File`: Path of the JSON file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
-
-**Returns**: An value whose type is dependent on the contents of the JSON file.
-
-**Example**
-
-This task writes a JSON object to `./results/file_list.json` and then reads it into an `Object`, which is immediately coerced to a `Map[String, String]`.
-
-```wdl
-task do_stuff {
+workflow read_person {
   input {
-    File file
+    File json_file
   }
-  
-  command <<<
-    python do_stuff.py ~{file}
-  >>>
 
   output {
-    Map[String, String] output_table = read_json("./results/file_list.json")
-  }
-  
-  runtime {
-    container: "my_image:latest"
+    Person p = read_json(json_file)
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-## String read_string(String|File)
-
-Reads an entire file as a string, with any trailing end-of-line characters (`\r` and `\n`) stripped off. If the file is empty, an empty string is returned.
-
-If the file contains any internal newline characters, they are left intact. For example:
-
-```wdl
-# this file will contain "this\nfile\nhas\nfive\nlines\n"
-File f = write_lines(["this", "file", "has", "file", "lines"])
-
-# s will contain "this\nfile\nhas\nfive\nlines"
-String s = read_string(f)
-```
-
-If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
-
-**Parameters**
-
-1. `String|File`: Path of the file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
-
-**Returns**: A `String`.
-
-## Int read_int(String|File)
-
-Reads a file that contains a single line containing only an integer and (optional) whitespace. If the line contains a valid integer, that value is returned as an `Int`, otherwise an error is raised.
-
-If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
-
-**Parameters**
-
-1. `String|File`: Path of the file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
-
-**Returns**: An `Int`.
-
-## Float read_float(String|File)
-
-Reads a file that contains a single line containing only an numeric value and (optional) whitespace. If the line contains a valid floating point number, that value is returned as a `Float`, otherwise an error is raised.
-
-If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
-
-**Parameters**
-
-1. `String|File`: Path of the file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
-
-**Returns**: A `Float`.
-
-## Boolean read_boolean(String|File)
-
-Reads a file that contains a single line containing only an boolean value and (optional) whitespace. If the line contains "true" or "false", that value is returned as a `Boolean`, otherwise an error is raised.
-
-If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
-
-**Parameters**
-
-1. `String|File`: Path of the file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
-
-**Returns**: A `Boolean`.
-
-## File write_lines(Array[String])
-
-Writes a file with one line for each element in a `Array[String]`. All lines are terminated by the newline (`\n`) character (following the [POSIX standard](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap03.html#tag_03_206)). If the `Array` is empty, an empty file is written.
-
-The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
-
-If the entire contents of the file can not be written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, insufficient disk space to write the file.
-
-**Parameters**
-
-1. `Array[String]`: Array of strings to write.
-
-**Returns**: A `File`.
-
-**Example**
-
-This task writes an array of strings to a file, and then calls a script with that file as input.
-
-```wdl
-task example {
-  input {
-    Array[String] array = ["first", "second", "third"]
-  }
-
-  command <<<
-    ./script --file-list=~{write_lines(array)}
-  >>>
-  
-  runtime {
-    container: "my_image:latest"
-  }
+```json
+{
+  "read_person.json_file": "person.json"
 }
 ```
 
-The actual command line might look like:
+Example output:
 
-```sh
-./script --file-list=/local/fs/tmp/array.txt
-```
-
-And `/local/fs/tmp/array.txt` would contain:
-
-`first\nsecond\nthird`
-
-## File write_tsv(Array[Array[String]])
-
-Writes a tab-separated value (TSV) file with one line for each element in a `Array[Array[String]]`. Each element is concatenated into a single tab-delimited string. All lines are terminated by the newline (`\n`) character. If the `Array` is empty, an empty file is written.
-
-The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
-
-If the entire contents of the file can not be written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, insufficient disk space to write the file.
-
-**Parameters**
-
-1. `Array[Array[String]]`: An array of rows, where each row is an array of column values.
-
-**Returns**: A `File`.
-
-**Example**
-
-This task writes a TSV file with two lines, and three columns in each line. It then calls a script using that file as input.
-
-```wdl
-task example {
-  input {
-    Array[Array[String]] array = [["one", "two", "three"], ["un", "deux", "trois"]]
-  }
-
-  command <<<
-    ./script --tsv=~{write_tsv(array)}
-  >>>
-  
-  runtime {
-    container: "my_image:latest"
+```json
+{
+  "read_person.p": {
+    "name": "John",
+    "age": 42
   }
 }
 ```
+</p>
+</details>
 
-The actual command line might look like:
+### `write_json`
 
-```sh
-./script --tsv=/local/fs/tmp/array.tsv
+```
+File write_json(X)
 ```
 
-And `/local/fs/tmp/array.tsv` would contain:
+Writes a JSON file with the serialized form of a WDL value. The following WDL types can be serialized:
 
-```txt
-one\ttwo\tthree
-un\tdeux\ttrois
-```
+| WDL Type         | JSON Type |
+| ---------------- | --------- |
+| `Struct`         | object    |
+| `Object`         | object    |
+| `Map[String, X]` | object    |
+| `Array[X]`       | array     |
+| `Int`            | number    |
+| `Float`          | number    |
+| `String`         | string    |
+| `File`           | string    |
+| `Boolean`        | boolean   |
+| `None`           | null      |
 
-## File write_map(Map[String, String])
-
-Writes a tab-separated value (TSV) file with one line for each element in a `Map[String, String]`. Each element is concatenated into a single tab-delimited string of the format `~{key}\t~{value}`. All lines are terminated by the newline (`\n`) character. If the `Map` is empty, an empty file is written.
-
-Since `Map`s are ordered, the order of the lines in the file is guaranteed to be the same order that the elements were added to the `Map`.
-
-The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
-
-If the entire contents of the file can not be written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, insufficient disk space to write the file.
+When serializing compound types, all nested types must be serializable or an error is raised.
 
 **Parameters**
 
-1. `Map[String, String]`: An `Map`, where each element will be a row in the generated file.
+1. `X`: A WDL value of a supported type.
 
 **Returns**: A `File`.
 
-**Example**
-
-This task writes a `Map[String, String]` to a file, and then calls a script with that file as input.
+<details>
+<summary>
+Example: write_json_fail.wdl
 
 ```wdl
-task example {
+version 1.2
+
+workflow write_json_fail {
+  Pair[Int, Map[Int, String]] x = (1, {2: "hello"})
+  # this fails with an error - Map with Int keys is not serializable
+  File f = write_json(x)  
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: write_json_task.wdl
+
+```wdl
+version 1.2
+
+task write_json_task {
   input {
     Map[String, String] map = {"key1": "value1", "key2": "value2"}
   }
 
   command <<<
-    ./script --map=~{write_map(map)}
+    python <<CODE
+    import json
+    with open("~{write_json(map)}") as js:
+      d = json.load(js)
+      print(list(d.keys()))
+    CODE
   >>>
+
+  output {
+    Array[String] keys = read_json(stdout())
+  }
   
   runtime {
-    container: "my_image:latest"
+    container: "python:latest"
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "write_json_task.keys": ["key1", "key2"]
+}
+```
+</p>
+</details>
 
 The actual command line might look like:
 
 ```sh
-./script --tsv=/local/fs/tmp/map.tsv
+python <<CODE
+import json
+with open("local/fs/tmp/map.json") as js:
+  d = json.load(js)
+  print(list(d.keys()))
+CODE
 ```
 
-And `/local/fs/tmp/map.tsv` would contain:
+And `/local/fs/tmp/map.json` would contain:
 
-```txt
-key1\tvalue1
-key2\tvalue2
+```json
+{
+  "key1": "value1",
+  "key2": "value2"
+}
 ```
 
-## 🗑 File write_object(Object)
+### 🗑 `read_object`
 
-Writes a tab-separated value (TSV) file with the contents of an `Object`. The file contains two tab-delimited lines. The first line is the names of the `Object` members, and the second line is the corresponding values. All lines are terminated by the newline (`\n`) character. The ordering of the columns is unspecified.
+```
+Object read_object(File)
+```
+
+Reads a tab-separated value (TSV) file representing the names and values of the members of an `Object`. There must be two rows, and each row must have the same number of elements. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
+
+The first row specifies the object member names. The names in the first row must be unique; if there are any duplicate names, an error is raised.
+
+The second row specifies the object member values corresponding to the names in the first row. All of the `Object`'s values are of type `String`.
+
+**Parameters**
+
+1. `File`: Path of the two-row TSV file to read.
+
+**Returns**: An `Object`, with as many members as there are unique names in the TSV.
+
+<details>
+<summary>
+Example: read_object_task.wdl
+
+```wdl
+version 1.2
+
+task read_object_task {
+  command <<<
+    python <<CODE
+    print('\t'.join(["key_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_{}".format(i) for i in range(3)]))
+    CODE
+  >>>
+
+  output {
+    Object my_obj = read_object(stdout())
+  }
+
+  runtime {
+    container: "python:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "read_object_task.my_obj": {
+    "key_0": "value_0",
+    "key_1": "value_1",
+    "key_2": "value_2",
+  }
+}
+```
+</p>
+</details>
+
+The command outputs the following lines to stdout:
+
+```
+key_0\tkey_1\tkey_2
+value_0\tvalue_1\tvalue_2
+```
+
+Which are read into an `Object` with the following members:
+
+| Attribute | Value     |
+| --------- | --------- |
+| key_0     | "value_0" |
+| key_1     | "value_1" |
+| key_2     | "value_2" |
+
+### 🗑 `read_objects`
+
+```
+Array[Object] read_objects(File)
+```
+
+Reads a tab-separated value (TSV) file representing the names and values of the members of any number of `Object`s. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
+
+There must be a header row with the names of the object members. The names in the first row must be unique; if there are any duplicate names, an error is raised.
+
+There are any number of additional rows, where each additional row contains the values of an object corresponding to the member names. Each row in the file must have the same number of fields as the header row. All of the `Object`'s values are of type `String`.
+
+**Parameters**
+
+1. `File`: Path of the TSV file to read.
+
+**Returns**: An `Array[Object]`, with `N-1` elements, where `N` is the number of rows in the file.
+
+<details>
+<summary>
+Example: read_objects_task.wdl
+
+```wdl
+version 1.2
+
+task read_objects_task {
+  command <<<
+    python <<CODE
+    print('\t'.join(["key_{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_A{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_B{}".format(i) for i in range(3)]))
+    print('\t'.join(["value_C{}".format(i) for i in range(3)]))
+    CODE
+  >>>
+
+  output {
+    Array[Object] my_obj = read_objects(stdout())
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "read_objects_task.my_obj": [
+    {
+      "key_0": "value_A0",
+      "key_1": "value_A1",
+      "key_2": "value_A2",
+    },
+    {
+      "key_0": "value_B0",
+      "key_1": "value_B1",
+      "key_2": "value_B2",
+    },
+    {
+      "key_0": "value_C0",
+      "key_1": "value_C1",
+      "key_2": "value_C2",
+    }
+  ]
+}
+```
+</p>
+</details>
+
+The command outputs the following lines to stdout:
+
+```
+key_0\tkey_1\tkey_3
+value_A0\tvalue_A1\tvalue_A2
+value_B0\tvalue_B1\tvalue_B2
+value_C0\tvalue_C1\tvalue_C2
+```
+
+Which are read into an `Array[Object]` with the following elements:
+
+| Index | Attribute | Value      |
+| ----- | --------- | ---------- |
+| 0     | key_0     | "value_A0" |
+|       | key_1     | "value_A1" |
+|       | key_2     | "value_A2" |
+| 1     | key_0     | "value_B0" |
+|       | key_1     | "value_B1" |
+|       | key_2     | "value_B2" |
+| 2     | key_0     | "value_C0" |
+|       | key_1     | "value_C1" |
+|       | key_2     | "value_C2" |
+
+### 🗑 `write_object`
+
+```
+File write_object(Object)
+```
+
+Writes a tab-separated value (TSV) file with the contents of an `Object`. The file contains two tab-delimited lines. The first line is the names of the `Object` members, and the second line is the corresponding values. Each line is terminated by the newline (`\n`) character. The ordering of the columns is unspecified.
 
 The `Object` values must be serializable to strings, meaning that only primitive types are supported. Attempting to write an `Object` that has a compound member value results in an error.
-
-The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
-
-If the entire contents of the file can not be written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, insufficient disk space to write the file.
 
 **Parameters**
 
@@ -4958,28 +5554,55 @@ If the entire contents of the file can not be written for any reason, the callin
 
 **Returns**: A `File`.
 
-**Example**
-
-This task writes an `Object` to a file, and then calls a script with that file as input.
+<details>
+<summary>
+Example: write_object_task.wdl
 
 ```wdl
-task test {
+version 1.2
+
+task write_object_task {
   input {
     Object obj
   }
+
   command <<<
-    /bin/do_work --obj=~{write_object(obj)}
+    cut -f 1 ~{write_object(obj)}
   >>>
+  
   output {
-    File results = stdout()
+    Array[String] results = read_lines(stdout())
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "write_object_task": {
+    "key_1": "value_1",
+    "key_2": "value_2",
+    "key_3": "value_3",
   }
 }
 ```
 
+Example output:
+
+```json
+{
+  "write_object_task": ["key_1", "value_1"]
+}
+```
+</p>
+</details>
+
 The actual command line might look like:
 
-```
-/bin/do_work --obj=/path/to/input.tsv
+```sh
+cut -f 1 /path/to/input.tsv
 ```
 
 If `obj` has the following members:
@@ -4997,17 +5620,17 @@ key_1\tkey_2\tkey_3
 value_1\tvalue_2\tvalue_3
 ```
 
-## 🗑 File write_objects(Array[Object])
+### 🗑 `write_objects`
+
+```
+File write_objects(Array[Object])
+```
 
 Writes a tab-separated value (TSV) file with the contents of a `Array[Object]`. All `Object`s in the `Array` must have the same member names, or an error is raised.
 
-The file contains N+1 tab-delimited lines terminated by a newline (`\n`), where N is the number of elements in the `Array`. The first line is the names of the `Object` members, and the subsequent lines are the corresponding values for each `Object`. All lines are terminated by the newline (`\n`) character. The lines are written in the same order as the `Object`s in the `Array`. The ordering of the columns is unspecified. If the `Array` is empty, an empty file is written.
+The file contains `N+1` tab-delimited lines, where `N` is the number of elements in the `Array`. The first line is the names of the `Object` members, and the subsequent lines are the corresponding values for each `Object`. Each line is terminated by a newline (`\n`) character. The lines are written in the same order as the `Object`s in the `Array`. The ordering of the columns is unspecified. If the `Array` is empty, an empty file is written.
 
 The object values must be serializable to strings, meaning that only primitive types are supported. Attempting to write an `Object` that has a compound member value results in an error.
-
-The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
-
-If the entire contents of the file can not be written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, insufficient disk space to write the file.
 
 **Parameters**
 
@@ -5015,28 +5638,67 @@ If the entire contents of the file can not be written for any reason, the callin
 
 **Returns**: A `File`.
 
-**Example**
-
-This task writes an array of objects to a file, and then calls a script with that file as input.
+<details>
+<summary>
+Example: write_objects_task.wdl
 
 ```wdl
-task test {
+version 1.2
+
+task write_objects_task {
   input {
     Array[Object] obj_array
   }
+
   command <<<
-    /bin/do_work --obj=~{write_objects(obj_array)}
+    cut -f 1 ~{write_objects(obj_array)}
   >>>
+  
   output {
-    File results = stdout()
+    Array[String] results = read_lines(stdout())
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "write_objects_task.obj_array": [
+    {
+      "key_1": "value_1",
+      "key_2": "value_2",
+      "key_3": "value_3",
+    },
+    {
+      "key_1": "value_4",
+      "key_2": "value_5",
+      "key_3": "value_6",
+    },
+    {
+      "key_1": "value_7",
+      "key_2": "value_8",
+      "key_3": "value_9",
+    },
+  ]
+}
+```
+
+Example output:
+
+```json
+{
+  "write_objects_task.results": ["key_1", "value_1", "value_4", "value_7"]
+}
+```
+</p>
+</details>
 
 The actual command line might look like:
 
-```
-/bin/do_work --obj=/path/to/input.tsv
+```sh
+cut -f 1 /path/to/input.tsv
 ```
 
 If `obj_array` has the items:
@@ -5053,7 +5715,6 @@ If `obj_array` has the items:
 |       | key_2     | "value_8" |
 |       | key_3     | "value_9" |
 
-
 The `/path/to/input.tsv` will contain:
 
 ```
@@ -5063,282 +5724,17 @@ value_4\tvalue_5\tvalue_6
 value_7\tvalue_8\tvalue_9
 ```
 
-## File write_json(X)
+## String Array Functions
 
-Writes a JSON file with the serialized form of a WDL value. The following WDL types can be serialized:
+These functions take an `Array` as input and return a `String` or `Array[String]`. Due to type coercion, the `Array` argument may be of any primitive type (denoted by `P`).
 
-| WDL Type         | JSON Type |
-| ---------------- | --------- |
-| `Struct`         | object    |
-| `Object`         | object    |
-| `Map[String, X]` | object    |
-| `Array[X]`       | array     |
-| `Int`            | number    |
-| `Float`          | number    |
-| `String`         | string    |
-| `File`           | string    |
-| `Boolean`        | boolean   |
-| `None`           | null      |
+**Restrictions**: None
 
-When serializing compound types, all nested types must be serializable or an error is raised. For example the following value could not be written to JSON:
+### `prefix`
 
-```wdl
-Pair[Int, Map[Int, String]] x = (1, {2: "hello"})
-# this fails with an error - Map with Int keys is not serializable
-File f = write_json(x)  
 ```
-
-**Parameters**
-
-1. `X`: A WDL value of a supported type.
-
-**Returns**: A `File`.
-
-**Example**
-
-This task writes a `Map[String, String]` to a JSON file, then calls a script with that file as input.
-
-```wdl
-task example {
-  input {
-    Map[String, String] map = {"key1": "value1", "key2": "value2"}
-  }
-
-  command <<<
-    ./script --map=~{write_json(map)}
-  >>>
-  
-  runtime {
-    container: "my_image:latest"
-  }
-}
+Array[String] prefix(String, Array[P])
 ```
-
-The actual command line might look like:
-
-```sh
-./script --tsv=/local/fs/tmp/map.json
-```
-
-And `/local/fs/tmp/map.json` would contain:
-
-```json
-{
-  "key1": "value1",
-  "key2": "value2"
-}
-```
-
-## Float size(File?|Array[File?], [String])
-
-Determines the size of a file, or the sum total sizes of an array of files. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage).
-
-There are four supported types for the first parameter:
-- `File`: Returns the size of the file.
-- `File?`: Returns the size of the file if it is defined, or 0.0 otherwise.
-- `Array[File]`: Returns the sum of sizes of the files in the array, or 0.0 if the array is empty.
-- `Array[File?]`: Returns the sum of sizes of all defined files in the array, or 0.0 if the array contains no defined files.
-
-If the size can not be represented in the specified unit because the resulting value is too large to fit in a `Float`, an error is raised. It is recommended to use a unit that will always be large enough to handle any expected inputs without numerical overflow.
-
-**Parameters**
-
-1. `File|File?|Array[File]|Array[File?]`: A file, or array of files, for which to determine the size.
-2. `[String]` The unit of storage; defaults to 'B'.
-
-**Returns**: The size of the file(s) as a `Float`.
-
-**Example**
-
-```wdl
-task example {
-  input {
-    Array[File] input_files
-  }
-
-  command <<<
-    echo "this file is 22 bytes" > created_file
-  >>>
-
-  output {
-    Float input_files_gb = size(input_files, "GB")
-    Float created_file_bytes = size("created_file") # 22.0
-    Float created_file_kb = size("created_file", "K") # 0.022
-  }
-  
-  runtime {
-    container: "my_image:latest"
-  }
-}
-```
-
-## Int length(Array[X])
-
-Returns the number of elements in an array as an `Int`.
-
-**Parameters**
-
-1. `Array[X]`: An array with any element type.
-
-**Returns**: The length of the array as an `Int`.
-
-**Example**
-
-```wdl
-Array[Int] xs = [ 1, 2, 3 ]
-Array[String] ys = [ "a", "b", "c" ]
-Array[String] zs = [ ]
-
-Int xlen = length(xs) # 3
-Int ylen = length(ys) # 3
-Int zlen = length(zs) # 0
-```
-
-## Array[Int] range(Int)
-
-Creates an array of the given length containing sequential integers starting from 0.
-
-**Parameters**
-
-1. `Int`: The length of array to create.
-
-**Returns**: An `Array[Int]` containing integers `0..(N-1)`.
-
-**Example**
-
-```wdl
-workflow wf {
-  input {
-    Int i
-  }
-  Array[Int] indexes = range(i)
-  scatter (idx in indexes) {
-    call do_stuff { input: n = idx }
-  }
-}
-```
-
-## Array[Array[X]] transpose(Array[Array[X]])
-
-Transposes a two-dimensional array according to the standard matrix transposition rules, i.e. each row of the input array becomes a column of the output array. The input array must be square - i.e. every row must have the same number of elements - or an error is raised.
-
-**Parameters**
-
-1. `Array[Array[X]]`: A `M*N` two-dimensional array.
-
-**Returns**: A `N*M` two-dimensional array (`Array[Array[X]]`) containing the transposed input array.
-
-**Example**
-
-```wdl
-# input array is 2 rows * 3 columns
-Array[Array[Int]] input_array = [[0, 1, 2], [3, 4, 5]]
-
-# output array is 3 rows * 2 columns
-Array[Array[Int]] expected_output_array = [[0, 3], [1, 4], [2, 5]]
-
-Boolean is_true = transpose(input_array) == expected_output_array
-``` 
-
-## Array[Pair[X,Y]] zip(Array[X], Array[Y])
-
-Creates an array of `Pair`s containing the [dot product](https://en.wikipedia.org/wiki/Dot_product) of two input arrays, i.e. the elements at the same indices in each array `Xi` and `Yi` are combined together into (`Xi`, `Yi`) for each `i` in `range(length(array))`. The input arrays must have the same lengths or an error is raised.
-
-**Parameters**
-
-1. `Array[X]`: The first array of length `M`.
-2. `Array[Y]`: The second array of length `N`.
-
-**Returns**: An `Array[Pair[X, Y]]` of length `N`.
-
-**Example**
-
-```wdl
-Array[Int] xs = [ 1, 2, 3 ]
-Array[String] ys = [ "a", "b", "c" ]
-Array[String] zs = [ "d", "e" ]
-
-Array[Pair[Int, String]] zipped = zip(xs, ys) 
-Boolean is_true = zipped == [ (1, "a"), (2, "b"), (3, "c") ]
-
-# this fails with an error - xs and zs are not the same length
-Array[Pair[Int, String]] bad = zip(xs, zs)
-```
-
-## ✨ Pair[Array[X], Array[Y]] unzip(Array[Pair[X, Y]])
-
-Creates a `Pair` of `Arrays`, the first containing the elements from the `left` members of an `Array` of `Pair`s, and the second containing the `right` members. This is the inverse of the `zip` function.
-
-**Parameters**
-
-1. `Array[Pair[X, Y]]`: The `Array` of `Pair`s of length `N` to unzip.
-
-**Returns**: A `Pair[Array[X], Array[Y]]` where each `Array` is of length `N`.
-
-**Example**
-
-```wdl
-Array[Pair[Int, String]] int_str_arr = [(0, "hello"), (42, "goodbye")]
-Boolean is_true = unzip(int_str_arr) == ([0, 42], ["hello", "goodbye"])
-
-Map[String, Int] m = {"a": 0, "b": 1, "c": 2}
-Pair[Array[X], Pair[Array[Y]] keys_and_values = unzip(as_pairs(map))
-Boolean is_true2 = keys_and_values.left == ["a", "b", "c"]
-Boolean is_true3 = keys_and_values.right == [0, 1, 2]
-```
-
-## Array[Pair[X,Y]] cross(Array[X], Array[Y])
-
-Creates an array of `Pair`s containing the [cross product](https://en.wikipedia.org/wiki/Cross_product) of two input arrays, i.e. each element in the first array is paired with each element in the second array.
-
-Given arrays `X` of length `M`, and `Y` of length `N`, the cross product is an array `Z` of length `M*N` with the following elements: `[(X0, Y0), (X0, Y1), ..., (X0, Yn-1), (X1, Y0), ..., (X1, Yn-1), ..., (Xm-1, Yn-1)]`.
-
-**Parameters**
-
-1. `Array[X]`: The first array of length `M`.
-2. `Array[Y]`: The second array of length `N`.
-
-**Returns**: An `Array[Pair[X, Y]]` of length `M*N`.
-
-**Example**
-
-```wdl
-Array[Int] xs = [ 1, 2, 3 ]
-Array[String] ys = [ "a", "b" ]
-
-Array[Pair[Int, String]] crossed = cross(xs, ys)
-Boolean is_true = crossed == [ (1, "a"), (1, "b"), (2, "a"), (2, "b"), (3, "a"), (3, "b") ]
-```
-
-## Array[X] flatten(Array[Array[X]])
-
-Flattens a nested `Array[Array[X]]` by concatenating all of the element arrays, in order, into a single array. The function is not recursive - e.g. if the input is `Array[Array[Array[Int]]]` then the output will be `Array[Array[Int]]`. The elements in the concatenated array are not deduplicated.
-
-**Parameters**
-
-1. `Array[Array[X]]`: A nested array to flatten.
-
-**Returns**: An `Array[X]` containing the concatenated elements of the input array.
-
-**Example**
-
-```wdl
-Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
-Boolean is_true = flatten(ai2D) == [1, 2, 3, 1, 21, 22]
-
-Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
-Boolean is_true2 = flatten(af2D) == ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
-
-Array[Array[Pair[Float, String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
-Boolean is_true3 = flatten(aap2D) == [(0.1, "mouse"), (3, "cat"), (15, "dog")]
-# we can use as_map to turn this into a Map[Float, String]
-Map[Float, String] f2s = as_map(flatten(aap2D))
-
-Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
-Boolean is_true4 = flatten(ai3D) == [[1, 2], [3, 4], [5, 6], [7, 8]]
-```
-
-## Array[String] prefix(String, Array[P])
 
 Adds a prefix to each element of the input array of primitive values. Equivalent to evaluating `"~{prefix}~{array[i]}"` for each `i` in `range(length(array))`.
 
@@ -5347,23 +5743,78 @@ Adds a prefix to each element of the input array of primitive values. Equivalent
 1. `String`: The prefix to prepend to each element in the array.
 2. `Array[P]`: Array with a primitive element type.
 
-**Returns**: An `Array[String]` the prefixed elements of the input array.
+**Returns**: An `Array[String]` with the prefixed elements of the input array.
 
-**Example**
+<details>
+<summary>
+Example: test_prefix.wdl
 
 ```wdl
-Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
-prefix("-e ", env) == ["-e key1=value1", "-e key2=value2", "-e key3=value3"]
+version 1.2
 
-Array[Int] env2 = [1, 2, 3]
-Array[String] env2_param = prefix("-f ", env2) # ["-f 1", "-f 2", "-f 3"]
+workflow test_prefix {
+  Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
+  Array[Int] env2 = [1, 2, 3]
 
-Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
-# this fails with an error - env3 element type is not primitive
-Array[String] bad = prefix("-x ", env3)
+  output {
+    Array[String] env_prefixed = prefix("-e ", env1)
+    Array[String] env2_prefixed = prefix("-f ", env2)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
 ```
 
-## ✨ Array[String] suffix(String, Array[P])
+Example output:
+
+```json
+{
+  "test_prefix.env1_prefixed": ["-e key1=value1", "-e key2=value2", "-e key3=value3"],
+  "test_prefix.env2_prefixed": ["-f 1", "-f 2", "-f 3"]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: test_prefix_fail.wdl
+
+```wdl
+version 1.2
+
+workflow test_prefix_fail {
+  Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
+  # this fails with an error - env3 element type is not primitive
+  Array[String] bad = prefix("-x ", env3)
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+### ✨ `suffix`
+
+```
+Array[String] suffix(String, Array[P])
+```
 
 Adds a suffix to each element of the input array of primitive values. Equivalent to evaluating `"~{array[i]}~{suffix}"` for each `i` in `range(length(array))`.
 
@@ -5374,21 +5825,76 @@ Adds a suffix to each element of the input array of primitive values. Equivalent
 
 **Returns**: An `Array[String]` the suffixed elements of the input array.
 
-**Example**
+<details>
+<summary>
+Example: test_suffix.wdl
 
 ```wdl
-Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
-Boolean is_true = suffix(".txt ", env) == ["key1=value1.txt", "key2=value2.txt", "key3=value3.txt"]
+version 1.2
 
-Array[Int] env2 = [1, 2, 3]
-Boolean is_true2 = suffix(".0", env2) == ["1.0", "2.0", "3.0"]
+workflow test_suffix {
+  Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
+  Array[Int] env2 = [1, 2, 3]
 
-Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
-# this fails with an error - env3 element type is not primitive
-Array[String] bad = suffix("-z", env3)  
+  output {
+    Array[String] env1_suffix = suffix(".txt ", env1)
+    Array[String] env2_suffix = suffix(".0", env2)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
 ```
 
-## ✨ Array[String] quote(Array[P])
+Example output:
+
+```json
+{
+  "test_suffix.env1_suffix": ["key1=value1.txt", "key2=value2.txt", "key3=value3.txt"],
+  "test_suffix.env2_suffix": ["1.0", "2.0", "3.0"]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: test_suffix_fail.wdl
+
+```wdl
+version 1.2
+
+workflow test_suffix_fail {
+  Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
+  # this fails with an error - env3 element type is not primitive
+  Array[String] bad = suffix("-z", env3)  
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+### ✨ `quote`
+
+```
+Array[String] quote(Array[P])
+```
 
 Adds double-quotes (`"`) around each element of the input array of primitive values. Equivalent to evaluating `'"~{array[i]}"'` for each `i` in `range(length(array))`.
 
@@ -5398,17 +5904,47 @@ Adds double-quotes (`"`) around each element of the input array of primitive val
 
 **Returns**: An `Array[String]` the double-quoted elements of the input array.
 
-**Example**
+<details>
+<summary>
+Example: test_quote.wdl
 
 ```wdl
-Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
-Array[String] env_quoted = quote(env) # ['"key1=value1"', '"key2=value2", '"key3=value3"']
+version 1.2
 
-Array[Int] env2 = [1, 2, 3]
-Array[String] env2_quoted = quote(env2) # ['"1"', '"2"', '"3"']
-``` 
+workflow test_quote {
+  Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
+  Array[Int] env2 = [1, 2, 3]
 
-## ✨ Array[String] squote(Array[P])
+  output {
+    Array[String] env1_quoted = quote(env1)
+    Array[String] env2_quoted = quote(env2)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_quote.env1_quoted": ["\"key1=value1\"", "\"key2=value2\"", "\"key3=value3\""],
+  "test_quote.env2_quoted": ["\"1\"", "\"2\"", "\"3\""]
+}
+```
+</p>
+</details>
+
+### ✨ `squote`
+
+```
+Array[String] squote(Array[P])
+```
 
 Adds single-quotes (`'`) around each element of the input array of primitive values. Equivalent to evaluating `"'~{array[i]}'"` for each `i` in `range(length(array))`.
 
@@ -5418,203 +5954,631 @@ Adds single-quotes (`'`) around each element of the input array of primitive val
 
 **Returns**: An `Array[String]` the single-quoted elements of the input array.
 
-**Example**
+<details>
+<summary>
+Example: test_squote.wdl
 
 ```wdl
-Array[String] env = ["key1=value1", "key2=value2", "key3=value3"]
-Array[String] env_quoted =  squote(env) # ["'key1=value1'", "'key2=value2'", "'key3=value3'"]
+version 1.2
 
-Array[Int] env2 = [1, 2, 3]
-Array[String] env2_quoted = squote(env2) # ["'1'", "'2'", "'3'"]
-``` 
+workflow test_squote {
+  Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
+  Array[Int] env2 = [1, 2, 3]
+  
+  output {
+    Array[String] env1_quoted =  squote(env)
+    Array[String] env2_quoted = squote(env2)
+  }
+}
+```
+</summary>
+<p>
+Example input:
 
-## ✨ String sep(String, Array[String])
+```json
+{}
+```
 
-Concatenates the elements of an array together into a string with the given separator between consecutive elements. There are always `N-1` separators in the output string, where `N` is the length of the input array. A separator is never added after the last element.
+Example output:
+
+```json
+{
+  "test_squote.env1_quoted": ["'key1=value1'", "'key2=value2'", "'key3=value3'"],
+  "test_squote.env2_quoted": ["'1'", "'2'", "'3'"]
+}
+```
+</p>
+</details>
+
+### ✨ `sep`
+
+```
+String sep(String, Array[P])
+```
+
+Concatenates the elements of an array together into a string with the given separator between consecutive elements. There are always `N-1` separators in the output string, where `N` is the length of the input array. A separator is never added after the last element. Returns an empty string if the array is empty.
 
 **Parameters**
 
 1. `String`: Separator string. 
-2. `Array[String]`: Array of strings to concatenate.
+2. `Array[P]`: Array of strings to concatenate.
 
 **Returns**: A `String` with the concatenated elements of the array delimited by the separator string.
 
-**Example**
+<details>
+<summary>
+Example: test_sep.wdl
 
 ```wdl
-Array[String] a = ["file_1", "file_2"]
-# these all evaluate to true
-Boolean all_true = [
-  sep(' ', prefix('-i ', a)) == "-i file_1 -i file_2",
-  sep("", ["a, "b", "c"]) == "abc",
-  sep(' ', ["a", "b", "c"]) == "a b c",
-  sep(',', [1]) == "1"
-]
-```
+version 1.2
 
-## ✨ Array[Pair[P, Y]] as_pairs(Map[P, Y])
+workflow test_sep {
+  Array[String] a = ["file_1", "file_2"]
 
-Converts a `Map` with primitive keys into an `Array` of `Pair`s. Since `Map`s are ordered, the output array will always have elements in the same order they were added to the `Map`.
-
-**Parameters**
-
-1. `Map[P, Y]`: `Map` to convert to `Pair`s.
-
-**Returns**: Ordered `Array` of `Pair`s, where each pair contains the key (left) and value (right) of a `Map` element.
-
-**Example**
-
-```wdl
-workflow foo {
-  Map[String, Int] x = {"a": 1, "c": 3, "b": 2}
-  Boolean is_true = as_pairs(x) == [("a", 1), ("c", 3), ("b", 2)]
-
-  Map[String, Pair[File, File]] y = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
-  scatter (item in as_pairs(y)) {
-    String s = item.left
-    Pair[File, File] files = item.right
-    Pair[File, String] bams = (files.left, s)
+  output {
+    # these all evaluate to true
+    Boolean all_true = [
+      sep(' ', prefix('-i ', a)) == "-i file_1 -i file_2",
+      sep("", ["a, "b", "c"]) == "abc",
+      sep(' ', ["a", "b", "c"]) == "a b c",
+      sep(',', [1]) == "1"
+    ]
   }
-  Boolean is_true2 = bams == [("a.bam", "a"), ("b.bam", "b")]
-  Map[File, String] bam_to_name = as_map(bams)
 }
 ```
+</summary>
+<p>
+Example input:
 
-## ✨ Map[P, Y] as_map(Array[Pair[P, Y]])
-
-Converts an `Array` of `Pair`s into a `Map` in which the left elements of the `Pair`s are the (primitive) keys and the right elements the values. All the keys must be unique, or an error is raised. The order of the key/value pairs in the output `Map` is the same as the order of the `Pair`s in the `Array`.
-
-**Parameters**
-
-1. `Array[Pair[P, Y]]`: Array of `Pair`s to convert to a `Map`.
-
-**Returns**: `Map[P, Y]` of the elements in the input array.
-
-**Example**
-
-```wdl
-Array[Pair[String, Int]] x = [("a", 1), ("c", 3), ("b", 2)]
-Boolean is_true = as_map(x) == {"a": 1, "c": 3, "b": 2}
-
-Array[Pair[String, Pair[File,File]]] y = [("a", ("a.bam", "a.bai")), ("b", ("b.bam", "b.bai"))
-Boolean is_true2 = as_map(y) == {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
-
-# this fails with an error - the "a" key is duplicated
-Boolean bad = as_map([("a", 1), ("a", 2)])  
+```json
+{}
 ```
 
-## ✨ Array[P] keys(Map[P, Y])
+Example output:
 
-Creates an `Array` of the keys from the input `Map`, in the same order as the elements in the map.
+```json
+{
+  "test_sep.all_true: [true, true, true, true]
+}
+```
+</p>
+</details>
+
+## Generic Array Functions
+
+These functions are generic and take an `Array` as input and/or return an `Array`.
+
+**Restrictions**: None
+
+### `length`
+
+```
+Int length(Array[X])```
+
+Returns the number of elements in an array as an `Int`.
 
 **Parameters**
 
-1. `Map[P, Y]`: `Map` from which to extract keys.
+1. `Array[X]`: An array with any element type.
 
-**Returns**: `Array[P]` of the input `Map`s keys.
+**Returns**: The length of the array as an `Int`.
 
-**Example**
+<details>
+<summary>
+Example: test_length.wdl
 
 ```wdl
-workflow foo {
-  Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
-  Boolean is_true = keys(x) == ["a", "b", "c"]
+version 1.2
 
-  Map[String, Pair[File, File]] str_to_files = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
-  scatter (item in str_to_files) {
-    String key = item.left
+workflow test_length {
+  Array[Int] xs = [1, 2, 3]
+  Array[String] ys = ["a", "b", "c"]
+  Array[String] zs = []
+
+  output {
+    Int xlen = length(xs) # 3
+    Int ylen = length(ys) # 3
+    Int zlen = length(zs) # 0
   }
-  Array[String] str_to_files_keys = key
-  Boolean is_truew = str_to_files_keys == keys(str_to_files)
 }
 ```
+</summary>
+<p>
+Example input:
 
-## ✨ Map[P, Array[Y]] collect_by_key(Array[Pair[P, Y]])
+```json
+{}
+```
 
-Given an `Array` of `Pair`s, creates a `Map` in which the right elements of the `Pair`s are grouped by the left elements. In other words, the input `Array` may have multiple `Pair`s with the same (primitive) key - rather than causing an error (as would happen with [`as_map`](#-mapp-y-as_maparraypairp-y)), all the values with the same key are grouped together into an `Array`.
+Example output:
 
-The order of the keys in the output `Map` is the same as the order of their first occurrence in the input `Array`. The order of the elements in the `Map` values is the same as their order of occurrence in the input `Array`.
+```json
+{
+  "test_length.xlen": 3,
+  "test_length.ylen": 3,
+  "test_length.zlen": 0
+}
+```
+</p>
+</details>
+
+### `range`
+
+```
+Array[Int] range(Int)
+```
+
+Creates an array of the given length containing sequential integers starting from 0. The length must be >= `0`. If the length is `0`, an empty array is returned.
 
 **Parameters**
 
-1. `Array[Pair[P, Y]]`: `Array` of `Pair`s to group.
+1. `Int`: The length of array to create.
 
-**Returns**: `Map` of keys to `Array`s of values.
+**Returns**: An `Array[Int]` containing integers `0..(N-1)`.
 
-**Example**
-
-```wdl
-Array[Pair[String, Int]] x = [("a", 1), ("b", 2), ("a", 3)]
-Boolean is_true = as_map(x) == {"a": [1, 3], "b": [2]}
-
-Array[Pair[String, Pair[File, File]]] y = [
-  ("a", ("a_1.bam", "a_1.bai")), ("b", ("b.bam", "b.bai")), ("a", ("a_2.bam", "a_2.bai"))
-]
-Boolean is_true2 = as_map(y) == {
-  "a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], 
-  "b": [("b.bam", "b.bai")]
-}
-```
-
-## Boolean defined(X?)
-
-Tests whether the given optional value is defined, i.e. has a non-`None` value.
-
-**Parameters**
-
-1. `X?`: optional value of any type.
-
-**Returns**: `false` if the input value is `None`, otherwise `true`.
-
-**Example**
+<details>
+<summary>
+Example: test_range.wdl
 
 ```wdl
-task say_hello {
+version 1.2
+
+task double {
   input {
-    String name
+    Int n
   }
-  command <<< echo ~{name} >>>
+
+  output {
+    Int d = n * n
+  }
 }
 
-workflow wf {
+workflow test_range {
   input {
-    String? s
+    Int i
   }
-  if (defined(s)) {
-    call say_hello { input: name = select_first([s]) }
+
+  Array[Int] indexes = range(i)
+  scatter (idx in indexes) {
+    call double { input: n = idx }
+  }
+
+  output {
+    Array[Int] result = double.d
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-## X select_first(Array[X?]+)
+```json
+{
+  "test_range.n": 5
+}
+```
+
+Example output:
+
+```json
+{
+  "test_range.result": [0, 2, 4, 6, 8]
+}
+```
+</p>
+</details>
+
+### `transpose`
+
+```
+Array[Array[X]] transpose(Array[Array[X]])
+```
+
+Transposes a two-dimensional array according to the standard matrix transposition rules, i.e. each row of the input array becomes a column of the output array. The input array must be square - i.e., every row must have the same number of elements - or an error is raised. If either the inner or the outer array is empty, an empty array is returned.
+
+**Parameters**
+
+1. `Array[Array[X]]`: A `M*N` two-dimensional array.
+
+**Returns**: A `N*M` two-dimensional array (`Array[Array[X]]`) containing the transposed input array.
+
+<details>
+<summary>
+Example: test_transpose.wdl
+
+```wdl
+version 1.2
+
+workflow test_transpose {
+  # input array is 2 rows * 3 columns
+  Array[Array[Int]] input_array = [[0, 1, 2], [3, 4, 5]]
+  # output array is 3 rows * 2 columns
+  Array[Array[Int]] expected_output_array = [[0, 3], [1, 4], [2, 5]]
+  
+  output {
+    Boolean is_true = transpose(input_array) == expected_output_array
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_transpose.is_true": true
+}
+```
+</p>
+</details>
+
+### `cross`
+
+```
+Array[Pair[X,Y]] cross(Array[X], Array[Y])
+```
+
+Creates an array of `Pair`s containing the [cross product](https://en.wikipedia.org/wiki/Cross_product) of two input arrays, i.e., each element in the first array is paired with each element in the second array.
+
+Given `Array[X]` of length `M`, and `Array[Y]` of length `N`, the cross product is `Array[Pair[X, Y]]` of length `M*N` with the following elements: `[(X0, Y0), (X0, Y1), ..., (X0, Yn-1), (X1, Y0), ..., (X1, Yn-1), ..., (Xm-1, Yn-1)]`. If either of the input arrays is empty, an empty array is returned.
+
+**Parameters**
+
+1. `Array[X]`: The first array of length `M`.
+2. `Array[Y]`: The second array of length `N`.
+
+**Returns**: An `Array[Pair[X, Y]]` of length `M*N`.
+
+<details>
+<summary>
+Example: test_cross.wdl
+
+```wdl
+version 1.2
+
+workflow test_cross {
+  Array[Int] xs = [1, 2, 3]
+  Array[String] ys = ["a", "b"]
+  Array[Pair[Int, String]] expected = [
+    (1, "a"), (1, "b"), (2, "a"), (2, "b"), (3, "a"), (3, "b")
+  ]
+  
+  output {
+    Boolean is_true = cross(xs, ys) == expected
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_cross.is_true": true
+}
+```
+</p>
+</details>
+
+### `zip`
+
+```
+Array[Pair[X,Y]] zip(Array[X], Array[Y])
+```
+
+Creates an array of `Pair`s containing the [dot product](https://en.wikipedia.org/wiki/Dot_product) of two input arrays, i.e., the elements at the same indices in each array `X[i]` and `Y[i]` are combined together into (`X[i]`, `Y[i]`) for each `i` in `range(length(X))`. The input arrays must have the same lengths or an error is raised. If the input arrays are empty, an empty array is returned.
+
+**Parameters**
+
+1. `Array[X]`: The first array of length `N`.
+2. `Array[Y]`: The second array of length `N`.
+
+**Returns**: An `Array[Pair[X, Y]]` of length `N`.
+
+<details>
+<summary>
+Example: test_zip.wdl
+
+```wdl
+version 1.2
+
+workflow test_zip {
+  Array[Int] xs = [1, 2, 3]
+  Array[String] ys = ["a", "b", "c"]
+  Array[Pair[Int, String]] expected = [(1, "a"), (2, "b"), (3, "c")]
+  
+  output {
+    Boolean is_true = zip(xs, ys) == expected
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_zip.is_true": true
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: test_zip_fail.wdl
+
+```wdl
+version 1.2
+
+workflow test_zip_fail {
+  Array[Int] xs = [1, 2, 3]
+  Array[String] zs = ["d", "e"]
+  # this fails with an error - xs and zs are not the same length
+  Array[Pair[Int, String]] bad = zip(xs, zs)
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+### ✨ `unzip`
+
+```
+Pair[Array[X], Array[Y]] unzip(Array[Pair[X, Y]])
+```
+
+Creates a `Pair` of `Arrays`, the first containing the elements from the `left` members of an `Array` of `Pair`s, and the second containing the `right` members. If the array is empty, a pair of empty arrays is returned. This is the inverse of the `zip` function.
+
+**Parameters**
+
+1. `Array[Pair[X, Y]]`: The `Array` of `Pair`s of length `N` to unzip.
+
+**Returns**: A `Pair[Array[X], Array[Y]]` where each `Array` is of length `N`.
+
+<details>
+<summary>
+Example: test_unzip.wdl
+
+```wdl
+version 1.2
+
+workflow test_unzip {
+  Array[Pair[Int, String]] int_str_arr = [(0, "hello"), (42, "goodbye")]
+  Map[String, Int] m = {"a": 0, "b": 1, "c": 2}
+  Pair[Array[X], Pair[Array[Y]]] keys_and_values = unzip(as_pairs(map))
+
+  output {
+    Boolean is_true1 = unzip(int_str_arr) == ([0, 42], ["hello", "goodbye"])
+    Boolean is_true2 = keys_and_values.left == ["a", "b", "c"]
+    Boolean is_true3 = keys_and_values.right == [0, 1, 2]
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_unzip.is_true1": true,
+  "test_unzip.is_true2": true,
+  "test_unzip.is_true3": true
+}
+```
+</p>
+</details>
+
+### `flatten`
+
+```
+Array[X] flatten(Array[Array[X]])
+```
+
+Flattens a nested `Array[Array[X]]` by concatenating all of the element arrays, in order, into a single array. The function is not recursive - e.g. if the input is `Array[Array[Array[Int]]]` then the output will be `Array[Array[Int]]`. The elements in the concatenated array are *not* deduplicated.
+
+**Parameters**
+
+1. `Array[Array[X]]`: A nested array to flatten.
+
+**Returns**: An `Array[X]` containing the concatenated elements of the input array.
+
+<details>
+<summary>
+Example: test_flatten.wdl
+
+```wdl
+version 1.2
+
+workflow test_flatten {
+  Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
+  Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
+  Array[Array[Pair[Float, String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
+  Map[Float, String] f2s = as_map(flatten(aap2D))
+  Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+
+  output {
+    Boolean is_true1 = flatten(ai2D) == [1, 2, 3, 1, 21, 22]
+    Boolean is_true2 = flatten(af2D) == ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
+    Boolean is_true3 = flatten(aap2D) == [(0.1, "mouse"), (3, "cat"), (15, "dog")]
+    Boolean is_true4 = flatten(ai3D) == [[1, 2], [3, 4], [5, 6], [7, 8]]
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_flatten.is_true1": true,
+  "test_flatten.is_true2": true,
+  "test_flatten.is_true3": true,
+  "test_flatten.is_true4": true
+}
+```
+</p>
+</details>
+
+### `select_first`
+
+```
+X select_first(Array[X?]+)
+```
 
 Selects the first - i.e. left-most - non-`None` value from an `Array` of optional values. It is an error if the array is empty, or if the array only contains `None` values. 
 
 **Parameters**
 
-1. `Array[X?]+`: non-empty `Array` of optional values.
+1. `Array[X?]+`: Non-empty `Array` of optional values.
 
-**Returns**: the first non-`None` value in the input array.
+**Returns**: The first non-`None` value in the input array.
 
-**Example**
+<details>
+<summary>
+Example: test_select_first.wdl
 
 ```wdl
-workflow SelectFirst {
+version 1.2
+
+workflow test_select_first {
   input {
     Int? maybe_five = 5
     Int? maybe_four_but_is_not = None
     Int? maybe_three = 3
   }
-  # both of these statements evaluate to 5
-  Int five = select_first([maybe_five, maybe_four_but_is_not, maybe_three])
-  Int five = select_first([maybe_four_but_is_not, maybe_five, maybe_three])
+
+  output {
+    # both of these statements evaluate to 5
+    Int five1 = select_first([maybe_five, maybe_four_but_is_not, maybe_three])
+    Int five2 = select_first([maybe_four_but_is_not, maybe_five, maybe_three])
+  }
 
   select_first([maybe_four_but_is_not])  # error! array contains only None values
   select_first([])  # error! array is empty
 }
 ```
+</summary>
+<p>
+Example input:
 
-## Array[X] select_all(Array[X?])
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_select_first.five1": 5,
+  "test_select_first.five2": 5,
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: select_first_only_none_fail.wdl
+
+```wdl
+version 1.2
+
+workflow test_select_first {
+  Int? maybe_four_but_is_not = None
+  select_first([maybe_four_but_is_not])  # error! array contains only None values
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: select_first_empty_fail.wdl
+
+```wdl
+version 1.2
+
+workflow test_select_first {
+  select_first([])  # error! array is empty
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+### `select_all`
+
+```
+Array[X] select_all(Array[X?])
+```
 
 Filters the input `Array` of optional values by removing all `None` values. The elements in the output `Array` are in the same order as the input `Array`. If the input array is empty or contains only `None` values, an empty array is returned.
 
@@ -5624,19 +6588,372 @@ Filters the input `Array` of optional values by removing all `None` values. The 
 
 **Returns**: an `Array` of all non-`None` values in the input array.
 
-**Example**
+<details>
+<summary>
+Example: test_select_all.wdl
 
 ```wdl
-workflow SelectAll {
+version 1.2
+
+workflow test_select_all {
   input {
     Int? maybe_five = 5
     Int? maybe_four_but_is_not = None
     Int? maybe_three = 3
   }
+
   Array[Int] fivethree = select_all([maybe_five, maybe_four_but_is_not, maybe_three])
-  Boolean is_true = fivethree == [5, 3]
+
+  output {
+    Boolean is_true = fivethree == [5, 3]
+  }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_select_all.is_true": true
+}
+```
+</p>
+</details>
+
+## Map Functions
+
+These functions are generic and take a `Map` as input and/or return a `Map`.
+
+**Restrictions**: None
+
+### ✨ `as_pairs`
+
+```
+Array[Pair[P, Y]] as_pairs(Map[P, Y])
+```
+
+Converts a `Map` into an `Array` of `Pair`s. Since `Map`s are ordered, the output array will always have elements in the same order they were added to the `Map`.
+
+**Parameters**
+
+1. `Map[P, Y]`: `Map` to convert to `Pair`s.
+
+**Returns**: Ordered `Array` of `Pair`s, where each pair contains the key (left) and value (right) of a `Map` element.
+
+<details>
+<summary>
+Example: test_as_pairs.wdl
+
+```wdl
+version 1.2
+
+workflow test_as_pairs {
+  Map[String, Int] x = {"a": 1, "c": 3, "b": 2}
+  Map[String, Pair[File, File]] y = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+  
+  scatter (item in as_pairs(y)) {
+    String s = item.left
+    Pair[File, File] files = item.right
+    Pair[File, String] bams = (files.left, s)
+  }
+  
+  Map[File, String] bam_to_name = as_map(bams)
+
+  output {
+    Boolean is_true1 = as_pairs(x) == [("a", 1), ("c", 3), ("b", 2)]
+    Boolean is_true2 = bams == [("a.bam", "a"), ("b.bam", "b")]
+    Boolean is_true3 = bam_to_name == {"a.bam": "a", "b.bam": "b"}
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_as_pairs.is_true1": true,
+  "test_as_pairs.is_true2": true,
+  "test_as_pairs.is_true3": true
+}
+```
+</p>
+</details>
+
+### ✨ `as_map`
+
+```
+Map[P, Y] as_map(Array[Pair[P, Y]])
+```
+
+Converts an `Array` of `Pair`s into a `Map` in which the left elements of the `Pair`s are the keys and the right elements the values. All the keys must be unique, or an error is raised. The order of the key/value pairs in the output `Map` is the same as the order of the `Pair`s in the `Array`.
+
+**Parameters**
+
+1. `Array[Pair[P, Y]]`: Array of `Pair`s to convert to a `Map`.
+
+**Returns**: `Map[P, Y]` of the elements in the input array.
+
+<details>
+<summary>
+Example: test_as_map.wdl
+
+```wdl
+version 1.2
+
+workflow test_as_map {
+  Array[Pair[String, Int]] x = [("a", 1), ("c", 3), ("b", 2)]
+  Array[Pair[String, Pair[File,File]]] y = [("a", ("a.bam", "a.bai")), ("b", ("b.bam", "b.bai"))]
+
+  output {
+    Boolean is_true1 = as_map(x) == {"a": 1, "c": 3, "b": 2}
+    Boolean is_true2 = as_map(y) == {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_as_map.is_true1": true,
+  "test_as_map.is_true2": true
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: test_as_map_fail.wdl
+
+```wdl
+version 1.2
+
+workflow test_as_map {
+  # this fails with an error - the "a" key is duplicated
+  Boolean bad = as_map([("a", 1), ("a", 2)])  
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+### ✨ `keys`
+
+```
+Array[P] keys(Map[P, Y])
+```
+
+Creates an `Array` of the keys from the input `Map`, in the same order as the elements in the map.
+
+**Parameters**
+
+1. `Map[P, Y]`: `Map` from which to extract keys.
+
+**Returns**: `Array[P]` of the input `Map`s keys.
+
+<details>
+<summary>
+Example: test_keys.wdl
+
+```wdl
+version 1.2
+
+workflow test_keys {
+  Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
+  Map[String, Pair[File, File]] str_to_files = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+
+  scatter (item in str_to_files) {
+    String key = item.left
+  }
+
+  Array[String] str_to_files_keys = key
+
+  output {
+    Boolean is_true1 = keys(x) == ["a", "b", "c"]
+    Boolean is_true2 = str_to_files_keys == keys(str_to_files)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_keys.is_true1": true,
+  "test_keys.is_true2": true
+}
+```
+</p>
+</details>
+
+### ✨ `collect_by_key`
+
+```
+Map[P, Array[Y]] collect_by_key(Array[Pair[P, Y]])
+```
+
+Given an `Array` of `Pair`s, creates a `Map` in which the right elements of the `Pair`s are grouped by the left elements. In other words, the input `Array` may have multiple `Pair`s with the same key. Rather than causing an error (as would happen with [`as_map`](#✨-as_map)), all the values with the same key are grouped together into an `Array`.
+
+The order of the keys in the output `Map` is the same as the order of their first occurrence in the input `Array`. The order of the elements in the `Map` values is the same as their order of occurrence in the input `Array`.
+
+**Parameters**
+
+1. `Array[Pair[P, Y]]`: `Array` of `Pair`s to group.
+
+**Returns**: `Map` of keys to `Array`s of values.
+
+<details>
+<summary>
+Example: test_collect_by_key.wdl
+
+```wdl
+version 1.2
+
+workflow test_collect_by_key {
+  Array[Pair[String, Int]] x = [("a", 1), ("b", 2), ("a", 3)]
+  Array[Pair[String, Pair[File, File]]] y = [
+    ("a", ("a_1.bam", "a_1.bai")), 
+    ("b", ("b.bam", "b.bai")), 
+    ("a", ("a_2.bam", "a_2.bai"))
+  ]
+
+  output {
+    Boolean is_true1 = collect_by_key(x) == {"a": [1, 3], "b": [2]}
+    Boolean is_true2 = collect_by_key(y) == {
+      "a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], 
+      "b": [("b.bam", "b.bai")]
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_collect_by_key.is_true1": true,
+  "test_collect_by_key.is_true2": true
+}
+```
+</p>
+</details>
+
+## Other Functions
+
+### `defined`
+
+```
+Boolean defined(X?)
+```
+
+Tests whether the given optional value is defined, i.e., has a non-`None` value.
+
+**Parameters**
+
+1. `X?`: optional value of any type.
+
+**Returns**: `false` if the input value is `None`, otherwise `true`.
+
+<details>
+<summary>
+Example: is_defined.wdl
+
+```wdl
+version 1.2
+
+workflow is_defined {
+  input {
+    String? name
+  }
+
+  if (defined(s)) {
+    call say_hello { input: name = select_first([name]) }
+  }
+
+  output {
+    String? greeting = say_hello.greeting
+  }
+}
+
+task say_hello {
+  input {
+    String name
+  }
+
+  command <<< echo "Hello ~{name}" >>>
+
+  output {
+    String greeting = read_string(stdout())
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "is_defined.name": "John"
+}
+```
+
+Example output:
+
+```json
+{
+  "is_defined.greeting": "Hello John"
+}
+```
+</p>
+</details>
 
 # Input and Output Formats
 
@@ -5646,7 +6963,7 @@ All WDL implementations are required to support the standard JSON input and outp
 
 ## JSON Input Format
 
-The inputs for a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow, subworkflow, or task input. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the input parameter, and the value is the [serialized form]() of the WDL value.
+The inputs for a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow, subworkflow, or task input. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the input parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
 
 Here is an example JSON workflow input file:
 
@@ -5713,7 +7030,7 @@ The following would all be valid JSON inputs:
 
 ## JSON Output Format
 
-The outputs from a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow output; sub-workflow and task outputs are not provided. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the output parameter, and the value is the [serialized form]() of the WDL value.
+The outputs from a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow output; sub-workflow and task outputs are not provided. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the output parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
 
 Every WDL implementation must support the ability to output this standard output. It is suggested that WDL implementations make the standard format be the default output format.
 
