@@ -63,7 +63,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
       - [Expression Placeholders](#expression-placeholders)
       - [Stripping Leading Whitespace](#stripping-leading-whitespace)
     - [Task Outputs](#task-outputs)
-      - [Files and Optional Outputs](#files-and-optional-outputs)
+      - [File, Directory, and Optional Outputs](#file-directory-and-optional-outputs)
     - [Evaluation of Task Declarations](#evaluation-of-task-declarations)
     - [Runtime Section](#runtime-section)
       - [Units of Storage](#units-of-storage)
@@ -110,7 +110,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [File stderr()](#file-stderr)
   - [Array\[File\] glob(String)](#arrayfile-globstring)
     - [Non-standard Bash](#non-standard-bash)
-  - [String basename(String|File, \[String\])](#string-basenamestringfile-string)
+  - [String basename(String|File|Directory, \[String\])](#string-basenamestringfiledirectory-string)
   - [Array\[String\] read\_lines(String|File)](#arraystring-read_linesstringfile)
   - [Array\[Array\[String\]\] read\_tsv(String|File)](#arrayarraystring-read_tsvstringfile)
   - [Map\[String, String\] read\_map(String|File)](#mapstring-string-read_mapstringfile)
@@ -127,7 +127,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [🗑 File write\_object(Object)](#-file-write_objectobject)
   - [🗑 File write\_objects(Array\[Object\])](#-file-write_objectsarrayobject)
   - [File write\_json(X)](#file-write_jsonx)
-  - [Float size(File?|Array\[File?\], \[String\])](#float-sizefilearrayfile-string)
+  - [Float size(File?|Directory?|Array\[File?\]|Array\[Directory?\], \[String\])](#float-sizefiledirectoryarrayfilearraydirectory-string)
   - [Int length(Array\[X\])](#int-lengtharrayx)
   - [Array\[Int\] range(Int)](#arrayint-rangeint)
   - [Array\[Array\[X\]\] transpose(Array\[Array\[X\]\])](#arrayarrayx-transposearrayarrayx)
@@ -415,7 +415,7 @@ workflow wf {
 The following language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, or struct types & aliases.
 
 ```
-Array Boolean Float Int Map None Object Pair String
+Array Boolean Directory File Float Int Map None Object Pair String
 
 alias as call command else false if in import input 
 left meta object output parameter_meta right runtime 
@@ -424,7 +424,6 @@ scatter struct task then true workflow
 
 The following keywords should also be considered as reserved - they are not used in the current version of the specification, but they will be used in a future version:
 
-* `Directory`
 * `hints`
 
 ### Types
@@ -442,9 +441,9 @@ The following primitive types exist in WDL:
 * A `Float` represents a finite 64-bit IEEE-754 floating point number.
 * A `String` represents a unicode character string following the format described [above](#strings).
 * A `File` represents a file (or file-like object).
-  * A `File` declaration can have a string value indicating a relative or absolute path on the local file system.
-  * Within a WDL file, literal values for files may only be local (relative or absolute) paths.
-  * An execution engine may support other ways to specify [`File` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
+* ✨ A `Directory` represents a (possibly nested) directory of files.
+
+A `File` or `Directory` declaration may have a string value indicating a relative or absolute path on the local file system. An execution engine may support other ways to specify [`File` and `Directory` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution the engine must [localize](#task-input-localization) inputs so that the runtime value of a `File`/`Directory` variable is a local path.
 
 Examples:
 
@@ -454,6 +453,7 @@ Int i = 0
 Float f = 27.3
 String s = "hello, world"
 File f = "path/to/file"
+Directory d = "/path/to/"
 ```
 
 #### Optional Types and None
@@ -651,6 +651,7 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | Target Type     | Source Type     | Notes/Constraints                                                                                                |
 | --------------- | --------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `File`          | `String`        |                                                                                                                  |
+| `Directory`     | `String`        |                                                                                                                  |
 | `Float`         | `Int`           | May cause overflow error                                                                                         |
 | `Y?`            | `X`             | `X` must be coercible to `Y`                                                                                     |
 | `Array[Y]`      | `Array[X]`      | `X` must be coercible to `Y`                                                                                     |
@@ -1436,9 +1437,10 @@ A task's `input` section declares its input parameters. The values for declarati
 ```wdl
 task t {
   input {
-    Int i               # a required input parameter
-    String s = "hello"  # an input parameter with a default value
-    File? f             # an optional input parameter
+    Int i                 # a required input parameter
+    String s = "hello"    # an input parameter with a default value
+    File? f               # an optional input parameter
+    Directory? d = "/etc" # an optional input parameter with a default value
   }
 
   # [... other task sections]
@@ -1447,14 +1449,14 @@ task t {
 
 #### Task Input Localization
 
-`File` inputs must be treated specially since they may require localization to the execution directory. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
+`File` and `Directory` inputs may require localization to the execution directory. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
 
-- Files are localized into the execution directory prior to the task execution commencing.
-- When localizing a `File`, the engine may choose to place the file wherever it likes so long as it adheres to these rules:
-  - The original file name must be preserved even if the path to it has changed.
-  - Two input files with the same name must be located separately, to avoid name collision.
-  - Two input files that originated in the same storage directory must also be localized into the same directory for task execution (see the special case handling for Versioning Filesystems below).
-- When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted when that declaration is referenced in the command template.
+- `File`s and `Directory`s are localized into the execution directory prior to the task execution commencing.
+- When localizing a `File` or `Directory`, the engine may choose to place the local resource wherever it likes so long as it adheres to these rules:
+  - The original file/directory name (the "basename") must be preserved even if the path to it has changed.
+  - Two inputs with the same basename must be located separately, to avoid name collision.
+  - Two inputs that originated in the same storage directory must also be localized into the same parent directory for task execution (see the special case handling for Versioning Filesystems below).
+- When a WDL author uses a `File` or `Directory` input in their [Command Section](#command-section), the absolute path to the localized file/directory is substituted when that declaration is referenced.
 
 ##### Special Case: Versioning Filesystem
 
@@ -1760,9 +1762,9 @@ After the command is executed, the following outputs are expected to be found in
 
 See the [WDL Value Serialization](#appendix-a-wdl-value-serialization-and-deserialization) section for more details.
 
-#### Files and Optional Outputs
+#### File, Directory, and Optional Outputs
 
-File outputs are represented as string paths.
+`File` and `Directory` outputs are represented as path strings.
 
 A common pattern is to use a placeholder in a string expression to construct a file name as a function of the task input. For example:
 
@@ -1788,7 +1790,7 @@ task example {
 }
 ```
 
-If prefix were specified as `"foobar"`, then `"~{prefix}.out"` would be evaluated to `"foobar.out"`.
+In the preceding example, if `prefix` were specified as `"foobar"`, then `"~{prefix}.out"` would be evaluated to `"foobar.out"`.
 
 Another common pattern is to use the [`glob`](#arrayfile-globstring) function to define outputs that might contain zero, one, or many files.
 
@@ -1809,7 +1811,7 @@ File rel = "my/path/to/something.txt"
 File abs = "/something.txt"
 ```
 
-All file outputs are required to exist, otherwise the task will fail. However, an output may be declared as optional (e.g. `File?` or `Array[File?]`), in which case the value will be undefined if the file does not exist.
+All `File` and `Directory` outputs are required to exist, otherwise the task will fail. However, an output may be declared as optional (e.g. `File?`, `Directory?`, or `Array[File?]`), in which case the value will be undefined if the file does not exist.
 
 For example, executing the following task:
 
@@ -1832,6 +1834,49 @@ will generate the following outputs:
 * `optional_output.example_exists` will resolve to a File
 * `optional_output.example_optional` will resolve to `None`
 * `optional_output.array_optional` will resolve to `[<File>, None]`
+
+The execution engine may need to "de-localize" `File` and `Directory` outputs. For example, if the WDL is executed on a cloud instance, then the outputs must be copied to cloud storage after execution completes successfully.
+
+When a `File` or `Directory` is de-localized, its name and contents (including subdirectories) are preserved, but not necessarily its local path. Any hard- or soft-links shall be resolved into regular files/directories.
+
+For example, if a task produces the following `Directory` output:
+
+```txt
+dir/
+ - a           # a file, 10 MB
+ - b -> a      # a softlink to 'a'
+```
+
+Then, after de-localization, it would be:
+
+```txt
+dir/
+ - a           # a file, 10 MB
+ - b           # another file, 10 MB
+```
+
+If this were then passed to the `Directory` input of another task, it would contain two independent files, `dir/a` and `dir/b`, with identical contents.
+
+WDL does not have any built-in way to specify that an output `Directory` should only contain a subset of files in the local directory, so a common pattern is to create an output directory with the desired structure and soft-link the desired output files into that directory.
+
+```wdl
+task output_subset {
+  command <<<
+  for i in 1..10; do
+    touch file${i}
+  done
+  # we only want the first three files in the output directory
+  mkdir -p outdir/subdir
+  ln -s file1 outdir
+  ln -s file2 outdir
+  ln -s file3 outdir/subdir
+  >>>
+  
+  output {
+    Directory outdir = "outdir"
+  }
+}
+```
 
 ### Evaluation of Task Declarations
 
@@ -3740,15 +3785,15 @@ Running `echo a*` in the execution directory would expand to `a1.txt`, `ab.txt`,
 
 The runtime container may use a non-standard Bash shell that supports more complex glob strings, such as allowing expansions that include `a_inner.txt` in the example above. To ensure that a WDL is portable when using `glob`, a container image should be provided and the WDL author should remember that `glob` results depend on coordination with the Bash implementation provided in that container.
 
-## String basename(String|File, [String])
+## String basename(String|File|Directory, [String])
 
 Returns the "basename" of a file - the name after the last directory separator in the file's path. 
 
-The optional second parameter specifies a literal suffix to remove from the file name.
+The optional second parameter specifies a literal suffix to remove from the file name. If the file name does not end with the specified suffix then it is ignored.
 
 **Parameters**
 
-1. (`String`|`File`): Path of the file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
+1. (`String`|`File`|`Directory`): Path of the file to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
 2. `[String]`: Suffix to remove from the file name.
  
 **Returns**: The file's basename as a `String`.
@@ -3758,6 +3803,7 @@ The optional second parameter specifies a literal suffix to remove from the file
 ```wdl
 Boolean is_true1 = basename("/path/to/file.txt") == "file.txt"`
 Boolean is_true2 = basename("/path/to/file.txt", ".txt") == "file"
+Boolean is_true3 = basename("/path/to/dir") == "dir" 
 ```
 
 ## Array[String] read_lines(String|File)
@@ -4425,24 +4471,26 @@ And `/local/fs/tmp/map.json` would contain:
 }
 ```
 
-## Float size(File?|Array[File?], [String])
+## Float size(File?|Directory?|Array[File?]|Array[Directory?], [String])
 
-Determines the size of a file, or the sum total sizes of an array of files. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage).
+Determines the size of a file, directory, or the sum total sizes of an array of files/directories. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage).
 
-There are four supported types for the first parameter:
-- `File`: Returns the size of the file.
+The following types are supported for the first parameter in all circumstances:
 - `File?`: Returns the size of the file if it is defined, or 0.0 otherwise.
-- `Array[File]`: Returns the sum of sizes of the files in the array, or 0.0 if the array is empty.
 - `Array[File?]`: Returns the sum of sizes of all defined files in the array, or 0.0 if the array contains no defined files.
+
+In addition, when `size` is used in a context where the inputs have been localized (i.e., in the `command` or `output` section), the following types are also supported:
+- `Directory?`: Returns the size of the directory - which is the sum of the sizes of all files in the directory to any level of nesting - if it is defined, or 0.0 otherwise.
+- `Array[Directory?]`: Returns the sum of sizes of all defined directories in the array, or 0.0 if the array contains no defined directories.
 
 If the size can not be represented in the specified unit because the resulting value is too large to fit in a `Float`, an error is raised. It is recommended to use a unit that will always be large enough to handle any expected inputs without numerical overflow.
 
 **Parameters**
 
-1. `File|File?|Array[File]|Array[File?]`: A file, or array of files, for which to determine the size.
+1. `File?|Directory?|Array[File?]|Array[Directory?]`: A file, directory, or array of files/directories, for which to determine the size.
 2. `[String]` The unit of storage; defaults to 'B'.
 
-**Returns**: The size of the file(s) as a `Float`.
+**Returns**: The size of the files/directories as a `Float`.
 
 **Example**
 
@@ -4942,7 +4990,7 @@ All WDL implementations are required to support the standard JSON input and outp
 
 ## JSON Input Format
 
-The inputs for a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow, subworkflow, or task input. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the input parameter, and the value is the [serialized form]() of the WDL value.
+The inputs for a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow, subworkflow, or task input. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the input parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
 
 Here is an example JSON workflow input file:
 
@@ -5009,7 +5057,7 @@ The following would all be valid JSON inputs:
 
 ## JSON Output Format
 
-The outputs from a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow output; sub-workflow and task outputs are not provided. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the output parameter, and the value is the [serialized form]() of the WDL value.
+The outputs from a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow output; sub-workflow and task outputs are not provided. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the output parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
 
 Every WDL implementation must support the ability to output this standard output. It is suggested that WDL implementations make the standard format be the default output format.
 
@@ -5067,14 +5115,15 @@ To differentiate runtime attributes from task inputs, the `runtime` namespace is
 
 All primitive WDL types serialize naturally to JSON values:
 
-| WDL Type  | JSON Type |
-| --------- | --------- |
-| `Int`     | number    |
-| `Float`   | number    |
-| `Boolean` | boolean   |
-| `String`  | string    |
-| `File`    | string    |
-| `None`    | null      |
+| WDL Type    | JSON Type |
+| ----------- | --------- |
+| `Int`       | number    |
+| `Float`     | number    |
+| `Boolean`   | boolean   |
+| `String`    | string    |
+| `File`      | string    |
+| `Directory` | string    |
+| `None`      | null      |
 
 JSON has a single numeric type - it does not differentiate between integral and floating point values. A JSON `number` is always deserialized to a WDL `Float`, which may then be coerced to an `Int` if necessary.
 
