@@ -42,6 +42,11 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
+version 1.2.0
+---------------------------
+
++ Added `Directory` type.
+
 version 1.1.0
 ---------------------------
 
