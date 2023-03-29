@@ -1938,14 +1938,15 @@ The following attributes must be supported by the execution engine. The value fo
 ##### `container`
 
 * Accepted types:
+    * `"*"`: This special value indicates that the runtime engine may use any container it wishes to execute the task, or it may choose not to use a container and instead execute the task directly in the host environment
     * `String`: A single container URI.
     * `Array[String]`: An array of container URIs.
+* Default value: "*"
+* Alias: `docker`
 
 The `container` attribute accepts a URI string that describes a location where the execution engine can attempt to retrieve a container image to execute the task.
 
-The user is strongly suggested to specify a `container` for every task. There is no default value for `container`. If `container` is not specified, the execution behavior is determined by the execution engine. Typically, the task is simply executed in the host environment. 
-
-🗑 The ability to omit `container` is deprecated. In WDL 2.0, `container` will be required.
+The user is strongly suggested to specify a `container` for every task. If `container` is not specified, or is specified with the special `"*"` value, the execution behavior is determined by the execution engine.
 
 The format of a container URI string is `protocol://location`, where protocol is one of the protocols supported by the execution engine. Execution engines must, at a minimum, support the `docker://` protocol, and if no protocol is specified, it is assumed to be `docker://`. An execution engine should ignore any URI with a protocol it does not support.
 
