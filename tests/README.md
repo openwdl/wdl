@@ -68,7 +68,7 @@ An example can import another example using its file name.
 </details>
 </pre>
 
-The `meta` section of the `task` or `workflow` can be used to specify test meadata using the `test_config` attribute. This attribute accepts either a directive or an array of directives, where each directive is one of the following string values.
+The `meta` section of the `task` or `workflow` can be used to specify test metadata using the `test_config` attribute. This attribute accepts either a directive or an array of directives, where each directive is one of the following string values.
 
 * Necessity: these directives are mutually exclusive, in increasing order of precedence:
     * "required": The test harness must run the test. (default)
