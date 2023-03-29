@@ -78,13 +78,15 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
     - [🗑 Runtime Section](#-runtime-section)
     - [Meta Values](#meta-values)
     - [✨ Hints Section](#-hints-section)
-      - [Reserved Hints](#reserved-hints)
+      - [Reserved Task Hints](#reserved-task-hints)
         - [`max_cpu`](#max_cpu)
         - [`max_memory`](#max_memory)
         - [`short_task`](#short_task)
         - [`localization_optional`](#localization_optional)
         - [`inputs`](#inputs)
         - [`outputs`](#outputs)
+        - [`test_config`](#test_config)
+          - [Restrictions](#restrictions)
       - [Conventions and Best Practices](#conventions-and-best-practices)
     - [Metadata Sections](#metadata-sections)
       - [Task Metadata Section](#task-metadata-section)
@@ -92,16 +94,20 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
     - [Task Examples](#task-examples)
       - [Example 1: Simplest Task](#example-1-simplest-task)
       - [Example 2: Inputs/Outputs](#example-2-inputsoutputs)
-      - [Example 3: Runtime/Metadata](#example-3-runtimemetadata)
+      - [Example 3: Requirements/Metadata](#example-3-requirementsmetadata)
       - [Example 4: BWA MEM](#example-4-bwa-mem)
       - [Example 5: Word Count](#example-5-word-count)
       - [Example 6: tmap](#example-6-tmap)
   - [Workflow Definition](#workflow-definition)
     - [Workflow Elements](#workflow-elements)
-    - [Workflow Inputs](#workflow-inputs)
-    - [Workflow Outputs](#workflow-outputs)
     - [Evaluation of Workflow Elements](#evaluation-of-workflow-elements)
     - [Fully Qualified Names \& Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
+    - [Workflow Inputs](#workflow-inputs)
+    - [Workflow Outputs](#workflow-outputs)
+    - [Workflow Hints](#workflow-hints)
+      - [Reserved Workflow Hints](#reserved-workflow-hints)
+        - [`allow_nested_inputs`](#allow_nested_inputs)
+        - [`test_config`](#test_config-1)
     - [Call Statement](#call-statement)
       - [Computing Call Inputs](#computing-call-inputs)
     - [Scatter](#scatter)
@@ -160,7 +166,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [JSON Input Format](#json-input-format)
     - [Optional Inputs](#optional-inputs)
   - [JSON Output Format](#json-output-format)
-  - [Specifying / Overriding Runtime Attributes](#specifying--overriding-runtime-attributes)
+  - [Specifying / Overriding Requirements and Hints](#specifying--overriding-requirements-and-hints)
   - [JSON Serialization of WDL Types](#json-serialization-of-wdl-types)
     - [Primitive Types](#primitive-types-1)
     - [Array](#array)
@@ -222,7 +228,7 @@ task hello {
     egrep '~{pattern}' '~{infile}'
   >>>
 
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 
@@ -400,7 +406,7 @@ task test {
     String result = read_string(stdout())
   }
     
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -426,15 +432,14 @@ The following language keywords are reserved and cannot be used to name declarat
 ```
 Array Boolean Float Int Map None Object Pair String
 
-alias as call command else false if in import input 
-left meta object output parameter_meta right runtime 
-scatter struct task then true workflow
+alias as call command else false hints if in import input 
+left meta object output parameter_meta right requirements
+runtime scatter struct task then true workflow
 ```
 
 The following keywords should also be considered as reserved - they are not used in the current version of the specification, but they will be used in a future version:
 
 * `Directory`
-* `hints`
 
 ### Types
 
@@ -771,7 +776,7 @@ task test {
   output {
     String value = read_string(stdout())
   }
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -786,7 +791,7 @@ task test2 {
   output {
     Int value = read_int(stdout())
   }
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -1402,7 +1407,7 @@ A task has a required [`command`](#command-section) that is a template for a Bas
 
 Tasks explicitly define their [`input`s](#task-inputs) and [`output`s](#task-outputs), which is essential for building dependencies between tasks. The value of an input declaration may be supplied by the caller. All task declarations may be initialized with hard-coded literal values, or may have their values constructed from expressions. Declarations can be referenced in the command template.
 
-A task may also specify [requirements for the runtime environment](#runtime-section) (such as the amount of RAM or number of CPU cores) that must be satisfied in order for its commands to execute properly.
+A task may also specify [requirements for the runtime environment](#-requirements-section) (such as the amount of RAM or number of CPU cores) that must be satisfied in order for its commands to execute properly.
 
 There are two optional metadata sections: the [`meta`](#metadata-sections) section, for task-level metadata, and the [`parameter_meta`](#parameter-metadata-section) section, for parameter-level metadata.
 
@@ -1424,8 +1429,12 @@ task name {
     # task outputs are declared here
   }
 
-  runtime {
+  requirements {
     # runtime requirements are specified here
+  }
+
+  hints {
+    # runtime hints are specified here
   }
 
   meta {
@@ -1500,7 +1509,7 @@ task test {
     /bin/mycmd ~{write_lines(c)}
   >>>
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -1791,7 +1800,7 @@ task example {
     File bam_sibling = "~{bam}.suffix"
   }
   
-  runtime {
+  requirements {
     container: "quay.io/biocontainers/bwa:0.7.17--hed695b0_7"
   }
 }
@@ -2037,8 +2046,8 @@ task test_cpu_task {
     cpu: 2
   }
 
-  meta {
-    optional: true
+  hints {
+    test_config: "optional:requirements:cpu"
   }
 }
 ```
@@ -2089,8 +2098,8 @@ task test_memory_task {
     memory: "2 GiB"
   }
 
-  meta {
-    optional: true
+  hints {
+    test_config: "optional:requirements:memory"
   }
 }
 ```
@@ -2141,8 +2150,8 @@ task test_gpu_task {
     gpu: true
   }
 
-  meta {
-    optional: true
+  hints {
+    test_config: "optional:requirements:gpu"
   }
 }
 ```
@@ -2202,8 +2211,8 @@ task one_mount_point_task {
     disks: "/mnt/outputs 10 GiB"
   }
 
-  meta {
-    optional: true
+  hints {
+    test_config: "optional:requriements:disks"
   }
 }
 ```
@@ -2248,8 +2257,8 @@ task multi_mount_points_task {
     disks: ["2", "/mnt/outputs 4 GiB", "/mnt/tmp 1 GiB"]
   }
 
-  meta {
-    optional: true
+  hints {
+    test_config: "optional:requirements:disks"
   }
 }
 ```
@@ -2352,8 +2361,8 @@ task multi_return_code_task {
     return_codes: [1, 2, 5, 10]
   }
 
-  meta {
-    fail: true
+  hints {
+    test_config: "fail"
   }
 }
 ```
@@ -2429,7 +2438,7 @@ $meta_object = '{}' | '{' $meta_kv (, $meta_kv)* '}'
 $meta_array = '[]' |  '[' $meta_value (, $meta_value)* ']'
 ```
 
-The subsequent three sections (`hints`, `meta`, and `parameter_meta`) are all similar in that they can contain arbitrary key/value pairs. However, the values allowed in these sections ("meta values") are different than in `runtime` and other sections:
+The subsequent three sections (`hints`, `meta`, and `parameter_meta`) are all similar in that they can contain arbitrary key/value pairs. However, the values allowed in these sections ("meta values") are different than in `requirements` and other sections:
 
 * Only string, numeric, and boolean primitives are allowed.
 * Only array and object compound values are allowed.
@@ -2490,7 +2499,7 @@ The `requirements` and `hints` sections differ in two important ways:
 * A task execution must fail if the execution engine is not able to satisfy all of the requirements, but a task execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
 * The value of a `requirements` attribute may be any valid expression, while only meta values may be used in the `hints` section.
 
-#### Reserved Hints
+#### Reserved Task Hints
 
 The following hints are reserved. An implementation is not required to support these attributes, but if it does support a reserved attribute it must enforce the semantics and allowed values defined below. The purpose of reserving these hints is to encourage interoperability of tasks and workflows between different execution engines.
 
@@ -2593,6 +2602,38 @@ Reserved input-specific attributes:
 
 Provides outputs specific hints in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task.
 
+##### `test_config`
+
+* Allowed types: `String` or `Array[String]`
+* Default value: `["required", "succeed"]`
+
+This attribute is reserved for use by testing frameworks, and should be ignored otherwise. It provides directives to the testing framework about how to use the task as a test-case. If the value is an array, then all of the directives must be respected by the testing framework; however, when there are conflicting directives, the *most permissive* one wins. For example, the value `["required", "ignore"]` specifies two conflicting directives; `ignore` is more permissive than `required`, so the test case must be ignored.
+
+The value may be any combination of the following directives, in order of least to most permissive:
+
+* Necessity
+    * `required`: The test is required. The testing framework must execute the test.
+    * `optional`: The test is optional. The test harness may choose whether or not to run the test, and it may ignore any test failures. Restrictions can be added using a colon (':') delimiter to indicate that the test is only optional in certain situations. If there are multiple `optional` directives, than the test is optional if any one of them is satisfied.
+    * `ignore`: The test must not be run by the testing framework.
+* Expected result
+    * `succeed`: The test is expected to succeed. It is an error if the test fails to execute successfully.
+    * `fail`: The test is expected to fail. It is an error if the test executes successfully. Restrictions can be added using a colon (':') delimiter to indicate that the test is expected to fail for a specific reason. If there are multiple `fail` directives, than the test may fail for any of the specified reasons.
+
+###### Restrictions
+
+An `optional` test directive may have a restriction. The test harness may ignore any restrictions that it does not support. At a minimum, the test harness should recognize restrictions based on its ability to satisfy the test's `requirements` and `hints`. A restriction can name a specific requirement/hint, or it can use the special value `*` to indicate that it matches any unsatisfiable requirement/hint. Here are some examples:
+
+* `"optional:*"`: Equivalent to "optional" - the test is optional under all circumstances.
+* `"optional:requirements:cpu"`: The test is considered optional if the test harness cannot satisfy the task's `cpu` requirement.
+* `["optional:requriements:memory", "optional:requirements:disks"]`: The test is considered optional if the test harness cannot satisfy both the task's `memory` and `disks` requirements.
+* *optional:hints:*": The test is considered optional if the test harness cannot satisfy all of the task's hints.
+* "optional:hints:aws:*": The test is considered optional if the test harness cannot execute the test on AWS or cannot satisfy any of the AWS-specific configuration hints.
+
+A `fail` test directive may also have a restriction that indicates the test is expected to fail in a specific way or due to a specific cause. At a minimum, the test harness should recognize the following restrictions. If the test harness is not able to determine whether a failure is due to a specific cause, then it may ignore restrictions (i.e., treat the presence of any `fail` directive as `"fail:*"`). Here are some examples:
+
+* `"fail:*"`: Equivalent to "fail" - the test is expected to fail for any reason.
+* `"fail:return_code:<rc>"`: The test is expected to fail with a specific return code.
+
 #### Conventions and Best Practices
 
 To encourage interoperable workflows, WDL authors and execution engine implementors should view hints strictly as runtime optimizations. Hints must not be interpreted as requirements. Following this principle will ensure that a workflow is runnable on all platforms assuming the `requirements` section has the required attributes, regardless of whether it contains any additional hints.
@@ -2639,7 +2680,7 @@ Please observe the following guidelines when using hints:
 
 ### Metadata Sections
 
-There are two optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are designed to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface. Any attributes that may influence execution behavior should go in the `runtime` section.
+There are two optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are designed to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface. Any attributes that may influence execution behavior should go in the `requirements` section.
 
 #### Task Metadata Section
 
@@ -2686,7 +2727,7 @@ task wc {
      String retval = stdout()
   }
 
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -2718,16 +2759,16 @@ task one_and_one {
   output {
     File filtered = stdout()
   }
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
 ```
 
-#### Example 3: Runtime/Metadata
+#### Example 3: Requirements/Metadata
 
 ```wdl
-task runtime_meta {
+task requriements_meta {
   input {
     Int memory_mb
     String sample_id
@@ -2748,7 +2789,7 @@ task runtime_meta {
     author: "Joe Somebody"
     email: "joe@company.org"
   }
-  runtime {
+  requirements {
     container: "my_image:latest"
     memory: "~{memory_mb + 256} MB"
   }
@@ -2776,7 +2817,7 @@ task bwa_mem_tool {
   output {
     File sam = "output.sam"
   }
-  runtime {
+  requirements {
     container: "my_image:latest"
     cpu: threads
   }
@@ -2796,7 +2837,7 @@ task wc2_tool {
   output {
     Int count = read_int(stdout())
   }
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -2830,7 +2871,7 @@ task tmap_tool {
   output {
     File sam = "output.sam"
   }
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -2912,6 +2953,7 @@ Tasks and workflows have several elements in common. These sections have nearly 
 * [`input` section](#task-inputs)
 * [Private declarations](#private-declarations)
 * [`output` section](#task-outputs)
+* [`hints` section](#-hints-section)
 * [`meta` section](#metadata-sections)
 * [`parameter_meta` section](#parameter-metadata-section)
 
@@ -2920,22 +2962,6 @@ In addition to these sections, a workflow may have any of the following elements
 * [`call`s](#call-statement) to tasks or subworkflows
 * [`scatter`](#scatter) blocks, which are used to parallelize operations across collections
 * [Conditional (`if`)](#conditional-if-block) blocks, which are only executed when a conditional expression evaluates to `true`
-
-### Workflow Inputs
-
-The workflow and [task `input` sections](#task-inputs) have identical semantics.
-
-### Workflow Outputs
-
-The workflow and [task `output` sections](#task-outputs) have identical semantics.
-
-By default, if the `output {...}` section is omitted from a top-level workflow, then the workflow has no outputs. However, the execution engine may choose allow the user to specify that when the top-level output section is omitted, all outputs from all calls (including nested calls) should be returned.
-
-If the `output {...}` section is omitted from a workflow that is called as a subworkflow, then that call must not have outputs. Formally defined outputs of subworkflows are required for the following reasons:
-
-- To present the same interface when calling subworkflows as when calling tasks.
-- To make it easy for callers of subworkflows to find out exactly what outputs the call is creating.
-- In case of nested subworkflows, to give the outputs at the top level a simple fixed name rather than a long qualified name like `a.b.c.d.out` (which is liable to change if the underlying implementation of `c` changes, for example).
 
 ### Evaluation of Workflow Elements
 
@@ -3022,7 +3048,7 @@ task foobar {
   output {
     File results = stdout()
   }
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -3049,7 +3075,7 @@ task test {
   output {
     File results = stdout()
   }
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -3097,6 +3123,105 @@ The following fully-qualified names exist within `workflow wf` in main.wdl:
 * `wf.scattered_test.my_var` - References an `Array[String]` for each element used as `my_var` when running the scattered version of `call test`.
 * `wf.scattered_test.results` - References an `Array[File]` which are the accumulated results from scattering `call test`
 * `wf.scattered_test.1.results` - References an `File` from the second invocation (0-indexed) of `call test` within the scatter block.  This particular invocation used value "b" for `my_var`
+
+### Workflow Inputs
+
+The workflow and [task `input` sections](#task-inputs) have identical semantics.
+
+### Workflow Outputs
+
+The workflow and [task `output` sections](#task-outputs) have identical semantics.
+
+By default, if the `output {...}` section is omitted from a top-level workflow, then the workflow has no outputs. However, the execution engine may choose allow the user to specify that when the top-level output section is omitted, all outputs from all calls (including nested calls) should be returned.
+
+If the `output {...}` section is omitted from a workflow that is called as a subworkflow, then that call must not have outputs. Formally defined outputs of subworkflows are required for the following reasons:
+
+- To present the same interface when calling subworkflows as when calling tasks.
+- To make it easy for callers of subworkflows to find out exactly what outputs the call is creating.
+- In case of nested subworkflows, to give the outputs at the top level a simple fixed name rather than a long qualified name like `a.b.c.d.out` (which is liable to change if the underlying implementation of `c` changes, for example).
+
+### Workflow Hints
+
+The `hints` section is optional and may contain any number of attributes (key/value pairs) that provide hints to the execution engine. Some workflow hint keys are reserved and have well-defined values. The value of a `hint` must be a [meta value](#meta-values).
+
+The runtime implementation may ignore any unsupported hint. A workflow execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
+
+#### Reserved Workflow Hints
+
+The following hints are reserved. An implementation is not required to support these attributes, but if it does support a reserved attribute it must enforce the semantics and allowed values defined below. The purpose of reserving these hints is to encourage interoperability of tasks and workflows between different execution engines.
+
+##### `allow_nested_inputs`
+
+* Allowed type: `Boolean`
+* Alias: `allowNestedInputs`
+
+By default, when a workflow calls a sub-workflow or task it must provide inputs for all of the sub-workflow/task inputs. However, if the runtime engine supports the `allow_nested_inputs` hint and it is set to `true` in a workflow's `hints` section, then that workflow is allowed to leave any sub-workflow/task inputs unsatisfied. Any unsatisfied inputs must be specified by at runtime. If a runtime engine does not support `allow_nested_inputs` or if any inputs remain unsatisfied at runtime then the workflow fails with an error.
+
+<details>
+<summary>
+Example: test_allow_nested_inputs.wdl
+
+```wdl
+version 1.2
+
+task nested {
+  input {
+    String greeting
+    String name
+  }
+
+  command <<<
+  echo "~{greeting} ~{name}"
+  >>>
+
+  output {
+    String greeting = read_string(stdout())
+  }
+}
+
+workflow test_allow_nested_inputs {
+  call nested {
+    input: greeting = "Hello"
+  }
+
+  output {
+    String greeting = nested.greeting
+  }
+
+  hints {
+    allow_nested_inputs: true,
+    test_config: "optional:hints:allow_nested_inputs"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_allow_nested_inputs.nested.name": "John"
+}
+```
+
+Example output:
+
+```json
+{
+  "test_allow_nested_inputs.greeting": "Hello John"
+}
+```
+</p>
+</details>
+
+##### `test_config`
+
+* Allowed types: `String` or `Array[String]`
+* Default value: `["required", "succeed"]`
+
+This hint has the same semantics as the [task-level `test_config` hint](#test_config).
+
+If any restrictions are given for `optional` or `fail` directives, those restrictions apply to the workflow or any sub-workflow or task it executes. For example, if a workflow has `test_config: "optional:requirements:cpu"`, then it is considered optional if the test harness cannot satisfy the `cpu` reuirement for any task called by the workflow (at any level of nesting). Additionally, a test harness should, at a minimum, support workflow-level `optional` directives based on the ability to satisfy workflow-level hints. For example, `test_config: "optional:hints:allow_nested_inputs"` should cause the workflow to be treated as an optional test if the runtime engine does not support the `allow_nested_inputs` hint.
 
 ### Call Statement
 
@@ -3268,7 +3393,7 @@ task my_task {
     File results = stdout()
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
     disks: disk_space_gb
   }
@@ -3298,7 +3423,7 @@ task hello {
   command <<<
     echo "Hello ~{addressee}!"
   >>>
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
   output {
@@ -3340,7 +3465,7 @@ workflow main_workflow {
 
 Any required workflow inputs (i.e. those that are not initialized with a default value or expression) must have their values provided when invoking the workflow. Inputs may be specified for a workflow invocation using any mechanism supported by the execution engine, including the [standard JSON format](#json-input-format). 
 
-By default, all calls to subworkflows and tasks must have values provided for all required inputs by the caller. However, the execution engine may allow the workflow to leave some subworkflow/task inputs undefined - to be specified by the user at runtime - by setting the `allowNestedInputs` flag to `true` in the `meta` section of the top-level workflow. For example:
+By default, all calls to subworkflows and tasks must have values provided for all required inputs by the caller. However, the execution engine may allow the workflow to leave some subworkflow/task inputs undefined - to be specified by the user at runtime - by setting the `allow_nested_inputs` hint to `true` in the `hints` section of the top-level workflow. For example:
 
 ```wdl
 task mytask {
@@ -3356,12 +3481,12 @@ workflow allows_nested_inputs {
     String s
   }
   
-  meta {
-    allowNestedInputs: true
+  hints {
+    allow_nested_inputs: true
   }
 
   # Required parameter "mytask.f" is not specified.
-  # Typically this is an error, but "meta.allowNestedInputs"
+  # Typically this is an error, but "hints.allow_nested_inputs"
   # is true so it is allowed, but the user must specify a 
   # value for "allows_nested_inputs.mytask.f" as a runtime 
   # input.
@@ -3386,7 +3511,7 @@ task t1 {
     Int count = read_int(stdout())
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -3406,7 +3531,7 @@ task t2 {
     Int count = read_int(stdout())
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -3425,7 +3550,7 @@ task t3 {
     Int incr = read_int(stdout())
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -3439,8 +3564,8 @@ workflow wf {
     String t2s
   }
 
-  meta {
-    allowNestedInputs: true
+  hints {
+    allow_nested_inputs: true
   }
 
   String not_an_input = "hello"
@@ -3474,7 +3599,7 @@ The inputs to `wf` will be:
 * `wf.ref_file` as a `File`
 * `wf.t2.t` as an `Int?`
 
-Note that the optional `t` input for task `t2` is left unsatisfied. This input can be specified at runtime as `wf.t2.t` because `allowNestedInputs` is set to `true`; if it were set to `false`, this input could not be specified at runtime. 
+Note that the optional `t` input for task `t2` is left unsatisfied. This input can be specified at runtime as `wf.t2.t` because the `allow_nested_inputs` hint is set to `true`; if it were set to `false`, this input could not be specified at runtime. 
 
 It is an error for the user to attempt to override a call input at runtime, even if nested inputs are allowed. For example, if the user tried to specify `allows_nested_inputs.mytask.name = "Fred"` in the input JSON, an error would be raised.
 
@@ -3878,7 +4003,7 @@ task my_task {
     Int age_in_muggle_years = w.age * 2
   }
     
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -4070,7 +4195,7 @@ task example {
     File outputFile = output_file_name
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -4222,7 +4347,7 @@ task do_stuff {
     Array[String] matches = read_lines(stdout())
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -4463,7 +4588,7 @@ task do_stuff {
     Map[String, String] output_table = read_json("./results/file_list.json")
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -4555,7 +4680,7 @@ task example {
     ./script --file-list=~{write_lines(array)}
   >>>
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -4599,7 +4724,7 @@ task example {
     ./script --tsv=~{write_tsv(array)}
   >>>
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -4648,7 +4773,7 @@ task example {
     ./script --map=~{write_map(map)}
   >>>
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -4833,7 +4958,7 @@ task example {
     ./script --map=~{write_json(map)}
   >>>
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -4891,7 +5016,7 @@ task example {
     Float created_file_kb = size("created_file", "K") # 0.022
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -5475,18 +5600,19 @@ The output JSON will look like:
 
 It is recommended (but not required) that JSON outputs be "pretty printed" to be more human-readable.
 
-## Specifying / Overriding Runtime Attributes
+## Specifying / Overriding Requirements and Hints
 
-In addition to specifying workflow input in JSON, the user can also specify (or override) runtime attributes. Input values for standardized runtime attributes must adhere to the [supported types and formats](#runtime-section). Runtime values provided as inputs always supersede values supplied directly in the WDL. Any runtime attributes that are not supported by the execution engine are ignored.
+In addition to specifying workflow input in JSON, the user can also specify (or override) [requirements](#-requirements-section) and [hints](#-hints-section). Input values for standardized requirements must adhere to the supported types and formats. Requirements and hints provided as inputs always supersede values supplied directly in the WDL. Any hints that are not supported by the execution engine are ignored.
 
-To differentiate runtime attributes from task inputs, the `runtime` namespace is added after the task name. For example:
+To differentiate requirements and hints from task inputs, the `requirements` or `hints` namespace is added after the task name. For example:
 
 ```json
 {
-  "wf.t1.runtime.memory": "16 GB",
-  "wf.t2.runtime.cpu": 2,
-  "wf.t2.runtime.disks": "100",
-  "wf.t2.runtime.container": "mycontainer:latest"
+  "wf.t1.requirements.memory": "16 GB",
+  "wf.t2.requirements.cpu": 2,
+  "wf.t2.requirements.disks": "100",
+  "wf.t2.requirements.container": "mycontainer:latest",
+  "wf.t2.hints.foo": "bar"
 }
 ```
 
@@ -5620,7 +5746,7 @@ task output_example {
     String my_str = read_string("str_file")
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -5658,7 +5784,7 @@ task test {
     python script.py --bams=~{sep=',' bams}
   >>>
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -5688,7 +5814,7 @@ task test {
     sh script.sh ~{write_lines(bams)}
   >>>
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -5730,7 +5856,7 @@ task test {
     sh script.sh ~{write_json(bams)}
   >>>
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -5780,7 +5906,7 @@ task test {
     Array[Int] my_ints = read_lines(stdout())
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -5802,7 +5928,7 @@ task test {
     Array[String] my_array = read_json(stdout())
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -5834,7 +5960,7 @@ task process_person {
     perl script.py ~{write_json(p)}
   >>>
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -5884,7 +6010,7 @@ task test {
     sh script.sh ~{write_map(sample_quality_scores)}
   >>>
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -5926,7 +6052,7 @@ task test {
     sh script.sh ~{write_json(sample_quality_scores)}
   >>>
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -5975,7 +6101,7 @@ task test {
     Map[String, Int] my_ints = read_map(stdout())
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -6003,7 +6129,7 @@ task test {
     Map[String, String] my_map = read_json(stdout())
   }
   
-  runtime {
+  requirements {
     container: "my_image:latest"
   }
 }
@@ -6092,7 +6218,7 @@ The following WDL namespaces exist:
 * A [WDL `task`](#task-definition) is a namespace consisting of:
   * The `task` `input` declarations
   * The `task` `output` declarations
-  * A [`runtime`](#runtime-section) namespace that contains all the runtime attributes
+  * A [`requirements`](#-requirements-section) namespace that contains all the runtime requirements
 * A [WDL `workflow`](#workflow-definition) is a namespace consisting of:
   * The `workflow` `input` declarations
   * The `workflow` `output` declarations
@@ -6125,7 +6251,7 @@ A WDL document is the top-level (or "outermost") scope. All elements defined wit
 
 ### Task Scope
 
-A task scope consists of all the declarations in the task `input` section and in the body of the task. The `input` section is used only to delineate which declarations are visible outside the task (i.e. are part of the task's namespace) and which are private to the task. Input declarations may reference private declarations, and vice-versa. Declarations in the task scope are reachable from all sections of the task (i.e. `command`, `runtime`, `output` - `meta` and `parameter_meta` are excluded because they cannot have expressions).
+A task scope consists of all the declarations in the task `input` section and in the body of the task. The `input` section is used only to delineate which declarations are visible outside the task (i.e. are part of the task's namespace) and which are private to the task. Input declarations may reference private declarations, and vice-versa. Declarations in the task scope are reachable from all sections of the task (i.e., `command`, `requirements`, `output` - `meta` and `parameter_meta` are excluded because they cannot have expressions).
 
 The `output` section can be considered a nested scope within the task. Expressions in the output scope may reference declarations in the task scope, but the reverse is not true. This is because declarations in the task scope are evaluated when a task is invoked (i.e. before it's command is evaluated and executed), while declarations in the output scope are not evaluated until after execution of the command is completed.
 
@@ -6380,7 +6506,7 @@ workflow my_workflow {
 
 ### Namespaces without Scope
 
-Elements such as `struct`s and task `runtime` sections are namespaces, but they lack scope because their members cannot reference each other. For example, one member of a `struct` cannot reference another member in that struct, nor can a `runtime` attribute reference another attribute.
+Elements such as `struct`s and task `requirements` sections are namespaces, but they lack scope because their members cannot reference each other. For example, one member of a `struct` cannot reference another member in that struct, nor can a `requirements` attribute reference another attribute.
 
 ## Evaluation Order
 
