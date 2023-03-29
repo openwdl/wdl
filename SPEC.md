@@ -2791,37 +2791,32 @@ task wc {
 
 The `requirements` section of a task specifies its minimum requirements, but it is sometimes useful to know at runtime:
 
-* What are the actual resource allocations. For example, a task may request at least `8 GB` of memory but may be able to use more memory if it is available. *
+* What are the actual resource allocations. For example, a task may request at least `8 GB` of memory but may be able to use more memory if it is available.
 * Which hints was the runtime engine able to satisfy, and what are the runtime values of those hints (if applicable).
 * The task metadata, to avoid duplication. For example, the task may wish to write log messages with the task's name and description without having to duplicate the information in the task's `meta` section.
 * The runtime engine may also choose to provide additional information at runtime.
 
-Each task implicitly declares a `task` variable that is available only with in the `command` and `output` sections. The `task` variable has the following declaration.
+Each task implicitly declares a `task` variable of type `Object` that is available only with in the `command` and `output` sections. The `task` variable has  the following structure. The runtime engine may choose to define additional optional members of `task`.
 
 ```wdl
-# The actual resource allocations. If the runtime engine is not able to determine the actual
-# value, then it uses the requested value instead, or the default value if no specific value
-# was requested.
-struct TaskRequirements {
-  String container  # the URI of the container in which the task is executing; or `""` if none
-  Float cpu  # allocated cpu's
-  Int memory  # allocated memory in bytes
-  Map[String, Int] disks  # mapping of mount point to allocated disk space in bytes
-  Boolean gpu  # whether at least one GPU is allocated
-  Int retries  # the number of times the task has been retried
-  Int return_code  # the return code of the command; only defined within the output section
-}
-
-struct TaskInfo {
-  String name  # the task name
-  TaskRequirements requirements  # the actual resource allocations
-  Object hints  # the acutal values of the hints supported by the runtime engine
-  Object meta  # a copy of the task's `meta` section
+Object task = object {
+  String name,  # the task name
+  Object requirements: {
+    String container,  # the URI of the container in which the task is executing; or `""` if none
+    Float cpu,  # allocated number of cpus
+    Int memory,  # allocated memory in bytes
+    Map[String, Int] disks,  # mapping of mount point to allocated disk space in bytes
+    Int gpu,  # The number of GPUs allocated
+    Int retries,  # the number of times the task has been retried
+    Int return_code  # the return code of the command; only defined within the output section
+  },  # the actual resource allocations
+  Object hints,  # the acutal values of the hints supported by the runtime engine
+  Object meta,  # a copy of the task's `meta` section
   Object parameter_meta  # a copy of the task's `parameter_meta` section
 }
-
-TaskInfo task = TaskInfo { ... }
 ```
+
+If the runtime engine is not able to determine the actual value of a requirement, then it uses the requested value instead, or the default value if no specific value was requested.
 
 <details>
 <summary>
@@ -2878,10 +2873,6 @@ Example output:
 ```
 </p>
 </details>
-
-Note that the `TaskRequirements` and `TaskInfo` struct definitions above do not exist in any namespace, i.e., you would not be able to declare your own variables using those types. They are simply illustrative of the structure of the data assigned to the `task` declaration.
-
-The runtime engine may choose to define additional optional members of `TaskInfo`.
 
 If a task is using the deprecated `runtime` section rather than `requirements` and `hints`, then the runtime values of the reserved `runtime` attributes (i.e., the ones that appear in the `requirements` section) are populated in the `requirements` member, and any other attributes are populated in the `hints` member.
 
