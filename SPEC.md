@@ -853,7 +853,7 @@ File bam = b_and_i.bam
 
 ##### 🗑 Object
 
-An `Object` is an unordered associative array of name-value pairs, where values may be of any type and are not specified explicitly.
+An `Object` is an unordered associative array of name-value pairs, where values may be of any type and are not defined explicitly.
 
 An `Object` can be initialized using syntax similar to a struct literal, except that the `object` keyword is used in place of the `Struct` name. The value of a specific member of an `Object` value can be accessed by placing a `.` followed by the member name after the identifier.
 
@@ -873,7 +873,7 @@ A hidden type is one that may only be instantiated by the runtime engine, and ca
 
 ##### Union
 
-The `Union` type is used for a value that may have any one of several concrete types. A `Union` value must always be coerced to a concrete type. The `Union` type is used in two placed:
+The `Union` type is used for a value that may have any one of several concrete types. A `Union` value must always be coerced to a concrete type. The `Union` type is used in two contexts:
 
 * It is the type of the special [`None`](#optional-types-and-none) value.
 * It is the return type of some standard library functions, such as [`read_json`](#read_json).
