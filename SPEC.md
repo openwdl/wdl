@@ -3332,6 +3332,20 @@ struct Sample {
 }
 ```
 
+A `struct` definition may include a `parameter_meta` section with metadata about any of the struct's members.
+
+```wdl
+struct Person {
+  String name
+  String? phone
+
+  paramter_meta {
+    name: "The person's name",
+    phone: "The person's phone number (optional)"
+  }
+}
+```
+
 ### Struct Literals
 
 A struct literal is an instance of a specific `Struct` type that provides values for all of the non-optional members and any of the optional members. The members of a struct literal are validated against the `Struct`'s definition at the time of creation. Members do not need to be specified in any specific order. Once a struct literal is created, it is immutable like any other WDL value.
