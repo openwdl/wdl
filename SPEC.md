@@ -2590,7 +2590,59 @@ A `Boolean` value, for which `true` indicates that, if possible, any `File` inpu
 
 * Allowed type: `object`
 
-Provides input-specific hints in the form of a meta object. Each key within this hint should refer to an actual input defined for the current task.
+Provides input-specific hints in the form of a meta object. Each key within this hint should refer to an actual input defined for the current task. A key may also refer to a specific member of a struct/object input.
+
+<details>
+<summary>
+Example: input_hint_task.wdl
+
+```wdl
+version 1.2
+
+struct Person {
+  String name
+  File? cv
+}
+
+task input_hint_task {
+  input {
+    Person person
+  }
+
+  command <<<
+  grep "WDL" ~{cv}
+  >>>
+
+  hints {
+    inputs: {
+      person: {
+        cv: {
+          localization_optional: true
+        }
+      }
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "input_hint_task.person": {
+    "name": "Joe"
+  }
+}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
 
 Reserved input-specific attributes:
 
@@ -2600,7 +2652,7 @@ Reserved input-specific attributes:
 
 * Allowed type: `object`
 
-Provides outputs specific hints in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task.
+Provides outputs specific hints in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task. A key may also refer to a specific member of a struct/object input.
 
 ##### `test_config`
 
