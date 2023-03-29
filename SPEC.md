@@ -2613,7 +2613,7 @@ The value may be any combination of the following directives, in order of least 
 
 * Necessity
     * `required`: The test is required. The testing framework must execute the test.
-    * `optional`: The test is optional. The test harness may choose whether or not to run the test, and it may ignore any test failures. Restrictions can be added using a colon (':') delimiter to indicate that the test is only optional in certain situations. If there are multiple `optional` directives, than the test is optional if any one of them is satisfied.
+    * `optional`: The test is optional. The test harness may choose whether or not to run the test. If the test harness does run the test and it is unsuccessful, it should be reported as a warning rather than an error. Restrictions can be added using a colon (':') delimiter to indicate that the test is only optional in certain situations. If there are multiple `optional` directives, than the test is optional if any one of them is satisfied.
     * `ignore`: The test must not be run by the testing framework.
 * Expected result
     * `succeed`: The test is expected to succeed. It is an error if the test fails to execute successfully.
