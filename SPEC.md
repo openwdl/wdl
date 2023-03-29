@@ -726,7 +726,7 @@ An array value can be initialized with an array literal - a comma-separated list
     }
 
     meta {
-     fail: true
+     test_config: "fail"
     }
   }
   ```
@@ -5282,7 +5282,7 @@ workflow write_json_fail {
   File f = write_json(x)
   
   meta {
-    fail: true
+    test_config: "fail"
   }
 }
 ```
@@ -5801,7 +5801,7 @@ workflow test_prefix_fail {
   Array[String] bad = prefix("-x ", env3)
 
   meta {
-    fail: true
+    test_config: "fail"
   }
 }
 ```
@@ -5885,7 +5885,7 @@ workflow test_suffix_fail {
   Array[String] bad = suffix("-z", env3)
   
   meta {
-    fail: true
+    test_config: "fail"
   }
 }
 ```
@@ -6351,7 +6351,7 @@ workflow test_zip_fail {
   Array[Pair[Int, String]] bad = zip(xs, zs)
 
   meta {
-    fail: true
+    test_config: "fail"
   }
 }
 ```
@@ -6550,7 +6550,7 @@ workflow select_first_only_none_fail {
   select_first([maybe_four_but_is_not])  # error! array contains only None values
   
   meta {
-    fail: true
+    test_config: "fail"
   }
 }
 ```
@@ -6581,7 +6581,7 @@ workflow select_first_empty_fail {
   select_first([])  # error! array is empty
   
   meta {
-    fail: true
+    test_config: "fail"
   }
 }
 ```
@@ -6782,7 +6782,7 @@ workflow test_as_map_fail {
   Boolean bad = as_map([("a", 1), ("a", 2)])
 
   meta {
-    fail: true
+    test_config: "fail"
   }
 }
 ```
