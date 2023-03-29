@@ -68,10 +68,15 @@ An example can import another example using its file name.
 </details>
 </pre>
 
-The `meta` section of the `task` or `workflow` can be used to specify test meadata. Currently, two attributes are supported:
+The `meta` section of the `task` or `workflow` can be used to specify test meadata using the `test_config` attribute. This attribute accepts either a directive or an array of directives, where each directive is one of the following string values.
 
-* `optional`: Boolean; whether an automated testing framework is allowed to skip the example or ignore a failure.
-* `fail`: Boolean; whether the task/workflow is expected to fail; defaults to `false`.
+* Necessity: these directives are mutually exclusive, in increasing order of precedence:
+    * "required": The test harness must run the test. (default)
+    * "optional": The test harness may choose whether or not to run the test. If the test harness does run the test and it is unsuccessful, it should be reported as a warning rather than an error.
+    * "ignore": The test harness must not run the test.
+* Expected result: these directives are mutually exclusive, in increasing order of precedence:
+    * "succeed": The test is expected to succeed. (default)
+    * "fail": The test is expected to fail.
 
 <pre>
 <details>
@@ -83,8 +88,8 @@ The `meta` section of the `task` or `workflow` can be used to specify test meada
     ...
 
     meta {
-      optional: true,
-      fail: true
+      # This test is optional. If the test harness does run it, then it's expected to fail.
+      test_config: ["optional", "fail"]
     }
   }
   ```
