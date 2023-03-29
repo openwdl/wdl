@@ -2881,6 +2881,8 @@ Note that the `TaskRequirements` and `TaskInfo` struct definitions above do not 
 
 The runtime engine may choose to define additional optional members of `TaskInfo`.
 
+If a task is using the deprecated `runtime` section rather than `requirements` and `hints`, then the runtime values of the reserved `runtime` attributes (i.e., the ones that appear in the `requirements` section) are populated in the `requirements` member, and any other attributes are populated in the `hints` member.
+
 ### Task Examples
 
 #### Example 1: Simplest Task

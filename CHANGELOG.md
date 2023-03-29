@@ -49,6 +49,8 @@ version 1.2.0
 
 + Deprecated `runtime` section.
 
++ Added the ability to access the actual values of `requirements`, `hints`, `meta`, and `parameter_meta` at runtime.
+
 version 1.1.0
 ---------------------------
 
