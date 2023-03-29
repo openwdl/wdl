@@ -2802,7 +2802,7 @@ Each task implicitly declares a `task` variable that is available only with in t
 # value, then it uses the requested value instead, or the default value if no specific value
 # was requested.
 struct TaskRequirements {
-  String container  # the container in which the task is executing
+  String container  # the URI of the container in which the task is executing; or `""` if none
   Float cpu  # allocated cpu's
   Int memory  # allocated memory in bytes
   Map[String, Int] disks  # mapping of mount point to allocated disk space in bytes
@@ -2838,7 +2838,8 @@ task test_runtime_info_task {
   echo "Task name: ~{task.name}"
   echo "Task description: ~{task.meta.description}"
   echo "Task container: ~{task.container}"
-  echo "Available cpus: ~{task.cpu / (1024 * 1024 * 1024)} GiB"
+  echo "Available cpus: ~{task.cpu}"
+  echo "Available memory: ~{task.memory / (1024 * 1024 * 1024)} GiB"
   exit 1
   >>>
 
