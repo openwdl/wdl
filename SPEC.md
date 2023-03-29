@@ -34,6 +34,8 @@ Revisions to this specification are made periodically in order to correct errors
         - [Map\[P, Y\]](#mapp-y)
         - [Custom Types (Structs)](#custom-types-structs)
         - [🗑 Object](#-object)
+      - [Hidden Types](#hidden-types)
+        - [Union](#union)
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
@@ -140,10 +142,10 @@ Revisions to this specification are made periodically in order to correct errors
     - [`write_map`](#write_map)
     - [`read_json`](#read_json)
     - [`write_json`](#write_json)
-    - [🗑 `read_object`](#-read_object)
-    - [🗑 `read_objects`](#-read_objects)
-    - [🗑 `write_object`](#-write_object)
-    - [🗑 `write_objects`](#-write_objects)
+    - [`read_object`](#read_object)
+    - [`read_objects`](#read_objects)
+    - [`write_object`](#write_object)
+    - [`write_objects`](#write_objects)
   - [String Array Functions](#string-array-functions)
     - [`prefix`](#prefix)
     - [✨ `suffix`](#-suffix)
@@ -609,7 +611,7 @@ The following primitive types exist in WDL:
 
 A type may have a `?` postfix quantifier, which means that its value is allowed to be undefined without causing an error. A declaration with an optional type can only be used in calls or functions that accept optional values.
 
-WDL has a special value `None` whose meaning is "an undefined value". The type of the `None` value is `Any`, meaning `None` can be assigned to an optional declaration of any type. The `None` value is the only value that can be of type `Any`.
+WDL has a special value `None` whose meaning is "an undefined value". The `None` value has the (hidden) type [`Union`](#hidden-types), meaning `None` can be assigned to an optional declaration of any type.
 
 An optional declaration has a default initialization of `None`, which indicates that it is undefined. An optional declaration may be initialized to any literal or expression of the correct type, including the special `None` value.
 
@@ -863,7 +865,18 @@ Object f = object {
 Int i = f.a
 ```
 
-Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, **the `Object` type, the `object` literal syntax, and all of the [standard library functions](#-read_objects) with `Object` parameters or return values have been deprecated and will be removed in the next major version of the WDL specification**. All uses of `Object` can be replaced with [structs](#struct-definition).
+Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, the use of the `Object` type and the `object` literal syntax have been deprecated. In WDL 2.0, `Object` will become a [hidden type](#hidden-types) that may only be instantiated by the runtime engine. `Object` declarations can be replaced with use of [structs](#struct-definition).
+
+#### Hidden Types
+
+A hidden type is one that may only be instantiated by the runtime engine, and cannot be used in a declaration within a WDL file. There is currently only one hidden type, `Union`; however, in WDL 2.0, `Object` will also become a hidden type.
+
+##### Union
+
+The `Union` type is used for a value that may have any one of several concrete types. A `Union` value must always be coerced to a concrete type. The `Union` type is used in two placed:
+
+* It is the type of the special [`None`](#optional-types-and-none) value.
+* It is the return type of some standard library functions, such as [`read_json`](#read_json).
 
 #### Type Conversion
 
@@ -5169,7 +5182,7 @@ key2\tvalue2
 ### `read_json`
 
 ```
-X read_json(File)
+Union read_json(File)
 ```
 
 Reads a JSON file into a WDL value whose type depends on the file's contents. The mapping of JSON type to WDL type is:
@@ -5183,7 +5196,7 @@ Reads a JSON file into a WDL value whose type depends on the file's contents. Th
 | boolean   | `Boolean`        |
 | null      | `None`           |
 
-The return value must be used in a context where it can be coerced to the expected type, or an error is raised. For example, if the JSON file contains `null`, then the return type will be `None`, meaning the value can only be used in a context where an optional type is expected.
+The return value is of type [`Union`](#union) and must be used in a context where it can be coerced to the expected type, or an error is raised. For example, if the JSON file contains `null`, then the return value will be `None`, meaning the value can only be used in a context where an optional type is expected.
 
 If the JSON file contains an array, then all the elements of the array must be coercible to the same type, or an error is raised.
 
@@ -5370,7 +5383,7 @@ And `/local/fs/tmp/map.json` would contain:
 }
 ```
 
-### 🗑 `read_object`
+### `read_object`
 
 ```
 Object read_object(File)
@@ -5448,7 +5461,7 @@ Which are read into an `Object` with the following members:
 | key_1     | "value_1" |
 | key_2     | "value_2" |
 
-### 🗑 `read_objects`
+### `read_objects`
 
 ```
 Array[Object] read_objects(File)
@@ -5545,19 +5558,19 @@ Which are read into an `Array[Object]` with the following elements:
 |       | key_1     | "value_C1" |
 |       | key_2     | "value_C2" |
 
-### 🗑 `write_object`
+### `write_object`
 
 ```
-File write_object(Object)
+File write_object(Struct|Object)
 ```
 
-Writes a tab-separated value (TSV) file with the contents of an `Object`. The file contains two tab-delimited lines. The first line is the names of the `Object` members, and the second line is the corresponding values. Each line is terminated by the newline (`\n`) character. The ordering of the columns is unspecified.
+Writes a tab-separated value (TSV) file with the contents of a `Object` or `Struct`. The file contains two tab-delimited lines. The first line is the names of the members, and the second line is the corresponding values. Each line is terminated by the newline (`\n`) character. The ordering of the columns is unspecified.
 
-The `Object` values must be serializable to strings, meaning that only primitive types are supported. Attempting to write an `Object` that has a compound member value results in an error.
+The member values must be serializable to strings, meaning that only primitive types are supported. Attempting to write a `Struct` or `Object` that has a compound member value results in an error.
 
 **Parameters**
 
-1. `Object`: An object to write.
+1. `Struct|Object`: An object to write.
 
 **Returns**: A `File`.
 
@@ -5627,21 +5640,21 @@ key_1\tkey_2\tkey_3
 value_1\tvalue_2\tvalue_3
 ```
 
-### 🗑 `write_objects`
+### `write_objects`
 
 ```
-File write_objects(Array[Object])
+File write_objects(Array[Struct|Object])
 ```
 
-Writes a tab-separated value (TSV) file with the contents of a `Array[Object]`. All `Object`s in the `Array` must have the same member names, or an error is raised.
+Writes a tab-separated value (TSV) file with the contents of a `Array[Struct]` or `Array[Object]`. All elements of the `Array` must have the same member names, or an error is raised.
 
-The file contains `N+1` tab-delimited lines, where `N` is the number of elements in the `Array`. The first line is the names of the `Object` members, and the subsequent lines are the corresponding values for each `Object`. Each line is terminated by a newline (`\n`) character. The lines are written in the same order as the `Object`s in the `Array`. The ordering of the columns is unspecified. If the `Array` is empty, an empty file is written.
+The file contains `N+1` tab-delimited lines, where `N` is the number of elements in the `Array`. The first line is the names of the `Struct`/`Object` members, and the subsequent lines are the corresponding values for each element. Each line is terminated by a newline (`\n`) character. The lines are written in the same order as the elements in the `Array`. The ordering of the columns is the same as the order in which the `Struct`'s members are defined; the column ordering for `Object`s is unspecified. If the `Array` is empty, an empty file is written.
 
-The object values must be serializable to strings, meaning that only primitive types are supported. Attempting to write an `Object` that has a compound member value results in an error.
+The member values must be serializable to strings, meaning that only primitive types are supported. Attempting to write a `Struct` or `Object` that has a compound member value results in an error.
 
 **Parameters**
 
-1. `Array[Object]`: An array of objects to write.
+1. `Array[Struct|Object]`: An array of objects to write.
 
 **Returns**: A `File`.
 
