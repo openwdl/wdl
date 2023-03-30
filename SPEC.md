@@ -2637,7 +2637,7 @@ A task's `input` section declares its input parameters. The values for declarati
 Example: task_inputs_task.wdl
 
 ```wdl
-version 1.2
+version 1.1
 
 task task_inputs {
   input {
@@ -2716,106 +2716,175 @@ Recall that a type may have a quantifier:
 
 The following task has several inputs with type quantifiers:
 
+<details>
+<summary>
+Example: input_type_quantifiers_task.wdl
+
 ```wdl
-task test {
+version 1.1
+
+task input_type_quantifiers {
   input {
-    Array[File]  a
-    Array[File]+ b
-    Array[File]? c
+    Array[String]  a
+    Array[String]+ b
+    Array[String]? c
     # If the next line were uncommented it would cause an error
     # + only applies to Array, not File
     #File+ d
     # An optional array that, if defined, must contain at least one element
-    Array[File]+? e
+    Array[String]+? e
   }
 
   command <<<
-    /bin/mycmd ~{sep=" " a}
-    /bin/mycmd ~{sep="," b}
-    /bin/mycmd ~{write_lines(c)}
+    cat ~{write_lines(a)} >> result
+    cat ~{write_lines(b)} >> result
+    ~{if defined(c) then 
+    "cat ~{write_lines(select_first([c]))} >> result"
+    else ""}
+    ~{if defined(d) then 
+    "cat ~{write_lines(select_first([d]))} >> result"
+    else ""}
   >>>
+
+  output {
+    Array[String] lines = read_lines("result")
+  }
   
   runtime {
-    container: "my_image:latest"
+    container: "ubuntu:latest"
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "input_type_quantifiers.a": [],
+  "input_type_quantifiers.b": ["A", "B"],
+  "input_type_quantifiers.e": ["C"],
+}
+```
+
+Example output:
+
+```json
+{
+  "input_type_quantifiers.lines": ["A", "B", "C"]
+}
+```
+</p>
+</details>
 
 If these input values are provided:
 
-| input  | value           |
-| ------ | --------------- |
-| test.a | ["1", "2", "3"] |
-| test.b | []              |
+| input | value           |
+| ----- | --------------- |
+| `a`   | ["1", "2", "3"] |
+| `b`   | []              |
 
-It will result in an error, since `test.b` is required to have at least one element.
+the task will fail with an error, because `test.b` is required to have at least one element.
 
 On the other hand, if these input values are provided:
 
-| var    | value           |
-| ------ | --------------- |
-| test.a | ["1", "2", "3"] |
-| test.b | ["x"]           |
+| var | value           |
+| --- | --------------- |
+| `a` | ["1", "2", "3"] |
+| `b` | ["x"]           |
 
-The task will run successfully, because `test.c` is not required. Given these values, the command would be instantiated as:
+the task will run successfully (`c` and `d` are not required). Given these values, the command would be instantiated as:
 
 ```txt
-/bin/mycmd 1 2 3
-/bin/mycmd x
-/bin/mycmd
+cat /tmp/file1 >> result
+cat /tmp/file2 >> result
 ```
 
 If the inputs were:
 
-| var    | value             |
-| ------ | ----------------- |
-| test.a | ["1", "2", "3"]   |
-| test.b | ["x","y"]         |
-| test.c | ["a","b","c","d"] |
+| var | value                |
+| --- | -------------------- |
+| `a` | ["1", "2", "3"]      |
+| `b` | ["x", "y"]           |
+| `c` | ["a", "b", "c", "d"] |
 
-Then the command would be instantiated as:
+then the command would be instantiated as:
 
 ```txt
-/bin/mycmd 1 2 3
-/bin/mycmd x,y
-/bin/mycmd /path/to/c.txt
+cat /tmp/file1 >> result
+cat /tmp/file2 >> result
+cat /tmp/file3 >> result
 ```
 
 ##### Optional inputs with defaults
 
-It *is* possible to provide a default to an optional input type. This may be desirable in the case where you want to have a defined value by default, but you want the caller to be able to override the default and set the value to undefined (i.e. `None`).
+It *is* possible to provide a default to an optional input type. This may be desirable in the case where you want to have a defined value by default, but you want the caller to be able to override the default and set the value to undefined (`None`).
+
+<details>
+<summary>
+Example: optional_with_default.wdl
 
 ```wdl
+version 1.1
+
 task say_hello {
   input {
     String name
     String? saluation = "hello"
   }
+
   command <<< >>>
+
   output {
     String greeting = if defined(saluation) then "~{saluation} ~{name}" else name
   }
 }
 
-workflow foo {
+workflow optional_with_default {
   input {
     String name
     Boolean use_salutation
   }
   
   if (use_salutation) {
-    call say_hello { input: name = name }
+    call say_hello as hello1 { 
+      input: name = name 
+    }
   }
 
   if (!use_salutation) {
-    call say_hello { 
+    call say_hello as hello2 { 
       input: 
         name = name,
         salutation = None 
     }
   }
+
+  output {
+    String greeting = select_first([hello1, hello2])
+  }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "optional_with_default.name": "John",
+  "optional_with_default.use_salutation": false
+}
+```
+
+Example output:
+
+```json
+{
+  "optional_with_default.greeting": "John"
+}
+```
+</p>
+</details>
 
 ### Private Declarations
 
@@ -2823,20 +2892,59 @@ A task can have declarations that are intended as intermediate values rather tha
 
 For example, this task takes an input and then performs a calculation, using a private declaration, that can then be referenced in the command template:
 
+<details>
+<summary>
+Example: private_declaration_task.wdl
+
 ```wdl
-task t {
+version 1.1
+
+task private_declaration {
   input {
-    Int size
+    Array[String] lines
   }
 
-  Int size_clamped = if size > 10 then 10 else size
-  ...
+  Int num_lines = length(lines)
+  Int num_lines_clamped = if num_lines > 3 then 3 else num_lines
+
+  command <<<
+  head -~{num_lines_clamped} ~{write_lines(lines)}
+  >>>
+
+  output {
+    Array[String] out_lines = read_lines(stdout())
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "private_declaration.lines": ["A", "B", "C", "D"]
 }
 ```
 
+Example output:
+
+```json
+{
+  "private_declaration.out_lines": ["A", "B", "C"]
+}
+```
+</p>
+</details>
+
 The value of a private declaration may *not* be specified by the task caller, nor is it accessible outside of the task [scope](#task-scope).
 
+<details>
+<summary>
+Example: private_declaration_fail.wdl
+
 ```wdl
+version 1.1
+
 task test {
   input {
     Int i
@@ -2844,22 +2952,42 @@ task test {
   String s = "hello"
   command <<< ... >>>
   output {
-    File out = "/path/to/file"
+    String out = "goodbye"
   }
 }
 
-workflow wf {
+workflow private_declaration_fail {
   call test {
     input:
       i = 1,         # this is fine - "i" is in the input section
       s = "goodbye"  # error! "s" is private
   }
+
   output {
-    File out = test.out # this is fine - "out" is in the output section
-    String s = test.s   # error! "s" is private
+    String out = test.out # this is fine - "out" is in the output section
+    String s = test.s # error! "s" is private
+  }
+
+  meta {
+    test_config: "fail"
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
 
 ### Command Section
 
