@@ -2541,6 +2541,10 @@ The `import` statement specifies a WDL document source as a string literal, whic
 
 Every imported WDL file requires a unique namespace, which can be specified using the `as <identifier>` syntax. If a namespace identifier is not specified explicitly, then the default namespace is the filename of the imported WDL, minus the `.wdl` extension. The tasks and workflows imported from a WDL file are only accessible through the assigned [namespace](#namespaces) - see [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details.
 
+<!--- 
+TODO: find a reliable way to turn this into an executable example. For example, we could host
+WDLs to be imported within this GitHub repo.
+--->
 ```wdl
 import "http://example.com/lib/analysis_tasks" as analysis
 import "http://example.com/lib/stdlib.wdl"
@@ -2586,13 +2590,13 @@ A task is defined using the `task` keyword, followed by a task name that is uniq
 
 A task has a required [`command`](#command-section) that is a template for a Bash script.
 
-Tasks explicitly define their [`input`s](#task-inputs) and [`output`s](#task-outputs), which is essential for building dependencies between tasks. The value of an input declaration may be supplied by the caller. All task declarations may be initialized with hard-coded literal values, or may have their values constructed from expressions. Declarations can be referenced in the command template.
+Tasks explicitly define their [`input`s](#task-inputs) and [`output`s](#task-outputs), which is essential for building dependencies between tasks and workflows. The value of an input declaration may be supplied by the caller. Tasks may have additional "private" declarations within the task body. All task declarations may be initialized with hard-coded literal values, or may have their values constructed from expressions. Input and private declarations can be referenced in the command template.
 
 A task may also specify [requirements for the runtime environment](#runtime-section) (such as the amount of RAM or number of CPU cores) that must be satisfied in order for its commands to execute properly.
 
 There are two optional metadata sections: the [`meta`](#metadata-sections) section, for task-level metadata, and the [`parameter_meta`](#parameter-metadata-section) section, for parameter-level metadata.
 
-The execution engine is responsible for "instantiating" the shell script (i.e. replacing all references with actual values) in an environment that meets all specified runtime requirements, localizing any input files into that environment, executing the script, and generating any requested outputs.
+The execution engine is responsible for "instantiating" the shell script (i.e., replacing all references with actual values) in an environment that meets all specified runtime requirements, localizing any input files into that environment, executing the script, and generating any requested outputs.
 
 ```wdl
 task name {
@@ -2626,30 +2630,51 @@ task name {
 
 ### Task Inputs
 
-A task's `input` section declares its input parameters. The values for declarations within the input section may be specified by the caller of the task. An input declaration may be initialized to a default value or expression that will be used when the caller does not specify a value. Input declarations may also be optional, in which case a value may be specified but is not required. If an input declaration is not optional and does not have an initialization, then it is a required input, meaning the caller must specify a value.
+A task's `input` section declares its input parameters. The values for declarations within the `input` section may be specified by the caller of the task. An input declaration may be initialized to a default value or expression that will be used when the caller does not specify a value. Input declarations may also be optional, in which case a value may be specified but is not required. If an input declaration is not optional and does not have an initialization, then it is a required input, meaning the caller must specify a value.
+
+<details>
+<summary>
+Example: task_inputs_task.wdl
 
 ```wdl
-task t {
+version 1.2
+
+task task_inputs {
   input {
     Int i               # a required input parameter
     String s = "hello"  # an input parameter with a default value
     File? f             # an optional input parameter
   }
+}
+```
+</summary>
+<p>
+Example input:
 
-  # [... other task sections]
+```json
+{
+  "task_inputs.i": 1
 }
 ```
 
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
 #### Task Input Localization
 
-`File` inputs must be treated specially since they may require localization to the execution environment. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
+`File` inputs may require localization to the execution environment. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
 
 - Files are localized into the execution environment prior to the task execution commencing.
 - When localizing a `File`, the engine may choose to place the file wherever it likes so long as it adheres to these rules:
   - The original file name must be preserved even if the path to it has changed.
   - Two input files with the same name must be located separately, to avoid name collision.
   - Two input files that have the same parent location must be localized into the same directory for task execution. For example, `http://foo.com/bar/a.txt` and `http://foo.com/bar/b.txt` have the same parent (`http://foo.com/bar/`), so they must be localized into the same directory. See below for special-case handling for Versioning Filesystems.
-- When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted when that declaration is referenced in the command template.
+- When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted when the command is instantiated.
 
 The above rules do *not* guarantee that two files will be localized to the same directory *unless* they originate from the same parent location. If you are writing a task for a tool that assumes two files will be co-located, then it is safest to manually co-locate them prior to running the tool. For example, the following task runs a variant caller (`varcall`) on a BAM file and expects the BAM's index file (`.bai` extension) to be in the same directory as the BAM file.
 
