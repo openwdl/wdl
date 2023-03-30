@@ -35,7 +35,7 @@ Examples must conform to the following rules:
 * Workflow and task names must be globally unique.
 * Workflow names must not end with `_task`.
 * The WDL code must be valid, runnable code.
-* The input and output JSON must be written with the workflow name as a prefix for all parameter names.
+* The input and output JSON must be written according to the [standard input/output specification](../SPEC.md#input-and-output-formats), i.e., with the workflow/task name as a prefix for all parameter names.
 
 An example can import another example using its file name.
 
@@ -45,7 +45,7 @@ An example can import another example using its file name.
   Example: example1_task.wdl
 
   ```wdl
-  task1 {
+  example1 {
     ...
   }
   ```
@@ -60,7 +60,7 @@ An example can import another example using its file name.
   import "example1_task.wdl"
 
   workflow example2 {
-    ...
+    call example1_task.example1 { ... }
   }
   ```
   </summary>
@@ -84,7 +84,7 @@ The `meta` section of the `task` or `workflow` can be used to specify test metad
   Example: optional_fail_task.wdl
 
   ```wdl
-  optional_fail_task {
+  task optional_fail {
     ...
 
     meta {
@@ -98,7 +98,7 @@ The `meta` section of the `task` or `workflow` can be used to specify test metad
 </details>
 </pre>
 
-These naming conventions are used with the intention that an automated testing framework can extract the examples from the specification and write them into the following directory structure. It also enables the implementation to filter out task tests if it does not support executing tasks.
+These naming and metadata conventions are used with the intention that an automated testing framework can extract the examples from the specification and write them into the following directory structure. It also enables the implementation to filter out task tests if it does not support executing tasks.
 
 ```
 tests
@@ -153,3 +153,4 @@ The `data` directory contains files that may be referenced by test cases. The da
   ``` 
   </p>
 </details>
+</pre>

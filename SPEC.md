@@ -552,9 +552,9 @@ The following primitive types exist in WDL:
 * A `Float` represents a finite 64-bit IEEE-754 floating point number.
 * A `String` represents a unicode character string following the format described [above](#strings).
 * A `File` represents a file (or file-like object).
-  * A `File` declaration can have a string value indicating a relative or absolute path on the local file system.
-  * Within a WDL file, literal values for files may only be local (relative or absolute) paths.
-  * An execution engine may support other ways to specify [`File` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
+    * A `File` declaration can have a string value indicating a relative or absolute path on the local file system.
+    * Within a WDL file, literal values for files may only be local (relative or absolute) paths.
+    * An execution engine may support other ways to specify [`File` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
 
 <details>
   <summary>
@@ -749,40 +749,124 @@ An array value can be initialized with an array literal - a comma-separated list
 
 An `Array` may have an empty value (i.e. an array of length zero), unless it is declared using `+`, the non-empty postfix quantifier, which represents a constraint that the `Array` value must contain one-or-more elements. For example, the following task operates on an `Array` of `File`s and it requires at least one file to function:
 
+<details>
+<summary>
+Example: sum_task.wdl
+
 ```wdl
-task align {
+version 1.1
+
+task sum {
   input {
-    Array[File]+ fastqs
+    Array[Int]+ ints
   }
-  String sample_type = if length(fastqs) == 1 then "--single-end" else "--paired-end"
+  
   command <<<
-  ./align ~{sample_type} ~{sep(" ", fastqs)} > output.bam
+  echo ~{sep(" ", ints)} | awk '{tot=0; for(i=1;i<=NF;i++) tot+=$i; print tot}'
   >>>
+  
   output {
-    File bam = "output.bam"
+    Int total = read_int(stdout())
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "sum.ints": [0, 1, 2]
+}
+```
+
+Example output:
+
+```json
+{
+  "sum.total": 3
+}
+```
+</p>
+</details>
 
 Recall that a type may have an optional postfix quantifier (`?`), which means that its value may be undefined. The `+` and `?` postfix quantifiers can be combined to declare an `Array` that is either undefined or non-empty, i.e. it can have any value *except* the empty array.
 
 Attempting to assign an empty array literal to a non-empty `Array` declaration results in an error. Otherwise, the non-empty assertion is only checked at runtime: binding an empty array to an `Array[T]+` input or function argument is a runtime error. 
 
-```wdl
-# array that must contain at least one Float
-Array[Float]+ nonempty = [0.0]
-# array that must contain at least one Int?
-# (which may have an undefined value)
-Array[Int?]+ nonempty2 = [None, 1]
-# array that can be undefined or must contain
-# at least one Int
-Array[Int]+? nonempty4
-Array[Int]+? nonempty5 = [0.0]
 
-# these both cause an error - can't assign empty array value to non-empty Array type
-Array[Boolean]+ nonempty3 = []
-Array[Int]+? nonempty6 = [] 
+<details>
+<summary>
+Example: non_empty_optional.wdl
+
+```wdl
+version 1.1
+
+workflow non_empty_optional {
+  output {
+    # array that must contain at least one Float
+    Array[Float]+ nonempty1 = [0.0]
+    # array that must contain at least one Int? (which may have an undefined value)
+    Array[Int?]+ nonempty2 = [None, 1]
+    # array that can be undefined or must contain at least one Int
+    Array[Int]+? nonempty3
+    Array[Int]+? nonempty4 = [0.0]
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "non_empty_optional.nonempty1": [0.0],
+  "non_empty_optional.nonempty2": [null, 1],
+  "non_empty_optional.nonempty3": [],
+  "non_empty_optional.nonempty4": [0.0],
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: non_empty_optional_fail.wdl
+
+```wdl
+version 1.1
+
+workflow non_empty_optional_fail {
+  # these both cause an error - can't assign empty array value to non-empty Array type
+  Array[Boolean]+ nonempty3 = []
+  Array[Int]+? nonempty6 = [] 
+
+  meta {
+    test_config: "fail"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
 
 For more details see the section on [Input Type Constraints](#input-type-constraints).
 
@@ -792,11 +876,39 @@ A `Pair` represents two associated values, which may be of different types. In o
 
 A `Pair` can be initialized with a pair literal - a comma-separated pair of values in parentheses (`()`). The components of a `Pair` value are accessed using its `left` and `right` accessors.
 
+<details>
+<summary>
+Example: test_pairs.wdl
+
 ```wdl
-Pair[Int, Array[String]] data = (5, ["hello", "goodbye"])
-Int five = p.left  # evaluates to 5
-String hello = data.right[0]  # evaluates to "hello"
+verison 1.1
+
+workflow test_pairs {
+  Pair[Int, Array[String]] data = (5, ["hello", "goodbye"])
+  output {
+    Int five = p.left  # evaluates to 5
+    String hello = data.right[0]  # evaluates to "hello"
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_pairs.five": 5,
+  "test_pairs.hello": "hello"
+}
+```
+</p>
+</details>
 
 ##### Map[P, Y]
 
@@ -804,52 +916,184 @@ A `Map` represents an associative array of key-value pairs. All of the keys must
 
 A `Map` can be initialized with a map literal - a comma-separated list of key-value pairs in braces (`{}`), where key-value pairs are delimited by `:`. The value of a specific key can be accessed by placing the key in brackets after the declaration name. Accessing a non-existent key of a `Map` results in an error.
 
+<details>
+<summary>
+Example: test_map.wdl
+
 ```wdl
-Map[Int, Int] int_to_int = {1: 10, 2: 11}
-Map[String, Int] string_to_int = { "a": 1, "b": 2 }
-Map[File, Array[Int]] file_to_ints = {
-  "/path/to/file1": [0, 1, 2],
-  "/path/to/file2": [9, 8, 7]
+verison 1.1
+
+workflow test_map {
+  Map[Int, Int] int_to_int = {1: 10, 2: 11}
+  Map[String, Int] string_to_int = { "a": 1, "b": 2 }
+  Map[File, Array[Int]] file_to_ints = {
+    "/path/to/file1": [0, 1, 2],
+    "/path/to/file2": [9, 8, 7]
+  }
+
+  output {
+    Int ten = int_to_int[1]  # evaluates to 10
+    Int b = string_to_int["b"]  # evaluates to 2
+    Array[Int] ints = file_to_ints["/path/to/file1"]  # evaluates to [0, 1, 2]
+  }
 }
-Int b = string_to_int["b"]  # evaluates to 2
-Int c = string_to_int["c"]  # error - "c" is not a key in the map
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
 ```
 
-A `Map` is insertion ordered, meaning the order in which elements are added to the `Map` is preserved, for example when [✨ converting a `Map` to an array of `Pair`s](#-as_pairs).
+Example output:
+
+```json
+{
+  "test_map.ten": 10,
+  "test_map.b": 2,
+  "test_map.ints": [0, 1, 2]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: test_map_fail.wdl
 
 ```wdl
-# declaration using a map literal
-Map[Int, String] int_to_string = { 2: "hello", 1: "goodbye" }
-# evaluates to [(2, "hello"), (1, "goodbye")]
-Array[Pair[Int, String]] pairs = as_pairs(int_to_string)
+verison 1.1
+
+workflow test_map_fail {
+  Map[String, Int] string_to_int = { "a": 1, "b": 2 }
+  Int c = string_to_int["c"]  # error - "c" is not a key in the map
+
+  meta {
+    test_config: "fail"
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+A `Map` is insertion-ordered, meaning the order in which elements are added to the `Map` is preserved, for example when [✨ converting a `Map` to an array of `Pair`s](#-as_pairs).
+
+<details>
+<summary>
+Example: test_map_ordering.wdl
+
+```wdl
+verison 1.1
+
+workflow test_map_ordering {
+  # declaration using a map literal
+  Map[Int, Int] int_to_int = { 2: 5, 1: 10 }
+
+  scatter (ints in as_pairs(int_to_int)) {
+    Array[Int] i = [ints.left, ints.right]
+  }
+
+  output {
+    # evaluates to [[2, 5], [1, 10]]
+    Array[Array[Int]] ints = i
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_map_ordering.ints": [[2, 5], [1, 10]]
+}
+```
+</p>
+</details>
 
 ##### Custom Types (Structs)
 
 WDL provides the ability to define custom compound types called [structs](#struct-definition). `Struct` types are defined directly in the WDL document and are usable like any other type. A `struct` definition contains any number of declarations of any types, including other `Struct`s.
 
-A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A declaration with a custom type can be initialized with a struct literal, which begins with the `Struct` type name followed by a comma-separated list of key-value pairs in braces (`{}`), where name-value pairs are delimited by `:`. The member names in a struct literal are not quoted.
-
-```wdl
-# a struct is a user-defined type; it can contain members of any types
-struct SampleBamAndIndex {
-  String sample_name
-  File bam
-  File bam_index
-}
-
-SampleBamAndIndex b_and_i = SampleBamAndIndex {
-  sample_name: "NA12878",
-  bam: "NA12878.bam",
-  bam_index: "NA12878.bam.bai" 
-}
-```
+A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A declaration with a custom type can be initialized with a struct literal, which begins with the `Struct` type name followed by a comma-separated list of name-value pairs in braces (`{}`), where name-value pairs are delimited by `:`. The member names in a struct literal are not quoted.
 
 The value of a specific member of a `Struct` value can be accessed by placing a `.` followed by the member name after the identifier.
 
+<details>
+<summary>
+Example: test_struct.wdl
+
 ```wdl
-File bam = b_and_i.bam
+version 1.1
+
+struct Person {
+  String name
+  Phone? phone
+}
+
+struct Phone {
+  Int exchange
+  Int number
+  Int? extension
+}
+
+workflow test_struct {
+  output {
+    Person person = Person {
+      name: "John",
+      phone: {
+        exchange: 123,
+        number: 4567890
+      }
+    }
+    Boolean has_extension = defined(person.extension)
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_struct.person": {
+    "name": "John",
+    "phone": {
+      "exchange": 123,
+      "number": 4567890
+    }
+  },
+  "test_struct.has_extension": false
+}
+```
+</p>
+</details>
 
 ##### 🗑 Object
 
@@ -857,13 +1101,44 @@ An `Object` is an unordered associative array of name-value pairs, where values 
 
 An `Object` can be initialized using syntax similar to a struct literal, except that the `object` keyword is used in place of the `Struct` name. The value of a specific member of an `Object` value can be accessed by placing a `.` followed by the member name after the identifier.
 
+<details>
+<summary>
+Example: test_object.wdl
+
 ```wdl
-Object f = object {
-  a: 10,
-  b: "hello"
+version 1.1
+
+workflow test_object {
+  output {
+    Object obj = object {
+      a: 10,
+      b: "hello"
+    }
+    Int i = f.a
+  }
 }
-Int i = f.a
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_object.obj": {
+    "a": 10,
+    "b": "hello"
+  },
+  "test_object.i": 10
+}
+```
+</p>
+</details>
 
 Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, the use of the `Object` type and the `object` literal syntax have been deprecated. In WDL 2.0, `Object` will become a [hidden type](#hidden-types) that may only be instantiated by the runtime engine. `Object` declarations can be replaced with use of [structs](#struct-definition).
 
@@ -888,10 +1163,42 @@ The execution engine is also responsible for converting (or "serializing") input
 
 Primitive types can always be converted to `String` using [string interpolation](#expression-placeholders-and-string-interpolation). See [Expression Placeholder Coercion](#expression-placeholder-coercion) for details.
 
+<details>
+<summary>
+Example: primitive_to_string.wdl
+
 ```wdl
-Int i = 5
-String istring = "~{i}"
+version 1.1
+
+workflow primitive_to_string {
+  input {
+    Int i = 5
+  }
+
+  output {
+    String istring = "~{i}"
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "primitive_to_string.i": 3
+}
+```
+
+Example output:
+
+```json
+{
+  "primitive_to_string.istring": "3"
+}
+```
+</p>
+</details>
 
 ##### Type Coercion
 
@@ -899,29 +1206,62 @@ There are some pairs of WDL types for which there is an obvious, unambiguous con
 
 For example, file paths are always represented as strings, making the conversion from `String` to `File` obvious and unambiguous.
 
+<details>
+<summary>
+Example: string_to_file.wdl
+
 ```wdl
-String path = "/path/to/file"
-# valid - String coerces unambiguously to File
-File f = path
+version 1.1
+
+workflow string_to_file {
+  String path1 = "/path/to/file"
+  File path2 = "/path/to/file"
+
+  # valid - String coerces unambiguously to File
+  File path3 = path1
+
+  output {
+    Boolean string_equals_path = path1 == path2
+    Boolean paths_equal = path2 == path3
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "string_to_file.string_equals_path": true,
+  "string_to_file.paths_equal": true
+}
+```
+</p>
+</details>
 
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
-| Target Type     | Source Type     | Notes/Constraints                                                                                                |
-| --------------- | --------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `File`          | `String`        |                                                                                                                  |
-| `Float`         | `Int`           | May cause overflow error                                                                                         |
-| `Y?`            | `X`             | `X` must be coercible to `Y`                                                                                     |
-| `Array[Y]`      | `Array[X]`      | `X` must be coercible to `Y`                                                                                     |
-| `Array[Y]`      | `Array[X]+`     | `X` must be coercible to `Y`                                                                                     |
-| `Map[X,Z]`      | `Map[W,Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                    |
-| `Pair[X,Z]`     | `Pair[W,Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                    |
-| `Struct`        | `Map[String,Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`           |
-| `Map[String,Y]` | `Struct`        | All `Struct` members must be coercible to `Y`                                                                    |
-| `Object`        | `Map[String,Y]` | 🗑                                                                                                                |
-| `Map[String,Y]` | `Object`        | 🗑 All object values must be coercible to `Y`                                                                     |
-| `Object`        | `Struct`        | 🗑                                                                                                                |
-| `Struct`        | `Object`        | 🗑 `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
+| Target Type      | Source Type      | Notes/Constraints                                                                                              |
+| ---------------- | ---------------- | -------------------------------------------------------------------------------------------------------------- |
+| `File`           | `String`         |                                                                                                                |
+| `Float`          | `Int`            | May cause overflow error                                                                                       |
+| `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                   |
+| `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                   |
+| `Array[Y]`       | `Array[X]+`      | `X` must be coercible to `Y`                                                                                   |
+| `Map[X, Z]`      | `Map[W, Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
+| `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
+| `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`         |
+| `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                  |
+| `Object`         | `Map[String, Y]` |                                                                                                                |
+| `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                     |
+| `Object`         | `Struct`         |                                                                                                                |
+| `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
 
 The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
 
@@ -957,17 +1297,20 @@ A non-optional type `T` can always be coerced to an optional type `T?`, but the 
 This constraint propagates into compound types. For example, an `Array[T?]` can contain both optional and non-optional elements. This facilitates the common idiom [`select_first([expr, default])`](#select_first), where `expr` is of type `T?` and `default` is of type `T`, for converting an optional type to a non-optional type. However, an `Array[T?]` could not be passed to the [`sep`](#-sep) function, which requires an `Array[T]`.
 
 There are two exceptions where coercion from `T?` to `T` is allowed:
+
 * [String concatenation in expression placeholders](#concatenation-of-optional-values)
 * [Equality and inequality comparisons](#equality-and-inequality-comparison-of-optional-types)
 
 ###### Struct/Object coercion from Map
 
-`Struct`s and `Object`s can be coerced from map literals, but beware the following behavioral difference:
+`Struct`s and `Object`s can be coerced from map literals, but beware the difference between `Map` keys (expressions) and `Struct`/`Object` member names.
+
+<details>
+<summary>
+Example: map_to_struct.wdl
 
 ```wdl
-String a = "beware"
-String b = "key"
-String c = "lookup"
+version 1.1
 
 struct Words {
   Int a
@@ -975,20 +1318,52 @@ struct Words {
   Int c
 }
 
-# What are the keys to this Struct?
-Words literal_syntax = Words {
-  a: 10,
-  b: 11,
-  c: 12
-}
+workflow map_to_struct {
+  String a = "beware"
+  String b = "key"
+  String c = "lookup"
 
-# What are the keys to this Struct?
-Words map_coercion = {
-  a: 10,
-  b: 11,
-  c: 12
+  # What are the keys to this Struct?
+  Words literal_syntax = Words {
+    a: 10,
+    b: 11,
+    c: 12
+  }
+
+  # What are the keys to this Struct?
+  Words map_coercion = {
+    a: 10,
+    b: 11,
+    c: 12
+  }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "map_to_struct.literal_syntax": {
+    "a": 10,
+    "b": 11,
+    "c": 12
+  },
+  "map_to_struct.map_coercion": {
+    "beware": 10,
+    "key": 11,
+    "lookup": 12
+  }
+}
+```
+</p>
+</details>
 
 - If a `Struct` (or `Object`) declaration is initialized using the struct-literal (or object-literal) syntax `Words literal_syntax = Words { a: ...` then the keys will be `"a"`, `"b"` and `"c"`.
 - If a `Struct` (or `Object`) declaration is initialized using the map-literal syntax `Words map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
@@ -1013,94 +1388,162 @@ Implementers may choose to allow limited exceptions to the above rules, with the
 $declaration = $type $identifier ('=' $expression)?
 ```
 
-A declaration reserves a name that can be referenced anywhere in the [scope](#appendix-b-wdl-namespaces-and-scopes) where it is declared. A declaration has a type, a name, and an optional initialization. Each declaration must be unique within its scope, and may not collide with a [reserved WDL keyword](#reserved-keywords) (e.g. `workflow`, or `input`).
-
-Some examples of declarations:
-
-```wdl
-File x
-String y = "abc"
-Int i = 1 + 2
-Float pi = 3 + .14
-Map[String, String] m
-```
+A declaration reserves a name that can be referenced anywhere in the [scope](#appendix-b-wdl-namespaces-and-scopes) where it is declared. A declaration has a type, a name, and an optional initialization. Each declaration must be unique within its scope, and may not collide with a [reserved WDL keyword](#reserved-keywords) (e.g., `workflow`, or `input`).
 
 A [task](#task-definition) or [workflow](#workflow-definition) may declare input parameters within its `input` section and output parameters within its `output` section. If a non-optional input declaration does not have an initialization, it is considered a "required" parameter, and its value must be provided by the user before the workflow or task may be run. Declarations may also appear in the body of a task or workflow. All non-input declarations must be initialized.
 
+<details>
+<summary>
+Example: declarations.wdl
+
 ```wdl
-task mytask {
+version 1.1
+
+workflow declarations {
   input {
-    String s  # required input declaration
-    Int? i    # optional input declaration
-    Float f   # input delcaration with an initialization
+    # these "unbound" declarations are only allowed in the input section
+    File? x  # optional - defaults to None
+    Map[String, String] m  # required
+    # this is a "bound" declaration
+    String y = "abc"  
   }
 
-  Boolean b = true  # declaration in the task body
-
-  # This is an error! f is not an input parameter and thus
-  # must be initialized.
-  File f
-
-  ...
+  Int i = 1 + 2  # Private declarations must be bound
 
   output {
-    Array[String] strarr = ["a", "b"] # output declaration
-    File? optfile = "/path/to/file"   # optional output declaration
-  } 
+    Float pi = i + .14  # output declarations must also be bound
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "declarations.m": {"a": "b"}
 }
 ```
 
-A declaration may be initialized with a literal value or an [expression](#expressions), which includes the ability to refer to elements that are outputs of tasks. For example:
+Example output:
+
+```json
+{
+  "declarations.pi": 3.14
+}
+```
+</p>
+</details>
+
+A declaration may be initialized with a literal value or an [expression](#expressions), which includes the ability to refer to elements that are outputs of tasks.
+
+<details>
+<summary>
+Example: task_outputs.wdl
 
 ```wdl
-task test {
+version 1.1
+
+task greet {
   input {
-    String var
+    String name
   }
+  
   command <<<
-    ./script ~{var}
+    echo "Hello ~{name}"
   >>>
+
   output {
-    String value = read_string(stdout())
-  }
-  runtime {
-    container: "my_image:latest"
+    String greeting = read_string(stdout())
   }
 }
 
-task test2 {
+task count_lines {
   input {
     Array[String] array
   }
+
   command <<<
-    ./script ~{write_lines(array)}
+    wc -l ~{write_lines(array)}
   >>>
+  
   output {
-    Int value = read_int(stdout())
-  }
-  runtime {
-    container: "my_image:latest"
+    Int line_count = read_int(stdout())
   }
 }
 
-workflow wf {
-  call test as x {input: var="x"}
-  call test as y {input: var="y"}
-  Array[String] strs = [x.value, y.value]
-  call test2 as z {input: array=strs}
+workflow task_outputs {
+  call greet as x {
+    input: name="John"
+  }
+  
+  call greet as y {
+    input: name="Sarah"
+  }
+
+  Array[String] greetings = [x.greeting, y.greeting]
+  call count_lines {
+    input: array=greetings
+  }
+
+  output {
+    Int num_greetings = count_lines.line_count
+  }
 }
 ```
+</summary>
+<p>
+Example input:
 
-In this example, `strs` would not be defined until both `call test as x` and `call test as y` have successfully completed. Before that's the case, `strs` is undefined. If any of the two tasks fail, then evaluation of `strs` should return an error to indicate that the `call test2 as z` operation should be skipped.
+```json
+{}
+```
 
-It must be possible to organize all of the statements within a scope into a directed acyclic graph (DAG); i.e. circular references between declarations are not allowed. The following example would result in an error due to the presence of a circular reference:
+Example output:
+
+```json
+{
+  "task_outputs.num_greetings": 2
+}
+```
+</p>
+</details>
+
+In this example, `greetings` is undefined until both `call greet as x` and `call greet as y` have successfully completed, at which point it is assigned the result of evaluating its expression. If either of the two tasks fail, the workflow would also fail and `greetings` would never be initialized.
+
+It must be possible to organize all of the statements within a scope into a directed acyclic graph (DAG); thus, circular references between declarations are not allowed. The following example would result in an error due to the presence of a circular reference.
+
+<details>
+<summary>
+Example: circular.wdl
 
 ```wdl
-task bad {
+version 1.1
+
+workflow circular {
   Int i = j + 1
   Int j = i - 2
+
+  meta {
+    test_config: "fail"
+  }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
 
 ### Expressions
 
@@ -1132,21 +1575,66 @@ $expression = '[' ($expression (',' $expression)*)? ']'
 $expression = $string | $integer | $float | $boolean | $identifier
 ```
 
-An expression is a compound statement that consists of literal values, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), [built-in operators](#built-in-operators) (e.g. `+` or `>=`), and calls to [standard library functions](#standard-library).
+An expression is a compound statement that consists of literal values, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), [built-in operators](#built-in-operators) (e.g., `+` or `>=`), and calls to [standard library functions](#standard-library).
 
-A "simple" expression is one that does not make use of identifiers or any function that takes a `File` input or returns a `File` output; i.e. it is an expression that can be evaluated unambiguously without any knowledge of the runtime context. An execution engine may choose to replace simple expressions with their literal values.
+A "simple" expression is one that does not make use of identifiers or any function that takes a `File` input or returns a `File` output; i.e., it is an expression that can be evaluated unambiguously without any knowledge of the runtime context. An execution engine may choose to replace simple expressions with their literal values.
+
+<details>
+<summary>
+Example: expressions_task.wdl
 
 ```wdl
-# simple expressions
-Float f = 1 + 2.2
-Boolean b = if 1 > 2 then true else false
-Map[String, Int] = as_map(zip(["a", "b", "c"], [1, 2, 3]))
+version 1.1
 
-# non-simple expressions
-Int i = x + 3  # requires knowing the value of x
-# requires reading a file that might only exist at runtime
-String s = read_string("/path/to/file")  
+task expressions {
+  input {
+    Int x
+  }
+
+  command <<<
+  echo -n "hello" > hello.txt
+  >>>
+
+  output {
+    # simple expressions
+    Float f = 1 + 2.2
+    Boolean b = if 1 > 2 then true else false
+    Map[String, Int] m = as_map(zip(["a", "b", "c"], [1, 2, 3]))
+
+    # non-simple expressions
+    Int i = x + 3  # requires knowing the value of x
+    # requires reading a file that might only exist at runtime
+    String s = read_string("hello.txt")
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "expressions.x": 5
+}
+```
+
+Example output:
+
+```json
+{
+  "expressions.f": 3.2,
+  "expressions.b": false,
+  "expressions.m": {
+    "a": 1,
+    "b": 2,
+    "c": 3
+  },
+  "expressions.i": 8,
+  "expressions.s": "hello"
+}
+```
+</p>
+</details>
 
 #### Built-in Operators
 
@@ -3902,7 +4390,7 @@ Rounds a floating point number **down** to the next lower integer.
 Example: test_floor.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_floor {
   input {
@@ -3957,7 +4445,7 @@ Rounds a floating point number **up** to the next higher integer.
 Example: test_ceil.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_ceil {
   input {
@@ -4012,7 +4500,7 @@ Rounds a floating point number to the nearest integer based on standard rounding
 Example: test_round.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_round {
   input {
@@ -4073,7 +4561,7 @@ Returns the smaller of two values. If both values are `Int`s, the return value i
 Example: test_min.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_min {
   input {
@@ -4135,7 +4623,7 @@ Returns the larger of two values. If both values are `Int`s, the return value is
 Example: test_max.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_max {
   input {
@@ -4203,7 +4691,7 @@ Regular expressions are written using regular WDL strings, so backslash characte
 Example: test_sub.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_sub {
   String chocolike = "I like chocolate when\nit's late"
@@ -4245,12 +4733,12 @@ Any arguments are allowed so long as they can be coerced to `String`s. For examp
 
 <details>
 <summary>
-Example: change_extension.wdl
+Example: change_extension_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task change_extension_task {
+task change_extension {
   input {
     String prefix
   }
@@ -4276,7 +4764,7 @@ Example input:
 
 ```json
 {
-  "change_extension_task.prefix": "foo"
+  "change_extension.prefix": "foo"
 }
 ```
 
@@ -4284,8 +4772,8 @@ Example output:
 
 ```json
 {
-  "change_extension_task.data": "data",
-  "change_extension_task.index": "index"
+  "change_extension.data": "data",
+  "change_extension.index": "index"
 }
 ```
 </p>
@@ -4327,7 +4815,7 @@ The optional second parameter specifies a literal suffix to remove from the file
 Example: test_basename.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_basename {
   output {
@@ -4375,12 +4863,12 @@ At least in standard Bash, glob expressions are not evaluated recursively, i.e.,
 
 <details>
 <summary>
-Example: gen_files.wdl
+Example: gen_files_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task gen_files_task {
+task gen_files {
   input {
     Int num_files
   }
@@ -4406,7 +4894,7 @@ Example input:
 
 ```json
 {
-  "gen_files_task.num_files": 2
+  "gen_files.num_files": 2
 }
 ```
 
@@ -4414,7 +4902,7 @@ Example output:
 
 ```json
 {
-  "gen_files_task.glob_len": 2
+  "gen_files.glob_len": 2
 }
 ```
 </p>
@@ -4458,9 +4946,9 @@ If the size cannot be represented in the specified unit because the resulting va
 Example: file_sizes_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task file_sizes_task {
+task file_sizes {
   command <<<
     echo "this file is 22 bytes" > created_file
   >>>
@@ -4490,9 +4978,9 @@ Example output:
 
 ```json
 {
-  "file_sizes_task.missing_file_bytes": 0.0,
-  "file_sizes_task.created_file_bytes": 22.0,
-  "file_sizes_task.multi_file_kb": 0.022
+  "file_sizes.missing_file_bytes": 0.0,
+  "file_sizes.created_file_bytes": 22.0,
+  "file_sizes.multi_file_kb": 0.022
 }
 ```
 </p>
@@ -4515,7 +5003,7 @@ Returns the value of the executed command's standard output (stdout) as a `File`
 Example: echo_stdout.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 task echo_stdout {
   command <<< echo "hello world" >>>
@@ -4560,7 +5048,7 @@ Returns the value of the executed command's standard error (stderr) as a `File`.
 Example: echo_stderr.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 task echo_stderr {
   command <<< >&2 echo "hello world" >>>
@@ -4609,9 +5097,9 @@ If the file contains any internal newline characters, they are left in tact.
 Example: read_string_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task read_string_task {
+task read_string {
   # this file will contain "this\nfile\nhas\nfive\nlines\n"
   File f = write_lines(["this", "file", "has", "file", "lines"])
 
@@ -4633,7 +5121,7 @@ Example output:
 
 ```json
 {
-  "read_string_task.s": "this\nfile\nhas\nfive\nlines"
+  "read_string.s": "this\nfile\nhas\nfive\nlines"
 }
 ```
 </p>
@@ -4658,9 +5146,9 @@ Reads a file that contains a single line containing only an integer and (optiona
 Example: read_int_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task read_int_task {
+task read_int {
   command <<<
   echo "  1  \n" > int_file
   >>>
@@ -4682,7 +5170,7 @@ Example output:
 
 ```json
 {
-  "read_int_task.i": 1
+  "read_int.i": 1
 }
 ```
 </p>
@@ -4707,9 +5195,9 @@ Reads a file that contains only a numeric value and (optional) whitespace. If th
 Example: read_float_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task read_float_task {
+task read_float {
   command <<<
   echo "  1  \n" > int_file
   echo "  2.0  \n" > float_file
@@ -4733,8 +5221,8 @@ Example output:
 
 ```json
 {
-  "read_float_task.f1": 1.0,
-  "read_float_task.f2": 2.0
+  "read_float.f1": 1.0,
+  "read_float.f2": 2.0
 }
 ```
 </p>
@@ -4759,9 +5247,9 @@ Reads a file that contains a single line containing only a boolean value and (op
 Example: read_bool_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task read_bool_task {
+task read_bool {
   command <<<
   echo "  true  \n" > true_file
   echo "  FALSE  \n" > false_file
@@ -4785,8 +5273,8 @@ Example output:
 
 ```json
 {
-  "read_bool_task.b1": true,
-  "read_bool_task.b2": false
+  "read_bool.b1": true,
+  "read_bool.b2": false
 }
 ```
 </p>
@@ -4813,9 +5301,9 @@ The order of the lines in the returned `Array[String]` is the order in which the
 Example: grep_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task grep_task {
+task grep {
   input {
     String pattern
     File file
@@ -4840,8 +5328,8 @@ Example input:
 
 ```json
 {
-  "grep_task.pattern": "world",
-  "grep_task.file": "greetings.txt"
+  "grep.pattern": "world",
+  "grep.file": "greetings.txt"
 }
 ```
 
@@ -4849,7 +5337,7 @@ Example output:
 
 ```json
 {
-  "grep_task.matches": [
+  "grep.matches": [
     "hello world",
     "hi_world"
   ]
@@ -4877,9 +5365,9 @@ Writes a file with one line for each element in a `Array[String]`. All lines are
 Example: write_lines_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task write_lines_task {
+task write_lines {
   input {
     Array[String] array = ["first", "second", "third"]
   }
@@ -4909,7 +5397,7 @@ Example output:
 
 ```json
 {
-  "write_lines_task.s": "first\tsecond\tthird"
+  "write_lines.s": "first\tsecond\tthird"
 }
 ```
 </p>
@@ -4946,9 +5434,9 @@ There is no requirement that the rows of the table are all the same length.
 Example: read_tsv_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task read_tsv_task {
+task read_tsv {
   command <<<
     echo "row1\tvalue1" >> data.tsv
     echo "row2\tvalue2" >> data.tsv
@@ -4972,7 +5460,7 @@ Example output:
 
 ```json
 {
-  "read_tsv_task.output_table": [
+  "read_tsv.output_table": [
     ["row1", "value1"],
     ["row2", "value2"],
     ["row3", "value3"]
@@ -5001,9 +5489,9 @@ Writes a tab-separated value (TSV) file with one line for each element in a `Arr
 Example: write_tsv_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task write_tsv_task {
+task write_tsv {
   input {
     Array[Array[String]] array = [["one", "two", "three"], ["un", "deux", "trois"]]
   }
@@ -5033,7 +5521,7 @@ Example output:
 
 ```json
 {
-  "write_tsv_task.ones": ["one", "un"]
+  "write_tsv.ones": ["one", "un"]
 }
 ```
 </p>
@@ -5073,9 +5561,9 @@ Each pair is added to a `Map[String, String]` in order. The values in the first 
 Example: read_map_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task read_map_task {
+task read_map {
   command <<<
     echo "key1\tvalue1" >> map_file
     echo "key2\tvalue2" >> map_file
@@ -5098,7 +5586,7 @@ Example output:
 
 ```json
 {
-  "read_map_task.mapping": {
+  "read_map.mapping": {
     "key1": "value1",
     "key2": "value2"
   }
@@ -5128,9 +5616,9 @@ Since `Map`s are ordered, the order of the lines in the file is guaranteed to be
 Example: write_map_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task write_map_task {
+task write_map {
   input {
     Map[String, String] map = {"key1": "value1", "key2": "value2"}
   }
@@ -5160,7 +5648,7 @@ Example output:
 
 ```json
 {
-  "write_map_task.keys": ["key1", "key2"]
+  "write_map.keys": ["key1", "key2"]
 }
 ```
 </p>
@@ -5213,7 +5701,7 @@ The `read_json` function does not have access to any WDL type information, so it
 Example: read_person.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 struct Person {
   String name
@@ -5287,7 +5775,7 @@ When serializing compound types, all nested types must be serializable or an err
 Example: write_json_fail.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow write_json_fail {
   Pair[Int, Map[Int, String]] x = (1, {2: "hello"})
@@ -5320,9 +5808,9 @@ Example output:
 Example: write_json_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task write_json_task {
+task write_json {
   input {
     Map[String, String] map = {"key1": "value1", "key2": "value2"}
   }
@@ -5357,7 +5845,7 @@ Example output:
 
 ```json
 {
-  "write_json_task.keys": ["key1", "key2"]
+  "write_json.keys": ["key1", "key2"]
 }
 ```
 </p>
@@ -5406,9 +5894,9 @@ The second row specifies the object member values corresponding to the names in 
 Example: read_object_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task read_object_task {
+task read_object {
   command <<<
     python <<CODE
     print('\t'.join(["key_{}".format(i) for i in range(3)]))
@@ -5437,7 +5925,7 @@ Example output:
 
 ```json
 {
-  "read_object_task.my_obj": {
+  "read_object.my_obj": {
     "key_0": "value_0",
     "key_1": "value_1",
     "key_2": "value_2",
@@ -5484,9 +5972,9 @@ There are any number of additional rows, where each additional row contains the 
 Example: read_objects_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task read_objects_task {
+task read_objects {
   command <<<
     python <<CODE
     print('\t'.join(["key_{}".format(i) for i in range(3)]))
@@ -5513,7 +6001,7 @@ Example output:
 
 ```json
 {
-  "read_objects_task.my_obj": [
+  "read_objects.my_obj": [
     {
       "key_0": "value_A0",
       "key_1": "value_A1",
@@ -5579,9 +6067,9 @@ The member values must be serializable to strings, meaning that only primitive t
 Example: write_object_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task write_object_task {
+task write_object {
   input {
     Object obj
   }
@@ -5601,7 +6089,7 @@ Example input:
 
 ```json
 {
-  "write_object_task": {
+  "write_object": {
     "key_1": "value_1",
     "key_2": "value_2",
     "key_3": "value_3",
@@ -5613,7 +6101,7 @@ Example output:
 
 ```json
 {
-  "write_object_task": ["key_1", "value_1"]
+  "write_object": ["key_1", "value_1"]
 }
 ```
 </p>
@@ -5663,9 +6151,9 @@ The member values must be serializable to strings, meaning that only primitive t
 Example: write_objects_task.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
-task write_objects_task {
+task write_objects {
   input {
     Array[Object] obj_array
   }
@@ -5685,7 +6173,7 @@ Example input:
 
 ```json
 {
-  "write_objects_task.obj_array": [
+  "write_objects.obj_array": [
     {
       "key_1": "value_1",
       "key_2": "value_2",
@@ -5709,7 +6197,7 @@ Example output:
 
 ```json
 {
-  "write_objects_task.results": ["key_1", "value_1", "value_4", "value_7"]
+  "write_objects.results": ["key_1", "value_1", "value_4", "value_7"]
 }
 ```
 </p>
@@ -5770,7 +6258,7 @@ Adds a prefix to each element of the input array of primitive values. Equivalent
 Example: test_prefix.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_prefix {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -5806,7 +6294,7 @@ Example output:
 Example: test_prefix_fail.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_prefix_fail {
   Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
@@ -5854,7 +6342,7 @@ Adds a suffix to each element of the input array of primitive values. Equivalent
 Example: test_suffix.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_suffix {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -5890,7 +6378,7 @@ Example output:
 Example: test_suffix_fail.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_suffix_fail {
   Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
@@ -5937,7 +6425,7 @@ Adds double-quotes (`"`) around each element of the input array of primitive val
 Example: test_quote.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_quote {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -5987,7 +6475,7 @@ Adds single-quotes (`'`) around each element of the input array of primitive val
 Example: test_squote.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_squote {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -6038,7 +6526,7 @@ Concatenates the elements of an array together into a string with the given sepa
 Example: test_sep.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_sep {
   Array[String] a = ["file_1", "file_2"]
@@ -6096,7 +6584,7 @@ Returns the number of elements in an array as an `Int`.
 Example: test_length.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_length {
   Array[Int] xs = [1, 2, 3]
@@ -6149,7 +6637,7 @@ Creates an array of the given length containing sequential integers starting fro
 Example: test_range.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 task double {
   input {
@@ -6215,7 +6703,7 @@ Transposes a two-dimensional array according to the standard matrix transpositio
 Example: test_transpose.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_transpose {
   # input array is 2 rows * 3 columns
@@ -6268,7 +6756,7 @@ Given `Array[X]` of length `M`, and `Array[Y]` of length `N`, the cross product 
 Example: test_cross.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_cross {
   Array[Int] xs = [1, 2, 3]
@@ -6320,7 +6808,7 @@ Creates an array of `Pair`s containing the [dot product](https://en.wikipedia.or
 Example: test_zip.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_zip {
   Array[Int] xs = [1, 2, 3]
@@ -6355,7 +6843,7 @@ Example output:
 Example: test_zip_fail.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_zip_fail {
   Array[Int] xs = [1, 2, 3]
@@ -6403,7 +6891,7 @@ Creates a `Pair` of `Arrays`, the first containing the elements from the `left` 
 Example: test_unzip.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_unzip {
   Array[Pair[Int, String]] int_str_arr = [(0, "hello"), (42, "goodbye")]
@@ -6456,7 +6944,7 @@ Flattens a nested `Array[Array[X]]` by concatenating all of the element arrays, 
 Example: test_flatten.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_flatten {
   Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
@@ -6513,7 +7001,7 @@ Selects the first - i.e. left-most - non-`None` value from an `Array` of optiona
 Example: test_select_first.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_select_first {
   input {
@@ -6556,7 +7044,7 @@ Example output:
 Example: select_first_only_none_fail.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow select_first_only_none_fail {
   Int? maybe_four_but_is_not = None
@@ -6588,7 +7076,7 @@ Example output:
 Example: select_first_empty_fail.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow select_first_empty_fail {
   select_first([])  # error! array is empty
@@ -6633,7 +7121,7 @@ Filters the input `Array` of optional values by removing all `None` values. The 
 Example: test_select_all.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_select_all {
   input {
@@ -6692,7 +7180,7 @@ Converts a `Map` into an `Array` of `Pair`s. Since `Map`s are ordered, the outpu
 Example: test_as_pairs.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_as_pairs {
   Map[String, Int] x = {"a": 1, "c": 3, "b": 2}
@@ -6752,7 +7240,7 @@ Converts an `Array` of `Pair`s into a `Map` in which the left elements of the `P
 Example: test_as_map.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_as_map {
   Array[Pair[String, Int]] x = [("a", 1), ("c", 3), ("b", 2)]
@@ -6788,7 +7276,7 @@ Example output:
 Example: test_as_map_fail.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_as_map_fail {
   # this fails with an error - the "a" key is duplicated
@@ -6834,7 +7322,7 @@ Creates an `Array` of the keys from the input `Map`, in the same order as the el
 Example: test_keys.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_keys {
   Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
@@ -6892,7 +7380,7 @@ The order of the keys in the output `Map` is the same as the order of their firs
 Example: test_collect_by_key.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow test_collect_by_key {
   Array[Pair[String, Int]] x = [("a", 1), ("b", 2), ("a", 3)]
@@ -6951,7 +7439,7 @@ Tests whether the given optional value is defined, i.e., has a non-`None` value.
 Example: is_defined.wdl
 
 ```wdl
-version 1.2
+verison 1.1
 
 workflow is_defined {
   input {
