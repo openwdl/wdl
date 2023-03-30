@@ -1458,6 +1458,28 @@ task t {
   - Two inputs that originated in the same storage directory must also be localized into the same parent directory for task execution (see the special case handling for Versioning Filesystems below).
 - When a WDL author uses a `File` or `Directory` input in their [Command Section](#command-section), the absolute path to the localized file/directory is substituted when that declaration is referenced.
 
+Runtime engines should treat input `File`s and `Directory`s as read-only, e.g., by setting their permissions appropriately on the local file system, or by localizing them to a directory marked as read-only.
+
+A common pattern for tasks that require multiple input files to be in the same directory is to create a new directory in the execution environment and soft-link the files into that directory.
+
+```wdl
+task two_files_one_directory {
+  input {
+    File bam
+    File bai
+  }
+
+  String prefix = basename(bam, ".bam")
+
+  command <<<
+  mkdir inputs
+  ln -s ~{bam} inputs/~{prefix}.bam
+  ln -s ~{bai} inputs/~{prefix}.bam.bai
+  varcall inputs/~{prefix}.bam
+  >>>
+}
+```
+
 ##### Special Case: Versioning Filesystem
 
 Two or more versions of a file in a versioning filesystem might have the same name and come from the same directory. In that case, the following special procedure must be used to avoid collision:

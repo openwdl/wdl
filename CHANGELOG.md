@@ -47,6 +47,8 @@ version 1.2.0
 
 + Added `Directory` type.
 
++ Added clarification that input files and directories should be treated as read-only.
+
 version 1.1.0
 ---------------------------
 
