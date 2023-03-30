@@ -1938,7 +1938,7 @@ The following attributes must be supported by the execution engine. The value fo
 ##### `container`
 
 * Accepted types:
-    * `"*"`: This special value indicates that the runtime engine may use any container it wishes to execute the task, or it may choose not to use a container and instead execute the task directly in the host environment
+    * `"*"`: This special value indicates that the runtime engine may use any POSIX-compliant operating environment it wishes to execute the task, whether that be a container or directly in the host environment.
     * `String`: A single container URI.
     * `Array[String]`: An array of container URIs.
 * Default value: "*"
