@@ -2580,7 +2580,7 @@ Some examples of correct import resolution:
 
 ## Task Definition
 
-A WDL task can be thought of as a template for running a set of commands - specifically, a UNIX Bash script - in a manner that is (ideally) independent of the execution engine and the runtime environment.
+A WDL task can be thought of as a template for running a set of commands - specifically, a Bash script - in a manner that is (ideally) independent of the execution engine and the runtime environment.
 
 A task is defined using the `task` keyword, followed by a task name that is unique within its WDL document.
 
