@@ -1946,7 +1946,7 @@ The following attributes must be supported by the execution engine. The value fo
 
 The `container` attribute accepts a URI string that describes a location where the execution engine can attempt to retrieve a container image to execute the task.
 
-The user is strongly suggested to specify a `container` for every task. If `container` is not specified, or is specified with the special `"*"` value, the execution behavior is determined by the execution engine.
+The user is strongly suggested to specify a `container` for every task. If `container` is not specified, or is specified with the special `"*"` value, the execution behavior is determined by the execution engine. A task that depends on the engine to determine the execution environment should be careful to only use built-in Bash operations and tools specified as mandatory by the [POSIX standard](https://unix.stackexchange.com/questions/228888/what-are-the-posix-mandatory-utilities).
 
 The format of a container URI string is `protocol://location`, where protocol is one of the protocols supported by the execution engine. Execution engines must, at a minimum, support the `docker://` protocol, and if no protocol is specified, it is assumed to be `docker://`. An execution engine should ignore any URI with a protocol it does not support.
 
