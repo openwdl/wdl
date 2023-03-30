@@ -1140,11 +1140,11 @@ Example output:
 </p>
 </details>
 
-Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, the use of the `Object` type and the `object` literal syntax have been deprecated. In WDL 2.0, `Object` will become a [hidden type](#hidden-types) that may only be instantiated by the runtime engine. `Object` declarations can be replaced with use of [structs](#struct-definition).
+Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, the use of the `Object` type and the `object` literal syntax have been deprecated. In WDL 2.0, `Object` will become a [hidden type](#hidden-types) that may only be instantiated by the execution engine. `Object` declarations can be replaced with use of [structs](#struct-definition).
 
 #### Hidden Types
 
-A hidden type is one that may only be instantiated by the runtime engine, and cannot be used in a declaration within a WDL file. There is currently only one hidden type, `Union`; however, in WDL 2.0, `Object` will also become a hidden type.
+A hidden type is one that may only be instantiated by the execution engine, and cannot be used in a declaration within a WDL file. There is currently only one hidden type, `Union`; however, in WDL 2.0, `Object` will also become a hidden type.
 
 ##### Union
 
@@ -2509,7 +2509,7 @@ If a workflow appears in the primary WDL file, it is called the "top-level" work
 
 ## Versioning
 
-There are multiple versions of the WDL specification. Every WDL document must include a version statement to specify which version of the specification it adheres to. From `draft-3` forward, the first non-comment statement of all WDL files must be a `version` statement. For example:
+There are multiple versions of the WDL specification. Every WDL document must include a version statement to specify which version (major and minor) of the specification it adheres to. From `draft-3` forward, the first non-comment statement of all WDL files must be a `version` statement. For example:
 
 ```wdl
 version 1.1
@@ -2523,7 +2523,7 @@ or
 version 1.1
 ```
 
-A WDL file that does not have a `version` statement must be treated as `draft-2`.
+A WDL file that does not have a `version` statement must be treated as [`draft-2`](https://github.com/openwdl/wdl/blob/main/versions/draft-2/SPEC.md).
 
 Because patches to the WDL specification do not change any functionality, all revisions that carry the same major and minor version numbers are considered equivalent. For example, `version 1.1` is used for a WDL document that adheres to the `1.1.x` specification, regardless of the value of `x`.
 
@@ -2539,7 +2539,7 @@ $import_alias = 'alias' $identifier $ws+ 'as' $ws+ $identifier
 
 The `import` statement specifies a WDL document source as a string literal, which is interpreted as a URI. The execution engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code **of the same version as the importing document**.
 
-Every imported WDL file requires a namespace, which can be specified using the `as $identifier` syntax. If a namespace identifier is not specified explicitly, then the default namespace is the filename of the imported WDL, minus the `.wdl` extension. For all imported WDL files, the tasks and workflows imported from that file will only be accessible through the assigned [namespace](#namespaces) - see [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details.
+Every imported WDL file requires a unique namespace, which can be specified using the `as <identifier>` syntax. If a namespace identifier is not specified explicitly, then the default namespace is the filename of the imported WDL, minus the `.wdl` extension. The tasks and workflows imported from a WDL file are only accessible through the assigned [namespace](#namespaces) - see [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details.
 
 ```wdl
 import "http://example.com/lib/analysis_tasks" as analysis
@@ -2565,7 +2565,7 @@ The execution engine must at least support the following protocols for import UR
 * `https://`
 * 🗑 `file://` - Using the `file://` protocol for local imports can be problematic. Its use is deprecated and will be removed in WDL 2.0.
 
-In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. If a protocol-less import starts with `/` it will be interpreted as starting from the root of the host in the resolved URL.
+In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. If a protocol-less import starts with `/` it will be interpreted as starting from the root of the host in the resolved URL. The execution engine may support additional import resolution mechanisms.
 
 Some examples of correct import resolution:
 
@@ -7938,7 +7938,7 @@ The following would all be valid JSON inputs:
 
 ## JSON Output Format
 
-The outputs from a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow output; sub-workflow and task outputs are not provided. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the output parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
+The outputs from a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow output; subworkflow and task outputs are not provided. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the output parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
 
 Every WDL implementation must support the ability to output this standard output. It is suggested that WDL implementations make the standard format be the default output format.
 
