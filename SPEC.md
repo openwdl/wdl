@@ -1638,9 +1638,9 @@ Example output:
 
 #### Built-in Operators
 
-WDL provides the standard unary and binary mathematical and logical operators. The following table lists the valid operand and result type combinations for each operator. Using an operator with unsupported types results in an error.
+WDL provides the standard unary and binary mathematical and logical operators. The following tables list the valid operand and result type combinations for each operator. Using an operator with unsupported types results in an error.
 
-In operations on mismatched numeric types (e.g. `Int` + `Float`), the `Int` type is first cast to a `Float`; the result type is always `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by the `Float`. A `Float` can be converted to an `Int` with the [`ceil`](#ceil), [`round`](#round), or [`floor`](#floor) functions.
+In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is first coerced to `Float`, and the result type is `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by a `Float`. A `Float` can be converted to `Int` with the [`ceil`](#ceil), [`round`](#round), or [`floor`](#floor) functions.
 
 ##### Unary Operators
 
@@ -1730,18 +1730,18 @@ Except for `String + File`, all concatenations between `String` and non-`String`
 
 ##### Equality of Compound Types
 
-| LHS Type  | Operator | RHS Type | Result    |
-| --------- | -------- | -------- | --------- |
-| `Array`   | `==`     | `Array`  | `Boolean` |
-| `Array`   | `!=`     | `Array`  | `Boolean` |
-| `Map`     | `==`     | `Map`    | `Boolean` |
-| `Map`     | `!=`     | `Map`    | `Boolean` |
-| `Pair`    | `==`     | `Pair`   | `Boolean` |
-| `Pair`    | `!=`     | `Pair`   | `Boolean` |
-| `Struct`  | `==`     | `Struct` | `Boolean` |
-| `Struct`  | `!=`     | `Struct` | `Boolean` |
-| 🗑`Object` | `==`     | `Object` | `Boolean` |
-| 🗑`Object` | `!=`     | `Object` | `Boolean` |
+| LHS Type | Operator | RHS Type | Result    |
+| -------- | -------- | -------- | --------- |
+| `Array`  | `==`     | `Array`  | `Boolean` |
+| `Array`  | `!=`     | `Array`  | `Boolean` |
+| `Map`    | `==`     | `Map`    | `Boolean` |
+| `Map`    | `!=`     | `Map`    | `Boolean` |
+| `Pair`   | `==`     | `Pair`   | `Boolean` |
+| `Pair`   | `!=`     | `Pair`   | `Boolean` |
+| `Struct` | `==`     | `Struct` | `Boolean` |
+| `Struct` | `!=`     | `Struct` | `Boolean` |
+| `Object` | `==`     | `Object` | `Boolean` |
+| `Object` | `!=`     | `Object` | `Boolean` |
 
 In general, two compound values are equal if-and-only-if all of the following are true:
 
@@ -1751,112 +1751,265 @@ In general, two compound values are equal if-and-only-if all of the following ar
 
 Since `Array`s and `Map`s are ordered, the order of their elements are also compared. For example:
 
-```wdl
-# arrays and maps with the same elements in the same order are equal
-Boolean is_true1 = [1, 2, 3] == [1, 2, 3]
-Boolean is_true2 = {"a": 1, "b": 2} == {"a": 1, "b": 2}
-
-# arrays and maps with the same elements in different orders are not equal
-Boolean is_false1 = [1, 2, 3] == [2, 1, 3]
-Boolean is_false2 = {"a": 1, "b": 2} == {"b": 2, "a": 1}
-```
-
-[Type coercion](#type-coercion) can be employed to compare values of different but compatible types. For example:
+<details>
+<summary>
+Example: array_map_equality.wdl
 
 ```wdl
-Array[Int] i = [1,2,3]
-Array[Float] f = [1.0, 2.0, 3.0]
-# Floats are not not automatically coerced to Ints for comparison
-Boolean is_false = i == f
+version 1.1
 
-# instead, coerce i to an array of Float first
-Array[Float] i_to_f = i
-Boolean is_true = i_to_f == f
+workflow array_map_equality {
+  output {
+    # arrays and maps with the same elements in the same order are equal
+    Boolean is_true1 = [1, 2, 3] == [1, 2, 3]
+    Boolean is_true2 = {"a": 1, "b": 2} == {"a": 1, "b": 2}
+
+    # arrays and maps with the same elements in different orders are not equal
+    Boolean is_false1 = [1, 2, 3] == [2, 1, 3]
+    Boolean is_false2 = {"a": 1, "b": 2} == {"b": 2, "a": 1}
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "array_map_equality.is_true1": true,
+  "array_map_equality.is_true2": true,
+  "array_map_equality.is_false1": true,
+  "array_map_equality.is_false2": true,
+}
+```
+</p>
+</details>
+
+[Type coercion](#type-coercion) can be employed to compare values of different but compatible types.
+
+<details>
+<summary>
+Example: compare_coerced.wdl
+
+```wdl
+version 1.1
+
+workflow compare_coerced {
+  Array[Int] i = [1, 2, 3]
+  Array[Float] f = [1.0, 2.0, 3.0]
+
+  output {
+    # Ints are automatically coerced to Floats for comparison
+    Boolean is_true = i == f
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "compare_coerced.is_true": true
+}
+```
+</p>
+</details>
 
 ##### Equality and Inequality Comparison of Optional Types
 
 The equality and inequality operators are exceptions to the general rules on [coercion of optional types](#coercion-of-optional-types). Either or both operands of an equality or inequality comparison can be optional, considering that `None` is equal to itself but no other value.
 
-```wdl
-Int i = 1
-Int? j = 1
-Int? k = None
+<details>
+<summary>
+Example: compare_optionals.wdl
 
-# equal values of the same type are equal even if one is optional
-Boolean is_true = i == j
-# k is undefined (None), and so is only equal to None
-Boolean is_true2 k == None
-# these comparisons are valid and evaluate to false
-Boolean is_false = i == k
-Boolean is_false2 j == k
+```wdl
+version 1.1
+
+workflow compare_optionals {
+  Int i = 1
+  Int? j = 1
+  Int? k = None
+
+  output {
+    # equal values of the same type are equal even if one is optional
+    Boolean is_true1 = i == j
+    # k is undefined (None), and so is only equal to None
+    Boolean is_true2 k == None
+    # these comparisons are valid and evaluate to false
+    Boolean is_false1 = i == k
+    Boolean is_false2 j == k
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "compare_optionals.is_true1": true,
+  "compare_optionals.is_true2": true,
+  "compare_optionals.is_false1": false,
+  "compare_optionals.is_false2": false,
+}
+```
+</p>
+</details>
 
 #### Operator Precedence Table
 
-| Precedence | Operator type         | Associativity | Example    |
-| ---------- | --------------------- | ------------- | ---------- |
-| 11         | Grouping              | n/a           | (x)        |
-| 10         | Member Access         | left-to-right | x.y        |
-| 9          | Index                 | left-to-right | x[y]       |
-| 8          | Function Call         | left-to-right | x(y,z,...) |
-| 7          | Logical NOT           | right-to-left | !x         |
-|            | Unary Negation        | right-to-left | -x         |
-| 6          | Multiplication        | left-to-right | x*y        |
-|            | Division              | left-to-right | x/y        |
-|            | Remainder             | left-to-right | x%y        |
-| 5          | Addition              | left-to-right | x+y        |
-|            | Subtraction           | left-to-right | x-y        |
-| 4          | Less Than             | left-to-right | x<y        |
-|            | Less Than Or Equal    | left-to-right | x<=y       |
-|            | Greater Than          | left-to-right | x>y        |
-|            | Greater Than Or Equal | left-to-right | x>=y       |
-| 3          | Equality              | left-to-right | x==y       |
-|            | Inequality            | left-to-right | x!=y       |
-| 2          | Logical AND           | left-to-right | x&&y       |
-| 1          | Logical OR            | left-to-right | x\|\|y     |
+| Precedence | Operator type         | Associativity | Example      |
+| ---------- | --------------------- | ------------- | ------------ |
+| 11         | Grouping              | n/a           | `(x)`        |
+| 10         | Member Access         | left-to-right | `x.y`        |
+| 9          | Index                 | left-to-right | `x[y]`       |
+| 8          | Function Call         | left-to-right | `x(y,z,...)` |
+| 7          | Logical NOT           | right-to-left | `!x`         |
+|            | Unary Negation        | right-to-left | `-x`         |
+| 6          | Multiplication        | left-to-right | `x*y`        |
+|            | Division              | left-to-right | `x/y`        |
+|            | Remainder             | left-to-right | `x%y`        |
+| 5          | Addition              | left-to-right | `x+y`        |
+|            | Subtraction           | left-to-right | `x-y`        |
+| 4          | Less Than             | left-to-right | `x<y`        |
+|            | Less Than Or Equal    | left-to-right | `x<=y`       |
+|            | Greater Than          | left-to-right | `x>y`        |
+|            | Greater Than Or Equal | left-to-right | `x>=y`       |
+| 3          | Equality              | left-to-right | `x==y`       |
+|            | Inequality            | left-to-right | `x!=y`       |
+| 2          | Logical AND           | left-to-right | `x&&y`       |
+| 1          | Logical OR            | left-to-right | `x\|\|y`     |
 
 #### Member Access
 
-The syntax `x.y` refers to member access. `x` must be a call in a workflow, or a `Struct` (or `Object`) value. A call can be thought of as a struct where the members are the outputs of the called task.
+The syntax `x.y` refers to member access. `x` must be a `Struct` or `Object` value, or a call in a workflow. A call can be thought of as a struct where the members are the outputs of the called task.
+
+
+<details>
+<summary>
+Example: member_access.wdl
 
 ```wdl
-# task foo has an output y
-call foo
-String x = foo.y
+version 1.1
 
-Struct MyType {
-  String b
+struct MyType {
+  String s
 }
-MyType z = MyType { z: 'hello' }
-String a = z.b
+
+task foo {
+  output {
+    String bar = "bar"
+  }
+}
+
+workflow member_access {
+  # task foo has an output y
+  call foo
+  MyType my = MyType { s: "hello" }
+
+  output {
+    String bar = foo.bar
+    String hello = my.s
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "member_access.bar": "bar",
+  "member_access.hello": "hello"
+}
+```
+</p>
+</details>
 
 #### Ternary operator (if-then-else)
 
-This is an operator that takes three arguments: a condition expression, an if-true expression, and an if-false expression. The condition is always evaluated. If the condition is true then the if-true value is evaluated and returned. If the condition is false, the if-false expression is evaluated and returned. The if-true and if-false expressions must return values of the same type, such that the value of the if-then-else is the same regardless of which side is evaluated.
+This operator takes three arguments: a condition expression, an if-true expression, and an if-false expression. The condition is always evaluated. If the condition is true then the if-true value is evaluated and returned. If the condition is false, the if-false expression is evaluated and returned. The if-true and if-false expressions must return values of the same type, such that the value of the if-then-else is the same regardless of which side is evaluated.
 
-Examples:
+<details>
+<summary>
+Example: ternary.wdl
 
-- Choose whether to say "good morning" or "good afternoon":
 ```wdl
-task greet {
-  input {
-    Boolean morning
-  }
-  String greeting = "good ~{if morning then "morning" else "afternoon}"
-}
-```
-- Choose how much memory to use for a task:
-```wdl
-task mytask {
+version 1.1
+
+task mem {
   input {
     Array[String] array
   }
   Int array_length = length(array)
-  Int memory = if array_length > 100 then "16GB" else "8GB"
+  # choose how much memory to use for a task
+  String memory = if array_length > 100 then "2GB" else "1GB"
+
+  command <<<
+  >>>
+
+  runtime {
+    memory: memory
+  }
+}
+
+workflow ternary {
+  input {
+    Boolean morning
+  }
+
+  call mem { input: ["x", "y", "z"] }
+
+  output {
+    # Choose whether to say "good morning" or "good afternoon"
+    String greeting = "good ~{if morning then "morning" else "afternoon}"
+  }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "ternary.morning": true
+}
+```
+
+Example output:
+
+```json
+{
+  "ternary.greeting": "good morning"
+}
+```
+</p>
+</details>
 
 #### Function Calls
 
@@ -1868,155 +2021,328 @@ Any WDL string expression may contain one or more "placeholders" of the form `~{
 
 When a string expression is evaluated, its placeholders are evaluated first, and their values are then substituted for the placeholders in the containing string.
 
-```wdl
-Int i = 3
-String s = "~{1 + i}"  # s == "4"
-```
-
-As another example, consider how the following expression would be parsed:
+<details>
+<summary>
+Example: placeholders.wdl
 
 ```wdl
-String command = "grep '~{start}...~{end}' ~{input}"
+version 1.1
+
+workflow placeholders {
+  input {
+    Int i = 3
+    String start
+    String end
+    String input
+  }
+
+  output {
+    String s = "~{1 + i}"
+    String command = "grep '~{start}...~{end}' ~{input}"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "placeholders.start": "h",
+  "placeholders.end": "o",
+  "placeholders.input": "hello"
+}
 ```
 
-This command would be parsed as:
+Example output:
 
-* `grep '` - literal string
-* `~{start}` - identifier expression - replaced with the value of `start`
-* `...` - literal string
-* `~{end}` - identifier expression - replaced with the value of `end`
-* `' ` - literal string
-* `~{input}` - identifier expression - replaced with the value of `input`
+```json
+{
+  "placeholders.command": "grep 'h...o' hello"
+}
+```
+</p>
+</details>
 
-Placeholders may contain other placeholders to any level of nesting, and placeholders are evaluated recursively in a depth-first manner. Placeholder expressions are anonymous - they have no name and thus cannot be referenced by other expressions, but they can reference declarations and call outputs.
+In the above example, `command` would be parsed and evaluated as:
+
+1. `grep '`: literal string
+2. `~{start}`: identifier expression, replaced with the value of `start`
+3. `...`: literal string
+4. `~{end}`: identifier expression, replaced with the value of `end`
+5. `' `: literal string
+6. `~{input}`: identifier expression, replaced with the value of `input`
+7. Final string value created by concatenating 1-6
+
+Placeholders may contain other placeholders to any level of nesting, and placeholders are evaluated recursively in a depth-first manner. Placeholder expressions are anonymous, i.e., they have no name and thus cannot be referenced by other expressions, but they can reference declarations and call outputs.
+
+<details>
+<summary>
+Example: nested_placeholders.wdl
 
 ```wdl
-Int i = 3
-Boolean b = true
-# s evaluates to "4", but would be "0" if b were false
-String s = "~{if b then '~{1 + i}' else 0}"
+version 1.1
+
+workflow nested_placeholders {
+  input {
+    Int i
+    Boolean b
+  }
+
+  output {
+    String s = "~{if b then '~{1 + i}' else '0'}"
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "nested_placeholders.i": 3,
+  "nested_placeholders.b": true
+}
+```
+
+Example output:
+
+```json
+{
+  "nested_placeholders.s": "4"
+}
+```
+</p>
+</details>
 
 ##### Expression Placeholder Coercion
 
-The expression result in a placeholder must ultimately be converted to a string in order to take the place of the placeholder in the command script. This is immediately possible for WDL primitive types due to automatic conversions ("coercions") that occur only within the context of string interpolation:
+The result of evaluating an expression in a placeholder must ultimately be converted to a string in order to take the place of the placeholder in the command script. This is immediately possible for WDL primitive types due to automatic conversions ("coercions") that occur only within the context of string interpolation:
 
 - `String` is substituted directly.
 - `File` is substituted as if it were a `String`.
 - `Int` is formatted without leading zeros (unless the value is `0`), and with a leading `-` if the value is negative.
 - `Float` is printed in the style `[-]ddd.dddddd`, with 6 digits after the decimal point.
-- `Boolean` is converted to the "stringified" version of its literal value, i.e. `true` or `false`.
-
-```wdl
-Boolean is_true1 = "~{"abc"}" == "abc"
-
-File x = "hij"
-Boolean is_true2 = "~{x}" == "hij"
- 
-Boolean is_true3 = "~{5}" == "5"
-
-Boolean is_true4 = "~{3.141}" == "3.141000"
-Boolean is_true5 = "~{3.141 * 1E-10}" == "0.000000"
-Boolean is_true6 = "~{3.141 * 1E10}" == "31410000000.000000"
-```
+- `Boolean` is converted to the "stringified" version of its literal value, i.e., `true` or `false`.
 
 Compound types cannot be implicitly converted to strings. To convert an `Array` to a string, use the [`sep`](#-sep) function: `~{sep(",", str_array)}`.
 
 If an expression within a placeholder evaluates to `None`, then the placeholder is replaced by the empty string.
 
-##### Concatenation of Optional Values
-
-Within expression placeholders the string concatenation operator (`+`) gains the ability to operate on optional values, to facilitate formulation of command-line flags. When applied to two non-optional operands, the result is a non-optional `String`. However, if either operand has an optional type, then the concatenation has type `String?`, and the runtime result is `None` if either operand is `None` (which is then replaced with the empty string).
+<details>
+<summary>
+Example: placeholder_coercion.wdl
 
 ```wdl
-String saluation = "hello"
-String? name1
-String? name2 = "Fred"
+version 1.1
 
-# since name1 is undefined, the evaluation of the
-# expression in the placeholder fails, and the
-# value of greeting1 = "nice to meet you!"
-String greeting1 = "~{salutation + ' ' + name1 + ' '}nice to meet you!"
+workflow placeholder_coercion {
+  File x = "/hij"
+  Int? i = None
 
-# since name2 is defined, the evaluation of the
-# expression in the placeholder succeeds, and the
-# value of greeting2 = "hello Fred, nice to meet you!"
-String greeting2 = "~{salutation + ' ' + name2 + ', '}nice to meet you!"
+  output {
+    Boolean is_true1 = "~{"abc"}" == "abc"
+    Boolean is_true2 = "~{x}" == "/hij"
+    Boolean is_true3 = "~{5}" == "5"
+    Boolean is_true4 = "~{3.141}" == "3.141000"
+    Boolean is_true5 = "~{3.141 * 1E-10}" == "0.000000"
+    Boolean is_true6 = "~{3.141 * 1E10}" == "31410000000.000000"
+    Boolean is_true7 = "~{i}" == ""
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
 ```
 
-To illustrate how this can be used, consider this task:
+Example output:
+
+```json
+{
+  "placeholder_coercion.is_true1": true,
+  "placeholder_coercion.is_true2": true,
+  "placeholder_coercion.is_true3": true,
+  "placeholder_coercion.is_true4": true,
+  "placeholder_coercion.is_true5": true,
+  "placeholder_coercion.is_true6": true,
+  "placeholder_coercion.is_true7": true,
+}
+```
+</p>
+</details>
+
+##### Concatenation of Optional Values
+
+Within expression placeholders the string concatenation operator (`+`) gains the ability to operate on optional values. When applied to two non-optional operands, the result is a non-optional `String`. However, if either operand has an optional type, then the concatenation has type `String?`, and the runtime result is `None` if either operand is `None` (which is then replaced with the empty string).
+
+<details>
+<summary>
+Example: concat_optional.wdl
 
 ```wdl
-task test {
+version 1.1
+
+workflow concat_optional {
   input {
-    String? val
+    String saluation = "hello"
+    String? name1
+    String? name2 = "Fred"
+  }
+
+  output {
+    # since name1 is undefined, the evaluation of the expression in the placeholder fails, and the
+    # value of greeting1 = "nice to meet you!"
+    String greeting1 = "~{salutation + ' ' + name1 + ' '}nice to meet you!"
+
+    # since name2 is defined, the evaluation of the expression in the placeholder succeeds, and the
+    # value of greeting2 = "hello Fred, nice to meet you!"
+    String greeting2 = "~{salutation + ' ' + name2 + ', '}nice to meet you!"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "concat_optional.greeting1": "nice to meet you!",
+  "concat_optional.greeting2": "hello Fred, nice to meet you!"
+}
+```
+</p>
+</details>
+
+Among other uses, concatenation of optionals can be used to facilitate the formulation of command-line flags. 
+
+<details>
+<summary>
+Example: flags_task.wdl
+
+```wdl
+version 1.1
+
+task flags {
+  input {
+    File input
+    String pattern
+    Int? max_matches
   }
 
   command <<<
-    python script.py --val=~{val}
+    # If `max_matches` is `None`, the command
+    # grep -m ~{max_matches} ~{pattern} ~{input}
+    # would evaluate to
+    # 'grep -m <pattern> <input>', which would be an error.
+
+    # Instead, make both the flag and the value conditional on `max_matches`
+    # being defined.
+    grep ~{"-m " + max_matches} ~{pattern} ~{input} | wc -l
   >>>
+
+  output {
+    String num_matches = read_int(stdout())
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "flags.input": "greetings.txt",
+  "flags.pattern": "world"
 }
 ```
 
-Since `val` is optional, the command can be instantiated in two ways:
+Example output:
 
+```json
+{
+  "flags.num_matches": 2
+}
 ```
-python script.py --val=foobar
-```
+</p>
+</details>
 
-Or
-
-```
-python script.py --val=
-```
-
-The latter case is very likely an error case, and this `--val=` part should be left off if a value for `val` is omitted. To solve this problem, modify the expression inside the template tag as follows:
-
-```
-python script.py ~{"--val=" + val}
-```
- 
 #### 🗑 Expression Placeholder Options
 
 Expression placeholder options are `option="value"` pairs that precede the expression within an expression placeholder and customize the interpolation of the WDL value into the containing string expression.
 
-The following options are available:
+There are three options available. An expression placeholder may have at most one option.
 
-* [`sep`](#sep): convert an array to a string using a delimiter; e.g. `~{sep=", " array_value}`
-* [`true` and `false`](#true-and-false): substitute a value depending on whether a boolean expression is `true` or `false`; e.g. `~{true="--yes" false="--no" boolean_value}`
-* [`default`](#default): substitute a default value for an undefined expression; e.g. `~{default="foo" optional_value}`
-
-Note that different options cannot be combined in the same expression placeholder.
+* [`sep`](#sep): convert an array to a string using a delimiter; e.g., `~{sep=", " array_value}`.
+* [`true` and `false`](#true-and-false): substitute a value depending on whether a boolean expression is `true` or `false`; e.g., `~{true="--yes" false="--no" boolean_value}`.
+* [`default`](#default): substitute a default value for an undefined expression; e.g., `~{default="foo" optional_value}`.
 
 **Expression placeholder options are deprecated and will be removed in WDL 2.0**. In the sections below, each type of placeholder option is described in more detail, including how to replicate its behavior using future-proof syntax.
 
 ##### `sep`
 
-`sep` is interpreted as the separator string used to join multiple parameters together. `sep` is only valid if the expression evaluates to an `Array`.
+`sep` is interpreted as the separator string used to join together the elements of an array. `sep` is only valid if the expression evaluates to an `Array`.
 
 For example, given a declaration `Array[Int] numbers = [1, 2, 3]`, the expression `"python script.py ~{sep=',' numbers}"` yields the value: `python script.py 1,2,3`.
 
 Alternatively, if the command were `"python script.py ~{sep=' ' numbers}"` it would evaluate to: `python script.py 1 2 3`.
 
-> *Requirements*:
->
-> 1. `sep` MUST accept only a string as its value
-> 2. `sep` is only allowed if the type of the expression is `Array[P]`
+Requirements:
+
+* `sep` MUST accept only a string as its value
+* `sep` is only allowed if the type of the expression is `Array[P]`
 
 The `sep` option can be replaced with a call to the ✨ [`sep`](#-sep) function:
 
+<details>
+<summary>
+Example: sep_option_to_function.wdl
+
 ```wdl
-task sep_example {
+version 1.1
+
+workflow sep_option_to_function {
   input {
     Array[String] str_array
     Array[Int] int_array
   }
-  command <<<
-    echo ~{sep(' ', str_array)}
-    echo ~{sep(',', quote(int_array))}
-  >>>
+  
+  output {
+    Boolean is_true1 = "~{sep(' ', str_array)}" == "~{sep=' ' str_array}"
+    Boolean is_true2 = "~{sep(',', quote(int_array))}" == "~{sep=',' quote(int_array)}"
+  }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "sep_option_to_function.str_array": ["A", "B", "C"],
+  "sep_option_to_function.int_array": [1, 2, 3]
+}
+```
+
+Example output:
+
+```json
+{
+  "sep_option_to_function.is_true1": true,
+  "sep_option_to_function.is_true2": true,
+}
+```
+</p>
+</details>
 
 ##### `true` and `false`
 
@@ -2026,62 +2352,112 @@ For example, `"~{true='--enable-foo' false='--disable-foo' allow_foo}"` evaluate
 
 Both `true` and `false` cases are required. If one case should insert no value then an empty string literal is used, e.g. `"~{true='--enable-foo' false='' allow_foo}"`.
 
-> *Requirements*:
->
-> 1.  `true` and `false` values MUST be string literals.
-> 2.  `true` and `false` are only allowed if the type of the expression is `Boolean`
-> 3.  Both `true` and `false` cases are required.
+Requirements:
+
+* `true` and `false` values MUST be string literals.
+* `true` and `false` are only allowed if the type of the expression is `Boolean`
+* Both `true` and `false` cases are required.
 
 The `true` and `false` options can be replaced with the use of an if-then-else expression:
 
+<details>
+<summary>
+Example: true_false_ternary.wdl
+
 ```wdl
-task tf_example {
+version 1.1
+
+workflow true_false_ternary {
   input {
-    Boolean debug
+    String message
+    Boolean newline
   }
+
   command <<<
-    ./my_cmd ~{if debug then "--verbose" else "--quiet"}
+    # these two commands have the same result
+    echo ~{true="-n" false="" newline} "~{message}" > result1
+    echo ~{if newline then "-n" else ""} "~{message}" > result2
   >>>
+
+  output {
+    Boolean is_true = read_string("result1") == read_string("result2")
+  }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "true_false_ternary.message": "hello world",
+  "true_false_ternary.newline": false
+}
+```
+
+Example output:
+
+```json
+{
+  "true_false_ternary.is_true": true
+}
+```
+</p>
+</details>
 
 ##### `default`
 
 The `default` option specifies a value to substitute for an optional-typed expression with an undefined value.
 
-For example, this task takes an optional `String` parameter and, if a value is not specified, then the value `foobar` is used instead.
+Requirements:
+
+* The type of the default value must match the type of the expression
+* The type of the expression must be optional, i.e., it must have a `?` postfix quantifier
+
+The `default` option can be replaced in several ways - most commonly with an `if-then-else` expression or with a call to the [`select_first`](#select_first) function.
+
+<details>
+<summary>
+Example: default_option_task.wdl
 
 ```wdl
-task default_test {
+version 1.1
+
+task default_option {
   input {
     String? s
   }
+
   command <<<
-    ./my_cmd ~{default="foobar" s}
+    echo ~{default="foobar" s} > result1
+    echo ~{if defined(s) then "~{select_first([s])}" else "foobar"} > result2
+    echo ~{select_first([s, "foobar"])} > result3
   >>>
-  ....
-}
-```
-
-> *Requirements*:
->
-> 1. The type of the default value must match the type of the expression
-> 2. The type of the expression must be optional, i.e. it must have a `?` postfix quantifier
-
-The `default` option can be replaced in several ways - most commonly with an if-then-else expression or with a call to the [`select_first`](#select_first) function.
-
-```wdl
-task default_example {
-  input {
-    String? s
+  
+  output {
+    Boolean is_true1 = read_string("result1") == read_string("result2")
+    Boolean is_true2 = read_string("result1") == read_string("result3")
   }
-  command <<<
-    .my_cmd ~{if defined(s) then "--opt ~{s}" else "foobar"}"foobar"}
-    # OR
-    .my_cmd ~{select_first([s, "foobar"])}
-  >>>
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "default_option.is_true1": true,
+  "default_option.is_true2": true
+}
+```
+</p>
+</details>
 
 ### Static Analysis and Dynamic Evaluation
 
