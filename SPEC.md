@@ -3009,7 +3009,7 @@ There may be any number of commands within a command section. Commands are not m
 
 #### Expression Placeholders
 
-The body of the command section (i.e. the command "template") can be though of as a single string expression, which (like all string expressions) may contain placeholders.
+The body of the command section (the command "template") can be though of as a single string expression, which (like all string expressions) may contain placeholders.
 
 There are two different syntaxes that can be used to define command expression placeholders, depending on which style of command section definition is used:
 
@@ -3020,38 +3020,55 @@ There are two different syntaxes that can be used to define command expression p
 
 Note that the `~{}` and `${}` styles may be used interchangeably in other string expressions.
 
-Any valid WDL expression may be used within a placeholder. For example, a command might reference an input to the task, like this:
+Any valid WDL expression may be used within a placeholder. For example, a command might reference an input to the task. The expression can also be more complex, such as a function call.
+
+<details>
+<summary>
+Example: test_placeholders_task.wdl
 
 ```wdl
-task test {
+version 1.1
+
+task test_placeholders {
   input {
     File infile
   }
+
   command <<<
-    cat ~{infile}
+    # The `read_lines` function reads the lines from a file into an
+    # array. The `sep` function concatenates the lines with a space
+    # (" ") delimiter. The resulting string is then echoed to stdout.
+    echo ~{sep(" ", read_lines(infile))}
   >>>
-  ....
-}
-```
-
-In this case, `infile` within the `~{...}` is an identifier expression referencing the value of the `infile` input parameter that was specified at runtime. Since `infile` is a `File` declaration, the execution engine will have staged whatever file was referenced by the caller such that it is available on the local file system, and will have replaced the original value of the `infile` parameter with the path to the file on the local filesystem.
-
-The expression can also be more complex, for example a function call: 
-
-```wdl
-task write_array {
-  input {
-    Array[String] str_array
+  
+  output {
+    # The `stdout` function returns a file with the contents of stdout.
+    # The `read_string` function reads the entire file into a String.
+    String result = read_string(stdout())
   }
-  command <<<
-    # the "write_lines" function writes each string in an array
-    # as a line in a temporary file, and returns the path to that
-    # file, which can then be referenced by other commands such as 
-    # the unix "cat" command
-    cat ~{write_lines(str_array)}
-  >>>
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_placeholders.infile": "greetings.txt"
+}
+```
+
+Example output:
+
+```json
+{
+  "test_placeholders.result": "hello world hi_world hello nurse"
+}
+```
+</p>
+</details>
+
+In this case, `infile` within the `~{...}` placeholder is an identifier expression referencing the value of the `infile` input parameter that was specified at runtime. Since `infile` is a `File` declaration, the execution engine will have staged whatever file was referenced by the caller such that it is available on the local file system, and will have replaced the original value of the `infile` parameter with the path to the file on the local filesystem.
 
 In most cases, the `~{}` style of placeholder is preferred, to avoid ambiguity between WDL placeholders and Bash variables, which are of the form `$name` or `${name}`. If the `command { ... }` style is used, then `${name}` is always interpreted as a WDL placeholder, so care must be taken to only use `$name` style Bash variables. If the `command <<< ... >>>` style is used, then only `~{name}` is interpreted as a WDL placeholder, so either style of Bash variable may be used.
 
