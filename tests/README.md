@@ -20,20 +20,28 @@ Beginning with version 1.1.1, all of the examples in the WDL specification repre
 
   ```json
   {output json}
-  ``` 
+  ```
+
+  Test config:
+
+  ```json
+  {config json}
+  ```
   </p>
 </details>
 </pre>
 
-All examples are written as a single WDL file. The file name is of the form:
+All examples are written as a single WDL file.
 
-* `<workflow_name>.wdl` if the example contains a workflow.
-* `<task_name>_task.wdl` if the example only contains a task.
+The file name is of the form `<target>.wdl`, where `target` is the name of the workflow or task within the example that should be executed by the test framework.
+
+* If the file name is of the form `<target>_task.wdl` then it is assumed that `target` is a task, otherwise it is assumed to be a workflow (unless the `type` configuration parameter is specified).
+* If the file name is of the form `<target>_fail.wdl` then it is assumed that the test is expected to fail (unless the `fail` configuration parameter is specified).
+* If the file name is of the form `<target>_fail_task.wdl` then it is both `type: "task"` and `fail: true` are assumed unless the configuration parameters specify differently.
 
 Examples must conform to the following rules:
 
-* Workflow and task names must be globally unique.
-* Workflow names must not end with `_task`.
+* Example names must be globally unique.
 * The WDL code must be valid, runnable code.
 * The input and output JSON must be written according to the [standard input/output specification](../SPEC.md#input-and-output-formats), i.e., with the workflow/task name as a prefix for all parameter names.
 
@@ -42,10 +50,10 @@ An example can import another example using its file name.
 <pre>
 <details>
   <summary>
-  Example: example1_task.wdl
+  Example: example1.wdl
 
   ```wdl
-  example1 {
+  task example1 {
     ...
   }
   ```
@@ -57,10 +65,10 @@ An example can import another example using its file name.
   Example: example2.wdl
 
   ```wdl
-  import "example1_task.wdl"
+  import "example1.wdl"
 
   workflow example2 {
-    call example1_task.example1 { ... }
+    call example1.mytask { ... }
   }
   ```
   </summary>
@@ -68,15 +76,24 @@ An example can import another example using its file name.
 </details>
 </pre>
 
-The `meta` section of the `task` or `workflow` can be used to specify test metadata using the `test_config` attribute. This attribute accepts either a directive or an array of directives, where each directive is one of the following string values.
+Each example may specify a configuration for use by the testing framework in its "Test config" section. The "Test config" section is optional - if it is missing then all configuration parameters have their default values.
 
-* Necessity: these directives are mutually exclusive, in increasing order of precedence:
-    * "required": The test harness must run the test. (default)
-    * "optional": The test harness may choose whether or not to run the test. If the test harness does run the test and it is unsuccessful, it should be reported as a warning rather than an error.
-    * "ignore": The test harness must not run the test.
-* Expected result: these directives are mutually exclusive, in increasing order of precedence:
-    * "succeed": The test is expected to succeed. (default)
-    * "fail": The test is expected to fail.
+The following are the configuration parameters that must be supported by all test frameworks. Test frameworks may support additional parameters, and should ignore any unrecognized parameters.
+
+* `type`: Either "task" or "workflow". The default is "workflow", unless the example name ends with "_task". Must be set to "task" if the example does not contain a workflow, or if the test framework should only execute a specific task (which should be specified using the `target` parameter).
+* `target`: The name of the workflow or task the test framework should execute. Defaults to the example name (without the ".wdl" extension). Required if the target name is different from the test name, even if the test only contains a single workflow/task.
+* `priority`: The priority of the test. Must be one of the following values. Defaults to "required".
+    * "required": The test framework must execute the test. If the test fails, it must be reported as an error.
+    * "optional": The test framework can choose whether to execute the test. If the test fails, it must be reported as a warning.
+    * "ignore": The test framework must not execute the test.
+* `fail`: Whether the test is expected to fail. If `true` then a failed execution is treated as a successful test, and a successful test is treated as a failure. and a Defaults to `false`.
+* `exclude_output`: A name or array of names of output parameters that should be ignored when comparing the expected and actual outputs of the test.
+* `return_code`: The expected return code of the task. If a task marked `fail: true` fails but with a different return code, then the test is treated as a failure. My either be an integer or an array of integers. The value "*" indicates that any return code is allowed. Defaults to `*`.
+* `dependencies`: An array of the test's dependencies. If the test framework is unable to satisfy any dependency of a "required" test, then the test is instead treated as "optional". At a minimum, the test framework should recognize dependencies based on runtime attributes. For example, `dependencies: ["cpu", "memory"]` indicates that the task has CPU and/or memory requirements that the test framework might not be reasonably expected to provide, and thus if the test fails due to lack of CPU or memory resources it should be reported as a warning rather than an error.
+
+For a workflow test, `return_code` and `dependencies` configuration parameters apply to any subworkflow or task called by the workflow, to any level of nesting. For example, if a workflow has `dependencies: ["gpu"]` and it calls a task that has `gpu: true` in its runtime section, and the test framework is not executing on a system that provides a GPU, then the test is treated as optional.
+
+The following is an example of a task test that is optional and expected to fail with a return code of `1`:
 
 <pre>
 <details>
@@ -85,20 +102,30 @@ The `meta` section of the `task` or `workflow` can be used to specify test metad
 
   ```wdl
   task optional_fail {
-    ...
-
-    meta {
-      # This test is optional. If the test harness does run it, then it's expected to fail.
-      test_config: ["optional", "fail"]
-    }
+    command <<<
+    exit 1
+    >>>
   }
   ```
   </summary>
-  <p>...</p>
+  <p>
+  ...
+  
+  Test config:
+
+  ```json
+  {
+    "type": "task",
+    "priority": "optional",
+    "fail": true,
+    "return_code": 1
+  }
+  ```
+  </p>
 </details>
 </pre>
 
-These naming and metadata conventions are used with the intention that an automated testing framework can extract the examples from the specification and write them into the following directory structure. It also enables the implementation to filter out task tests if it does not support executing tasks.
+These naming conventions and configuration are used with the intention that an automated testing framework can extract the examples from the specification and write them into the following directory structure. It also enables the implementation to filter out task tests if it does not support executing tasks.
 
 ```
 tests
@@ -106,12 +133,36 @@ tests
 |  |_ input1.txt
 |  |_ output1.txt
 |_ foo.wdl
-|_ foo_inputs.json
-|_ foo_outputs.json
 |_ bar_task.wdl
-|_ bar_task_inputs.wdl
-|_ bar_task_outputs.wdl
 |_ ...
+|_ test_index.json
+```
+
+The `test_index.json` file contains a JSON array with one element for each test, where each element is an object with the test inputs, outputs, and configuration parameters. For example:
+
+```json
+[
+  {
+    "id": "foo",
+    "file": "foo.wdl",
+    "target": "foo",
+    "type": "workflow",
+    "priority": "required",
+    "fail": false,
+    "return_code": "*",
+    "dependencies": [],
+    "input": {
+      "foo.x": 1
+    },
+    "output": {
+      "foo.y": true
+    }
+  },
+  {
+    "id": "bar",
+    ...
+  }
+]
 ```
 
 The `data` directory contains files that may be referenced by test cases. The data files do not need to follow any special naming conventions. Inputs to/outputs from `File`-type parameters must be given as file names/paths relative to the `data` directory.

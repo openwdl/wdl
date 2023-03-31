@@ -726,10 +726,6 @@ An array value can be initialized with an array literal - a comma-separated list
       # this causes an error - trying to access a non-existent array element
       Int i = empty[0]
     }
-
-    meta {
-     test_config: "fail"
-    }
   }
   ```
   </summary>
@@ -743,6 +739,14 @@ An array value can be initialized with an array literal - a comma-separated list
   Example output:
   
   ```json
+  ```
+
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
   ```
   </p>
 </details>
@@ -846,10 +850,6 @@ workflow non_empty_optional_fail {
   # these both cause an error - can't assign empty array value to non-empty Array type
   Array[Boolean]+ nonempty3 = []
   Array[Int]+? nonempty6 = [] 
-
-  meta {
-    test_config: "fail"
-  }
 }
 ```
 </summary>
@@ -864,6 +864,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -968,10 +976,6 @@ verison 1.1
 workflow test_map_fail {
   Map[String, Int] string_to_int = { "a": 1, "b": 2 }
   Int c = string_to_int["c"]  # error - "c" is not a key in the map
-
-  meta {
-    test_config: "fail"
-  }
 }
 ```
 </summary>
@@ -986,6 +990,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -1523,10 +1535,6 @@ version 1.1
 workflow circular {
   Int i = j + 1
   Int j = i - 2
-
-  meta {
-    test_config: "fail"
-  }
 }
 ```
 </summary>
@@ -1542,7 +1550,14 @@ Example output:
 ```json
 {}
 ```
-</p>
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
 </details>
 
 ### Expressions
@@ -2967,10 +2982,6 @@ workflow private_declaration_fail {
     String out = test.out # this is fine - "out" is in the output section
     String s = test.s # error! "s" is private
   }
-
-  meta {
-    test_config: "fail"
-  }
 }
 ```
 </summary>
@@ -2985,6 +2996,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -3072,29 +3091,58 @@ In this case, `infile` within the `~{...}` placeholder is an identifier expressi
 
 In most cases, the `~{}` style of placeholder is preferred, to avoid ambiguity between WDL placeholders and Bash variables, which are of the form `$name` or `${name}`. If the `command { ... }` style is used, then `${name}` is always interpreted as a WDL placeholder, so care must be taken to only use `$name` style Bash variables. If the `command <<< ... >>>` style is used, then only `~{name}` is interpreted as a WDL placeholder, so either style of Bash variable may be used.
 
+<details>
+<summary>
+Example: bash_variables_fail_task.wdl
+
 ```wdl
-task test {
+version 1.1
+
+task bash_variables {
   input {
-    File infile
+    String str
   }
+  
   command {
-    # store value of WDL declaration "infile" to Bash variable "f"
-    f=${infile}
-    # cat the file referenced by Bash variable "f"
-    cat $f
-    # this causes an error since "f" is not a WDL declaration
-    cat ${f}
+    # store value of WDL declaration "str" to Bash variable "s"
+    s=${str}
+    # echo the string referenced by Bash variable "s"
+    echo $s
+    # this causes an error since "s" is not a WDL declaration
+    echo ${s}
   }
-  ....
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "bash_variables.str": "hello"
+}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
 
 Like any other WDL string, the command section is subject to the rules of [string interpolation](#expression-placeholders-and-string-interpolation): all placeholders must contain expressions that are valid when analyzed statically, and that can be converted to a `String` value when evaluated dynamically. However, the evaluation of placeholder expressions during command instantiation is more lenient than typical dynamic evaluation as described in [Expression Placeholder Coercion](#expression-placeholder-coercion).
 
 The implementation is *not* responsible for interpreting the contents of the command section to check that it is a valid Bash script, ignore comment lines, etc. For example, in the following task the `greeting` declaration is commented out, so `greeting` is not a valid identifier in the task's scope. However, the placeholder in the command section refers to `greeting`, so the implementation will raise an error during static analysis. The fact that the placeholder occurs in a commented line of the Bash script doesn't matter.
 
+<details>
+<summary>
+Example: bash_comment_fail_task.wdl
+
 ```wdl
-task missing_declaration {
+version 1.1
+
+task bash_comment {
   # String greeting = "hello"
 
   command <<<
@@ -3102,6 +3150,21 @@ task missing_declaration {
   >>>
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
 
 #### Stripping Leading Whitespace
 
@@ -3109,8 +3172,14 @@ When a command template is evaluated, the execution engine first strips out all 
 
 For example, consider a task that calls the `python` interpreter with an in-line Python script:
 
+<details>
+<summary>
+Example: python_strip_task.wdl
+
 ```wdl
-task heredoc {
+version 1.1
+
+task python_strip {
   input {
     File infile
   }
@@ -3123,9 +3192,35 @@ task heredoc {
           print(line.strip())
   CODE
   >>>
-  ....
+
+  output {
+    Array[String] lines = read_lines(stdout())
+  }
+
+  runtime {
+    container: "python:latest"
+  }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "python_strip.infile": "comment.txt"
+}
+```
+
+Example output:
+
+```json
+{
+  "python_strip": ["A", "B", "C"]
+}
+```
+</p>
+</details>
 
 Given an `infile` value of `/path/to/file`, the execution engine will produce the following Bash script, which has removed the two spaces that were common to the beginning of each line:
 
@@ -3138,26 +3233,70 @@ python <<CODE
 CODE
 ```
 
-If the user mixes tabs and spaces, the behavior is undefined. The execution engine should, at a minimum, issue a warning and leave the whitespace unmodified, though it may choose to raise an exception or to substitute e.g. 4 spaces per tab.
+When leading whitespace is a mix of tabs and spaces, the execution engine should issue a warning and leave the whitespace unmodified.
 
 ### Task Outputs
 
-The `output` section contains declarations that are exposed as outputs of the task after a call to the task completes successfully. An output declaration must be initialized, and its value is evaluated only after the task's command completes successfully, enabling any files generated by the command to be used to determine its value.
+The `output` section contains declarations that are exposed as outputs of the task after the successful execution of the instantiated command. An output declaration must be initialized, and its value is evaluated only after the task's command completes successfully, enabling any files generated by the command to be used to determine its value.
 
-For example a task's `output` section might looks like this:
+<details>
+<summary>
+Example: outputs_task.wdl
 
 ```wdl
-output {
-  Int threshold = read_int("threshold.txt")
-  Array[File]+ csvs = glob("*.csv")
-  File? outfile = "path/to/outfile.txt"
+version 1.1
+
+task outputs {
+  input {
+    Int t
+  }
+
+  command <<<
+  echo ~{t} > threshold.txt
+  touch a.csv b.csv
+  >>>
+  
+  output {
+    Int threshold = read_int("threshold.txt")
+    Array[File]+ csvs = glob("*.csv")
+    Boolean two_csvs = length(csvs) == 2
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "outputs.t": 5,
+  "outputs.write_outstr": false
 }
 ```
 
+Example output:
+
+```json
+{
+  "outputs.threshold": 5,
+  "outputs.two_csvs": true
+}
+```
+
+Test config:
+
+```json
+{
+  "exclude_output": "csvs"
+}
+```
+</p>
+</details>
+
 After the command is executed, the following outputs are expected to be found in the task execution directory:
+
 - A file called "threshold.txt", which contains one line that consists of only an integer and whitespace.
 - One or more files (as indicated by the `+` postfix quantifier) with the `.csv` extension in the working directory that are collected into an array by the [`glob`](#glob) function.
-- There may or may not be an output file at `path/to/outfile.txt` (relative to the execution directory) - if the file does not exist, the value of `outfile` will be undefined.
 
 See the [WDL Value Serialization](#appendix-a-wdl-value-serialization-and-deserialization) section for more details.
 
@@ -3167,50 +3306,154 @@ File outputs are represented as string paths.
 
 A common pattern is to use a placeholder in a string expression to construct a file name as a function of the task input. For example:
 
+<details>
+<summary>
+Example: file_output_task.wdl
+
 ```wdl
-task example {
+version 1.1
+
+task file_output {
   input {
     String prefix
-    File bam
   }
 
   command <<<
-    python analysis.py --prefix=~{prefix} ~{bam}
+    echo "hello" > ~{prefix}.hello
+    echo "goodbye" > ~{prefix}.goodbye
   >>>
 
   output {
-    File analyzed = "~{prefix}.out"
-    File bam_sibling = "~{bam}.suffix"
-  }
-  
-  runtime {
-    container: "quay.io/biocontainers/bwa:0.7.17--hed695b0_7"
+    Array[String] basenames = [basename("~{prefix}.hello"), basename("~{prefix}.goodbye")]
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-If prefix were specified as `"foobar"`, then `"~{prefix}.out"` would be evaluated to `"foobar.out"`.
+```json
+{
+  "file_output.prefix": "foo"
+}
+```
+
+Example output:
+
+```json
+{
+  "file_output.basenames": ["foo.hello", "foo.goodbye"]
+}
+```
+</p>
+</details>
 
 Another common pattern is to use the [`glob`](#glob) function to define outputs that might contain zero, one, or many files.
 
+<details>
+<summary>
+Example: glob_task.wdl
+
 ```wdl
-output {
-  Array[File] output_bams = glob("*.bam")
+version 1.1
+
+task glob {
+  input {
+    Int num_files
+  }
+
+  command <<<
+  for i in 1..~{num_files}; do
+    echo ~{i} > file_~{i}.txt
+  done
+  >>>
+
+  output {
+    Array[File] outfiles = glob("*.txt")
+    Int last_file_contents = read_int(outfiles[num_files-1])
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "glob.num_files": 3
 }
 ```
 
-Relative paths are interpreted relative to the execution directory, whereas absolute paths are interpreted in a container-dependent way.
+Example output:
 
-```wdl
-# 'rel' is always at the given path relative to the execution dir
-File rel = "my/path/to/something.txt"
-# 'abs' may be in the root dir of the container file system if
-# we're running in a Docker container, or it might be in the
-# root dir of the host machine's file system if we're not
-File abs = "/something.txt"
+```json
+{
+  "glob.last_file_contents": 3
+}
 ```
 
-All file outputs are required to exist, otherwise the task will fail. However, an output may be declared as optional (e.g. `File?` or `Array[File?]`), in which case the value will be undefined if the file does not exist.
+Test config:
+
+```json
+{
+  "exclude_output": "outfiles"
+}
+```
+</p>
+</details>
+
+Relative paths are interpreted relative to the execution directory, whereas absolute paths are interpreted in a container-dependent way.
+
+<details>
+<summary>
+Example: relative_and_absolute_task.wdl
+
+```wdl
+version 1.1
+
+task relative_and_absolute {
+  command <<<
+  mkdir -p my/path/to
+  echo -n "something" > my/path/to/something.txt
+  >>>
+
+  output {
+    File something = read_string("my/path/to/something.txt")
+    File bashrc = "/root/.bashrc"
+  }
+
+  runtime {
+    container: "ubuntu:focal"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "relative_and_absolute.something": "something"
+}
+```
+
+Test config:
+
+```json
+{
+  "exclude_output": "bashrc"
+}
+```
+</p>
+</details>
+
+All file outputs are required to exist, otherwise the task will fail. However, an output may be declared as optional (e.g., `File?` or `Array[File?]`), in which case the value will be undefined if the file does not exist.
 
 For example, executing the following task:
 
@@ -6327,10 +6570,6 @@ workflow write_json_fail {
   Pair[Int, Map[Int, String]] x = (1, {2: "hello"})
   # this fails with an error - Map with Int keys is not serializable
   File f = write_json(x)
-  
-  meta {
-    test_config: "fail"
-  }
 }
 ```
 </summary>
@@ -6345,6 +6584,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -6846,10 +7093,6 @@ workflow test_prefix_fail {
   Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
   # this fails with an error - env3 element type is not primitive
   Array[String] bad = prefix("-x ", env3)
-
-  meta {
-    test_config: "fail"
-  }
 }
 ```
 </summary>
@@ -6864,6 +7107,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -6930,10 +7181,6 @@ workflow test_suffix_fail {
   Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
   # this fails with an error - env3 element type is not primitive
   Array[String] bad = suffix("-z", env3)
-  
-  meta {
-    test_config: "fail"
-  }
 }
 ```
 </summary>
@@ -6948,6 +7195,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -7396,10 +7651,6 @@ workflow test_zip_fail {
   Array[String] zs = ["d", "e"]
   # this fails with an error - xs and zs are not the same length
   Array[Pair[Int, String]] bad = zip(xs, zs)
-
-  meta {
-    test_config: "fail"
-  }
 }
 ```
 </summary>
@@ -7414,6 +7665,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -7595,10 +7854,6 @@ verison 1.1
 workflow select_first_only_none_fail {
   Int? maybe_four_but_is_not = None
   select_first([maybe_four_but_is_not])  # error! array contains only None values
-  
-  meta {
-    test_config: "fail"
-  }
 }
 ```
 </summary>
@@ -7613,6 +7868,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -7626,10 +7889,6 @@ verison 1.1
 
 workflow select_first_empty_fail {
   select_first([])  # error! array is empty
-  
-  meta {
-    test_config: "fail"
-  }
 }
 ```
 </summary>
@@ -7644,6 +7903,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -7827,10 +8094,6 @@ verison 1.1
 workflow test_as_map_fail {
   # this fails with an error - the "a" key is duplicated
   Boolean bad = as_map([("a", 1), ("a", 2)])
-
-  meta {
-    test_config: "fail"
-  }
 }
 ```
 </summary>
@@ -7845,6 +8108,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
