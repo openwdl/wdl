@@ -702,7 +702,7 @@ Pair[Int, String] twenty_threes = (23, "twenty-three")
 Pair values can also be specified within the [workflow inputs JSON](https://github.com/openwdl/wdl/blob/develop/SPEC.md#specifying-workflow-inputs-in-json) with a `Left` and `Right` value specified using JSON style syntax. For example, given a workflow `wf_hello` and workflow-level variable `twenty_threes`, it could be declared in the workflow inputs JSON as follows:
 ```json
 {
-  "wf_hello.twenty_threes": { "Left": 23, "Right": "twenty-three" }
+  "wf_hello.twenty_threes": { "left": 23, "right": "twenty-three" }
 }
 ```
 
