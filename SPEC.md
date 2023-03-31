@@ -89,6 +89,12 @@ Revisions to this specification are made periodically in order to correct errors
         - [`maxRetries`](#maxretries)
         - [`returnCodes`](#returncodes)
       - [Reserved `runtime` hints](#reserved-runtime-hints)
+        - [`maxCpu`](#maxcpu)
+        - [`maxMemory`](#maxmemory)
+        - [`shortTask`](#shorttask)
+        - [`localizationOptional`](#localizationoptional)
+        - [`inputs`](#inputs)
+        - [`outputs`](#outputs)
       - [Conventions and Best Practices](#conventions-and-best-practices)
     - [Metadata Sections](#metadata-sections)
       - [Task Metadata Section](#task-metadata-section)
@@ -3455,31 +3461,69 @@ Test config:
 
 All file outputs are required to exist, otherwise the task will fail. However, an output may be declared as optional (e.g., `File?` or `Array[File?]`), in which case the value will be undefined if the file does not exist.
 
-For example, executing the following task:
+<details>
+<summary>
+Example: optional_output_task.wdl
 
 ```wdl
+version 1.1
+
 task optional_output {
+  input {
+    Boolean make_example2
+  }
   command <<<
-    touch example_exists.txt
-    touch arr2.exists.txt
+    echo -n "1" > example1.txt
+    if ~{make_example2}; do
+      echo -n "2" > example2.txt
+    fi
   >>>
   output {
-    File example_exists = "example_exists.txt"
-    File? example_optional = "example_optional.txt"
-    Array[File?] array_optional = ["arr1.dne.txt", "arr2.exists.txt"]
+    File example1 = "example1.txt"
+    File? example2 = "example2.txt"
+    Array[File?] file_array = ["example1.txt", "example2.txt"]
+    Int file_array_len = length(select_all(file_array))
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-will generate the following outputs:
+```json
+{
+  "optional_output.make_example2": false
+}
+```
 
-* `optional_output.example_exists` will resolve to a File
-* `optional_output.example_optional` will resolve to `None`
-* `optional_output.array_optional` will resolve to `[<File>, None]`
+Example output:
+
+```json
+{
+  "optional_output.example2": null,
+  "optional_output.file_array_len": 1
+}
+```
+
+Test config:
+
+```json
+{
+  "exclude_output": ["example1", "file_array"]
+}
+```
+</p>
+</details>
+
+Executing the above task with `make_example2 = true` will result in the following outputs:
+
+* `optional_output.example1` will resolve to a`File`
+* `optional_output.example2` will resolve to `None`
+* `optional_output.file_array` will resolve to `[<File>, None]`
 
 ### Evaluation of Task Declarations
 
-All non-output declarations (i.e. input and private declarations) must be evaluated prior to evaluating the command section.
+All non-output declarations (i.e., input and private declarations) must be evaluated prior to evaluating the command section.
 
 Input and private declarations may appear in any order within their respective sections and they may reference each other so long as there are no circular references. Input and private declarations may *not* reference declarations in the output section.
 
@@ -3496,37 +3540,67 @@ The `runtime` section defines a set of key/value pairs that represent the minimu
 
 During execution of a task, resource requirements within the `runtime` section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task immediately fails. 
 
-There are a set of reserved attributes (described below) that must be supported by the execution engine, and which have well-defined meanings and default values. Default values for all optional standard attributes are directly defined by the WDL specification in order to encourage portability of workflows and tasks; execution engines should NOT provide additional mechanisms to set _default_ values for when no runtime attributes are defined.
+There are a set of reserved attributes (described below) that must be supported by the execution engine, and which have well-defined meanings and default values. Default values for all optional standard attributes are directly defined by the WDL specification in order to encourage portability of workflows and tasks; execution engines should NOT provide additional mechanisms to set default values for when no runtime attributes are defined.
 
 🗑 Additional arbitrary attributes may be specified in the `runtime` section, but these may be ignored by the execution engine. These non-standard attributes are called "hints". The use of hint attributes in the `runtime` section is deprecated; a later version of WDL will introduce a new `hints` section for arbitrary attributes and disallow non-standard attributes in the `runtime` section.
 
 The value of a `runtime` attribute can be any expression that evaluates to the expected type - and in some cases matches the accepted format - for that attribute. Expressions in the `runtime` section may reference (non-output) declarations in the task:
 
+
+<details>
+<summary>
+Example: runtime_container_task.wdl
+
 ```wdl
-task test {
+version 1.1
+
+task runtime_container {
   input {
     String ubuntu_version
   }
 
   command <<<
-    python script.py
+    cat /etc/*-release | grep DISTRIB_CODENAME | cut -f 2 -d '='
   >>>
   
+  output {
+    String is_true = ubuntu_version == read_string(stdout())
+  }
+
   runtime {
-    container: ubuntu_version
+    container: "ubuntu:~{ubuntu_version}"
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "runtime_container.ubuntu_version": "focal"
+}
+```
+
+Example output:
+
+```json
+{
+  "runtime_container.is_true": true
+}
+```
+</p>
+</details>
 
 #### Units of Storage
 
-Several of the `runtime` attributes can (and some [Standard Library](#standard-library) functions) accept a string value with an optional unit suffix, using one of the valid [SI or IEC abbreviations](https://en.wikipedia.org/wiki/Binary_prefix). At a minimum, execution engines must support the following suffices in a case-insensitive manner:
+Several of the `runtime` attributes (and some [Standard Library](#standard-library) functions) can accept a string value with an optional unit suffix, using one of the valid [SI or IEC abbreviations](https://en.wikipedia.org/wiki/Binary_prefix). At a minimum, execution engines must support the following suffices in a case-insensitive manner:
 
 * B (bytes)
 * Decimal: KB, MB, GB, TB
 * Binary: KiB, MiB, GiB, TiB
 
-An optional space is allowed between the number/expression and the suffix. For example: `6.2 GB`, `5MB`, `"~{ram}GiB"`.
+Optional whitespace is allowed between the number/expression and the suffix. For example: `6.2 GB`, `5MB`, `"~{ram}GiB"`.
 
 The decimal and binary units may be shortened by omitting the trailing "B". For example, "K" and "KB" are both interpreted as "kilobytes".
 
@@ -3539,6 +3613,7 @@ The following attributes must be supported by the execution engine. The value fo
 * Accepted types:
     * `String`: A single container URI.
     * `Array[String]`: An array of container URIs.
+* Alias: `docker`
 
 The `container` key accepts a URI string that describes a location where the execution engine can attempt to retrieve a container image to execute the task.
 
@@ -3548,26 +3623,68 @@ The user is strongly suggested to specify a `container` for every task. There is
 
 The format of a container URI string is `protocol://location`, where protocol is one of the protocols supported by the execution engine. Execution engines must, at a minimum, support the `docker://` protocol, and if no protocol is specified, it is assumed to be `docker://`. An execution engine should ignore any URI with a protocol it does not support.
 
-```wdl
-task single_image_test {
-  #....
-  runtime {
-    container: "ubuntu:latest"
-  }
-```
-
 Container source locations should use the syntax defined by the individual container repository. For example an image defined as `ubuntu:latest` would conventionally refer a docker image living on `DockerHub`, while an image defined as `quay.io/bitnami/python` would refer to a `quay.io` repository.
 
 The `container` key also accepts an array of URI strings. All of the locations must point to images that are equivalent, i.e. they must always produce the same final results when the task is run with the same inputs. It is the responsibility of the execution engine to define the specific image sources it supports, and to determine which image is the "best" one to use at runtime. The ordering of the array does not imply any implicit preference or ordering of the containers. All images are expected to be the same, and therefore any choice would be equally valid. Defining multiple images enables greater portability across a broad range of execution environments.
 
+<details>
+<summary>
+Example: test_containers.wdl
+
 ```wdl
-task multiple_image_test {
-  #.....
+version 1.1
+
+task single_image_task {
+  command <<< echo "hello" >>>
+
+  output {
+    String greeting = read_string(stdout())
+  }
+
+  runtime {
+    container: "ubuntu:latest"
+  }
+}
+
+task multi_image_task {
+  command <<< echo "hello" >>>
+
+  output {
+    String greeting = read_string(stdout())
+  }
+
   runtime {
     container: ["ubuntu:latest", "https://gcr.io/standard-images/ubuntu:latest"]
   }
 }
+
+workflow test_containers {
+  call single_image_task
+  call multi_image_task
+  output {
+    String single_greeting = single_image_task.greeting
+    String multi_greeting = multi_image_task.greeting
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_containers.single_greeting": "hello",
+  "test_containers.multi_greeting": "hello"
+}
+```
+</p>
+</details>
 
 The execution engine must cause the task to fail immediately if none of the container URIs can be successfully resolved to a runnable image.
 
@@ -3582,14 +3699,53 @@ The execution engine must cause the task to fail immediately if none of the cont
 
 The `cpu` attribute defines the _minimum_ number of CPU cores required for this task, which must be available prior to instantiating the command. The execution engine must provision at least the requested number of CPU cores, but it may provision more. For example, if the request is `cpu: 0.5` but only discrete values are supported, then the execution engine might choose to provision `1.0` CPU instead.
 
+<details>
+<summary>
+Example: test_cpu_task.wdl
+
 ```wdl
-task cpu_example {
-  #....	
+version 1.1
+
+task test_cpu {
+  command <<<
+  cat /proc/cpuinfo | grep processor | wc -l
+  >>>
+
+  output {
+    Boolean at_least_two_cpu = read_int(stdout()) >= 2
+  }
+
   runtime {
-    cpu: 8
+    container: "ubuntu:latest"
+    cpu: 2
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_cpu.at_least_two_cpu": true
+}
+```
+
+Test config:
+
+```json
+{
+  "dependencies": "cpu"
+}
+```
+</p>
+</details>
 
 ##### `memory`
 
@@ -3600,14 +3756,51 @@ task cpu_example {
 
 The `memory` attribute defines the _minimum_ memory (RAM) required for this task, which must be available prior to instantiating the command. The execution engine must provision at least the requested amount of memory, but it may provision more. For example, if the request is `1 GB` but only blocks of `4 GB` are available, then the execution engine might choose to provision `4.0 GB` instead.
 
+<details>
+<summary>
+Example: test_memory_task.wdl
+
 ```wdl
-task memory_test {
-  #....
-  runtime {
-    memory: "2 GB"
+version 1.1
+
+task test_memory {
+  command <<<
+  free --bytes -t | tail -1 | sed -E 's/\s+/\t/g' | cut -f 2
+  >>>
+
+  output {
+    Boolean at_least_two_gb = read_int(stdout()) >= (2 * 1024 * 1024 * 1024)
+  }
+
+  requirements {
+    memory: "2 GiB"
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_memory.at_least_two_gb": true
+}
+
+Test config:
+
+```json
+{
+  "dependencies": "memory"
+}
+```
+</p>
+</details>
 
 ##### `gpu`
 
@@ -3618,14 +3811,52 @@ The `gpu` attribute provides a way to accommodate modern workflows that are incr
 
 This attribute *cannot* request any specific quantity or types of GPUs to make available to the task. Any such information should be provided using an execution engine-specific attribute.
 
+<details>
+<summary>
+Example: test_gpu_task.wdl
+
 ```wdl
-task gpu_test {
-  #.....
-  runtime {
+version 1.1
+
+task test_gpu {
+  command <<<
+  lspci -nn | grep ' \[03..\]: ' | wc -l
+  >>>
+
+  output {
+    Int at_least_one_gpu = read_int(stdout()) >= 1
+  }
+  
+  requirements {
     gpu: true
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_gpu.at_least_one_gpu": true
+}
+```
+
+Test config:
+
+```json
+{
+  "dependencies": "gpu"
+}
+```
+</p>
+</details>
 
 ##### `disks`
 
@@ -3641,39 +3872,106 @@ task gpu_test {
 
 The `disks` attribute provides a way to request one or more persistent volumes of at least a specific size and mounted at a specific location. When the `disks` attribute is provided, the execution engine must guarantee the requested resources are available or immediately fail the task prior to instantiating the command.
 
- ```wdl
-task disks_test {
-  #.....
-  runtime {
-    disks: 100
-  }
-}
-```
-
 This property does not specify exactly what type of persistent volume is being requested (e.g. SSD, HDD), but leaves this up to the engine to decide, based on what hardware is available or on another execution engine-specific attribute.
 
 If a disk specification string is used to specify a mount point, then the mount point must be an absolute path to a location on the host machine. If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
 
+details>
+<summary>
+Example: one_mount_point_task.wdl
+
 ```wdl
-task disks_test {
-  #.....
-  runtime {
-    disks: "/mnt/outputs 500 GiB"
+version 1.1
+
+task one_mount_point {
+  command <<<
+    findmnt -bno size /mnt/outputs
+  >>>
+  
+  output {
+    Boolean at_least_ten_gb = read_int(stdout()) >= (10 * 1024 * 1024 * 1024)
+  }
+
+  requirements {
+    disks: "/mnt/outputs 10 GiB"
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "one_mount_point.at_least_ten_gb": true
+}
+```
+
+Test config:
+
+```json
+{
+  "dependencies": "disks"
+}
+```
+</p>
+</details>
 
 If an array of disk specifications is used to specify multiple disk mounts, only one of them is allowed to omit the mount point.
 
+<details>
+<summary>
+Example: multi_mount_points_task.wdl
+
 ```wdl
-task disks_test {
-  #.....
-  runtime {
+version 1.1
+
+task multi_mount_points {
+  command <<<
+    findmnt -bno size /
+  >>>
+  
+  output {
+    Boolean at_least_two_gb = read_int(stdout()) >= (2 * 1024 * 1024 * 1024)
+  }
+
+  requirements {
   	# The first value will be mounted at the execution root
-    disks: ["500", "/mnt/outputs 500 GiB", "/mnt/tmp 5 TB"]
+    disks: ["2", "/mnt/outputs 4 GiB", "/mnt/tmp 1 GiB"]
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "multi_mount_points.at_least_two_gb": true
+}
+```
+
+Test config:
+
+```json
+{
+  "dependencies": "disks"
+}
+```
+</p>
+</details>
 
 ##### `maxRetries`
 
@@ -3705,38 +4003,129 @@ task maxRetries_test {
 
 The `returnCodes` attribute provides a mechanism to specify the return code, or set of return codes, that indicates a successful execution of a task. The engine must honor the return codes specified within the runtime block and set the tasks status appropriately. 
 
-**Single return code**
+<details>
+<summary>
+Example: single_return_code_task.wdl
 
 ```wdl
-task maxRetries_test {
-  #.....
-  runtime {
-    returnCodes: 1
+version 1.1
+
+task single_return_code {
+  command <<<
+  exit 1
+  >>>
+
+  requirements {
+    return_codes: 1
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-**Multiple return codes**
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "return_code": 1
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: multi_return_code_fail_task.wdl
 
 ```wdl
-task maxRetries_test {
-  #.....
-  runtime {
-    returnCodes: [1,2,5,10]
+version 1.1
+
+task multi_return_code {
+  command <<<
+  exit 42
+  >>>
+
+  requirements {
+    return_codes: [1, 2, 5, 10]
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-**All return codes**
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true,
+  "return_code": 42
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: all_return_codes_task.wdl
 
 ```wdl
-task maxRetries_test {
-  #.....
-  runtime {
-    returnCodes: "*"
+version 1.1
+
+task multi_return_code_task {
+  command <<<
+  exit 42
+  >>>
+
+  requirements {
+    return_codes: "*"
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "return_code": 42
+}
+```
+</p>
+</details>
 
 #### Reserved `runtime` hints
 
@@ -3744,34 +4133,150 @@ The following attributes are considered "hints" rather than requirements. They a
 
 In WDL 2.0, these attributes will move to the new `hints` section.
 
-* `maxCpu`: Specifies the maximum CPU to be provisioned for a task. The value of this hint has the same specification as `runtime.cpu`.
-* `maxMemory`: Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as `runtime.memory`.
-* `shortTask`: A `Boolean` value, for which `true` indicates that that this task is not expected to take long to execute. The execution engine can interpret this as permission to attempt to optimize the execution of the task - e.g. by batching together multiple `shortTask`s, or by using the cost-optimized instance types that many clouds provide, e.g. `preemptible` instances on `gcp` and `spot` instances on `aws`. "Short" is a bit relative, but should generally be interpreted as << 24h.
-* `localizationOptional`: A `Boolean` value, for which `true` indicates that, if possible, the `File` type input declarations for this task should not be (immediately) localized. For example, a task that processes its input file once in linear fashion could have that input streamed (e.g. using a `fifo`) rather than requiring the input file to be fully localized prior to execution. This directive must not have any impact on the success or failure of a task (i.e. a task should run with or without localization).
-* `inputs`: Provides input-specific hints in the form of a hints object. Each key within this hint should refer to an actual input defined for the current task.
-  * `inputs.<key>.localizationOptional`: Tells the execution engine that a specific `File` input does not need to be localized for this task.
-* `outputs`: Provides outputs specific hints in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task
-  
+<details>
+<summary>
+Example: test_hints_task.wdl
+
 ```wdl
-task foo {
+version 1.1
+
+task test_hints {
   input {
-    File bar
-  } 
-  ...
-  runtime {
+    File foo
+  }
+
+  command <<<
+  wc -l ~{foo}
+  >>>
+
+  output {
+    Int num_lines = read_int(stdout())
+  }
+
+  requirements {
     container: "ubuntu:latest"
+  }
+
+  hints {
     maxMemory: "36 GB"
     maxCpu: 24
     shortTask: true
     localizationOptional: false
-    inputs: object {
-      bar: object { 
+    inputs: {
+      foo: { 
         localizationOptional: true
-      } 
+      }
     }
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_hints.foo": "greetings.txt"
+}
+```
+
+Example output:
+
+```json
+{
+  "test_hints.num_lines": 3
+}
+```
+</p>
+</details>
+
+##### `maxCpu`
+
+Specifies the maximum CPU to be provisioned for a task. The value of this hint has the same specification as [`requirements.cpu`](#cpu).
+
+##### `maxMemory`
+
+Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as [`requirements.memory`](#memory).
+
+##### `shortTask`
+
+* Allowed type: `Boolean`
+
+A `Boolean` value for which `true` indicates that that this task is not expected to take long to execute. The execution engine can interpret this as permission to attempt to optimize the execution of the task - e.g., by batching together multiple `shortTask`s, or by using the cost-optimized instance types that many cloud vendors provide, e.g., `preemptible` instances on `GCP` and `spot` instances on `AWS`. "Short" is a bit ambiguous, but should generally be interpreted as << 24h.
+
+##### `localizationOptional`
+
+* Allowed type: `Boolean`
+
+A `Boolean` value, for which `true` indicates that, if possible, any `File` inputs for this task should not be (immediately) localized. For example, a task that processes its input file once in linear fashion could have that input streamed (e.g., using a `fifo`) rather than requiring the input file to be fully localized prior to execution. This directive must not have any impact on the success or failure of a task (i.e., a task must run the same with or without localization).
+
+##### `inputs`
+
+* Allowed type: `object`
+
+Provides input-specific hints in the form of a meta object. Each key within this hint should refer to an actual input defined for the current task. A key may also refer to a specific member of a struct/object input.
+
+<details>
+<summary>
+Example: input_hint_task.wdl
+
+```wdl
+version 1.1
+
+struct Person {
+  String name
+  File? cv
+}
+
+task input_hint {
+  input {
+    Person person
+  }
+
+  command <<<
+  grep "WDL" ~{cv}
+  >>>
+
+  hints {
+    inputs: {
+      person: {
+        cv: {
+          localizationOptional: true
+        }
+      }
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "input_hint.person": {
+    "name": "Joe"
+  }
+}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+Reserved input-specific attributes:
+
+* `inputs.<key>.localizationOptional`: Tells the execution engine that a specific `File` input does not need to be localized for this task.
+
+##### `outputs`
+
+* Allowed type: `object`
+
+Provides outputs specific hints in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task. A key may also refer to a specific member of a struct/object input.
 
 #### Conventions and Best Practices
 
@@ -3828,7 +4333,7 @@ $meta_object = '{}' | '{' $meta_kv (, $meta_kv)* '}'
 $meta_array = '[]' |  '[' $meta_value (, $meta_value)* ']'
 ```
 
-There are two purely optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are designed to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface. Any attributes that may influence execution behavior should go in the `runtime` section.
+There are two optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are designed to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface. Any attributes that may influence execution behavior should go in the `runtime` section.
 
 Both of these sections can contain key/value pairs. Metadata values are different than in `runtime` and other sections:
 
