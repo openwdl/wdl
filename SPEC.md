@@ -99,13 +99,9 @@ Revisions to this specification are made periodically in order to correct errors
     - [Metadata Sections](#metadata-sections)
       - [Task Metadata Section](#task-metadata-section)
       - [Parameter Metadata Section](#parameter-metadata-section)
-    - [Task Examples](#task-examples)
-      - [Example 1: Simplest Task](#example-1-simplest-task)
-      - [Example 2: Inputs/Outputs](#example-2-inputsoutputs)
-      - [Example 3: Runtime/Metadata](#example-3-runtimemetadata)
-      - [Example 4: BWA MEM](#example-4-bwa-mem)
-      - [Example 5: Word Count](#example-5-word-count)
-      - [Example 6: tmap](#example-6-tmap)
+    - [Advanced Task Examples](#advanced-task-examples)
+      - [Example 1: HISAT2](#example-1-hisat2)
+      - [Example 2: GATK Haplotype Caller](#example-2-gatk-haplotype-caller)
   - [Workflow Definition](#workflow-definition)
     - [Workflow Elements](#workflow-elements)
     - [Workflow Inputs](#workflow-inputs)
@@ -4377,17 +4373,27 @@ $parameter_meta = 'parameter_meta' $ws* '{' ($ws* $meta_kv $ws*)* '}'
 
 This section contains metadata specific to input and output parameters. Any key in this section *must* correspond to a task input or output.
 
+<details>
+<summary>
+Example: ex_paramter_meta_task.wdl
+
 ```wdl
-task wc {
+version 1.1
+
+task ex_paramter_meta {
   input {
     File infile
     Boolean lines_only = false
     String? region
   }
 
+  meta {
+    description: "A task that counts the number of words/lines in a file"
+  }
+
   parameter_meta {
     infile: {
-      help: "Count the number of lines in this file"
+      help: "Count the number of words/lines in this file"
     }
     lines_only: { 
       help: "Count only lines"
@@ -4399,179 +4405,225 @@ task wc {
   }
 
   command <<<
-    wc ~{true="-l", false=' ' lines_only} ~{infile}
+    wc ~{if lines_only then '-l' else ''} ~{infile}
   >>>
 
   output {
-     String retval = stdout()
+     String result = stdout()
   }
 
   runtime {
-    container: "my_image:latest"
+    container: "ubuntu:latest"
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-### Task Examples
-
-#### Example 1: Simplest Task
-
-```wdl
-task hello_world {
-  command <<<
-  echo "hello world"
-  >>>
+```json
+{
+  "ex_paramter_meta.infile": "greetings.txt",
+  "ex_paramter_meta.lines_only": true
 }
 ```
 
-#### Example 2: Inputs/Outputs
+Example output:
+
+```json
+{
+  "ex_paramter_meta.result": "3"
+}
+```
+</p>
+</details>
+
+### Advanced Task Examples
+
+#### Example 1: HISAT2
+
+<details>
+<summary>
+Example: hisat2_task.wdl
 
 ```wdl
-task one_and_one {
+version 1.1
+
+task hisat2 {
   input {
-    String pattern
-    File infile
+    File index
+    String sra_acc
+    Int? max_reads
+    Int threads = 8
+    Float memory_gb = 16
+    Float disk_size_gb = 100
   }
+
+  String index_id = basename(index, ".tar.gz)
+
   command <<<
-    grep ~{pattern} ~{infile}
+    mkdir index
+    tar -C index -xzf ~{index}
+    hisat2 \
+      -p ~{threads} \
+      ~{if defined(max_reads) then "-u ~{select_first([max_reads])}" else ""} \
+      -x index/~{index_id} \
+      --sra-acc ~{sra_acc} > ~{sra_acc}.sam
   >>>
+  
   output {
-    File filtered = stdout()
+    File sam = "output.sam"
   }
+  
   runtime {
-    container: "my_image:latest"
+    container: "quay.io/biocontainers/hisat2:2.2.1--h1b792b2_3"
+    cpu: threads
+    memory: "~{memory_gb} GB"
+    disks: "~{disk_size_gb} GB"
   }
-}
-```
 
-#### Example 3: Runtime/Metadata
+  meta {
+    description: "Align single-end reads with BWA MEM"
+  }
 
-```wdl
-task runtime_meta {
-  input {
-    Int memory_mb
-    String sample_id
-    String param
-  }
-  command <<<
-    java -Xmx~{memory_mb}M -jar task.jar -id ~{sample_id} -param ~{param} -out ~{sample_id}.out
-  >>>
-  output {
-    File results = "~{sample_id}.out"
-  }
   parameter_meta {
-    memory_mb: "Amount of memory to allocate to the JVM"
-    param: "Some arbitrary parameter"
-    sample_id: "The ID of the sample in format foo_bar_baz"
+    index: "Gzipped tar file with HISAT2 index files"
+    sra_acc: "SRA accession number or reads to align"
   }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "hisat2.index_tar_gz": "https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz",
+  "hisat2.sra_acc": "SRR3440404",
+  "hisat2.max_reads": 10,
+}
+```
+
+Example output:
+
+```json
+{
+  "hisat2.sam": "SRR3440404.sam"
+}
+```
+
+Test config:
+
+```json
+{
+  "dependencies": ["cpu", "memory", "disks"]
+}
+```
+</p>
+</details>
+
+#### Example 2: GATK Haplotype Caller
+
+<details>
+<summary>
+Example: gatk_haplotype_caller_task.wdl
+
+```wdl
+version 1.1
+
+struct Reference {
+  String id
+  File fasta
+  File index
+  File dict
+}
+
+task gatk_haplotype_caller {
+  input {
+    File bam
+    Reference reference
+    String? interval
+    Int memory_gb = 4
+    Float? disks_gb
+    String? sample_id
+  }
+  
+  String prefix = select_first([sample_id, basename(bam, ".bam")])
+  Float disk_size_gb = select_first([
+    disks_gb, 10 + size([bam, reference_fasta], "GB")
+  ])
+
+  command <<<
+    # ensure all reference files are in the same directory
+    mkdir ref
+    ln -s ~{reference.fasta} ref/~{reference.id}.fasta
+    ln -s ~{reference.index} ref/~{reference.id}.fasta.fai
+    ln -s ~{reference.dict} ref/~{reference.id}.dict
+    gatk --java-options "-Xmx~{memory_gb}g" HaplotypeCaller \
+      ~{if defined(interval) then "-L ~{select_first([interval])}" else ""} \
+      -R ref/~{reference.id}.fasta \
+      -I ~{bam} \
+      -O ~{prefix}.vcf
+  >>>
+
+  output {
+    File vcf = "~{prefix}.vcf"
+  }
+
+  parameter_meta {
+    bam: "BAM file to call"
+    reference_fasta: "Reference genome in FASTA format"
+    memory_gb: "Amount of memory to allocate to the JVM in GB"
+    disks_gb: "Amount of disk space to reserve"
+    sample_id: "The ID of the sample to call"
+  }
+
   meta {
     author: "Joe Somebody"
     email: "joe@company.org"
   }
+  
   runtime {
-    container: "my_image:latest"
-    memory: "~{memory_mb + 256} MB"
+    container: "broadinstitute/gatk"
+    memory: "~{memory_gb + 1} GB"
+    disks: "~{disk_size_gb} GB"
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-#### Example 4: BWA MEM
-
-```wdl
-task bwa_mem_tool {
-  input {
-    Int threads
-    Int min_seed_length
-    Array[Int]+ min_std_max_min
-    File reference
-    File reads
-  }
-  command <<<
-    bwa mem -t ~{threads} \
-            -k ~{min_seed_length} \
-            -I ~{sep=',' min_std_max_min} \
-            ~{reference} \
-            ~{sep=' ' reads+} > output.sam
-  >>>
-  output {
-    File sam = "output.sam"
-  }
-  runtime {
-    container: "my_image:latest"
-    cpu: threads
-  }
+```json
+{
+  "gatk_haplotype_caller.bam": "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/RMNISTHS_30xdownsample.bam",
+  "gatk_haplotype_caller.reference": {
+    "id":"Homo_sapiens_assembly38",
+    "fasta": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta",
+    "index": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta.fai",
+    "dict": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.dict"
+  },
+  "gatk_haplotype_caller.interval": "chr1:1000000-1010000"
 }
 ```
 
-#### Example 5: Word Count
+Example output:
 
-```wdl
-task wc2_tool {
-  input {
-    File file1
-  }
-  command <<<
-    wc ~{file1}
-  >>>
-  output {
-    Int count = read_int(stdout())
-  }
-  runtime {
-    container: "my_image:latest"
-  }
-}
-
-workflow count_lines4_wf {
-  input {
-    Array[File] files
-  }
-  scatter (f in files) {
-    call wc2_tool {
-      input: file1 = f
-    }
-  }
-  output {
-    wc2_tool.count
-  }
+```json
+{
+  "gatk_haplotype_caller.vcf": "HG002.vcf"
 }
 ```
 
-#### Example 6: tmap
+Test config:
 
-```wdl
-task tmap_tool {
-  input {
-    Array[String] stages
-    File reads
-  }
-  command <<<
-    tmap mapall ~{sep=' ' stages} < ~{reads} > output.sam
-  >>>
-  output {
-    File sam = "output.sam"
-  }
-  runtime {
-    container: "my_image:latest"
-  }
+```json
+{
+  "dependencies": ["memory", "disks"]
 }
 ```
-
-Given the following inputs:
-
-| Variable | Value                                                                                                                                                                                                 |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| reads    | /path/to/fastq                                                                                                                                                                                        |
-| stages   | ["stage1 map1 --min-seq-length 20 map2 --min-seq-length 20", "stage2 map1 --max-seq-length 20 --min-seq-length 10 --seed-length 16  map2 --max-seed-hits -1 --max-seq-length 20 --min-seq-length 10"] |
-
-This task produces a command line like this:
-
-```sh
-tmap mapall \
-stage1 map1 --min-seq-length 20 \
-       map2 --min-seq-length 20 \
-stage2 map1 --max-seq-length 20 --min-seq-length 10 --seed-length 16 \
-       map2 --max-seed-hits -1 --max-seq-length 20 --min-seq-length 10
-```
+</p>
+</details>
 
 ## Workflow Definition
 
