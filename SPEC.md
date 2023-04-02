@@ -4627,7 +4627,7 @@ Test config:
 
 ## Workflow Definition
 
-A workflow can be thought of as a directed acyclic graph (DAG) of transformations that convert the input data to the desired outputs. Rather than explicitly specifying the sequence of operations, A WDL workflow instead describes the connections between the steps in the workflow (i.e. between the nodes in the graph). It is the responsibility of the execution engine to determine the proper ordering of the workflow steps, and to orchestrate the execution of the different steps.
+A workflow can be thought of as a directed acyclic graph (DAG) of transformations that convert the input data to the desired outputs. Rather than explicitly specifying the sequence of operations, A WDL workflow instead describes the connections between the steps in the workflow (i.e., between the nodes in the graph). It is the responsibility of the execution engine to determine the proper ordering of the workflow steps, and to orchestrate the execution of the different steps.
 
 A workflow is defined using the `workflow` keyword, followed by a workflow name that is unique within its WDL document, followed by any number of workflow elements within braces.
 
@@ -4655,24 +4655,6 @@ workflow name {
 
   parameter_meta {
     # metadata about each input/output parameter can go here
-  }
-}
-```
-
-Here is an example of a simple workflow that runs one task (not defined here):
-
-```wdl
-workflow wf {
-  input {
-    Array[File] files
-    Int threshold
-    Map[String, String] my_map
-  }
-  call analysis_job {
-    input:
-      search_paths = files,
-      threshold = threshold,
-      sex_lookup = my_map
   }
 }
 ```
@@ -4707,28 +4689,67 @@ If the `output {...}` section is omitted from a workflow that is called as a sub
 
 - To present the same interface when calling subworkflows as when calling tasks.
 - To make it easy for callers of subworkflows to find out exactly what outputs the call is creating.
-- In case of nested subworkflows, to give the outputs at the top level a simple fixed name rather than a long qualified name like `a.b.c.d.out` (which is liable to change if the underlying implementation of `c` changes, for example).
+- In the case of nested subworkflows, to give the outputs at the top level a simple fixed name rather than a long qualified name like `a.b.c.d.out` (which is liable to change if the underlying implementation of `c` changes, for example).
 
 ### Evaluation of Workflow Elements
 
-As with tasks, workflow declarations can appear in the body of a workflow in any order. Expressions in workflows can reference the outputs of calls, including in input declarations. For example:
+As with tasks, declarations can appear in the body of a workflow in any order. Expressions in workflows can reference the outputs of calls, including in input declarations. For example:
+
+<details>
+<summary>
+Example: input_ref_call.wdl
 
 ```wdl
-workflow foo {
+version 1.1
+
+task double {
   input {
-    Int x = 10
-    Int y = my_task.out
+    Int int_in
   }
 
-  call my_task as t1 { input: int_in = x }
-  call my_task as t2 { input: int_in = y }
+  output {
+    Int out = int_in * 2
+  }
+}
+
+workflow input_ref_call {
+  input {
+    Int x
+    Int y = d1.out
+  }
+
+  call double as d1 { input: int_in = x }
+  call double as d2 { input: int_in = y }
+
+  output {
+    Int result = d2.out
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "input_ref_call.x": 5
 }
 ```
 
+Example output:
+
+```json
+{
+  "input_ref_call.result": 20
+}
+```
+</p>
+</details>
+
 The control flow of this workflow changes depending on whether the value of `y` is provided as an input or it's initializer expression is evaluated:
 
-* If an input value is provided for `y` then it receives that value immediately and `t2` may start running as soon as the workflow starts.
-* In no input value is provided for `y` then it will need to wait for `t1` to complete before it is assigned.
+* If an input value is provided for `y` then it receives that value immediately and `d2` may start running as soon as the workflow starts.
+* In no input value is provided for `y` then it will need to wait for `d1` to complete before it is assigned.
 
 ### Fully Qualified Names & Namespaced Identifiers
 
@@ -4749,134 +4770,230 @@ For example: `ns.ns2.mytask` is a fully-qualified name - `ns.ns2` is the parent 
 
 When a [call statement](#call-statement) needs to refer to a task or workflow in another namespace, then it must use the fully-qualified name of that task or workflow. When an [expression](#expressions) needs to refer to a declaration in another namespace, it must use a *namespaced identifier*, which is an identifier consisting of a fully-qualified name.
 
-Consider this workflow:
+<details>
+<summary>
+Example: call_imported_task.wdl
 
-`other.wdl`
 ```wdl
-struct Result {
-  String foo
-}
+version 1.1
 
-task mytask {
-  ...
+import "input_ref_call.wdl" as ns1
+
+workflow call_imported_task {
+  input {
+    Int x
+    Int y = d1.out
+  }
+
+  call ns1.double as d1 { input: int_in = x }
+  call ns1.double as d2 { input: int_in = y }
+
   output {
-    Result result
+    Int result = d2.out
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-`main.wdl`
-```wdl
-import "other.wdl" as ns
-
-workflow wf {
-  call ns.mytask
-
-  output {
-    String result = mytask.result.foo
-  }
+```json
+{
+  "call_imported_task.x": 5
 }
 ```
 
-In this example, the call statement uses the fully-qualified name `ns.mytask` to refer to task `mytask` in namespace `ns`, which is the alias given to `other.wdl` when it is imported. We can then refer to the outputs of this call using its alias `mytask` (see the [Call Statement](#call-statement) section for details on call aliasing). `mytask.result.foo` is a namespaced identifier referring to the member `foo` of the `Struct`-typed output declaration `result` of the call `mytask`.
+Example output:
+
+```json
+{
+  "call_imported_task.result": 20
+}
+```
+</p>
+</details>
+
+The workflow in the above example imports the WDL file from the previous section using an alias. The import creates the namespace `ns1`, and the workflow calls a task in the imported namespace using its fully qualified name, `ns1.double`. Each call is aliased, and the alias is used to refer to the output of the task, e.g., `d1.out` (see the [Call Statement](#call-statement) section for details on call aliasing).
 
 In the following more extensive example, all of the fully-qualified names that exist within the top-level workflow are listed exhaustively.
 
-`other.wdl`
+<details>
+<summary>
+Example: main.wdl
+
+```wdl
+version 1.1
+
+import "other.wdl" as other_wf
+
+task echo {
+  input {
+    String msg = "hello"
+  }
+  
+  command <<<
+  echo -n ~{msg}
+  >>>
+  
+  output {
+    File results = stdout()
+  }
+  
+  runtime {
+    container: "ubuntu:latest"
+  }
+}
+
+workflow main {
+  Array[String] arr = ["a", "b", "c"]
+
+  call echo
+  call echo as echo2
+  call other_wf.foobar { input: infile = echo2.results }
+  call other_wf.other { input: b = true, f = echo2.results }
+  call other_wf.other as other2 { input: b = false }
+  
+  scatter(x in arr) {
+    call echo as scattered_echo {
+      input: msg = x
+    }
+    String scattered_echo_results = read_string(scattered_echo.results)
+  }
+
+  output {
+    String echo_results = read_string(echo.results)
+    Int foobar_results = foobar.results
+    Array[String] echo_array = scattered_echo_results
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "main.echo_results": "hello",
+  "main.foobar_results": 1,
+  "main.echo_array": ["a", "b", "c"]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: other.wdl
+
+```wdl
+version 1.1
+
 ```wdl
 task foobar {
   input {
     File infile
   }
+
   command <<<
-    sh setup.sh ~{infile}
+  wc -l ~{infile}
   >>>
+
   output {
-    File results = stdout()
+    Int results = read_int(stdout())
   }
+
   runtime {
-    container: "my_image:latest"
+    container: "ubuntu:latest"
   }
 }
 
-workflow other_workflow {
+workflow other {
   input {
-    Boolean bool
+    Boolean b
+    File? f
   }
-  call foobar
-}
-```
 
-`main.wdl`
-```wdl
-import "other.wdl" as other
-
-task test {
-  input {
-    String my_var
+  if (b && defined(f)) {
+    call foobar { input: infile = select_first([f]) }
   }
-  command <<<
-    ./script ~{my_var}
-  >>>
+
   output {
-    File results = stdout()
-  }
-  runtime {
-    container: "my_image:latest"
-  }
-}
-
-workflow wf {
-  Array[String] arr = ["a", "b", "c"]
-  call test
-  call test as test2
-  call other.foobar
-  call other.other_workflow
-  call other.other_workflow as other_workflow2
-  output {
-    File test_results = test.results
-    File foobar_results = foobar.results
-  }
-  scatter(x in arr) {
-    call test as scattered_test {
-      input: my_var = x
-    }
+    Int? results = foobar.results
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-The following fully-qualified names exist within `workflow wf` in main.wdl:
+```json
+{
+  "other.b": true,
+  "other.f": "greetings.txt"
+}
+```
 
-* `wf` - References top-level workflow
-* `wf.test` - References the first call to task `test`
-* `wf.test2` - References the second call to task `test` (aliased as test2)
-* `wf.test.my_var` - References the `String` input of first call to task `test`
-* `wf.test.results` - References the `File` output of first call to task `test`
-* `wf.test2.my_var` - References the `String` input of second call to task `test`
-* `wf.test2.results` - References the `File` output of second call to task `test`
-* `wf.foobar.results` - References the `File` output of the call to `other.foobar`
-* `wf.foobar.infile` - References the `File` input of the call to `other.foobar`
-* `wf.other_workflow` - References the first call to subworkflow `other.other_workflow`
-* `wf.other_workflow.bool` - References the `Boolean` input of the first call to subworkflow `other.other_workflow`
-* `wf.other_workflow.foobar.results` - References the `File` output of the call to `foobar` inside the first call to subworkflow `other.other_workflow`
-* `wf.other_workflow.foobar.input` - References the `File` input of the call to `foobar` inside the first call to subworkflow `other.other_workflow`
-* `wf.other_workflow2` - References the second call to subworkflow `other.other_workflow` (aliased as other_workflow2)
-* `wf.other_workflow2.bool` - References the `Boolean` input of the second call to subworkflow `other.other_workflow`
-* `wf.other_workflow2.foobar.results` - References the `File` output of the call to `foobar` inside the second call to subworkflow `other.other_workflow`
-* `wf.other_workflow2.foobar.input` - References the `File` input of the call to `foobar` inside the second call to subworkflow `other.other_workflow`
-* `wf.arr` - References the `Array[String]` declaration on the workflow
-* `wf.scattered_test` - References the scattered version of `call test`
-* `wf.scattered_test.my_var` - References an `Array[String]` for each element used as `my_var` when running the scattered version of `call test`.
-* `wf.scattered_test.results` - References an `Array[File]` which are the accumulated results from scattering `call test`
-* `wf.scattered_test.1.results` - References an `File` from the second invocation (0-indexed) of `call test` within the scatter block.  This particular invocation used value "b" for `my_var`
+Example output:
+
+```json
+{
+  "other.results": 3
+}
+```
+</p>
+</details>
+
+The following fully-qualified names exist when calling `workflow main` in `main.wdl`:
+
+| Fully-qualified Name          | References                                                                                  | Accessible                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `other_wf`                    | Namespace created by importing `other.wdl` and aliasing it                                  | Anywhere in `main.wdl`                                        |
+| `main`                        | Top-level workflow                                                                          | By the caller of `main`                                       |
+| `main.arr`                    | `Array[String]` declaration on the workflow                                                 | Anywhere within `main`                                        |
+| `main.echo`                   | First call to task `echo`                                                                   | Anywhere within `main`                                        |
+| `main.echo2`                  | Second call to task `echo` (aliased as `echo2`)                                             | Anywhere within `main`                                        |
+| `main.echo.msg`               | `String` input of first call to task `echo`                                                 | No*                                                           |
+| `main.echo.results`           | `File` output of first call to task `echo`                                                  | Anywhere within `main`                                        |
+| `main.echo2.msg`              | `String` input of second call to task `echo`                                                | No*                                                           |
+| `main.echo2.results`          | `File` output of second call to task `echo`                                                 | Anywhere within `main`                                        |
+| `main.foobar.infile`          | `File` input of the call to `other_wf.foobar`                                               | No*                                                           |
+| `main.foobar.results`         | `Int` output of the call to `other_wf.foobar`                                               | Anywhere within `main`                                        |
+| `main.other`                  | First call to subworkflow `other_wf.other`                                                  | Anywhere within `main`                                        |
+| `main.other.b`                | `Boolean` input of the first call to subworkflow `other_wf.other`                           | No*                                                           |
+| `main.other.f`                | `File` input of the first call to subworkflow `other_wf.other`                              | No*                                                           |
+| `main.other.foobar.infile`    | `File` input of the call to `foobar` inside the first call to subworkflow `other_wf.other`  | No*                                                           |
+| `main.other.foobar.results`   | `Int` output of the call to `foobar` inside the first call to subworkflow `other_wf.other`  | No                                                            |
+| `main.other.results`          | `Int?` output of the first call to subworkflow `other_wf.other`                             | Anywhere within `main`                                        |
+| `main.other2`                 | Second call to subworkflow `other_wf.other` (aliased as other2)                             | Anywhere within `main`                                         |
+| `main.other2.b`               | `Boolean` input of the second call to subworkflow `other_wf.other`                          | No*                                                           |
+| `main.other2.f`               | `File input of the second call to subworkflow `other_wf.other`                              | No*                                                           |
+| `main.other2.foobar.infile`   | `File` input of the call to `foobar` inside the second call to subworkflow `other_wf.other` | No*                                                           |
+| `main.other2.foobar.results`  | `Int` output of the call to `foobar` inside the second call to subworkflow `other_wf.other` | No                                                            |
+| `scattered_echo`              | Call to `echo` within scatter block of `main`                                               | Within the scatter block                                      |
+| `scattered_echo.results`      | `File` results of call to scattered_echo`                                                   | Within the scatter block                                      |
+| `main.scattered_echo.msg`     | Array of `String` inputs to calls to `scattered_echo`                                       | No*                                                           |
+| `main.scattered_echo.results` | Array of `File` results of calls to `echo` within the scatter block                         | Anywhere within `main`                                        |
+| `scattered_echo_results`      | `String` contents of `File` created by call to `scattered_echo`                             | Within the scatter block                                      |
+| `main.scattered_echo_results` | Array of `String` contents of `File` results of calls to `echo` within the scatter block    | Anywhere within `main`                                        |
+| `main.echo_results`           | `String` contents of `File` result from call to `echo`                                      | Anywhere in `main`'s output block and by the caller of `main` |
+| `main.foobar_results`         | `Int` result from call to `foobar`                                                          | Anywhere in `main`'s output block and by the caller of `main` |
+| `main.echo_array`             | Array of `String` contents of `File` results from calls to `echo` in the scatter block      | Anywhere in `main`'s output block and by the caller of `main` |
+
+\* Task inputs are accessible to be set by the caller of `main` if the workflow is called with [`allowNestedInputs: true`](#computing-call-inputs) in its `meta` section.
 
 ### Call Statement
 
 A workflow calls other tasks/workflows via the `call` keyword. A `call` is followed by the name of the task or subworkflow to run. A call's target task may be defined in the current WDL document - using just the task name - or in an imported WDL - using its [fully-qualified name](#fully-qualified-names--namespaced-identifiers). Since a WDL workflow can never be in the same document as another workflow, a subworkflow must always be called in an imported WDL using its fully-qualified name.
 
-A `call` statement must be uniquely identifiable. By default, the call's unique identifier is the task or subworkflow name (e.g. `call foo` would be referenced by name `foo`). However, if one were to `call foo` twice in a workflow, each subsequent `call` statement will need to alias itself to a unique name using the `as` clause, e.g. `call foo as bar`.
+Each `call` must be uniquely identifiable. By default, the `call`'s unique identifier is the task or subworkflow name (e.g., `call foo` would be referenced by name `foo`). However, to `call foo` multiple times in the same workflow, it is necessary to give all except one of the `call` statements a unique alias using the `as` clause, e.g., `call foo as bar`.
 
-A `call` has an optional body in braces (`{}`). The only element that may appear in the call body is the `input:` keyword, followed by an optional, comma-delimited list of inputs to the call. A `call` must, at a minimum, provide values for all of the task/subworkflow's required inputs, and every input value/expression must match the type of the task/subworkflow's corresponding input parameter. If a task has no required parameters, then the call body may be empty or omitted.
+A `call` has an optional body in braces (`{}`). The only element that may appear in the call body is the `input:` keyword, followed by an optional, comma-delimited list of inputs to the call. A `call` must, at a minimum, provide values for all of the task/subworkflow's required inputs, and each input value/expression must match the type of the task/subworkflow's corresponding input parameter. If a task has no required parameters, then the `call` body may be empty or omitted.
 
 ```wdl
 import "lib.wdl" as lib
@@ -4911,31 +5028,6 @@ workflow wf {
   call lib.other_workflow
   # This call is also valid
   call lib.other_workflow as other_workflow2 {}
-}
-```
-
-There is no mechanism for a workflow to set a value for a nested input when calling a subworkflow. For example, the following workflow is invalid:
-
-`sub.wdl`
-```wdl
-task mytask {
-  input {
-    Int x
-  }
-  ...
-}
-
-workflow sub {
-  # error! missing required input
-  call mytask
-}
-```
-
-`main.wdl`
-```wdl
-workflow top {
-  # error! can't specify a nested input
-  call sub { input: sub.mytask.x = 5 }
 }
 ```
 
@@ -5249,6 +5341,31 @@ The inputs to `wf` will be:
 Note that the optional `t` input for task `t2` is left unsatisfied. This input can be specified at runtime as `wf.t2.t` because `allowNestedInputs` is set to `true`; if it were set to `false`, this input could not be specified at runtime. 
 
 It is an error for the user to attempt to override a call input at runtime, even if nested inputs are allowed. For example, if the user tried to specify `allows_nested_inputs.mytask.name = "Fred"` in the input JSON, an error would be raised.
+
+There is no mechanism for a workflow to set a value for a nested input when calling a subworkflow. For example, the following workflow is invalid:
+
+`sub.wdl`
+```wdl
+task mytask {
+  input {
+    Int x
+  }
+  ...
+}
+
+workflow sub {
+  # error! missing required input
+  call mytask
+}
+```
+
+`main.wdl`
+```wdl
+workflow top {
+  # error! can't specify a nested input
+  call sub { input: sub.mytask.x = 5 }
+}
+```
 
 ### Scatter
 
