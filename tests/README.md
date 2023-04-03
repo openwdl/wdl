@@ -38,6 +38,7 @@ The file name is of the form `<target>.wdl`, where `target` is the name of the w
 * If the file name is of the form `<target>_task.wdl` then it is assumed that `target` is a task, otherwise it is assumed to be a workflow (unless the `type` configuration parameter is specified).
 * If the file name is of the form `<target>_fail.wdl` then it is assumed that the test is expected to fail (unless the `fail` configuration parameter is specified).
 * If the file name is of the form `<target>_fail_task.wdl` then it is both `type: "task"` and `fail: true` are assumed unless the configuration parameters specify differently.
+* If the file name ends with `_resource.wdl` then it not executed as a test. Such resource WDLs are intended to be imported by other examples.
 
 Examples must conform to the following rules:
 
@@ -80,7 +81,7 @@ Each example may specify a configuration for use by the testing framework in its
 
 The following are the configuration parameters that must be supported by all test frameworks. Test frameworks may support additional parameters, and should ignore any unrecognized parameters.
 
-* `type`: Either "task" or "workflow". The default is "workflow", unless the example name ends with "_task". Must be set to "task" if the example does not contain a workflow, or if the test framework should only execute a specific task (which should be specified using the `target` parameter).
+* `type`: One of "task", "workflow", or "resource". The default is "workflow", unless the example name ends with "_task" or "_resource". Must be set explicitly if the example does not contain a workflow, if the test framework should only execute a specific task (which should be specified using the `target` parameter), or if the example should not be executed at all and only contains definitions that should be available for import by other examples (`type: "resource"`).
 * `target`: The name of the workflow or task the test framework should execute. Defaults to the example name (without the ".wdl" extension). Required if the target name is different from the test name, even if the test only contains a single workflow/task.
 * `priority`: The priority of the test. Must be one of the following values. Defaults to "required".
     * "required": The test framework must execute the test. If the test fails, it must be reported as an error.

@@ -32,8 +32,8 @@ Revisions to this specification are made periodically in order to correct errors
         - [Array\[X\]](#arrayx)
         - [Pair\[X, Y\]](#pairx-y)
         - [Map\[P, Y\]](#mapp-y)
-        - [Custom Types (Structs)](#custom-types-structs)
         - [🗑 Object](#-object)
+        - [Custom Types (Structs)](#custom-types-structs)
       - [Hidden Types](#hidden-types)
         - [Union](#union)
       - [Type Conversion](#type-conversion)
@@ -64,7 +64,10 @@ Revisions to this specification are made periodically in order to correct errors
     - [Static Analysis and Dynamic Evaluation](#static-analysis-and-dynamic-evaluation)
   - [WDL Documents](#wdl-documents)
   - [Versioning](#versioning)
+  - [Struct Definition](#struct-definition)
   - [Import Statements](#import-statements)
+    - [Import URIs](#import-uris)
+    - [Importing and Aliasing Structs](#importing-and-aliasing-structs)
   - [Task Definition](#task-definition)
     - [Task Inputs](#task-inputs)
       - [Task Input Localization](#task-input-localization)
@@ -112,10 +115,6 @@ Revisions to this specification are made periodically in order to correct errors
       - [Computing Call Inputs](#computing-call-inputs)
     - [Scatter](#scatter)
     - [Conditional (`if`)](#conditional-if)
-  - [Struct Definition](#struct-definition)
-    - [Struct Literals](#struct-literals)
-    - [Struct Namespacing](#struct-namespacing)
-    - [Struct Usage](#struct-usage)
 - [Standard Library](#standard-library)
   - [Numeric Functions](#numeric-functions)
     - [`floor`](#floor)
@@ -1045,70 +1044,6 @@ Example output:
 </p>
 </details>
 
-##### Custom Types (Structs)
-
-WDL provides the ability to define custom compound types called [structs](#struct-definition). `Struct` types are defined directly in the WDL document and are usable like any other type. A `struct` definition contains any number of declarations of any types, including other `Struct`s.
-
-A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A declaration with a custom type can be initialized with a struct literal, which begins with the `Struct` type name followed by a comma-separated list of name-value pairs in braces (`{}`), where name-value pairs are delimited by `:`. The member names in a struct literal are not quoted.
-
-The value of a specific member of a `Struct` value can be accessed by placing a `.` followed by the member name after the identifier.
-
-<details>
-<summary>
-Example: test_struct.wdl
-
-```wdl
-version 1.1
-
-struct Person {
-  String name
-  Phone? phone
-}
-
-struct Phone {
-  Int exchange
-  Int number
-  Int? extension
-}
-
-workflow test_struct {
-  output {
-    Person person = Person {
-      name: "John",
-      phone: {
-        exchange: 123,
-        number: 4567890
-      }
-    }
-    Boolean has_extension = defined(person.extension)
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{}
-```
-
-Example output:
-
-```json
-{
-  "test_struct.person": {
-    "name": "John",
-    "phone": {
-      "exchange": 123,
-      "number": 4567890
-    }
-  },
-  "test_struct.has_extension": false
-}
-```
-</p>
-</details>
-
 ##### 🗑 Object
 
 An `Object` is an unordered associative array of name-value pairs, where values may be of any type and are not defined explicitly.
@@ -1155,6 +1090,136 @@ Example output:
 </details>
 
 Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, the use of the `Object` type and the `object` literal syntax have been deprecated. In WDL 2.0, `Object` will become a [hidden type](#hidden-types) that may only be instantiated by the execution engine. `Object` declarations can be replaced with use of [structs](#struct-definition).
+
+##### Custom Types (Structs)
+
+WDL provides the ability to define custom compound types called [structs](#struct-definition). `Struct` types are defined directly in the WDL document and are usable like any other type. A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A `struct` definition contains any number of declarations of any types, including other `Struct`s.
+
+A declaration with a custom type can be initialized with a struct literal, which begins with the `Struct` type name followed by a comma-separated list of name-value pairs in braces (`{}`), where name-value pairs are delimited by `:`. The member names in a struct literal are not quoted. A struct literal must provide values for all of the `Struct`'s non-optional members, and may provide values for any of the optional members. The members of a struct literal are validated against the `Struct`'s definition at the time of creation. Members do not need to be specified in any specific order. Once a struct literal is created, it is immutable like any other WDL value.
+
+The value of a specific member of a `Struct` value can be [accessed](#member-access) by placing a `.` followed by the member name after the identifier.
+
+<details>
+<summary>
+Example: test_struct.wdl
+
+```wdl
+version 1.1
+
+struct BankAccount {
+  String account_number
+  Int routing_number
+  Float balance
+  Array[Int]+ pin_digits
+  String? username
+}
+
+struct Person {
+  String name
+  BankAccount? account
+}
+
+workflow test_struct {
+  output {
+    Person john = Person {
+      name: "John",
+      # it's okay to leave out username since it's optional
+      account: BankAccount {
+        account_number: "123456",
+        routing_number: 300211325,
+        balance: 3.50,
+        pin_digits: [1, 2, 3, 4]
+      }
+    }
+    Boolean has_account = defined(john.account)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_struct.person": {
+    "name": "John",
+    "account": {
+      "account_number": "123456",
+      "routing_number": 300211325,
+      "balance": 3.5,
+      "pin_digits": [1, 2, 3, 4]
+    }
+  },
+  "test_struct.has_account": true
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: incomplete_struct_fail.wdl
+
+```wdl
+version 1.1
+
+# importing a WDL automatically imports all its structs into
+# the current namespace
+import "test_struct.wdl"
+
+workflow incomplete_struct {
+  output {
+    # error! missing required account_number
+    Person fail1 = Person {
+      "name": "Sam",
+      "account": BankAccount {
+        routing_number: 611325474,
+        balance: 9.99,
+        pin_digits: [5, 5, 5, 5]
+      }
+    }
+    # error! pin_digits is empty
+    Person fail2 = Person {
+      "name": "Bugs",
+      "account": BankAccount {
+        account_number: "FATCAT42",
+        routing_number: 880521345,
+        balance: 50.01,
+        pin_digits: []
+      }
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+🗑 It is also possible to assign an `Object` or `Map[String, X]` value to a `Struct` declaration. In the either case:
+
+* The `Object`/`Map` must not have any members that are not declared for the struct.
+* The value of each object/map member must be coercible to the declared type of the struct member.
+* The `Object`/`Map` must at least contain values for all of the struct's non-optional members.
+
+Note that the ability to assign non-`Struct` values to `Struct` declarations is deprecated and will be removed in WDL 2.0.
 
 #### Hidden Types
 
@@ -1922,7 +1987,6 @@ Example output:
 
 The syntax `x.y` refers to member access. `x` must be a `Struct` or `Object` value, or a call in a workflow. A call can be thought of as a struct where the members are the outputs of the called task.
 
-
 <details>
 <summary>
 Example: member_access.wdl
@@ -1965,6 +2029,79 @@ Example output:
 {
   "member_access.bar": "bar",
   "member_access.hello": "hello"
+}
+```
+</p>
+</details>
+
+Access to elements of compound members can be chained into a single expression.
+
+<details>
+<summary>
+Example: nested_access.wdl
+
+```wdl
+version 1.1
+
+struct Experiment {
+  String id
+  Array[String] variables
+  Map[String, Float] data
+}
+
+workflow nested_access {
+  input {
+    Array[Experiment]+ my_experiments
+  }
+
+  Experiment first_experiment = my_experiments[0]
+  
+  output {
+    # these are equivalent
+    String first_var = first_experiment.variables[0]
+    String first_var_from_first_experiment = my_experiments[0].variables[0]
+
+    # these are equivalent
+    String subject_name = first_experiment.data["name"]
+    String subject_name_from_first_experiment = my_experiments[0].data["name"]
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "nested_access.my_experiments": [
+    {
+      "id": "mouse_size",
+      "variables": ["name", "height"],
+      "data": {
+        "name": "Pinky",
+        "height": 7
+      }
+    },
+    {
+      "id": "pig_weight",
+      "variables": ["name", "weight"],
+      "data": {
+        "name": "Porky",
+        "weight": 1000
+      }
+    }
+  ]
+}
+```
+
+Example output:
+
+```json
+{
+  "nested_access.first_var": "name",
+  "nested_access.first_var_from_first_experiment": "name",
+  "nested_access.subject_name": "Pinky",
+  "nested_access.subject_name_from_first_experiment": "Pinky",
 }
 ```
 </p>
@@ -2513,13 +2650,13 @@ A WDL document is a file that contains valid WDL definitions.
 A WDL document must contain:
 
 * A [`version` statement](#versioning) on the first non-comment line of the file.
-* At least one [`task` definition](#task-definition), [`workflow` definition](#workflow-definition), or [`struct` definition](#struct-definition).
+* At least one [`struct` definition](#struct-definition), [`task` definition](#task-definition), [`workflow` definition](#workflow-definition).
 
 A WDL document may contain any combination of the following:
 
 * Any number of [`import` statements](#import-statements).
-* Any number of `task` definitions.
 * Any number of `struct` definitions.
+* Any number of `task` definitions.
 * A maximum of one `workflow` definition.
 
 To execute a WDL workflow, the user must provide the execution engine with the location of a "primary" WDL file (which may import additional files as needed) and any input values needed to satisfy all required task and workflow input parameters, using a [standard input JSON file](#json-input-format) or some other execution engine-specific mechanism.
@@ -2546,9 +2683,54 @@ A WDL file that does not have a `version` statement must be treated as [`draft-2
 
 Because patches to the WDL specification do not change any functionality, all revisions that carry the same major and minor version numbers are considered equivalent. For example, `version 1.1` is used for a WDL document that adheres to the `1.1.x` specification, regardless of the value of `x`.
 
-## Import Statements
+## Struct Definition
 
-A WDL file may contain import statements to include WDL code from other sources.
+A `Struct` type is a user-defined data type. Structs enable the creation of compound data types that bundle together related attributes in a more natural way than is possible using the general-purpose compound types like `Pair` or `Map`. Once defined, a `Struct` type can be used as the type of a declaration like any other data type.
+
+`Struct` definitions are top-level WDL elements, meaning they exist at the same level as `import`, `task`, and `workflow` definitions. A `struct` cannot be defined within a `task` or `workflow` body.
+
+A struct is defined using the `struct` keyword, followed by a name that is unique within the WDL document, and a body containing the member declarations. A `struct` member may be of any type, including compound types and even other `Struct` types. A `struct` member may be optional. Declarations in a `struct` body differ from those in a `task` or `workflow` in that `struct` members cannot have default initializers (i.e., they are unbound declarations).
+
+Valid structs:
+
+<details>
+<summary>
+Example: structs_resource.wdl
+
+```wdl
+version 1.1
+
+struct Name {
+  String first
+  String last
+}
+
+struct Income {
+  Float amount
+  String period
+  String? currency
+}
+
+struct Person {
+  Name name
+  Int age
+  Income? income
+  Map[String, Array[File]] assay_data
+}
+```
+</summary>
+</details>
+
+An invalid struct:
+
+```wdl
+struct Invalid {
+  String myString = "Cannot do this"
+  Int myInt
+}
+```
+
+## Import Statements
 
 ```txt
 $import = 'import' $ws+ $string ($ws+ $import_namespace)? ($ws+ $import_alias)*
@@ -2556,14 +2738,14 @@ $import_namespace = 'as' $ws+ $identifier
 $import_alias = 'alias' $identifier $ws+ 'as' $ws+ $identifier
 ```
 
-The `import` statement specifies a WDL document source as a string literal, which is interpreted as a URI. The execution engine is responsible for resolving the URI and downloading the contents.  The contents of the document in each URI must be WDL source code **of the same version as the importing document**.
+Although a WDL workflow and the task(s) it calls may be defined completely within a single WDL document, splitting it into multiple documents can be beneficial in terms of modularity and code resuse. Furthermore, complex workflows that consist of multiple subworkflows must be defined in multiple documents because each document is only allowed to contain at most one workflow.
 
-Every imported WDL file requires a unique namespace, which can be specified using the `as <identifier>` syntax. If a namespace identifier is not specified explicitly, then the default namespace is the filename of the imported WDL, minus the `.wdl` extension. The tasks and workflows imported from a WDL file are only accessible through the assigned [namespace](#namespaces) - see [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details.
+The `import` statement is the basis for modularity in WDL. A WDL document may have any number of `import` statements, each of which references another WDL document and allows access to that document's top-level members (`task`s, `workflow`s, and `struct`s).
 
-<!--- 
-TODO: find a reliable way to turn this into an executable example. For example, we could host
-WDLs to be imported within this GitHub repo.
---->
+The `import` statement specifies a WDL document source as a string literal, which is interpreted as a URI. The execution engine is responsible for resolving each import URI and retrieving the contents of the WDL document. The contents of the document in each URI must be WDL source code **of the same version as the importing document**.
+
+Each imported WDL document must be assigned a unique namespace that is used to refer to its members. By default, the namespace of an imported WDL document is the filename of the imported WDL, minus the `.wdl` extension. A namespace can be assigned explicitly using the `as <identifier>` syntax. The tasks and workflows imported from a WDL file are only accessible through the assigned [namespace](#namespaces) - see [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details.
+
 ```wdl
 import "http://example.com/lib/analysis_tasks" as analysis
 import "http://example.com/lib/stdlib.wdl"
@@ -2582,13 +2764,15 @@ workflow wf {
 }
 ```
 
-The execution engine must at least support the following protocols for import URIs:
+### Import URIs
+
+A document is imported using it's [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier), which uniquely describes its local or network-accessible location. The execution engine must at least support the following protocols for import URIs:
 
 * `http://`
 * `https://`
 * 🗑 `file://` - Using the `file://` protocol for local imports can be problematic. Its use is deprecated and will be removed in WDL 2.0.
 
-In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. If a protocol-less import starts with `/` it will be interpreted as starting from the root of the host in the resolved URL. The execution engine may support additional import resolution mechanisms.
+In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. In the primary WDL document, a protocol-less import is relative to the host file system. If a protocol-less import starts with `/` it is interpreted as relative to the root of the host in the resolved URI.
 
 Some examples of correct import resolution:
 
@@ -2599,7 +2783,121 @@ Some examples of correct import resolution:
 | http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | /openwdl/otherwdls/subworkflow.wdl | http://www.github.com/openwdl/otherwdls/subworkflow.wdl |
 | /some/path/hello.wdl                                  | /another/path/world.wdl            | /another/path/world.wdl                                 |
 
-`Import` statements also support aliasing of structs using the `x as y` syntax. See [struct namespacing](#struct-namespacing) for details.
+### Importing and Aliasing Structs
+
+When importing a WDL document, any `struct` definitions in that document are "copied" into the importing document. This enables structs to be used by their name alone, without the need for any `namespace.` prefix.
+
+A document may import two or more `struct` definitions with the same name so long as they are all identical. To be identical, two `struct` definitions must have members with exactly the same names and types and defined in exactly the same order.
+
+A `struct` may be imported with a different name using an `alias` clause of the form `alias <source name> as <new name>`. If two structs have the same name but are not identical, at least one of them must be imported with a unique alias. To alias multiple `Struct`s, simply add additional alias clauses to the `import` statement. If aliases are used for some `struct`s in an imported WDL but not others, the unaliased `struct`s are still imported under their original names.
+
+<details>
+<summary>
+Example: import_structs.wdl
+
+```wdl
+version 1.1
+
+import "structs.wdl"
+  alias Person as Patient
+  alias Income as PatientIncome
+
+# This struct has the same name as a struct in 'structs.wdl',
+# but they have identical definitions so an alias is not required.
+struct Name {
+  String first
+  String last
+}
+
+# This struct also has the same name as a struct in 'structs.wdl',
+# but their definitions are different, so it was necessary to
+# import the struct under a different name.
+struct Income {
+  Float dollars
+  Boolean annual
+}
+
+struct Person {
+  Int age
+  Name name
+  Float? height
+  Income income
+}
+
+task calculate_bill {
+  input {
+    Person doctor
+    Patient patient
+    PatientIncome average_income = PatientIncome {
+      amount: 50000,
+      currency: "USD",
+      period: "annually"
+    }
+  }
+  
+  Income income = select_first([patient.income, average_income])
+  Float hourly_income = if income.period == "hourly" then income.amount else income.amount / 2000
+  Float hourly_income_usd = if income.currency == "USD" then amount else amount * 100
+
+  output {
+    Float amount = hourly_income_usd * 5
+  }
+}
+
+workflow import_structs {
+  input {
+    Person doctor = Person {
+      age: 10,
+      name: Name {
+        first: "Joe",
+        last: "Josephs"
+      },
+      income: Income {
+        dollars: 140000,
+        annual: true
+      }
+    }
+
+    Patient patient = Patient {
+      name: "Bill Williamson",
+      age: 42,
+      income: PatientIncome {
+        amount: 350,
+        currency: "Yen",
+        period: "hourly"
+      },
+      assay_data: {
+        "glucose": "hello.txt"
+      }
+    }
+  }
+
+  call calculate_bill {
+    input: doctor = doctor, patient = patient
+  }
+
+  output {
+    Float bill = calculate_bill.amount
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "import_structs.bill": 175000
+}
+```
+</p>
+</details>
 
 ## Task Definition
 
@@ -5752,204 +6050,6 @@ Example output:
 ```
 </p>
 </details>
-
-## Struct Definition
-
-A `Struct` type is a user-defined data type. Structs enable the creation of compound data types that bundle together related attributes in a more natural way than is possible using the general-purpose compound types like `Pair` or `Map`. Once defined, a `Struct` type can be used as the type of a declaration like any other data type.
-
-A `struct` definition is a top-level WDL element, meaning it is defined at the same level as tasks and workflows, and it cannot be defined within a task or workflow body. A struct is defined using the `struct` keyword, followed by a name that is unique within the WDL document, and a body containing a set of member declarations. Declarations in a `struct` body differ from those in a `task` or `workflow` in that `struct` members cannot have default initializers. `Struct` members may be optional.
-
-Valid `struct`:
-```wdl
-struct Person {
-  String first_name
-  String last_name
-  Int age
-  Float? income
-}
-```
-
-Invalid `struct`:
-```wdl
-struct Invalid {
-  String myString = "Cannot do this"
-  Int myInt
-}
-```
-
-A `struct` member may be of any type, including compound types and even other `Struct` types.
-
-```wdl
-struct Sample {
-  String id
-  Person donor
-  Map[String, Array[File]] assay_data
-}
-```
-
-### Struct Literals
-
-A struct literal is an instance of a specific `Struct` type that provides values for all of the non-optional members and any of the optional members. The members of a struct literal are validated against the `Struct`'s definition at the time of creation. Members do not need to be specified in any specific order. Once a struct literal is created, it is immutable like any other WDL value.
-
-A struct literal begins with the name of the `Struct` type, followed by name-value pairs for each of the members within braces.
-
-```wdl
-struct BankAccount {
-  String account_number
-  Int routing_number
-  Float balance
-  Array[Int]+ pin_digits
-  String? username
-}
-
-task {
-  input {
-    # it's okay to leave out username since it's optional
-    BankAccount account1 = BankAccount {
-      account_number: "123456",
-      routing_number: 300211325,
-      balance: 3.50,
-      pin_digits: [1, 2, 3, 4]
-    }
-
-    # error! missing required account_number
-    BankAccount account2 = BankAccount {
-      routing_number: 611325474,
-      balance: 9.99,
-      pin_digits: [5, 5, 5, 5]
-    }
-
-    # error! pin_digits is empty
-    BankAccount account3 = BankAccount {
-      account_number: "FATCAT42",
-      routing_number: 880521345,
-      balance: 50.01,
-      pin_digits: []
-    }
-  }
-}
-```
-
-🗑 It is also possible to assign an `Object` or `Map[String, X]` value to a `Struct` declaration. In the either case:
-* The `Object`/`Map` must not have any members that are not declared for the struct.
-* The value of each object/map member must be coercible to the declared type of the struct member.
-* The `Object`/`Map` must at least contain values for all of the struct's non-optional members.
-
-Note that the ability to assign non-`Struct` values to `Struct` declarations is deprecated and will be removed in WDL 2.0.
-
-### Struct Namespacing
-
-Although a `struct` is a top-level element, it is not considered a member of the WDL document's namespace the way that other top-level elements (`task`s and `workflow`s) are. Instead, when a WDL document is imported all of its `structs` are added to a global struct namespace. This enables structs to be used by their name alone, without the need for any `namespace.` prefix.
-
-`structs.wdl`
-```wdl
-struct Foo {
-  String s
-  Int i
-}
-```
-
-`main.wdl`
-```wdl
-import "structs.wdl"
-
-task test {
-  input {
-    # here we can use type 'Foo' rather than 'structs.Foo'
-    Foo f = Foo { s: "hello", i: 42 }
-  }
-}
-```
-
-It is valid to import the same `Struct` into the global namespace multiple times via different paths; however, if two `Struct`s with the same name but different members are imported into the global namespace there is a name collision resulting in an error. This means that care must be taken not to give identical names to two different `Struct`s that might be imported into the same WDL document tree. Alternatively, `Struct`s can be aliased at import time.
-
-For example, if the current WDL defines a `struct Experiment` and an imported WDL defines a different `struct Experiment`, it can be aliased as follows:
-
-```wdl
-import "http://example.com/example.wdl" as ex alias Experiment as OtherExperiment
-```
-
-In order to resolve multiple `Struct`s, simply add additional alias statements:
-
-```wdl
-import "http://example.com/another_exampl.wdl" as ex2
-  alias Parent as Parent2
-  alias Child as Child2
-  alias GrandChild as GrandChild2
-```
-
-A `Struct` can always be aliased even if its name does not conflict with another `Struct` in the global namespace. When a `Struct` is imported with an alias, it is added to the global namespace only under that alias. If aliases are used for some `Struct`s in an imported WDL but not others, the unaliased `Struct`s are still imported into the global namespace under their original names.
-
-### Struct Usage
-
-A `Struct`s members are [accessed](#member-access) using a `.` to separate the identifier from the member name. For example:
-
-```wdl
-struct Wizard {
-  String name
-  Int age
-}
-
-task my_task {
-  input {
-    Wizard w
-  }
-
-  command <<<
-    echo "hello my name is ~{w.name} and I am ~{w.age} years old"
-  >>>
-
-  output {
-    String wizard_name = "~{w.name} Potter"
-    Int age_in_muggle_years = w.age * 2
-  }
-    
-  runtime {
-    container: "my_image:latest"
-  }
-}
-
-workflow my_workflow {
-  Wizard harry = Wizard { name: "Harry", age: 11 }
-  
-  call myTask { input: a = harry }
-}
-```
-
-Access to elements of compound members can be chained into a single expression. For example:
-
-```wdl
-struct Experiment {
-  Array[File] experiment_files
-  Map[String, String] experiment_data
-}
-```
-
-**Example 1:** Accessing the nth element of experimentFiles and any element in experimentData:
-
-```wdl
-workflow workflow_a {
-  input {
-    Experiment my_experiment
-  }
-  File first_file = my_experiment.experiment_files[0]
-  String experiment_name = my_experiment.experiment_data["name"]
-}
-```
-
-**Example 2:** The struct is an item in an Array:
-
-```wdl
-workflow workflow_a {
-  input {
-    Array[Experiment] my_experiments
-  }
-
-  File first_file_from_first_experiment = my_experiments[0].experiment_files[0]
-  File experiment_name_from_first_experiment = my_experiments[0].experiment_data["name"]
-  ....
-}
-```
 
 # Standard Library
 
