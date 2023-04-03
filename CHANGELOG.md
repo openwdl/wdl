@@ -42,6 +42,11 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
+version 1.2.0
+---------------------------
+
++ Added the `?` operator for unwrapping optionals.
+
 version 1.1.0
 ---------------------------
 

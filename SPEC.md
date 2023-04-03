@@ -478,6 +478,25 @@ Boolean test_is_none = maybe_five_but_is_not == None  # Evaluates to true
 Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false
 ```
 
+An optional value can be "unwrapped" using the question mark operator (`?`). Unwrapping an optional value turns it into a non-optional value if it is defined, and results in an error if it is `None`. The question mark operator is shorthand for `select_first([x])` where `x` is an optional value.
+
+```wdl
+version 1.2
+
+workflow unwrap_optional {
+  input {
+    Int? i
+  }
+
+  Int j1 = i? * 2  # multiplies `i * 2` if `i` is defined, otherwise causes an error
+  Int j2 = select_first([i]) * 2  # this is equivalent to the previous statement
+  
+  output {
+    Boolean is_true = j1 == j2
+  }
+}
+```
+
 For more details, see the sections on [Input Type Constraints](#input-type-constraints) and [Optional Inputs with Defaults](#optional-inputs-with-defaults).
 
 #### Compound Types
@@ -665,11 +684,21 @@ The table below lists all globally valid coercions. The "target" type is the typ
 
 ###### Coercion of Optional Types
 
-A non-optional type `T` can always be coerced to an optional type `T?`, but the reverse is not true - coercion from `T?` to `T` is not allowed because the latter cannot accept `None`.
+A non-optional type `T` can always be coerced to an optional type `T?`. This coercion propagates into compound types. For example, an `Array[T?]` can be assigned an array literal that contains both optional and non-optional elements; the non-optional elements are coerced to optional.
 
-This constraint propagates into compound types. For example, an `Array[T?]` can contain both optional and non-optional elements. This facilitates the common idiom [`select_first([expr, default])`](#x-select_firstarrayx), where `expr` is of type `T?` and `default` is of type `T`, for converting an optional type to a non-optional type. However, an `Array[T?]` could not be passed to the [`sep`](#-string-sepstring-arraystring) function, which requires an `Array[T]`.
+```wdl
+Int i = 1
+Int? j = i  # allowed because `T` is coerced to `T?`
+Int? k = None
+Array[Int?] a = [i, j, k]  # `i` is coerced to optional
+```
 
-There are two exceptions where coercion from `T?` to `T` is allowed:
+In contrast, an optional type cannot be coerced to a non-optional type. Coercion from `T?` to `T` is not allowed because the latter cannot accept `None`. There are two mechanisms for explicitly converting an optional type to non-optional:
+
+* [`select_first`](#x-select_firstarrayx): The common idiom `select_first([T?, T])` returns the optional argument as non-optional if it is defined, and the non-optional "default" value otherwise.
+* ✨ The question mark operator (`?`): Placing `?` after an optional identifier (e.g., `x?`) in an expression causes the optional to be "unwrapped" (i.e., replaced with its non-optional value) if it is defined, and to fail with an error otherwise. This is equivalent to `select_first([x])`.
+
+🗑 There are two special cases where coercion from `T?` to `T` is allowed. These are both deprecated and should be replaced by use of the question mark operator. They will be disallowed starting in WDL 2.0.
 * [String concatenation in expression placeholders](#concatenation-of-optional-values)
 * [Equality and inequality comparisons](#equality-and-inequality-comparison-of-optional-types)
 
