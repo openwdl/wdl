@@ -111,7 +111,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [Call Statement](#call-statement)
       - [Computing Call Inputs](#computing-call-inputs)
     - [Scatter](#scatter)
-    - [Conditional (`if` block)](#conditional-if-block)
+    - [Conditional (`if`)](#conditional-if)
   - [Struct Definition](#struct-definition)
     - [Struct Literals](#struct-literals)
     - [Struct Namespacing](#struct-namespacing)
@@ -1449,7 +1449,7 @@ Example output:
 </p>
 </details>
 
-A declaration may be initialized with a literal value or an [expression](#expressions), which includes the ability to refer to elements that are outputs of tasks.
+A declaration may be initialized with an [expression](#expressions), which includes the ability to refer to elements that are outputs of tasks.
 
 <details>
 <summary>
@@ -1594,7 +1594,9 @@ $expression = $string | $integer | $float | $boolean | $identifier
 
 An expression is a compound statement that consists of literal values, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), [built-in operators](#built-in-operators) (e.g., `+` or `>=`), and calls to [standard library functions](#standard-library).
 
-A "simple" expression is one that does not make use of identifiers or any function that takes a `File` input or returns a `File` output; i.e., it is an expression that can be evaluated unambiguously without any knowledge of the runtime context. An execution engine may choose to replace simple expressions with their literal values.
+A "literal" expression is one that consists only of a literal value. For example, `"foo"` is a literal `String` expression and `[1, 2, 3]` is a literal `Array[Int]` expression.
+
+A "simple" expression is one that can be evaluated unambiguously without any knowledge of the runtime context. Literal expressions, operations on literals (e.g., `1 + 2`), and function calls with literal arguments (excluding any functions that read or create `File`s) are all simple expressions. A simple expression cannot refer to any declarations (i.e., it cannot contain identifiers). An execution engine may choose to replace a simple expression with its literal value during static analysis.
 
 <details>
 <summary>
@@ -2647,7 +2649,7 @@ task name {
 
 ### Task Inputs
 
-A task's `input` section declares its input parameters. The values for declarations within the `input` section may be specified by the caller of the task. An input declaration may be initialized to a default value or expression that will be used when the caller does not specify a value. Input declarations may also be optional, in which case a value may be specified but is not required. If an input declaration is not optional and does not have an initialization, then it is a required input, meaning the caller must specify a value.
+A task's `input` section declares its input parameters. The values for declarations within the `input` section may be specified by the caller of the task. An input declaration may be initialized to a default expression that will be used when the caller does not specify a value. Input declarations may also be optional, in which case a value may be specified but is not required. If an input declaration is not optional and does not have an initialization, then it is a required input, meaning the caller must specify a value.
 
 <details>
 <summary>
@@ -3997,7 +3999,7 @@ task maxRetries_test {
     * `Array[Int]`: Any of the return codes specified in the array should be considered a success.
 * Default value: `0`
 
-The `returnCodes` attribute provides a mechanism to specify the return code, or set of return codes, that indicates a successful execution of a task. The engine must honor the return codes specified within the runtime block and set the tasks status appropriately. 
+The `returnCodes` attribute provides a mechanism to specify the return code, or set of return codes, that indicates a successful execution of a task. The engine must honor the return codes specified within the `runtime` section and set the tasks status appropriately. 
 
 <details>
 <summary>
@@ -4276,7 +4278,7 @@ Provides outputs specific hints in the form of a hints object. Each key within t
 
 #### Conventions and Best Practices
 
-In order to encourage interoperable workflows, WDL authors and execution engine implementors should view hints strictly as an optimization that can be made for a specific task at runtime; hints should not be interpreted as requirements for that task. By following this principle, we can guarantee that a workflow is runnable on all platforms assuming the `runtime` block has the required parameters, regardless of whether it contains any additional hints.
+In order to encourage interoperable workflows, WDL authors and execution engine implementors should view hints strictly as an optimization that can be made for a specific task at runtime; hints should not be interpreted as requirements for that task. By following this principle, we can guarantee that a workflow is runnable on all platforms assuming the `runtime` section has the required parameters, regardless of whether it contains any additional hints.
 
 The following guidelines should be followed when using hints:
 
@@ -4640,7 +4642,7 @@ workflow name {
   # other "private" declarations can be made here
  
   # there may be any number of (potentially nested) 
-  # calls, scatter blocks, or conditional blocks
+  # calls, scatters, or conditionals
   call target { input: ... }
   scatter (i in collection) { ... }
   if (condition) { ... }
@@ -4672,8 +4674,8 @@ Tasks and workflows have several elements in common. These sections have nearly 
 In addition to these sections, a workflow may have any of the following elements that are specific to workflows:
 
 * [`call`s](#call-statement) to tasks or subworkflows
-* [`scatter`](#scatter) blocks, which are used to parallelize operations across collections
-* [Conditional (`if`)](#conditional-if-block) blocks, which are only executed when a conditional expression evaluates to `true`
+* [`scatters`](#scatter), which are used to parallelize operations across collections
+* [Conditional (`if`)](#conditional-if-block) statements, which are only executed when a conditional expression evaluates to `true`
 
 ### Workflow Inputs
 
@@ -4951,39 +4953,39 @@ Example output:
 
 The following fully-qualified names exist when calling `workflow main` in `main.wdl`:
 
-| Fully-qualified Name          | References                                                                                  | Accessible                                                    |
-| ----------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `other_wf`                    | Namespace created by importing `other.wdl` and aliasing it                                  | Anywhere in `main.wdl`                                        |
-| `main`                        | Top-level workflow                                                                          | By the caller of `main`                                       |
-| `main.arr`                    | `Array[String]` declaration on the workflow                                                 | Anywhere within `main`                                        |
-| `main.echo`                   | First call to task `echo`                                                                   | Anywhere within `main`                                        |
-| `main.echo2`                  | Second call to task `echo` (aliased as `echo2`)                                             | Anywhere within `main`                                        |
-| `main.echo.msg`               | `String` input of first call to task `echo`                                                 | No*                                                           |
-| `main.echo.results`           | `File` output of first call to task `echo`                                                  | Anywhere within `main`                                        |
-| `main.echo2.msg`              | `String` input of second call to task `echo`                                                | No*                                                           |
-| `main.echo2.results`          | `File` output of second call to task `echo`                                                 | Anywhere within `main`                                        |
-| `main.foobar.infile`          | `File` input of the call to `other_wf.foobar`                                               | No*                                                           |
-| `main.foobar.results`         | `Int` output of the call to `other_wf.foobar`                                               | Anywhere within `main`                                        |
-| `main.other`                  | First call to subworkflow `other_wf.other`                                                  | Anywhere within `main`                                        |
-| `main.other.b`                | `Boolean` input of the first call to subworkflow `other_wf.other`                           | No*                                                           |
-| `main.other.f`                | `File` input of the first call to subworkflow `other_wf.other`                              | No*                                                           |
-| `main.other.foobar.infile`    | `File` input of the call to `foobar` inside the first call to subworkflow `other_wf.other`  | No*                                                           |
-| `main.other.foobar.results`   | `Int` output of the call to `foobar` inside the first call to subworkflow `other_wf.other`  | No                                                            |
-| `main.other.results`          | `Int?` output of the first call to subworkflow `other_wf.other`                             | Anywhere within `main`                                        |
-| `main.other2`                 | Second call to subworkflow `other_wf.other` (aliased as other2)                             | Anywhere within `main`                                        |
-| `main.other2.b`               | `Boolean` input of the second call to subworkflow `other_wf.other`                          | No*                                                           |
-| `main.other2.f`               | `File input of the second call to subworkflow `other_wf.other`                              | No*                                                           |
-| `main.other2.foobar.infile`   | `File` input of the call to `foobar` inside the second call to subworkflow `other_wf.other` | No*                                                           |
-| `main.other2.foobar.results`  | `Int` output of the call to `foobar` inside the second call to subworkflow `other_wf.other` | No                                                            |
-| `scattered_echo`              | Call to `echo` within scatter block of `main`                                               | Within the scatter block                                      |
-| `scattered_echo.results`      | `File` results of call to scattered_echo`                                                   | Within the scatter block                                      |
-| `main.scattered_echo.msg`     | Array of `String` inputs to calls to `scattered_echo`                                       | No*                                                           |
-| `main.scattered_echo.results` | Array of `File` results of calls to `echo` within the scatter block                         | Anywhere within `main`                                        |
-| `scattered_echo_results`      | `String` contents of `File` created by call to `scattered_echo`                             | Within the scatter block                                      |
-| `main.scattered_echo_results` | Array of `String` contents of `File` results of calls to `echo` within the scatter block    | Anywhere within `main`                                        |
-| `main.echo_results`           | `String` contents of `File` result from call to `echo`                                      | Anywhere in `main`'s output block and by the caller of `main` |
-| `main.foobar_results`         | `Int` result from call to `foobar`                                                          | Anywhere in `main`'s output block and by the caller of `main` |
-| `main.echo_array`             | Array of `String` contents of `File` results from calls to `echo` in the scatter block      | Anywhere in `main`'s output block and by the caller of `main` |
+| Fully-qualified Name          | References                                                                                  | Accessible                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `other_wf`                    | Namespace created by importing `other.wdl` and aliasing it                                  | Anywhere in `main.wdl`                                          |
+| `main`                        | Top-level workflow                                                                          | By the caller of `main`                                         |
+| `main.arr`                    | `Array[String]` declaration on the workflow                                                 | Anywhere within `main`                                          |
+| `main.echo`                   | First call to task `echo`                                                                   | Anywhere within `main`                                          |
+| `main.echo2`                  | Second call to task `echo` (aliased as `echo2`)                                             | Anywhere within `main`                                          |
+| `main.echo.msg`               | `String` input of first call to task `echo`                                                 | No*                                                             |
+| `main.echo.results`           | `File` output of first call to task `echo`                                                  | Anywhere within `main`                                          |
+| `main.echo2.msg`              | `String` input of second call to task `echo`                                                | No*                                                             |
+| `main.echo2.results`          | `File` output of second call to task `echo`                                                 | Anywhere within `main`                                          |
+| `main.foobar.infile`          | `File` input of the call to `other_wf.foobar`                                               | No*                                                             |
+| `main.foobar.results`         | `Int` output of the call to `other_wf.foobar`                                               | Anywhere within `main`                                          |
+| `main.other`                  | First call to subworkflow `other_wf.other`                                                  | Anywhere within `main`                                          |
+| `main.other.b`                | `Boolean` input of the first call to subworkflow `other_wf.other`                           | No*                                                             |
+| `main.other.f`                | `File` input of the first call to subworkflow `other_wf.other`                              | No*                                                             |
+| `main.other.foobar.infile`    | `File` input of the call to `foobar` inside the first call to subworkflow `other_wf.other`  | No*                                                             |
+| `main.other.foobar.results`   | `Int` output of the call to `foobar` inside the first call to subworkflow `other_wf.other`  | No                                                              |
+| `main.other.results`          | `Int?` output of the first call to subworkflow `other_wf.other`                             | Anywhere within `main`                                          |
+| `main.other2`                 | Second call to subworkflow `other_wf.other` (aliased as other2)                             | Anywhere within `main`                                          |
+| `main.other2.b`               | `Boolean` input of the second call to subworkflow `other_wf.other`                          | No*                                                             |
+| `main.other2.f`               | `File input of the second call to subworkflow `other_wf.other`                              | No*                                                             |
+| `main.other2.foobar.infile`   | `File` input of the call to `foobar` inside the second call to subworkflow `other_wf.other` | No*                                                             |
+| `main.other2.foobar.results`  | `Int` output of the call to `foobar` inside the second call to subworkflow `other_wf.other` | No                                                              |
+| `scattered_echo`              | Call to `echo` within scatter of `main`                                                     | Within the scatter                                              |
+| `scattered_echo.results`      | `File` results of call to scattered_echo`                                                   | Within the scatter                                              |
+| `main.scattered_echo.msg`     | Array of `String` inputs to calls to `scattered_echo`                                       | No*                                                             |
+| `main.scattered_echo.results` | Array of `File` results of calls to `echo` within the scatter                               | Anywhere within `main`                                          |
+| `scattered_echo_results`      | `String` contents of `File` created by call to `scattered_echo`                             | Within the scatter                                              |
+| `main.scattered_echo_results` | Array of `String` contents of `File` results of calls to `echo` within the scatter          | Anywhere within `main`                                          |
+| `main.echo_results`           | `String` contents of `File` result from call to `echo`                                      | Anywhere in `main`'s output section and by the caller of `main` |
+| `main.foobar_results`         | `Int` result from call to `foobar`                                                          | Anywhere in `main`'s output section and by the caller of `main` |
+| `main.echo_array`             | Array of `String` contents of `File` results from calls to `echo` in the scatter            | Anywhere in `main`'s output section and by the caller of `main` |
 
 \* Task inputs are accessible to be set by the caller of `main` if the workflow is called with [`allowNestedInputs: true`](#computing-call-inputs) in its `meta` section.
 
@@ -5014,7 +5016,7 @@ version 1.1
 
 import "other.wdl" as lib
 
-task my_task {
+task repeat {
   input {
     Int i
     String? opt_string
@@ -5037,21 +5039,21 @@ workflow call_example {
     Int i
   }
 
-  # Calls my_task with one required input - it is okay to not
-  # specify a value for my_task.opt_string since it is optional.
-  call my_task { input: i = 3 }
+  # Calls repeat with one required input - it is okay to not
+  # specify a value for repeat.opt_string since it is optional.
+  call repeat { input: i = 3 }
 
-  # Calls my_task a second time, this time with both inputs.
+  # Calls repeat a second time, this time with both inputs.
   # We need to give this one an alias to avoid name-collision.
-  call my_task as my_task2 {
+  call repeat as repeat2 {
     input:
       i = i * 2,
       opt_string = s
   }
 
-  # Calls my_task with one required input using the abbreviated 
+  # Calls repeat with one required input using the abbreviated 
   # syntax for `i`.
-  call my_task as my_task3 { input: i, opt_string = s }
+  call repeat as repeat3 { input: i, opt_string = s }
 
   # Calls a workflow imported from lib with no inputs.
   call lib.other
@@ -5059,9 +5061,9 @@ workflow call_example {
   call lib.other as other_workflow2 {}
 
   output {
-    Array[String] lines1 = my_task.lines
-    Array[String] lines2 = my_task2.lines
-    Array[String] lines3 = my_task3.lines
+    Array[String] lines1 = repeat.lines
+    Array[String] lines2 = repeat2.lines
+    Array[String] lines3 = repeat3.lines
     Int? results1 = other.results
     Int? results2 = other_workflow2.results  
   }
@@ -5096,36 +5098,58 @@ The execution engine may execute a `call` as soon as all its inputs are availabl
 
 An `after` clause can be used to create an explicit dependency between `x` and `y` (i.e., one that isn't based on the availability of `y`'s outputs). For example, `call x after y after z`. An explicit dependency is only required if `x` must not execute until after `y` and `x` doesn't already depend on output from `y`.
 
+<details>
+<summary>
+Example: test_after.wdl
+
 ```wdl
-task my_task {
-  input {
-    Int input_num
+version 1.1
+
+import "call_example.wdl" as lib
+
+workflow test_after {
+  # Call repeat
+  call repeat { input: i = 2, opt_string = "hello" }
+
+  # Call `repeat` again with the output from the first call.
+  # This call will wait until `repeat` is finished.
+  call repeat as repeat2 {
+    input:
+      i = 1,
+      opt_string = sep(" ", repeat.lines)
   }
-  ...
+
+  # Call `repeat` again. This call does not depend on the output 
+  # from an earlier call, but we specify explicitly that this 
+  # task must wait until `repeat` is complete before executing.
+  call repeat as repeat3 after repeat { input: i = 3 }
+
   output {
-    Int output_num
-  }
-}
-
-workflow wf {
-  # Call my_task
-  call my_task { input: input_num = 2 }
-
-  # Call my_task again with the output from the first call.
-  # This call will wait until my_task is finished.
-  call my_task as my_task_alias {
-    input: input_num = my_task.output_num
-  }
-
-  # Call my_task again. This call does not depend on the
-  # output from an earlier call, but we explicitly
-  # specify that this task should wait until my_task is
-  # complete before executing this call.
-  call my_task as my_task_alias2 after my_task {
-    input: input_num = 5
+    Array[String] lines1 = repeat.lines
+    Array[String] lines2 = repeat2.lines
+    Array[String] lines3 = repeat3.lines
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_after.lines1": ["hello", "hello"],
+  "test_after.lines2": ["hello hello"],
+  "test_after.lines3": ["default", "default", "default"],
+}
+```
+</p>
+</details>
 
 A `call`'s outputs are available to be used as inputs to other calls in the workflow or as workflow outputs immediately after the execution of the call has completed. The only task declarations that are accessible outside of the task are its output declarations; call inputs and private declarations cannot be referenced by the calling workflow. To expose a call input, add an output to the task that simply copies the input. Note that the output must use a different name since every declaration in a task or workflow must have a unique name.
 
@@ -5186,87 +5210,27 @@ Example output:
 
 #### Computing Call Inputs
 
-Any required workflow inputs (i.e. those that are not initialized with a default value or expression) must have their values provided when invoking the workflow. Inputs may be specified for a workflow invocation using any mechanism supported by the execution engine, including the [standard JSON format](#json-input-format). 
+Any required workflow inputs (i.e., those that are not initialized with a default expression) must have their values provided when invoking the workflow. Inputs may be specified for a workflow invocation using any mechanism supported by the execution engine, including the [standard JSON format](#json-input-format). 
 
-By default, all calls to subworkflows and tasks must have values provided for all required inputs by the caller. However, the execution engine may allow the workflow to leave some subworkflow/task inputs undefined - to be specified by the user at runtime - by setting the `allowNestedInputs` flag to `true` in the `meta` section of the top-level workflow. For example:
+By default, all calls to subworkflows and tasks must have values provided for all required inputs by the caller. However, the execution engine may allow the workflow to leave some subworkflow/task inputs undefined - to be specified by the user at runtime - by setting the `allowNestedInputs` flag to `true` in the `meta` section of the top-level workflow.
 
-```wdl
-task mytask {
-  input {
-    String name
-    File f
-  }
-  ...
-}
-
-workflow allows_nested_inputs {
-  input {
-    String s
-  }
-  
-  meta {
-    allowNestedInputs: true
-  }
-
-  # Required parameter "mytask.f" is not specified.
-  # Typically this is an error, but "meta.allowNestedInputs"
-  # is true so it is allowed, but the user must specify a 
-  # value for "allows_nested_inputs.mytask.f" as a runtime 
-  # input.
-  call mytask { input: name = s }
-}
-```
-
-Here is a more extensive example:
+<details>
+<summary>
+Example: allow_nested.wdl
 
 ```wdl
-task t1 {
-  input {
-    String s
-    Int x
-  }
+version 1.1
 
-  command <<<
-    ./script --action=~{s} -x~{x}
-  >>>
+import "call_example.wdl" as lib
 
-  output {
-    Int count = read_int(stdout())
-  }
-  
-  runtime {
-    container: "my_image:latest"
-  }
-}
-
-task t2 {
-  input {
-    String s
-    Int? t
-    Int x
-  }
-
-  command <<<
-    ./script2 --action=~{s} -x~{x} ~{"--other=" + t}
-  >>>
-
-  output {
-    Int count = read_int(stdout())
-  }
-  
-  runtime {
-    container: "my_image:latest"
-  }
-}
-
-task t3 {
+task inc {
   input {
     Int y
     File ref_file # Do nothing with this
   }
 
   command <<<
-    python -c "print(~{y} + 1)"
+  echo -n ~{y + 1}
   >>>
 
   output {
@@ -5274,82 +5238,113 @@ task t3 {
   }
   
   runtime {
-    container: "my_image:latest"
+    container: "ubuntu:latest"
   }
 }
 
-workflow wf {
+workflow allow_nested {
   input {
     Int int_val
+    String msg1
+    String msg2
     Array[Int] my_ints
     File ref_file
-    String t1s
-    String t2s
   }
 
   meta {
     allowNestedInputs: true
   }
 
-  String not_an_input = "hello"
-
-  call t1 {
-    input: 
-        x = int_val,
-        s = t1s
+  call lib.repeat {
+    input:
+      i = int_val,
+      opt_string = msg1
   }
 
-  call t2 {
-    input: 
-        x = t1.count,
-        s = t2s
+  call lib.repeat as repeat2 {
+    input:
+      opt_string = msg2
   }
 
-  scatter(i in my_ints) {
-    call t3 {
+  scatter (i in my_ints) {
+    call inc {
       input: y=i, ref=ref_file
     }
   }
-}
-```
 
-The inputs to `wf` will be:
-
-* `wf.t1s` as a `String`
-* `wf.t2s` as a `String`
-* `wf.int_val` as an `Int`
-* `wf.my_ints` as an `Array[Int]`
-* `wf.ref_file` as a `File`
-* `wf.t2.t` as an `Int?`
-
-Note that the optional `t` input for task `t2` is left unsatisfied. This input can be specified at runtime as `wf.t2.t` because `allowNestedInputs` is set to `true`; if it were set to `false`, this input could not be specified at runtime. 
-
-It is an error for the user to attempt to override a call input at runtime, even if nested inputs are allowed. For example, if the user tried to specify `allows_nested_inputs.mytask.name = "Fred"` in the input JSON, an error would be raised.
-
-There is no mechanism for a workflow to set a value for a nested input when calling a subworkflow. For example, the following workflow is invalid:
-
-`sub.wdl`
-```wdl
-task mytask {
-  input {
-    Int x
+  output {
+    Array[String] lines1 = repeat.lines
+    Array[String] lines2 = repeat2.lines
+    Array[Int] incrs = inc.incr
   }
-  ...
 }
+```
+</summary>
+<p>
+Example input:
 
-workflow sub {
-  # error! missing required input
-  call mytask
+```json
+{
+  "allow_nested.int_val": 3,
+  "allow_nested.msg1": "hello",
+  "allow_nested.msg2": "goodbye",
+  "allow_nested.my_ints": [1, 2, 3],
+  "allow_nested.ref_file": "hello.txt"
 }
 ```
 
-`main.wdl`
+Example output:
+
+```json
+{
+  "allow_nested.lines1": ["hello", "hello", "hello"],
+  "allow_nested.lines2": ["goodbye", "goodbye"],
+  "allow_nested.repeat2.i": 2,
+  "allow_nested.incrs": [2, 3, 4]
+}
+```
+</p>
+</details>
+
+In the preceding example, the required input `i` to call `repeat2` is missing. Normally this would result in an error. However, if the execution engine supports `allowNestedInputs`, then the fact that `allowNestedInputs: true` appears in the workflow's `meta` section means that `repeat2.i` may be set by the caller of the workflow, e.g., by including `"allow_nested.repeat2.i": 2,` in the input JSON.
+
+It is not allowed to *override* a call input at runtime, even if nested inputs are allowed. For example, if the user tried to specify `"allow_nested.repeat.opt_string": "hola"` in the input JSON, an error would be raised because the workflow already specifies a value for that input.
+
+The `allowNestedInputs` directive only applies to user-supplied inputs. There is no mechanism for the workflow itself to set a value for a nested input when calling a subworkflow. For example, the following workflow is invalid:
+
+<details>
+<summary>
+Example: call_subworkflow_fail.wdl
+
 ```wdl
-workflow top {
-  # error! can't specify a nested input
-  call sub { input: sub.mytask.x = 5 }
+version 1.1
+
+import "copy_input.wdl" as copy
+
+workflow call_subworkflow {
+  meta {
+    allowNestedInputs: true
+  }
+
+  # error! A workflow can't specify a nested input for a subworkflow's call.
+  call copy.copy_input { input: greet.greeting = "hola" }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
 
 ### Scatter
 
@@ -5359,246 +5354,404 @@ $scatter_iteration_statement = $identifier $ws* 'in' $ws* $expression
 $scatter_body = '{' $ws* $workflow_element* $ws* '}'
 ```
 
-Scatter-gather is a common parallelization pattern in computer science. Given a collection of inputs (such as an array), the "scatter" step executes a set of operations on each input in parallel. In the "gather" step, the outputs of all the individual scatter-tasks are collected into the final output.
+Scatter/gather is a common parallelization pattern in computer science. Given a collection of inputs (such as an array), the "scatter" step executes a set of operations on each input in parallel. In the "gather" step, the outputs of all the individual scatter-tasks are collected into the final output.
 
-WDL provides a mechanism for scatter-gather using the `scatter` block. A `scatter` block begins with the `scatter` keyword and has three essential pieces:
+WDL provides a mechanism for scatter/gather using the `scatter` statement. A `scatter` statement begins with the `scatter` keyword and has three essential pieces:
 
 * An expression that evaluates to an `Array[X]` - the array to be scattered over.
-* The scatter variable - an identifier that will hold the input value in each iteration of the scatter. The scatter variable is always of type `X`, where `X` is the item type of the `Array`.
+* The scatter variable - an identifier that will hold the input value in each iteration of the scatter. The scatter variable is always of type `X`, where `X` is the item type of the `Array`. The scatter variable may only be referenced in the body of the scatter.
 * A body that contains any number of nested statements - declarations, calls, scatters, conditionals - that are executed for each value in the collection.
 
+After evaluation has completed for all iterations of a `scatter`, each declaration or call output in the scatter body (except for the scatter variable) is collected into an array, and those array declarations are exposed in the enclosing context. In other words, for a declaration or call output `T <name>` within a scatter body, a declaration `Array[T] <name>` is implicitly available outside of the scatter body. The ordering of an exported array is guaranteed to match the ordering of the input array. In the example below, `String greeting` is accessible anywhere in the `scatter` body, and `Array[String] greeting` is a collection of all the values of `greeting` - in the same order as `name_array` - that is accessible outside of the `scatter` anywhere in `workflow test_scatter`.
+
+<details>
+<summary>
+Example: test_scatter.wdl
+
 ```wdl
-workflow scatter_example {
+version 1.1
+
+task say_hello {
+  input {
+    String greeting
+  }
+
+  command <<<
+  echo -n "~{greeting}, how are you?"
+  >>>
+
+  output {
+    String msg = read_string(stdout())
+  }
+}
+
+workflow test_scatter {
   input {
     Array[String] name_array = ["Joe", "Bob", "Fred"]
-    String salutation = "hello"
+    String salutation = "Hello"
   }
   
-  # 'name_array' is an identifier expression that evaluates
-  #   to an Array of Strings.
-  # 'name' is a String declaration that will have a 
-  #   different value - one of the elements of name_array - 
-  #   during each iteration
+  # `name_array` is an identifier expression that evaluates to an Array 
+  # of Strings.
+  # `name` is a `String` declaration that is assigned a different value
+  # - one of the elements of `name_array` - during each iteration.
   scatter (name in name_array) {
-    # these statements are evaluated for each different value
-    # of 'name'
+    # these statements are evaluated for each different value of `name`,s
     String greeting = "~{salutation} ~{name}"
     call say_hello { input: greeting = greeting }
   }
+
+  output {
+    Array[String] messages = say_hello.msg
+  }
 }
 ```
+</summary>
+<p>
+Example input:
 
-In this example, the scatter body is evaluated three times - once for each value in `name_array`. On a multi-core computer, each of these evaluations might happen in a separate thread or subprocess; on a cloud platform, each of these evaluations might take place in a different virtual machine.
+```json
+{}
+```
 
-The scatter body is a nested scope in which `name` is accessible, along with all of the declarations and call outputs that are accessible in the enclosing scope. `name` is *not* accessible outside the scatter body - e.g. it would be an error to reference `name` in the workflow's output section. However, if there were another nested scatter, `name` would be accessible in that nested scatter's body.
+Example output:
+
+```json
+{
+  "test_scatter.messages": [
+    "Hello Joe, how are you?",
+    "Hello Bob, how are you?",
+    "Hello Fred, how are you?"
+  ]
+}
+```
+</p>
+</details>
+
+In this example, the scatter body is evaluated three times - once for each value in `name_array`. On a multi-core computer, these evaluations might happen in parallel, with each evaluation running in a separate thread or subprocess; on a cloud platform, each of these evaluations might take place in a different virtual machine.
+
+The scatter body is a nested scope in which the scatter variable is accessible, along with all of the declarations and call outputs that are accessible in the enclosing scope. The scatter variable is *not* accessible outside the scatter body. In the preceding example, it would be an error to reference `name` in the workflow's output section. However, if the `scatter` contained a nested `scatter`, `name` would be accessible in that nested `scatter`'s body. Similarly, calls within the scatter body are able to depend on each other and reference each others' outputs.
+ 
+If scatters are nested to multiple levels, the output types are also nested to the same number of levels.
+
+<details>
+<summary>
+Example: nested_scatter.wdl
 
 ```wdl
-workflow scatter_example {
-  input {
-    Array[String] name_array = ["Joe", "Bob", "Fred"]
-    Array[String] salutation_array = ["hello", "goodbye"]
-  }
+version 1.1
 
-  scatter (name in name_array) {
-    scatter (salutation in salutation_array)
-      # both 'name' and 'saluation' are accessible here
-      String greeting = "~{salutation} ~{name}"
-    }
+import "test_scatter.wdl" as scat
+
+task make_name {
+  input {
+    String first
+    String last
   }
 
   output {
-    String scatter_name = name  # error! 'name' not accessible here
+    String name = "~{first} ~{last}"
   }
 }
-```
 
-Calls within the scatter body are able to depend on each other and reference each others' outputs. In the following example, `task2` depends on `task1`.
-
-```wdl
-scatter (i in integers) {
-  call task1 { input: num=i }
-  call task2 { input: num=task1.output }
-}
-```
-
-After a scatter block is fully evaluated, *all* of the declarations and call outputs in the scatter body (except for the scatter variable) are "exported" to the enclosing context. However, because a scatter block represents an array of evaluations, the type of each exported declaration or call output is implicitly `Array[X]`, where `X` is the type of the declaration or call output within the scatter body. The ordering of the exported array(s) is guaranteed to match the ordering of the input array.
-
-For example:
-
-```wdl
-task say_hello {
+workflow nested_scatter {
   input {
-    String salutation
-    String name
-  }
-  command <<< >>>
-  output {
-    String greeting = "~{salutation} ~{name}"
-  }
-}
-
-workflow scope_example {
-  input {
-    Array[String] hobbit_array = ["Bilbo", "Frodo", "Merry"]
+    Array[String] first_names = ["Bilbo", "Gandalf", "Merry"]
+    Array[String] last_names = ["Baggins", "the Grey", "Brandybuck"]
+    Array[String] salutations = ["Hello", "Goodbye"]
   }
 
-  Array[Int] counter = range(length(hobbit_array))
-  
-  # the zip() function generates an array of pairs
-  scatter (name_and_index in zip(hobbit_array, counter)) {
-    # use a different saluation for even and odd items in the array
-    String salutation = if name_and_index.right % 2 == 0 then "hello" else "g'day"
+  Array[String] honorifics = ["Wizard", "Mr."]
+
+  # the zip() function creates an array of pairs
+  Array[Pair[String, String]] name_pairs = zip(first_names, last_names)
+  # the range() function creates an array of increasing integers
+  Array[Int] counter = range(length(name_pairs))
+
+  scatter (name_and_index in zip(name_pairs, counter) ) {
+    Pair[String, String] names = name_and_index.left
+
+    # Use a different honorific for even and odd items in the array
+    # `honorifics` is accessible here
+    String honorific = honorifics[name_and_index.right % 2]
     
-    call say_hello { 
+    call make_name {
       input:
-        salutation = salutation,
-        name = name_and_index.left
+        first = names.left,
+        last = names.right
     }
 
-    # within the scatter body, when we access the output of the
-    # say_hello call, we get a String
-    String greeting = say_hello.greeting
+    scatter (salutation in salutations) {
+      # `names`, and `salutation` are all accessible here
+      String short_greeting = "~{salutation} ~{honorific} ~{names.left}"
+      call say_hello { input: greeting = greeting }
+
+      # the output of `make_name` is also accessible
+      String long_greeting = "~{salutation} ~{honorific} ~{make_name.name}"
+      call say_hello as say_hello_long { input: greeting = greeting }
+
+      # within the scatter body, when we access the output of the
+      # say_hello call, we get a String
+      Array[String] messages = [say_hello.msg, say_hello_long.msg]
+    }
+
+    # this would be an error - `salutation` is not accessible here
+    # String scatter_saluation = salutation
   }
 
   # Outside of the scatter body, we can access all of the names that
   # are inside the scatter body, but the types are now all Arrays.
   # Each of these outputs will be an array of length 3 (the same
-  # length as 'hobbit_array').
+  # length as `name_and_index`).
   output {
-    # the value of this Array is guaranteed to be: 
-    # ["hello", "g'day", "hello"]
-    Array[String] salutations = salutation
+    # Here we are one level of nesting away from `honorific`, so
+    # the implicitly created array is one level deep
+    Array[String] used_honorifics = honorific
 
-    # the value of this Array is guaranteed to be:
-    # ["hello Bilbo", "g'day Frodo", "hello Merry"]
-    Array[String] greetings = say_hello.greeting
+    # Here we are two levels of nesting away from `messages`, so
+    # the array is two levels deep
+    Array[Array[Array[String]]] out_messages = messages
+
+    # This would be an error - 'names' is not accessible here
+    # String scatter_names = names  
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-If scatter blocks are nested to multiple levels, the output types are also nested to the same number of levels. For example:
-
-```wdl
-workflow multi_level {
-  scatter (i in [1, 2, 3]) {
-    scatter (j in ["a", "b", "c"]) {
-      String msg = "~{i} ~{j}"
-    }
-    # directly outside the scatter containing msg,
-    # msg's type is an Array
-    Array[String] msg_level_1 = msg
-  }
-
-  # here we are two levels of nesting away from msg, so
-  # its type is an Array that is two levels deep
-  Array[Array[String]] msg_level_2a = msg
-
-  # these two arrays are identical
-  Array[Array[String]] msg_level_2b = msg_level_1
-}
+```json
+{}
 ```
 
-### Conditional (`if` block)
+Example output:
+
+```json
+{
+  "nested_scatter.out_messages": [
+    [
+      ["Hello Mr. Bilbo, how are you?", "Hello Mr. Bilbo Baggins, how are you?"],
+      ["Goodbye Mr. Bilbo, how are you?", "Goodbye Mr. Bilbo Baggins, how are you?"],
+    ],
+    [
+      ["Hello Wizard Gandalf, how are you?", "Hello Wizard Gandalf the Grey, how are you?"],
+      ["Goodbye Wizard Gandalf, how are you?", "Goodbye Wizard Gandalf the Grey, how are you?"],
+    ],
+    [
+      ["Hello Mr. Merry, how are you?", "Hello Mr. Merry Brandybuck, how are you?"],
+      ["Goodbye Mr. Merry, how are you?", "Goodbye Mr. Merry Brandybuck, how are you?"],
+    ]
+  ]
+}
+```
+</p>
+</details>
+
+### Conditional (`if`)
 
 ```txt
 $conditional = 'if' '(' $expression ')' '{' $workflow_element* '}'
 ```
 
-A conditional block consists of the `if` keyword, followed by a `Boolean` expression and a body of nested statements. The conditional body is only evaluated if the conditional expression evaluates to `true`.
+A conditional statement consists of the `if` keyword, followed by a `Boolean` expression and a body of (potentially nested) statements. The conditional body is only evaluated if the conditional expression evaluates to `true`.
+
+After evaluation of the conditional has completed, each declaration or call output in the conditional body is exposed in the enclosing context as an optional declaration. In other words, for a declaration or call output `T <name>` within a conditional body, a declaration `T? <name>` is implicitly available outside of the conditional body. If the expression evaluated to `true`, and thus the body of the conditional was evaluated, then the value of each exposed declaration is the same as its original value inside the conditional body. If the expression evaluated to `false` and thus the body of the conditional was not evaluated, then the value of each exposed declaration is `None`.
+
+The scoping rules for conditionals are similar to those for scatters - declarations or call outputs inside a conditional body are accessible within that conditional and any nested statements.
+
+In the example below, `Int j` is accessible anywhere in the conditional body, and `Int? j` is an optional that is accessible outside of the conditional anywhere in `workflow test_conditional`.
+
+<details>
+<summary>
+Example: test_conditional.wdl
 
 ```wdl
-workflow cond_test {
+version 1.1
+
+task gt_three {
   input {
-    Boolean b = false
+    Int i
   }
-  
-  # this block is not evaluated since 'b' is false
-  if (b) {
-    call say_hello
-  }
-  # this block is not evaluated since !b is true
-  if (!b) {
-    call say_goodbye
+
+  output {
+    Boolean valid = i > 3
   }
 }
-```
 
-The scoping rules for conditionals are similar to those for scatters. Any declarations or call outputs inside a conditional body are accessible within that conditional and any nested scatter or conditional blocks. After a conditional block has been evaluated, its declarations and call outputs are "exported" to the enclosing scope. However, because the statements within a conditional block may or may not be evaluated during any given execution of the workflow, the type of each exported declarations or call output is implicitly `X?`, where `X` is the type of the declaration or call output within the conditional body.
-
-Even though a conditional body is only evaluated if its conditional expression evaluates to `true`, all of the potential declarations and call outputs in the conditional body are always exported, regardless of the value of the conditional expression. In the case that the conditional expression evaluates to `false`, all of the exported declarations and call outputs are undefined (i.e. have a value of `None`).
-
-```wdl
-workflow foo {
-  # Call 'x', producing a Boolean output:
-  call x
-  Boolean x_out = x.out
-
-  # Call 'y', producing an Int output, in a conditional block:
-  if (x_out) {
-    call y
-    Int y_out = y.out
-  }
-
-  # Outside the if block, 'y' has an optional type:
-  Int? y_out_maybe = y.out
-
-  # Call 'z' which takes an optional Int input:
-  call z { input: optional_int = y_out_maybe }
-}
-```
-
-It is impossible to have a multi-level optional type, e.g. `Int??`; thus, the outputs of a conditional block are only ever single-level optionals, even when there are nested conditionals.
-
-```wdl
-workflow foo {
+workflow test_conditional {
   input {
-    Boolean b
-    Boolean c
-  }
-
-  if(b) {
-    if(c) {
-      call x
-      Int x_out = x.out
-    }
-  }
-
-  # Even though it's within a nested conditional, x_out
-  # has a type of Int? rather than Int??
-  Int? x_out_maybe = x_out 
-
-  # Call 'y' which takes an Int input.
-  # The select_first produces an Int, not an Int?
-  call y { input: int_input = select_first([x_out_maybe, 5]) } 
-}
-```
-
-Remember that optional types can be coalesced by using the `select_all` and `select_first` functions. For example:
-
-```wdl
-workflow foo {
-  input {
+    Boolean do_scatter = true
     Array[Int] scatter_range = [1, 2, 3, 4, 5]
   }
 
-  scatter (i in scatter_range) {
-    call x { input: i = i }
-    if (x.validOutput) {
-      Int x_out = x.out
+  if (do_scatter) {
+    Int j = 2
+
+    scatter (i in scatter_range) {
+      call gt_three { input: i = i + j }
+      
+      if (gt_three.valid) {
+        Int result = i * j
+      }
+
+      # `result` is accessible here as an optional
+      Int result2 = if defined(result) then select_first([result]) else 0
+    }
+  }
+  
+  # Here there is an implicit `Array[Int?]? result` declaration, since
+  # `result` is inside a conditional inside a scatter inside a conditional.
+  # We can "unwrap" the other optional using select_first.
+  Array[Int?] maybe_results = select_first([i_out, []])
+
+  output {
+    Int? j_out = j
+    # We can unwrap the inner optional using select_all to get rid of all
+    # the `None` values in the array.
+    Array[Int] result_array = select_all(maybe_results)
+
+    # Here we reference the implicit declaration of result2, which is
+    # created from an `Int` declaration inside a scatter inside a
+    # conditional, and so becomes an optional array.
+    Array[Int]? maybe_result2 = result2
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_conditional.result_array": [4, 6, 8, 10],
+  "test_conditional.maybe_result2": [0, 4, 6, 8, 10]
+}
+```
+</p>
+</details>
+
+WDL has no `else` keyword. To mimic an `if-else` statement, you would simply use two conditionals with inverted boolean expressions. A common idiom is to use `select_first` to select a value from either the `if` or the `if not` body, whichever one is defined.
+
+<details>
+<summary>
+Example: if_else.wdl
+
+```wdl
+version 1.1
+
+task greet {
+  input {
+    String time
+  }
+
+  command <<<
+  echo -n "Good ~{time} buddy!"
+  >>>
+
+  output {
+    String greeting = read_string(stdout())
+  }
+}
+
+workflow if_else {
+  input {
+    Boolean morning = false
+  }
+  
+  # the body *is not* evaluated since 'b' is false
+  if (morning) {
+    call greet as morning { time = "morning" }
+  }
+
+  # the body *is* evaluated since !b is true
+  if (!morning) {
+    call greet as afternoon { time = "afternoon" }
+  }
+
+  output {
+    String greeting = select_first([morning.greeting, afternoon.greeting])
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "if_else.greeting": "Good afternoon buddy!"
+}
+```
+</p>
+</details>
+
+It is impossible to have a multi-level optional type, e.g., `Int??`. The outputs of a conditional are only ever single-level optionals, even when there are nested conditionals.
+
+<details>
+<summary>
+Example: nested_if.wdl
+
+```wdl
+version 1.1
+
+import "if_else.wdl"
+
+workflow nested_if {
+  input {
+    Boolean morning
+    Boolean friendly
+  }
+
+  if (morning) {
+    if (friendly) {
+      call if_else.greet { time = "morning" }
     }
   }
 
-  # Because it was declared inside the scatter and the if-block, 
-  # the type of x_out is different here:
-  Array[Int?] x_out_maybes = x_out
+  output {
+    # Even though it's within a nested conditional, greeting
+    # has a type of `String?` rather than `String??`
+    String? greeting_maybe = greet.greeting
 
-  # We can select only the valid elements with select_all:
-  Array[Int] x_out_valids = select_all(x_out_maybes)
-
-  # Or we can select the first valid element:
-  Int x_out_first = select_first(x_out_maybes)
+    # Similarly, `select_first` produces a `String`, not a `String?`
+    String greeting = select_first([greet.greeting, "hi"])
+  }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "nested_if.morning": true,
+  "nested_if.friendly": false
+}
+```
+
+Example output:
+
+```json
+{
+  "nested_if.greeting_maybe": null,
+  "nested_if.greeting": "hi"
+}
+```
+</p>
+</details>
 
 ## Struct Definition
 
@@ -9766,7 +9919,7 @@ A workflow scope consists of all of the:
 * Declarations in the workflow `input` section.
 * Declarations in the body of the workflow.
 * Calls in the workflow.
-* Declarations and call outputs that are exported from nested scopes within the workflow (i.e. `scatter` and `if` blocks).
+* Declarations and call outputs that are exported from nested scopes within the workflow (i.e., scatters and conditionals).
  
 Just like in the task scope, all declarations in the workflow scope can reference each other, and the `output` section is a nested scope that has access to - but cannot be accessed from - the workflow scope.
 
@@ -9792,7 +9945,7 @@ workflow my_workflow {
 ```
 
 * `file` and `x` are `input` declarations that will be evaluated when the workflow is invoked.
-* The call block provides inputs for the task values `x` and `f`. Note that `x` is used twice in the line `x = x`:
+* The call body provides inputs for the task values `x` and `f`. Note that `x` is used twice in the line `x = x`:
     * First: to name the value in the task being provided. This must reference an input declaration in the namespace of the called `task`.
     * Second: as part of the input expression. This expression may reference any values in the current `workflow` scope.
 * `z` is an output declaration that depends on the output from the `call` to `my_task`. It is not accessible from elsewhere outside the `output` section.
@@ -9802,7 +9955,7 @@ Workflows can have block constructs - scatters and conditionals - that define ne
 Every nested scope implicitly "exports" all of its declarations and call outputs in the following manner:
 
 * A scatter scope exports its declarations and calls with the same names they have inside the scope, but with their types modified, such that the exported types are all `Array[X]`, where `X` is the type of the declaration within the scope.
-  * A scatter scope *does not* export its scatter variable. For example, if a block is defined as `scatter (x in array)`, `x` is not accessible outside of the scatter scope - it is only accessible from within the scatter scope and any nested scopes.
+  * A scatter scope *does not* export its scatter variable. For example, the `x` variable in `scatter (x in array)` is only accessible from within the scatter scope and any nested scopes; it is not accessible outside of the scatter scope.
 * A conditional scope exports its declarations and calls with the same names they have inside the scope, but with their types modified, such that the exported types are all `X?`, where `X` is the type of the declaration within the scope.
 
 Example: this workflow scatters over the `my_task` task from the previous examples.
@@ -9830,7 +9983,7 @@ workflow my_workflow {
 ```
 
 * The expression for `Int z = ...` accesses `my_task.z` from within the same scatter.
-* The output `zs` references `z` even though it was declared in a sub-section. However, because `z` is declared within a `scatter` block, the type of `zs` is `Array[Int]` outside of that scatter block.
+* The output `zs` references `z` even though it was declared in a sub-section. However, because `z` is declared within a `scatter` body, the type of `zs` is `Array[Int]` outside of that scatter.
 
 The concept of a single name within a workflow having different types depending on where it appears can be confusing at first, and it helps to think of these as two different variables. When the user makes a declaration within a nested scope, they are essentially reserving that name in all of the higher-level scopes so that it cannot be reused. For example, the following workflow is invalid:
 
@@ -9842,20 +9995,17 @@ workflow invalid {
     String x = "hello"
   }
   
-  # the scatter block exports x to the top-level scope - 
-  # there is an implicit declaration here that is 
-  # reserved to hold the exported value and cannot be 
-  # used by any other declaration in this scope
-  # Array[String] x
+  # The scatter exports x to the top-level scope - there is an implicit 
+  # declaration `Array[String] x` here that is reserved to hold the 
+  # exported value and cannot be used by any other declaration in this scope.
   
   if (b) {
-    # error! x is already reserved in the top-level
-    # scope to hold the exported value of x from the
-    # scatter block, so we cannot reserve it here
+    # error! `x` is already reserved in the top-level scope to hold the exported 
+    # value of `x` from the scatter, so we cannot reserve it here
     Float x = 1.0
   }
 
-  # error! x is already reserved
+  # error! `x` is already reserved
   Int x = 5
 }
 ```
@@ -9924,7 +10074,7 @@ workflow my_workflow {
 * The declaration for `x_b` is able to access the value for `x_a` even though the declaration is in another sub-section of the `workflow`.
 * Because the declaration for `x_b` is outside the `scatter` in which `x_a` was declared, the type is `Array[Int]`
 
-The following change introduces a cyclic dependency between the scatter blocks:
+The following change introduces a cyclic dependency between the scatters:
 
 ```wdl
 workflow my_workflow {
@@ -9950,7 +10100,7 @@ workflow my_workflow {
 }
 ```
 
-The dependency graph now has to criss-cross between the `scatter (a in as)` block and the `scatter (b in bs)` block. This is **not** allowed. To avoid this criss-crossing between sub-sections, scatters may be split into separate `scatter` blocks over the same input array:
+The dependency graph now has to criss-cross between `scatter (a in as)` and `scatter (b in bs)`. This is **not** allowed. To avoid this criss-crossing between sub-sections, you would create two separate `scatter`s over the same input array:
 
 ```wdl
 workflow my_workflow {
@@ -9989,7 +10139,7 @@ A key concept in WDL is: **the order in which statements are evaluated depends o
 
 All values in tasks and workflows *can* be evaluated as soon as - but not before - their expression inputs are available; beyond this, it is up to the WDL implementation to determine when to evaluate each value.
 
-Remember that, in tasks, the `command` section implicitly depends on all the input and private declarations in the task, and the `output` section implicitly depends on the `command` section, i.e. the `command` section cannot be instantiated until all input and private declarations are evaluated, and the `output` section cannot be evaluated until the command successfully completes execution. This is true even for private declarations that follow the `command` block positionally in the file.
+Remember that, in tasks, the `command` section implicitly depends on all the input and private declarations in the task, and the `output` section implicitly depends on the `command` section, i.e. the `command` section cannot be instantiated until all input and private declarations are evaluated, and the `output` section cannot be evaluated until the command successfully completes execution. This is true even for private declarations that follow the `command` positionally in the file.
 
 A "forward reference" occurs when an expression refers to a declaration that occurs at a later position in the WDL file. Given the above cardinal rule of evaluation order, forward references are allowed, so long as all declarations can ultimately be processed as an acyclic graph. For example:
 
