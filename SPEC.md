@@ -4915,7 +4915,7 @@ task foobar {
 
 workflow other {
   input {
-    Boolean b
+    Boolean b = false
     File? f
   }
 
@@ -4970,7 +4970,7 @@ The following fully-qualified names exist when calling `workflow main` in `main.
 | `main.other.foobar.infile`    | `File` input of the call to `foobar` inside the first call to subworkflow `other_wf.other`  | No*                                                           |
 | `main.other.foobar.results`   | `Int` output of the call to `foobar` inside the first call to subworkflow `other_wf.other`  | No                                                            |
 | `main.other.results`          | `Int?` output of the first call to subworkflow `other_wf.other`                             | Anywhere within `main`                                        |
-| `main.other2`                 | Second call to subworkflow `other_wf.other` (aliased as other2)                             | Anywhere within `main`                                         |
+| `main.other2`                 | Second call to subworkflow `other_wf.other` (aliased as other2)                             | Anywhere within `main`                                        |
 | `main.other2.b`               | `Boolean` input of the second call to subworkflow `other_wf.other`                          | No*                                                           |
 | `main.other2.f`               | `File input of the second call to subworkflow `other_wf.other`                              | No*                                                           |
 | `main.other2.foobar.infile`   | `File` input of the call to `foobar` inside the second call to subworkflow `other_wf.other` | No*                                                           |
@@ -4989,24 +4989,49 @@ The following fully-qualified names exist when calling `workflow main` in `main.
 
 ### Call Statement
 
-A workflow calls other tasks/workflows via the `call` keyword. A `call` is followed by the name of the task or subworkflow to run. A call's target task may be defined in the current WDL document - using just the task name - or in an imported WDL - using its [fully-qualified name](#fully-qualified-names--namespaced-identifiers). Since a WDL workflow can never be in the same document as another workflow, a subworkflow must always be called in an imported WDL using its fully-qualified name.
+```
+$call = 'call' $ws* $namespaced_identifier $ws+ ('as' $identifier $ws+)? ('after $identifier $ws+)* $call_body?
+$call_body = '{' $ws* $inputs? $ws* '}'
+$inputs = 'input' $ws* ':' $ws* $variable_mappings
+$variable_mappings = $variable_mapping_kv (',' $variable_mapping_kv)*
+$variable_mapping_kv = $identifier $ws* ('=' $ws* $expression)?
+```
+
+A workflow calls other tasks/workflows via the `call` keyword. A `call` is followed by the name of the task or subworkflow to run. If a task is defined in the same WDL document as the calling workflow, it may be called using just the task name. A task or workflow in an imported WDL must be called using its [fully-qualified name](#fully-qualified-names--namespaced-identifiers).
 
 Each `call` must be uniquely identifiable. By default, the `call`'s unique identifier is the task or subworkflow name (e.g., `call foo` would be referenced by name `foo`). However, to `call foo` multiple times in the same workflow, it is necessary to give all except one of the `call` statements a unique alias using the `as` clause, e.g., `call foo as bar`.
 
-A `call` has an optional body in braces (`{}`). The only element that may appear in the call body is the `input:` keyword, followed by an optional, comma-delimited list of inputs to the call. A `call` must, at a minimum, provide values for all of the task/subworkflow's required inputs, and each input value/expression must match the type of the task/subworkflow's corresponding input parameter. If a task has no required parameters, then the `call` body may be empty or omitted.
+A `call` has an optional body in braces (`{}`). The only element that may appear in the call body is the `input:` keyword, followed by an optional, comma-delimited list of inputs to the call. A `call` must, at a minimum, provide values for all of the task/subworkflow's required inputs, and each input value/expression must match the type of the task/subworkflow's corresponding input parameter. An input value may be any valid expression, not just a reference to another call output. If a task has no required parameters, then the `call` body may be empty or omitted.
+
+If a call input has the same name as a declaration from the current scope, the name of the input may appear alone (without an expression) to implicitly bind the value of that declaration. For example, if a workflow and task both have inputs `x` and `z` of the same types, then `call mytask {input: x, y=b, z}` is equivalent to `call mytask {input: x=x, y=b, z=z}`.
+
+<details>
+<summary>
+Example: call_example.wdl
 
 ```wdl
-import "lib.wdl" as lib
+version 1.1
+
+import "other.wdl" as lib
 
 task my_task {
   input {
-    Int num
+    Int i
     String? opt_string
   }
-  ...
+  
+  command <<<
+  for i in 1..~{i}; do
+    echo ~{select_first([opt_string, "default"])}
+  done
+  >>>
+
+  output {
+    Array[String] lines = read_lines(stdout())
+  }
 }
 
-workflow wf {
+workflow call_example {
   input {
     String s
     Int i
@@ -5014,75 +5039,62 @@ workflow wf {
 
   # Calls my_task with one required input - it is okay to not
   # specify a value for my_task.opt_string since it is optional.
-  call my_task { input: num = i }
+  call my_task { input: i = 3 }
 
   # Calls my_task a second time, this time with both inputs.
   # We need to give this one an alias to avoid name-collision.
-  call my_task as my_task_alias {
+  call my_task as my_task2 {
     input:
-      num = i,
+      i = i * 2,
       opt_string = s
   }
 
+  # Calls my_task with one required input using the abbreviated 
+  # syntax for `i`.
+  call my_task as my_task3 { input: i, opt_string = s }
+
   # Calls a workflow imported from lib with no inputs.
-  call lib.other_workflow
+  call lib.other
   # This call is also valid
-  call lib.other_workflow as other_workflow2 {}
-}
-```
+  call lib.other as other_workflow2 {}
 
-If a call input has the same name as a declaration from the current scope, the name of the input may appear alone (without an expression) to implicitly bind the value of that declaration. In the following example, `{input: x, y=b, z}` is equivalent to `{input: x=x, y=b, z=z}`
-
-```wdl
-tash foo {
-  input {
-    Int x
-    String y
-    Float z
-  }
-  ...
-}
-
-workflow abbrev {
-  input {
-    Int x
-    String b
-    Float z
-  }
-  call foo { input: x, y=b, z }
-}
-```
-
-Calls may be executed as soon as all their inputs are available. If `call x`'s inputs are based on `call y`'s outputs, this means that `call x` can be run as soon as `call y` has completed. 
-
-As soon as the execution of a called task completes, the call outputs are available to be used as inputs to other calls in the workflow or as workflow outputs. The only task declarations that are accessible outside of the task are its output declarations, i.e. call inputs cannot be referenced. To expose a call input, add an output to the task that simply copies the input:
-
-```wdl
-task copy_input {
-  input {
-    String greeting
-  }
-  command <<< echo "~{greeting}, nice to meet you!" >>>
   output {
-    # expose the input to s as an output
-    String greeting_out = greeting
-    String msg = read_string(stdout())
-  }
-}
-
-workflow test {
-  input {
-    String name
-  }
-  call copy_input { input: greeting = "hello ~{name}" }
-  output {
-    String greeting = copy_input.greeting_out
-    String msg = copy_input.msg
+    Array[String] lines1 = my_task.lines
+    Array[String] lines2 = my_task2.lines
+    Array[String] lines3 = my_task3.lines
+    Int? results1 = other.results
+    Int? results2 = other_workflow2.results  
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-To add a dependency from x to y that isn't based on outputs, you can use the `after` keyword, such as `call x after y after z`. However, this is only required if `x` doesn't already depend on an output from `y`.
+```json
+{
+  "call_example.s": "hello",
+  "call_example.i": 2
+}
+```
+
+Example output:
+
+```json
+{
+  "call_example.lines1": ["default", "default", "default"],
+  "call_example.lines2": ["hello", "hello", "hello", "hello"],
+  "call_example.lines3": ["hello", "hello"],
+  "call_example.results1": null,
+  "call_example.results2": null
+}
+```
+</p>
+</details>
+
+The execution engine may execute a `call` as soon as all its inputs are available. If `call x`'s inputs are based on `call y`'s outputs (i.e., `x` depends on `y`), `x` can be run as soon as - but not before - `y` has completed. 
+
+An `after` clause can be used to create an explicit dependency between `x` and `y` (i.e., one that isn't based on the availability of `y`'s outputs). For example, `call x after y after z`. An explicit dependency is only required if `x` must not execute until after `y` and `x` doesn't already depend on output from `y`.
 
 ```wdl
 task my_task {
@@ -5115,90 +5127,62 @@ workflow wf {
 }
 ```
 
-An input value may be any valid expression, not just a reference to another call output. For example:
+A `call`'s outputs are available to be used as inputs to other calls in the workflow or as workflow outputs immediately after the execution of the call has completed. The only task declarations that are accessible outside of the task are its output declarations; call inputs and private declarations cannot be referenced by the calling workflow. To expose a call input, add an output to the task that simply copies the input. Note that the output must use a different name since every declaration in a task or workflow must have a unique name.
+
+<details>
+<summary>
+Example: copy_input.wdl
 
 ```wdl
-task my_task {
+version 1.1
+
+task greet {
   input {
-    File f
-    Int disk_space_gb
+    String greeting
   }
 
-  command <<<
-    python do_stuff.py ~{f}
-  >>>
+  command <<< echo "~{greeting}, nice to meet you!" >>>
 
   output {
-    File results = stdout()
+    # expose the input to s as an output
+    String greeting_out = greeting
+    String msg = read_string(stdout())
   }
+}
+
+workflow copy_input {
+  input {
+    String name
+  }
+
+  call greet { input: greeting = "Hello ~{name}" }
   
-  runtime {
-    container: "my_image:latest"
-    disks: disk_space_gb
-  }
-} 
-
-workflow wf {
-  input {
-    File f
-  }
-
-  call my_task {
-    input:
-      f = f,
-      disk_space_gb = size(f, "GB")
+  output {
+    String greeting = greet.greeting_out
+    String msg = greet.msg
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-Here is a more complex example of calling a subworkflow:
-
-`sub_wdl.wdl`
-```wdl
-task hello {
-  input {
-    String addressee
-  }
-  command <<<
-    echo "Hello ~{addressee}!"
-  >>>
-  runtime {
-    container: "ubuntu:latest"
-  }
-  output {
-    String salutation = read_string(stdout())
-  }
-}
-
-workflow wf_hello {
-  input {
-    String wf_hello_input
-  }
-
-  call hello {
-    input: addressee = wf_hello_input 
-  }
-
-  output {
-    String salutation = hello.salutation
-  }
+```json
+{
+  "copy_input.name": "Billy"
 }
 ```
 
-`main.wdl`
-```wdl
-import "sub_wdl.wdl" as sub
+Example output:
 
-workflow main_workflow {
-  call sub.wf_hello as sub_hello { 
-    input: wf_hello_input = "sub world" 
-  }
-
-  output {
-    String main_output = sub_hello.salutation
-  }
+```json
+{
+  "copy_input.greeting": "Hello Billy",
+  "copy_input.msg": "Hello Billy, nice to meet you!"
 }
 ```
+</p>
+</details>
 
 #### Computing Call Inputs
 
