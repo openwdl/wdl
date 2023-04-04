@@ -45,7 +45,7 @@ version development
 version 1.2.0
 ---------------------------
 
-+ Added `split` function for splitting an array into sub-arrays.
++ Added `chunk` function for chunking an array into sub-arrays.
 
 version 1.1.0
 ---------------------------
