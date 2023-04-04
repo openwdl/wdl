@@ -1635,7 +1635,7 @@ workflow foo {
   }
 
   call some_preliminary_task
-  call my_task { input: my_task_int_in = x) }
+  call my_task { input: my_task_int_in = x }
 }
 ```
 
