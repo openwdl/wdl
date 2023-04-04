@@ -46,6 +46,10 @@ Examples must conform to the following rules:
 * The WDL code must be valid, runnable code.
 * The input and output JSON must be written according to the [standard input/output specification](../SPEC.md#input-and-output-formats), i.e., with the workflow/task name as a prefix for all parameter names.
 
+The "Example input" is only required if the example has required inputs.
+
+The "Example output" section is used to validate the outputs of the workflow/task executed with the example inputs. Any output of the workflow/task that doesn't appear in the example output JSON is ignored.
+
 An example can import another example using its file name.
 
 <pre>

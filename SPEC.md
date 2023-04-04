@@ -173,19 +173,23 @@ Revisions to this specification are made periodically in order to correct errors
 - [Input and Output Formats](#input-and-output-formats)
   - [JSON Input Format](#json-input-format)
     - [Optional Inputs](#optional-inputs)
+    - [Specifying / Overriding Runtime Attributes](#specifying--overriding-runtime-attributes)
   - [JSON Output Format](#json-output-format)
-  - [Specifying / Overriding Runtime Attributes](#specifying--overriding-runtime-attributes)
   - [JSON Serialization of WDL Types](#json-serialization-of-wdl-types)
     - [Primitive Types](#primitive-types-1)
     - [Array](#array)
-    - [Pair](#pair)
-    - [Map](#map)
     - [Struct and Object](#struct-and-object)
+    - [Pair](#pair)
+      - [Pair to Array](#pair-to-array)
+      - [Pair to Struct](#pair-to-struct)
+    - [Map](#map)
+      - [Map to Struct](#map-to-struct)
+      - [Map to Array](#map-to-array)
 - [Appendix A: WDL Value Serialization and Deserialization](#appendix-a-wdl-value-serialization-and-deserialization)
   - [Primitive Values](#primitive-values)
   - [Compound Values](#compound-values)
     - [Array](#array-1)
-      - [Array serialization by expansion](#array-serialization-by-expansion)
+      - [Array serialization by delimitation](#array-serialization-by-delimitation)
       - [Array serialization using write\_lines()](#array-serialization-using-write_lines)
       - [Array serialization using write\_json()](#array-serialization-using-write_json)
       - [Array deserialization using read\_lines()](#array-deserialization-using-read_lines)
@@ -289,10 +293,10 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
 
 *Note*: you can click the arrow next to the name of any example to expand it and see supplementary information, such as example inputs and outputs.
 
-This WDL document describes a `task`, called `hello_task`, and a `workflow`, called `hello`.
+This WDL document describes a task, called `hello_task`, and a workflow, called `hello`.
 
-* A `task` encapsulates a Bash script and a UNIX environment and presents them as a reusable function.
-* A `workflow` encapsulates a (directed, acyclic) graph of task calls that transforms input data to the desired outputs.
+* A task encapsulates a Bash script and a UNIX environment and presents them as a reusable function.
+* A workflow encapsulates a (directed, acyclic) graph of task calls that transforms input data to the desired outputs.
 
 Both workflows and tasks can accept input parameters and produce outputs. For example, `workflow hello` has two input parameters, `File infile` and `String pattern`, and one output parameter, `Array[String] matches`. This simple workflow calls `task hello_task`, passing through the workflow inputs to the task inputs, and using the results of `call hello_task` as the workflow output.
 
@@ -1048,7 +1052,7 @@ Example output:
 
 An `Object` is an unordered associative array of name-value pairs, where values may be of any type and are not defined explicitly.
 
-An `Object` can be initialized using syntax similar to a struct literal, except that the `object` keyword is used in place of the `Struct` name. The value of a specific member of an `Object` value can be accessed by placing a `.` followed by the member name after the identifier.
+An `Object` can be initialized using an object literal value, which begins with the `object` keyword followed by a comma-separated list of name-value pairs in braces (`{}`), where name-value pairs are delimited by `:`. The member names in an object literal are not quoted. The value of a specific member of an `Object` value can be accessed by placing a `.` followed by the member name after the identifier.
 
 <details>
 <summary>
@@ -1093,11 +1097,11 @@ Due to the lack of explicitness in the typing of `Object` being at odds with the
 
 ##### Custom Types (Structs)
 
-WDL provides the ability to define custom compound types called [structs](#struct-definition). `Struct` types are defined directly in the WDL document and are usable like any other type. A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A `struct` definition contains any number of declarations of any types, including other `Struct`s.
+WDL provides the ability to define custom compound types called [structs](#struct-definition). `Struct` types are defined directly in the WDL document and are usable like any other type. A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A struct definition contains any number of declarations of any types, including other `Struct`s.
 
-A declaration with a custom type can be initialized with a struct literal, which begins with the `Struct` type name followed by a comma-separated list of name-value pairs in braces (`{}`), where name-value pairs are delimited by `:`. The member names in a struct literal are not quoted. A struct literal must provide values for all of the `Struct`'s non-optional members, and may provide values for any of the optional members. The members of a struct literal are validated against the `Struct`'s definition at the time of creation. Members do not need to be specified in any specific order. Once a struct literal is created, it is immutable like any other WDL value.
+A declaration with a custom type can be initialized with a struct literal, which begins with the `Struct` type name followed by a comma-separated list of name-value pairs in braces (`{}`), where name-value pairs are delimited by `:`. The member names in a struct literal are not quoted. A struct literal must provide values for all of the struct's non-optional members, and may provide values for any of the optional members. The members of a struct literal are validated against the struct's definition at the time of creation. Members do not need to be in any specific order. Once a struct literal is created, it is immutable like any other WDL value.
 
-The value of a specific member of a `Struct` value can be [accessed](#member-access) by placing a `.` followed by the member name after the identifier.
+The value of a specific member of a struct value can be [accessed](#member-access) by placing a `.` followed by the member name after the identifier.
 
 <details>
 <summary>
@@ -1219,7 +1223,7 @@ Example output:
 * The value of each object/map member must be coercible to the declared type of the struct member.
 * The `Object`/`Map` must at least contain values for all of the struct's non-optional members.
 
-Note that the ability to assign non-`Struct` values to `Struct` declarations is deprecated and will be removed in WDL 2.0.
+Note that the ability to assign values to `Struct` declarations other than struct literals is deprecated and will be removed in WDL 2.0.
 
 #### Hidden Types
 
@@ -2687,15 +2691,13 @@ Because patches to the WDL specification do not change any functionality, all re
 
 A `Struct` type is a user-defined data type. Structs enable the creation of compound data types that bundle together related attributes in a more natural way than is possible using the general-purpose compound types like `Pair` or `Map`. Once defined, a `Struct` type can be used as the type of a declaration like any other data type.
 
-`Struct` definitions are top-level WDL elements, meaning they exist at the same level as `import`, `task`, and `workflow` definitions. A `struct` cannot be defined within a `task` or `workflow` body.
+`Struct` definitions are top-level WDL elements, meaning they exist at the same level as `import`, `task`, and `workflow` definitions. A struct cannot be defined within a task or workflow body.
 
-A struct is defined using the `struct` keyword, followed by a name that is unique within the WDL document, and a body containing the member declarations. A `struct` member may be of any type, including compound types and even other `Struct` types. A `struct` member may be optional. Declarations in a `struct` body differ from those in a `task` or `workflow` in that `struct` members cannot have default initializers (i.e., they are unbound declarations).
-
-Valid structs:
+A struct is defined using the `struct` keyword, followed by a name that is unique within the WDL document, and a body containing the member declarations. A struct member may be of any type, including compound types and even other `Struct` types. A struct member may be optional. Declarations in a struct body differ from those in a task or workflow in that struct members cannot have default initializers.
 
 <details>
 <summary>
-Example: structs_resource.wdl
+Example: person_struct_task.wdl
 
 ```wdl
 version 1.1
@@ -2715,10 +2717,70 @@ struct Person {
   Name name
   Int age
   Income? income
-  Map[String, Array[File]] assay_data
+  Map[String, File] assay_data
+}
+
+task greet_person {
+  input {
+    Person person
+  }
+
+  Array[Pair[String, File]] assay_array = as_pairs(assay_data)
+
+  command <<<
+  echo "Hello ~{person.name.first}! You have ~{length(assay_array)} test result(s) available."
+
+  if ~{defined(person.income)}; then
+    if [ "~{select_first([person.income]).amount}" -gt 1000 ]; then
+      currency="~{select_first([select_first([person.income]).currency, "USD"])}"
+      echo "Please transfer $currency 500 to continue"
+    fi
+  fi
+  >>>
+
+  output {
+    String message = read_string(stdout())
+  }
 }
 ```
 </summary>
+<p>
+Example input:
+
+```json
+{
+  "person_struct.person": {
+    "name": {
+      "first": "Richard",
+      "last": "Rich"
+    },
+    "age": 14,
+    "income": {
+      "amount": 1000000,
+      "period": "annually"
+    },
+    "assay_data": {
+      "wealthitis": "hello.txt"
+    }
+  }
+}
+```
+
+Example output:
+
+```json
+{
+  "person_struct.message": "Hello Richard! You have 1 test result(s) available.\nPlease transfer USD 500 to continue"
+}
+```
+
+Test config:
+
+```json
+{
+  "target": "greet_person"
+}
+</p>
 </details>
 
 An invalid struct:
@@ -2754,10 +2816,12 @@ workflow wf {
   input {
     File bam_file
   }
+
   # file_size is from "http://example.com/lib/stdlib"
   call stdlib.file_size {
     input: file=bam_file
   }
+  
   call analysis.my_analysis_task {
     input: size=file_size.bytes, file=bam_file
   }
@@ -2785,11 +2849,11 @@ Some examples of correct import resolution:
 
 ### Importing and Aliasing Structs
 
-When importing a WDL document, any `struct` definitions in that document are "copied" into the importing document. This enables structs to be used by their name alone, without the need for any `namespace.` prefix.
+When importing a WDL document, any struct definitions in that document are "copied" into the importing document. This enables structs to be used by their name alone, without the need for any `namespace.` prefix.
 
-A document may import two or more `struct` definitions with the same name so long as they are all identical. To be identical, two `struct` definitions must have members with exactly the same names and types and defined in exactly the same order.
+A document may import two or more struct definitions with the same name so long as they are all identical. To be identical, two struct definitions must have members with exactly the same names and types and defined in exactly the same order.
 
-A `struct` may be imported with a different name using an `alias` clause of the form `alias <source name> as <new name>`. If two structs have the same name but are not identical, at least one of them must be imported with a unique alias. To alias multiple `Struct`s, simply add additional alias clauses to the `import` statement. If aliases are used for some `struct`s in an imported WDL but not others, the unaliased `struct`s are still imported under their original names.
+A struct may be imported with a different name using an `alias` clause of the form `alias <source name> as <new name>`. If two structs have the same name but are not identical, at least one of them must be imported with a unique alias. To alias multiple structs, simply add more alias clauses to the `import` statement. If aliases are used for some structs in an imported WDL but not others, the unaliased structs are still imported under their original names.
 
 <details>
 <summary>
@@ -2798,7 +2862,7 @@ Example: import_structs.wdl
 ```wdl
 version 1.1
 
-import "structs.wdl"
+import "person_struct.wdl"
   alias Person as Patient
   alias Income as PatientIncome
 
@@ -2859,7 +2923,10 @@ workflow import_structs {
     }
 
     Patient patient = Patient {
-      name: "Bill Williamson",
+      name: Name {
+        first: "Bill",
+        last: "Williamson"
+      },
       age: 42,
       income: PatientIncome {
         amount: 350,
@@ -2870,6 +2937,10 @@ workflow import_structs {
         "glucose": "hello.txt"
       }
     }
+  }
+
+  call person_struct.greet_person {
+    input: person = patient
   }
 
   call calculate_bill {
@@ -2898,6 +2969,19 @@ Example output:
 ```
 </p>
 </details>
+
+When a struct `A` in document `X` is imported with alias `B` in document `Y`, any other structs imported from `X` into `Y` with members of type `A` are updated to replace `A` with `B` when copying them into `Y`'s namespace. The execution engine is responsible for maintaining mappings between structs in different namespaces, such that when a task or workflow in `X` with an input of type `A` is called from `Y` with a value of type `B` it is coerced appropriately.
+
+To put this in concrete terms of the preceding example, when `Person` is imported from `structs.wdl` as `Patient` in `import_structs.wdl`, its `income` member is updated to have type `PatientIncome`. When the `person_struct.greet_person` task is called, the input of type `Patient` is coerced to the `Person` type that is defined in the `person_struct` namespace.
+
+```wdl
+struct Patient {
+  Name name
+  Int age
+  PatientIncome? income
+  Map[String, Array[File]] assay_data
+}
+```
 
 ## Task Definition
 
@@ -3842,7 +3926,6 @@ There are a set of reserved attributes (described below) that must be supported 
 
 The value of a `runtime` attribute can be any expression that evaluates to the expected type - and in some cases matches the accepted format - for that attribute. Expressions in the `runtime` section may reference (non-output) declarations in the task:
 
-
 <details>
 <summary>
 Example: runtime_container_task.wdl
@@ -4639,7 +4722,8 @@ Both of these sections can contain key/value pairs. Metadata values are differen
 * Expressions are not allowed.
 
 A meta object is similar to a struct literal, except:
-* A `Struct` type name is not required.
+
+* A type name is not required.
 * Its values must conform to the same metadata rules defined above.
 
 ```wdl
@@ -9219,30 +9303,32 @@ Example output:
 
 WDL uses [JSON](https://www.json.org) as its native serialization format for task and workflow inputs and outputs. The specifics of these formats are described below.
 
-All WDL implementations are required to support the standard JSON input and output formats. WDL compliance testing is performed using test cases whose inputs and expected outputs are given in these formats. A WDL implementation may choose to support any additional input and output mechanisms so long as they are documented, and or tools are provided to interconvert between engine-specific input and the standard JSON format, to foster interoperability between tools in the WDL ecosystem.
+All WDL implementations are required to support the standard JSON input and output formats. WDL compliance testing is performed using test cases whose inputs and expected outputs are given in these formats. A WDL implementation may choose to provide additional input and output mechanisms so long as they are documented, and/or tools are provided to interconvert between engine-specific input and the standard JSON format, to foster interoperability between tools in the WDL ecosystem.
 
 ## JSON Input Format
 
-The inputs for a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow, subworkflow, or task input. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the input parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
+The inputs for a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow input. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the input parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
 
-Here is an example JSON workflow input file:
+If the WDL implementation supports the [`allowNestedInputs`](#computing-call-inputs) hint, then task/subworkflow inputs can also be specified in the input JSON.
+
+Here is an example JSON input file for a workflow `wf`:
 
 ```json
 {
-  "wf.t1.s": "some_string",
-  "wf.t2.s": "some_string",
   "wf.int_val": 3,
-  "wf.my_ints": [5,6,7,8],
+  "wf.my_ints": [5, 6, 7, 8],
   "wf.ref_file": "/path/to/file.txt",
   "wf.some_struct": {
     "fieldA": "some_string",
     "fieldB": 42,
     "fieldC": "/path/to/file.txt"
-  }
+  },
+  "wf.task1.s": "task 1 input",
+  "wf.task2.s": "task 2 input"
 }
 ```
 
-WDL implementations are only required to support workflow execution, and not necessarily task execution, so a JSON input format for tasks is not specified. However, it is strongly suggested that if an implementation does support task execution, that it also supports this JSON input format for tasks. It is left to the discretion of the WDL implementation whether it is required to prefix the task input with the task name, i.e. `mytask.infile` vs. `infile`.
+WDL implementations are only required to support workflow execution, and not necessarily task execution, so a JSON input format for tasks is not specified. However, it is strongly suggested that if an implementation does support task execution, that it also supports this JSON input format for tasks. It is left to the discretion of the WDL implementation whether it is required to prefix the task input with the task name, i.e., `mytask.infile` vs. `infile`.
 
 ### Optional Inputs
 
@@ -9288,11 +9374,30 @@ The following would all be valid JSON inputs:
 }
 ```
 
+### Specifying / Overriding Runtime Attributes
+
+The value for any runtime attribute of any task called by a workflow can be overridden in the JSON input file. Unlike inputs, a WDL implementation must support overriding runtime attributes regardless of whether it supports the [`allowNestedInputs](#computing-call-inputs) hint.
+
+Values for runtime attributes provided in the input JSON always supersede values supplied directly in the WDL. Overriding an attribute for a task nested within a `scatter` applies to all invocations of that task.
+
+Values for standardized runtime attributes must adhere to the [supported types and formats](#runtime-section). Any non-standard runtime attributes that are not supported by the implementation are ignored.
+
+To differentiate runtime attributes from task inputs, the `runtime` namespace is added after the task name.
+
+```json
+{
+  "wf.task1.runtime.memory": "16 GB",
+  "wf.task2.runtime.cpu": 2,
+  "wf.task2.runtime.disks": "100",
+  "wf.subwf.task3.runtime.container": "mycontainer:latest"
+}
+```
+
 ## JSON Output Format
 
-The outputs from a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow output; subworkflow and task outputs are not provided. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the output parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
+The outputs from a workflow invocation may be serialized as a JSON object that contains one member for each top-level workflow output; subworkflow and task outputs are not provided. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the output parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
 
-Every WDL implementation must support the ability to output this standard output. It is suggested that WDL implementations make the standard format be the default output format.
+Every WDL implementation must provide the ability to serialize workflow outputs in this standard format. It is suggested that WDL implementations make the standard format be the default output format.
 
 For example, given this workflow:
 
@@ -9327,21 +9432,6 @@ The output JSON will look like:
 
 It is recommended (but not required) that JSON outputs be "pretty printed" to be more human-readable.
 
-## Specifying / Overriding Runtime Attributes
-
-In addition to specifying workflow input in JSON, the user can also specify (or override) runtime attributes. Input values for standardized runtime attributes must adhere to the [supported types and formats](#runtime-section). Runtime values provided as inputs always supersede values supplied directly in the WDL. Any runtime attributes that are not supported by the execution engine are ignored.
-
-To differentiate runtime attributes from task inputs, the `runtime` namespace is added after the task name. For example:
-
-```json
-{
-  "wf.t1.runtime.memory": "16 GB",
-  "wf.t2.runtime.cpu": 2,
-  "wf.t2.runtime.disks": "100",
-  "wf.t2.runtime.container": "mycontainer:latest"
-}
-```
-
 ## JSON Serialization of WDL Types
 
 ### Primitive Types
@@ -9350,16 +9440,16 @@ All primitive WDL types serialize naturally to JSON values:
 
 | WDL Type  | JSON Type |
 | --------- | --------- |
-| `Int`     | number    |
-| `Float`   | number    |
-| `Boolean` | boolean   |
-| `String`  | string    |
-| `File`    | string    |
-| `None`    | null      |
+| `Int`     | `number`  |
+| `Float`   | `number`  |
+| `Boolean` | `boolean` |
+| `String`  | `string`  |
+| `File`    | `string`  |
+| `None`    | `null`    |
 
-JSON has a single numeric type - it does not differentiate between integral and floating point values. A JSON `number` is always deserialized to a WDL `Float`, which may then be coerced to an `Int` if necessary.
+JSON has a single numeric type - it does not differentiate between integral and floating point values. A JSON `number` is always deserialized to a WDL `Float`, which may then be [coerced](#type-coercion) to an `Int` if necessary.
 
-JSON also does not have a specific type for filesystem paths, but a WDL `String` may be coerced to a `File` if necessary.
+JSON does not have a specific type for filesystem paths, but a WDL `String` may be coerced to a `File` if necessary.
 
 ### Array
 
@@ -9367,76 +9457,213 @@ Arrays are represented naturally in JSON using the `array` type. Each array elem
 
 When a JSON `array` is deserialized to WDL, each element of the array must be coercible to a common type.
 
+### Struct and Object
+
+`Struct`s and `Object`s are represented naturally in JSON using the `object` type. Each WDL `Struct` or `Object` member value is serialized recursively into its JSON format.
+
+A JSON `object` is deserialized to a WDL `Object` value, and each member value is deserialized to its most likely WDL type. The WDL `Object` may then be coerced to a `Struct` or `Map` type if necessary.
+
 ### Pair
 
-`Pair`s are not directly serializable to JSON, because there is no way to represent them unambiguously. Instead, a `Pair` must first be converted to a serializable type, such as using one of the following suggested methods. Attempting to serialize a `Pair` in an error.
+There is no natural or unambiguous serialization of a `Pair` to JSON. Attempting to serialize a `Pair` results in an error. A `Pair` must first be converted to a serializable type, e.g., using one of the following suggested methods.
 
-**Suggested Conversion 1: `Array`**
+#### Pair to Array
 
-To make a `Pair[X, X]` serializable, simply convert it to a two-element array:
+A `Pair[X, X]` may be converted to a two-element array.
+
+<details>
+<summary>
+Example: pair_to_array.wdl
 
 ```wdl
-Pair[Int, Int] p = (1, 2)
-Array[Int] a = [p.left, p.right]
+version 1.1
 
-# after deserialization, we can convert back to Pair
-Pair[Int, Int] p2 = (a[0], a[1])
+workflow pair_to_array {
+  Pair[Int, Int] p = (1, 2)
+  Array[Int] a = [p.left, p.right]
+  # We can convert back to Pair as needed
+  Pair[Int, Int] p2 = (a[0], a[1])
+
+  output {
+    Array[int] aout = a
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
 ```
 
-**Suggested Conversion 2: `Struct`**
+Example output:
 
-When a `Pair`'s left and right members are of different types, it can be converted to a `Struct` with members of the correct types:
+```json
+{
+  "pair_to_array.aout": [1, 2]
+}
+```
+</p>
+</details>
+
+#### Pair to Struct
+
+A `Pair[X, Y]` may be converted to a struct with two members `X left` and `Y right`.
+
+<details>
+<summary>
+Example: pair_to_struct.wdl
 
 ```wdl
+version 1.1
+
 struct StringIntPair {
   String left
   Int right
 }
-Pair[String, Int] p = ("hello", 42)
-StringIntPair s = StringIntPair {
-  left: p.left,
-  right: p.right
-}
 
-# after deserialization, we can convert back to Pair
-Pair[String, Int] p2 = (s.left, s.right)
+workflow pair_to_struct {
+  Pair[String, Int] p = ("hello", 42)
+  StringIntPair s = StringIntPair {
+    left: p.left,
+    right: p.right
+  }
+  # We can convert back to Pair as needed
+  Pair[String, Int] p2 = (s.left, s.right)
+
+  output {
+    StringIntPair sout = s
+  }
+}
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "pair_to_struct.sout": {
+    "left": "hello",
+    "right": 42
+  }
+}
+```
+</p>
+</details>
 
 ### Map
 
 A `Map[String, X]` may be serialized to a JSON `object` by the same mechanism as a WDL `Struct` or `Object`. This value will be deserialized to a WDL `Object`, after which it may be coerced to a `Map`.
 
-Serialization of `Map`s with other key types is problematic, because there is no way to represent them in JSON unambiguously. Thus, a `Map` with non-`String` keys must first be converted to a serializable type, e.g. by using the following suggested method. Attempting to serialize a `Map` with a non-`String` key type results in an error.
+There is no natural or unambiguous serialization of a `Map` with a non-`String` key type. Attempting to serialize a `Map` with a non-`String` key type results in an error. A `Map` with non-`String` keys must first be converted to a serializable type, e.g., using one of the following suggested methods.
 
-**Suggested Conversion**
+#### Map to Struct
 
-Convert the `Map[X, Y]` into a `Struct` with two array members: `Array[X] keys` and `Array[Y] values`.
+A `Map[X, Y]` can be converted to a `Struct` with two array members: `Array[X] keys` and `Array[Y] values`. This is the suggested approach.
+
+<details>
+<summary>
+Example: map_to_struct.wdl
 
 ```wdl
+version 1.1
+
 struct IntStringMap {
   Array[Int] keys
   Array[String] values
 }
-Map[Int, String] m = {0: "a", 1: "b"}
-Pair[Array[Int], Array[String]] u = unzip(m)
-IntStringMap i = IntStringMap {
-  keys: u.left,
-  values: u.right
-}
 
-# after deserialization, we can convert back to Map
-Map[Int, String] m2 = as_map(zip(i.keys, i.values))
+workflow map_to_struct {
+  Map[Int, String] m = {0: "a", 1: "b"}
+  Array[Pair[Int, String]] int_string_pairs = as_pairs(m)
+  Pair[Array[Int], Array[String]] int_string_arrays = unzip(int_string_pairs)
+
+  IntStringMap s = IntStringMap {
+    keys: int_string_arrays.left,
+    values: int_string_arrays.right
+  }
+
+  # We can convert back to Map
+  Map[Int, String] m2 = as_map(zip(i.keys, i.values))
+  
+  output {
+    IntStringMap sout = s
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
 ```
 
-### Struct and Object
+Example output:
 
-`Struct`s and `Object`s are represented naturally in JSON using the `object` type. Each WDL `Struct` or `Object` member value is serialized recursively into its JSON format.
+```json
+{
+  "map_to_struct.sout": {
+    "keys": [0, 1],
+    "values": ["a", "b"]
+  }
+}
+```
+</p>
+</details>
 
-A JSON `object` is deserialized to a WDL `Object` value, and each member value is deserialized to its most likely WDL type. The WDL `Object` may then be coerced to a `Map` or `Struct` type if necessary.
+#### Map to Array
+
+A `Map[X, X]` can be converted to an array of `Pair`s. Each pair can then be converted to a serializable format using one of the methods described in the previous section. This approach is less desirable as it requires the use of a `scatter`.
+
+<details>
+<summary>
+Example: map_to_array.wdl
+
+```wdl
+version 1.1
+
+workflow map_to_array {
+  Map[Int, Int] m = {0: 7, 1: 42}
+  Array[Pair[Int, Int]] int_int_pairs = as_pairs(m)
+
+  for (p in int_string_pairs) {
+    Array[Int] a = [p.left, p.right]
+  }
+
+  output {
+    Array[Array[Int]] aout = a
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "map_to_array.aout": [[0, 7], [1, 42]]
+}
+```
+</p>
+</details>
 
 # Appendix A: WDL Value Serialization and Deserialization
 
-This section provides suggestions for ways to deal with primitive and compound values in the task [command section](#command-section). When a WDL execution engine instantiates a command specified in the `command` section of a `task`, it must evaluate all expression placeholders (`~{...}` and `${...}`) in the command and coerce their values to strings. There are multiple different ways that WDL values can be communicated to the command(s) being called in the command section, and the best method will vary by command.
+This section provides suggestions for ways to deal with primitive and compound values in the task [command section](#command-section). When a WDL execution engine instantiates a command specified in the `command` section of a task, it must evaluate all expression placeholders (`~{...}` and `${...}`) in the command and coerce their values to strings. There are multiple different ways that WDL values can be communicated to the command(s) being called in the `command` section, and the best method will vary by command.
 
 For example, a task that wraps a tool that operates on an `Array` of FASTQ files has several ways that it can specify the list of files to the tool:
 
@@ -9444,7 +9671,7 @@ For example, a task that wraps a tool that operates on an `Array` of FASTQ files
 * A file containing a JSON list, e.g. `Rscript analysis.R --files=fastq_list.json`
 * Enumerated on the command line, e.g. `Rscript analysis.R 1.fastq 2.fastq 3.fastq`
 
-On the other end, command line tools will output results in files or to standard output, and these output data need to be converted to WDL values to be used as task outputs. For example, the FASTQ processor task mentioned above outputs a mapping of the input files to the number of reads in each file. This output might be represented as a two-column TSV or as a JSON object, both of which would need to be deserialized to a WDL `Map[File, Int]` value.
+On the other end, command line tools will output results in files or to standard output, and these outputs need to be converted to WDL values to be used as task outputs. For example, the FASTQ processor task mentioned above outputs a mapping of the input files to the number of reads in each file. This output might be represented as a two-column TSV or as a JSON object, both of which would need to be deserialized to a WDL `Map[File, Int]` value.
 
 The various methods for serializing and deserializing primitive and compound values are enumerated below.
 
@@ -9452,53 +9679,80 @@ The various methods for serializing and deserializing primitive and compound val
 
 WDL primitive values are naturally converted to string values. This is described in detail in the [string interpolation](#expression-placeholders-and-string-interpolation) section.
 
-De-serialization of primitive values is done through the `read_*` functions, which deserialize primitive values written to a file by a task command.
+Deserialization of primitive values is done via one of the `read_*` functions, each of which deserializes a different type of primitive value from a file. The file must contain a single value of the expected type, with optional whitespace. The value is read as a string and then coerced to the appropriate type, which results in an error if the value cannot be coerced.
 
-For example, this task's command writes a `String` to one file and an `Int` to another:
+<details>
+<summary>
+Example: read_write_primitives_task.wdl
 
 ```wdl
-task output_example {
+version 1.1
+
+task read_write_primitives {
   input {
-    String param1
-    String param2
+    String s
+    Int i
   }
 
   command <<<
-    python do_work.py ~{param1} ~{param2} --out1=int_file --out2=str_file
+  echo ~{s} > str_file
+  echo ~{i} > int_file
   >>>
 
   output {
-    Int my_int = read_int("int_file")
-    String my_str = read_string("str_file")
+    String sout = read_string("str_file")
+    String istr = read_string("int_file")
+    Int iout = read_int("int_file")
+    # This would cause an error since "hello" cannot be converted to an Int:
+    #Int sint = read_int("str_file")
   }
   
   runtime {
-    container: "my_image:latest"
+    container: "ubuntu:latest"
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-Both files `int_file` and `str_file` must contain one line with the value on that line. This value is read as a string and then coerced to the appropriate type. If `int_file` contains a line with the text "foobar", calling `read_int` on that file results in an error.
+```json
+{
+  "read_write_primitives.s": "hello",
+  "read_write_primitives.i": 42
+}
+```
+
+Example output:
+
+```json
+{
+  "read_write_primitives.sout": "hello",
+  "read_write_primitives.istr": "42",
+  "read_write_primitives.iout": 42
+}
+```
+</p>
+</details>
 
 ## Compound Values
 
-Compound values, like `Array` and `Map` must be converted to a primitive value before they can be used in the command. Similarly, compound values generated by the command must be deserialized to be used in WDL. Task commands will generally use one of two formats to write outputs that can be deserialized by WDL:
+A compound value such as `Array` or `Map` must be converted to a primitive value before it can be used in the command. Similarly, structured data generated by the command must be deserialized to be used in WDL.
+
+Task commands will generally use one of two formats to write outputs that can be deserialized by WDL:
 
 * JSON: Most WDL values convert naturally to JSON values, and vice-versa
-* Text based / tab-separated-values (TSV): Simple table and text-based encodings (e.g. `Array[String]` could be serialized by having each element be a line in a file)
+* Text based / tab-separated-values (TSV): Simple table and text-based encodings (e.g., `Array[String]` could be serialized by having each element be a line in a file)
 
-The various ways to turn compound values into primitive values and vice-versa are described below.
+The various ways to turn each type of compound value into a primitive value, and vice-versa, are described below.
 
 ### Array
 
-Arrays can be serialized in two ways:
+There are two common ways to serialize an array: by converting it to a delimited string or by writing its elements to a file.
 
-* **Array Expansion**: elements in the list are flattened to a string with a separator character.
-* **File Creation**: create a file with the elements of the array in it and passing that file as the parameter on the command line.
+#### Array serialization by delimitation
 
-#### Array serialization by expansion
-
-The array flattening approach can be done if a parameter is specified as `~{sep=' ' my_param}`.  `my_param` must be declared as an `Array` of primitive values. When the value of `my_param` is specified, then the values are joined together with the separator character (a space in this case).  For example:
+This method applies to an array of a primitive type. Each element of the array is coerced to a string, and the strings are then joined into a single string separated by a delimiter. This is done using the [`sep`](#sep) function.
 
 ```wdl
 task test {
@@ -9528,7 +9782,7 @@ Would produce the command `python script.py --bams=/path/to/1.bam,/path/to/2.bam
 
 #### Array serialization using write_lines()
 
-An array may be turned into a file with each element in the array occupying a line in the file.
+This method applies to an array of a primitive type. Each element of the array is coerced to a string, and the strings are written to a file, one element per line.
 
 ```wdl
 task test {
@@ -9570,7 +9824,7 @@ Where `/jobs/564758/bams` would contain:
 
 #### Array serialization using write_json()
 
-The array may be turned into a JSON document with the file path for the JSON file passed in as the parameter:
+This method applies to an array of any type that can be serialized to JSON. Calling [`write_json`](#write_json) with an `Array` parameter results in the creation of a file containing a JSON array.
 
 ```wdl
 task test {
@@ -9908,7 +10162,7 @@ task pair_test {
 }
 ```
 
-Alternatively, a `Struct` (or `Object`) can be created with `left` and `right` members and then serialized by the appropriate function.
+If the `Pair` is homogeneous (i.e., `Pair[X, X]` where both `left` and `right` types are the same), it can be converted to a two-element `Array[X]` for serialization. Alternatively, a `Struct` (or `Object`) can be created with `left` and `right` members and then serialized by the appropriate function.
 
 ```wdl
 struct IntStringPair {
@@ -9918,14 +10172,19 @@ struct IntStringPair {
 
 task pair_test_obj {
   input {
-    Pair[Int, String] p
+    Pair[Int, String] p1
+    Pair[Int, Int] p2
   }
-  IntStringPair serializable = IntStringPair {
+
+  IntStringPair serializable1 = IntStringPair {
     left: p.left,
     right: p.right
   }
+  Array[Int] serializable2 = [p.left, p.right]
+
   command <<<
-  ./myscript --json ~{write_json(serializable)}
+  ./myscript --json ~{write_json(serializable1)}
+  ./myscript --json ~{write_json(serializable2)}
   >>>
 }
 ```
@@ -9939,30 +10198,27 @@ Namespaces and scoping in WDL are somewhat complex topics, and some aspects are 
 The following WDL namespaces exist:
 
 * [WDL document](#wdl-documents)
-  * The namespace of an [imported](#import-statements) document equals that of the basename of the imported file by default, but may be aliased using the `as identifier` syntax.
-  * A WDL document may contain a `workflow` and/or `task`s, which are names within the document's namespace.
-  * A WDL document may contain `struct`s, which are added to a [global namespace](#struct-usage).
-  * A WDL document may contain other namespaces via `import`s.
+    * The namespace of an [imported](#import-statements) document equals that of the basename of the imported file by default, but may be aliased using the `as <identifier>` syntax.
+    * A WDL document may contain a `workflow` and/or `task`s, which are names within the document's namespace.
+    * A WDL document may contain `struct`s, which are also names within the document's namespace and usable as types in any declarations. Structs from any imported documents are [copied into the document's namespace](#importing-and-aliasing-structs) and may be aliased using the `alias <source name> as <new name>` syntax.
 * A [WDL `task`](#task-definition) is a namespace consisting of:
-  * The `task` `input` declarations
-  * The `task` `output` declarations
-  * A [`runtime`](#runtime-section) namespace that contains all the runtime attributes
+    * `input`, `output`, and private declarations
+    * A [`runtime`](#runtime-section) namespace that contains all the runtime attributes
 * A [WDL `workflow`](#workflow-definition) is a namespace consisting of:
-  * The `workflow` `input` declarations
-  * The `workflow` `output` declarations
-  * The [`call`s](#call-statement) made to tasks and subworkflows within the body of the workflow.
-    * A call is itself a namespace that equals the name of the called task or subworkflow by default, but may be aliased using the `as $identifier` syntax.
-    * A call namespace contains the output declarations of the called task or workflow.
-    * A call to a subworkflow also contains the names of calls made in the body of that workflow.
-* A [`struct` instance](#struct-definition): is a namespace consisting of the members defined in the `Struct`. This also applies to `Object` instances.
+    * `input`, `output`, and private declarations
+    * The [`call`s](#call-statement) made to tasks and subworkflows within the body of the workflow.
+        * A call is itself a namespace that equals the name of the called task or subworkflow by default, but may be aliased using the `as <identifier>` syntax.
+        * A call namespace contains the output declarations of the called task or workflow.
+    * The body of each nested element (`struct` or `if` statement).
+* A [`Struct` instance](#struct-definition): is a namespace consisting of the members defined in the struct. This also applies to `Object` instances.
 
 All members of a namespace must be unique within that namespace. For example:
 
-* Two workflows cannot be imported while they have the same namespace identifier - at least one of them would need to be aliased.
+* Two documents cannot be imported while they have the same namespace identifier - at least one of them would need to be aliased.
 * A workflow and a namespace both named `foo` cannot exist inside a common namespace.
 * There cannot be a call `foo` in a workflow also named `foo`.
  
-However, two sub-namespaces imported into the same parent namespace are allowed to contain the same names. For example, two workflows with different namespace identifiers `foo` and `bar` can both have a task named `baz`, because the [fully-qualified names](#fully-qualified-names--namespaced-identifiers) of the two tasks would be different: `foo.baz` and `bar.baz`.
+However, two sub-namespaces imported into the same parent namespace are allowed to contain the same names. For example, two documents with different namespace identifiers `foo` and `bar` can both have a task named `baz`, because the [fully-qualified names](#fully-qualified-names--namespaced-identifiers) of the two tasks would be different: `foo.baz` and `bar.baz`.
 
 ## Scopes
 
@@ -9972,10 +10228,10 @@ A "scope" is associated with a level of nesting within a namespace. The visibili
 
 A WDL document is the top-level (or "outermost") scope. All elements defined within a document that are not nested inside other elements are in the global scope and accessible from anywhere in the document. The elements that may be in a global scope are:
 
-* Namespaces (via imports)
-* `struct`s (including all `struct`s defined in the document and in any imported documents)
-* `task`s
 * A `workflow`
+* Any number of `task`s
+* Imported namespaces
+* All `struct`s defined in the document and in any imported documents
 
 ### Task Scope
 
@@ -10046,8 +10302,8 @@ workflow my_workflow {
 
 * `file` and `x` are `input` declarations that will be evaluated when the workflow is invoked.
 * The call body provides inputs for the task values `x` and `f`. Note that `x` is used twice in the line `x = x`:
-    * First: to name the value in the task being provided. This must reference an input declaration in the namespace of the called `task`.
-    * Second: as part of the input expression. This expression may reference any values in the current `workflow` scope.
+    * First: to name the value in the task being provided. This must reference an input declaration in the namespace of the called task.
+    * Second: as part of the input expression. This expression may reference any values in the current workflow scope.
 * `z` is an output declaration that depends on the output from the `call` to `my_task`. It is not accessible from elsewhere outside the `output` section.
 
 Workflows can have block constructs - scatters and conditionals - that define nested scopes. A nested scope can have declarations, calls, and block constructs (which create another level of nested scope). The declarations and calls in a nested scope are visible within that scope and within any sub-scopes, recursively.
@@ -10171,7 +10427,7 @@ workflow my_workflow {
 }
 ```
 
-* The declaration for `x_b` is able to access the value for `x_a` even though the declaration is in another sub-section of the `workflow`.
+* The declaration for `x_b` is able to access the value for `x_a` even though the declaration is in another sub-section of the workflow.
 * Because the declaration for `x_b` is outside the `scatter` in which `x_a` was declared, the type is `Array[Int]`
 
 The following change introduces a cyclic dependency between the scatters:
@@ -10231,7 +10487,7 @@ workflow my_workflow {
 
 ### Namespaces without Scope
 
-Elements such as `struct`s and task `runtime` sections are namespaces, but they lack scope because their members cannot reference each other. For example, one member of a `struct` cannot reference another member in that struct, nor can a `runtime` attribute reference another attribute.
+Elements such as struct values and task `runtime` sections are namespaces, but they lack scope because their members cannot reference each other. For example, one member of a struct cannot reference another member in that struct, nor can a runtime attribute reference another attribute.
 
 ## Evaluation Order
 
