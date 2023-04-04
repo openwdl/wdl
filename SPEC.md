@@ -135,7 +135,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
   - [Pair\[Array\[X\], Array\[Y\]\] unzip(Array\[Pair\[X, Y\]\])](#pairarrayx-arrayy-unziparraypairx-y)
   - [Array\[Pair\[X,Y\]\] cross(Array\[X\], Array\[Y\])](#arraypairxy-crossarrayx-arrayy)
   - [Array\[X\] flatten(Array\[Array\[X\]\])](#arrayx-flattenarrayarrayx)
-  - [Array\[Array\[X\]\] split(Array\[X\], Int)](#arrayarrayx-splitarrayx-int)
+  - [Array\[Array\[X\]\] chunk(Array\[X\], Int)](#arrayarrayx-chunkarrayx-int)
   - [Array\[String\] prefix(String, Array\[P\])](#arraystring-prefixstring-arrayp)
   - [Array\[String\] suffix(String, Array\[P\])](#arraystring-suffixstring-arrayp)
   - [Array\[String\] quote(Array\[P\])](#arraystring-quotearrayp)
@@ -4635,11 +4635,11 @@ Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
 Boolean is_true4 = flatten(ai3D) == [[1, 2], [3, 4], [5, 6], [7, 8]]
 ```
 
-## Array[Array[X]] split(Array[X], Int)
+## Array[Array[X]] chunk(Array[X], Int)
 
 Given an array and a length *n*, splits the array into consecutive, non-overlapping arrays of *n* elements. If the length of the array is not a multiple *n* then the final sub-array will have `length(array) % n` elements.
 
-This function is the inverse of `flatten`; i.e., `flatten`ing a `split` array will always yield the original array.
+This function is the inverse of `flatten`; i.e., `flatten`ing a `chunk` array will always yield the original array.
 
 **Parameters**
 
@@ -4652,12 +4652,12 @@ This function is the inverse of `flatten`; i.e., `flatten`ing a `split` array wi
 
 <details>
   <summary>
-  Example: split_array.wdl
+  Example: chunk_array.wdl
       
   ```wdl
   version 1.2
 
-  workflow split_array {
+  workflow chunk_array {
     Array[String] s1 = ["a", "b", "c", "d", "e", "f"]
     Array[String] s2 = ["a", "b", "c", "d", "e"]
     Array[String] s3 = ["a", "b"]
@@ -4668,11 +4668,11 @@ This function is the inverse of `flatten`; i.e., `flatten`ing a `split` array wi
     }
 
     output {
-      Boolean is_reversible = s1 == flatten(split(s1, 3))
-      Array[Array[String]] o1 = split(s1, 3)
-      Array[Array[String]] o2 = split(s2, 3)
-      Array[Array[String]] o3 = split(s3, 3)
-      Array[Array[String]] o4 = split(s4, 3)
+      Boolean is_reversible = s1 == flatten(chunk(s1, 3))
+      Array[Array[String]] o1 = chunk(s1, 3)
+      Array[Array[String]] o2 = chunk(s2, 3)
+      Array[Array[String]] o3 = chunk(s3, 3)
+      Array[Array[String]] o4 = chunk(s4, 3)
       Array[String] concats = concat
     }
   }
@@ -4689,12 +4689,12 @@ This function is the inverse of `flatten`; i.e., `flatten`ing a `split` array wi
 
   ```json
   {
-    "split_array.is_reversible": true,
-    "split_array.o1": [["a", "b", "c"], ["d", "e", "f"]],
-    "split_array.o2": [["a", "b", "c"], ["d", "e"]],
-    "split_array.o3": [["a", "b"]],
-    "split_array.o4": [[]],
-    "split_array.concats": ["abc", "def"]
+    "chunk_array.is_reversible": true,
+    "chunk_array.o1": [["a", "b", "c"], ["d", "e", "f"]],
+    "chunk_array.o2": [["a", "b", "c"], ["d", "e"]],
+    "chunk_array.o3": [["a", "b"]],
+    "chunk_array.o4": [[]],
+    "chunk_array.concats": ["abc", "def"]
   }
   ``` 
   </p>
