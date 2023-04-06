@@ -26,6 +26,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
         - [Map\[P, Y\]](#mapp-y)
         - [Custom Types (Structs)](#custom-types-structs)
         - [🗑 Object](#-object)
+        - [Enumeration Types (Enums)](#enumeration-types-enums)
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
@@ -101,6 +102,9 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
     - [Struct Literals](#struct-literals)
     - [Struct Namespacing](#struct-namespacing)
     - [Struct Usage](#struct-usage)
+  - [Enum Definition](#enum-definition)
+    - [Enum Namespacing](#enum-namespacing)
+    - [Enum Usage](#enum-usage)
 - [Standard Library](#standard-library)
   - [Int floor(Float), Int ceil(Float) and Int round(Float)](#int-floorfloat-int-ceilfloat-and-int-roundfloat)
   - [Int min(Int, Int), Float min(Float, Float), Float min(Int, Float), Float min(Float, Int)](#int-minint-int-float-minfloat-float-float-minint-float-float-minfloat-int)
@@ -158,6 +162,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
     - [Pair](#pair)
     - [Map](#map)
     - [Struct and Object](#struct-and-object)
+    - [Enum](#enum)
 - [Appendix A: WDL Value Serialization and Deserialization](#appendix-a-wdl-value-serialization-and-deserialization)
   - [Primitive Values](#primitive-values)
   - [Compound Values](#compound-values)
@@ -175,6 +180,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
       - [Map deserialization using read\_map()](#map-deserialization-using-read_map)
       - [Map deserialization using read\_json()](#map-deserialization-using-read_json)
     - [Pair](#pair-1)
+    - [Enum](#enum-1)
 - [Appendix B: WDL Namespaces and Scopes](#appendix-b-wdl-namespaces-and-scopes)
   - [Namespaces](#namespaces)
   - [Scopes](#scopes)
@@ -578,7 +584,7 @@ Array[Pair[Int, String]] pairs = as_pairs(int_to_string)
 
 ##### Custom Types (Structs)
 
-WDL provides the ability to define custom compound types called [structs](#struct-definition). `Struct` types are defined directly in the WDL document and are usable like any other type. A `struct` definition contains any number of declarations of any types, including other `Struct`s.
+WDL provides the ability to define custom compound types called [structs](#struct-definition). `Struct` types are defined at the top-level of the WDL document and are usable like any other type. A `struct` definition contains any number of declarations of any types, including other `Struct`s.
 
 A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A declaration with a custom type can be initialized with a struct literal, which begins with the `Struct` type name followed by a comma-separated list of key-value pairs in braces (`{}`), where name-value pairs are delimited by `:`. The member names in a struct literal are not quoted.
 
@@ -618,6 +624,48 @@ Int i = f.a
 ```
 
 Due to the lack of explicitness in the typing of `Object` being at odds with the goal of being able to know the type information of all WDL declarations, **the `Object` type, the `object` literal syntax, and all of the [standard library functions](#-object-read_objectstringfile) with `Object` parameters or return values have been deprecated and will be removed in the next major version of the WDL specification**. All uses of `Object` can be replaced with [structs](#struct-definition).
+
+##### Enumeration Types (Enums)
+
+An enumeration (or "enum") is a closed set of alternatives that are considered semantically valid in a specific context. An enum is [defined]() at the top-level of the WDL document and can be used as a declaration type anywhere in the document.
+
+An enum is defined using the `enum` keyword, followed by a globally unique name, followed by a comma-delimited list of identifiers in braces. The value for an enum cannot be created; rather, it must be selected from the list of available values using the `<name>.<value>` syntax.
+
+```wdl
+enum FileKind {
+  FASTQ,
+  BAM
+}
+
+task process_file {
+  input {
+    File infile
+    FileKind kind = FileKind.FASTQ
+  }
+  
+  command <<<
+  echo "Processing ~{kind} file"
+  ...
+  >>>
+}
+
+workflow process_files {
+  input {
+    Array[File] files
+    FileKind kind
+  }
+
+  scatter (file in files) {
+    call process_file {
+      input:
+        infile = file,
+        kind = kind
+    }
+  }
+}
+```
+
+As an example, consider a workflow that processes different types of NGS files and has a `file_kind` input parameter that is expected to be either "fastq" or "bam". Using `String` as the type of `file_kind` is not ideal - if the user specifies an invalid value, the error will not be caught until runtime, perhaps after the workflow has already run for several hours. Alternatively, using an `enum` type for `file_kind` restricts the allowed values such that the execution engine can validate the input prior to executing the workflow.
 
 #### Type Conversion
 
@@ -3496,6 +3544,121 @@ workflow workflow_a {
 }
 ```
 
+## Enum Definition
+
+An `Enum` is an enumerated type. Enums enable the creation of types that represent closed sets of alternatives (called "variants") that are semantically valid in a specific context. Once defined, an `Enum` type can be used as the type of a declaration like any other type. However, new variants of an `Enum` cannot be created. Instead, a declaration having an `Enum` type must be assigned one of the variants created as part of the `Enum`'s definition.
+
+An enum definition is a top-level WDL element, meaning it is defined at the same level as tasks, workflows, and structs, and it cannot be defined within a task or workflow body. An enum is defined using the `enum` keyword, followed by a name that is unique within the WDL document, and a body containing a comma-delimited list of varaints in braces (`{}`).
+
+```wdl
+enum Color {
+  RED,
+  BLUE,
+  GREEN
+}
+```
+
+An enum can be thought of as two different constructs sharing the same name:
+
+* A `Struct` with one `String`-type member, `name`, whose value is the "stringified" version of the variant's identifier. For example, the name of `Color.RED` is `"RED"`. Unlike structs, it is not possible to create new instances of an `Enum` outside of the enum's definition.
+* A global variable of type `Object` whose members have names equal to the enum variant names, and whose values are instances of the `Enum`.
+
+For example, the above definition of `Color` can be thought of as shorthand for:
+
+```wdl
+version 1.2
+
+struct Color {
+  String name
+}
+
+Object Color = object {
+  RED: Color { name: "RED" },
+  BLUE: Color { name: "BLUE" },
+  GREEN: Color { name: "GREEN" }
+}
+
+workflow test {
+  input {
+    # The first usage of `Color` on the left is a reference to the struct type.
+    # The second usage of `Color` on the right is a reference to the object declaration.
+    Color color = Color.RED
+  }
+
+  # Error! Creating additional instances of `Color` is not allowed.
+  Color pink = Color { name: "PINK" }
+}
+```
+
+Keep in mind that the above example is illustrative - it is not actually possible to have a top-level declaration, nor is it possible to create a struct that is not able to be instantiated. The example just shows the closest semantic equivalent of Enums using existing WDL syntax.
+
+### Enum Namespacing
+
+Enums are [imported in the same way as `Struct`s](#struct-namespacing) and have the same namespacing rules, namely that Enums exist in the document's global scope, and importing an `Enum` copies its definition into the global scope of the importing document (potentially using an alias).
+
+```wdl
+version 1.2
+
+import "color.wdl" alias Color as Hue
+
+workflow another_wf {
+  input {
+    Hue hue = Hue.BLUE
+  }
+  ...
+}
+```
+
+### Enum Usage
+
+An `Enum`'s variants are [accessed](#member-access) using a `.` to separate the variant name from the `Enum`'s identifier. Each variant has single member, `String name`, that can be accessed through a `.` separator.
+
+A declaration with an `Enum` type can only be initialized by referencing a variant directly or by assigning it to the value of another declaration of the same `Enum` type.
+
+Two enum values can be tested for equality (i.e., using `==` or `!=`). To be equal, two enum values must be the same variant of the same `Enum` type. Enum variants are not ordered, so they cannot be compared (i.e., using `>`, `>=`, `<`, `<=`).
+
+An `Enum` cannot be coerced to or from any other type. However, an enum value can be [serialized to/deserialized from a `String`]() or to/from [JSON]().
+
+```wdl
+version 1.2
+
+enum Pet {
+  CAT,
+  DOG,
+  RAT
+}
+
+enum HotFood {
+  DOG,
+  POTATO,
+  TAMALE
+}
+
+task pet_pet {
+  input {
+    Pet? pet
+  }
+
+  Pet my_pet = select_first([pet, Pet.DOG])
+
+  Array[String] all_pet_names = [
+    Pet.CAT.name,
+    Pet.DOG.name,
+    Pet.RAT.name
+  ]
+
+  command <<<
+  echo "There are ~{length(all_pet_names)} kinds of pet: ~{sep(", ", all_pet_names)}"
+  echo "I have a pet ~{my_pet.name}"
+  echo "I am petting my ~{my_pet}"
+  >>>
+
+  output {
+    Boolean is_false = Pet.DOG == HotFood.DOG
+  }
+}
+```
+
 # Standard Library
 
 The following functions are available to be called in WDL expressions. The signature of each function is given as `R func_name(T1, T2, ...)`, where `R` is the return type and `T1`, `T2`, ... are the parameter types. All function parameters must be specified in order, and all function parameters are required, with the exception that the last parameter of some functions is optional (denoted by the type in brackets `[]`).
@@ -4373,6 +4536,7 @@ Writes a JSON file with the serialized form of a WDL value. The following WDL ty
 | `Float`          | number    |
 | `String`         | string    |
 | `File`           | string    |
+| `Enum`           | string    |
 | `Boolean`        | boolean   |
 | `None`           | null      |
 
@@ -5153,6 +5317,10 @@ Map[Int, String] m2 = as_map(zip(i.keys, i.values))
 
 A JSON `object` is deserialized to a WDL `Object` value, and each member value is deserialized to its most likely WDL type. The WDL `Object` may then be coerced to a `Map` or `Struct` type if necessary.
 
+### Enum
+
+An `Enum` is serialized to its name, which is always a `String`. A `String` is deserialized to an `Enum` variant whose name is equal to the string value. If there is no variant that matches the string value, an error is raised.
+
 # Appendix A: WDL Value Serialization and Deserialization
 
 This section provides suggestions for ways to deal with primitive and compound values in the task [command section](#command-section). When a WDL execution engine instantiates a command specified in the `command` section of a `task`, it must evaluate all expression placeholders (`~{...}` and `${...}`) in the command and coerce their values to strings. There are multiple different ways that WDL values can be communicated to the command(s) being called in the command section, and the best method will vary by command.
@@ -5644,6 +5812,82 @@ task pair_test_obj {
   command <<<
   ./myscript --json ~{write_json(serializable)}
   >>>
+}
+```
+
+### Enum
+
+An enum value is serialized to its name. For example, an expression in a string interpolation that evaluates to an enum variant is replaced by the variant name:
+
+```wdl
+version 1.2
+
+enum Flower {
+  LILLY,
+  DAISY,
+  PETUNIA
+}
+
+task plan {
+  input {
+    Flower flower
+  }
+
+  command <<<
+  echo "I planted a ~{flower}"
+  >>>
+
+  output {
+    String expected = "I planted a ~{flower.name}"
+    Boolean is_true = read_string(stdout()) == expected
+  }
+}
+```
+
+To deserialize a string to an enum value, an appropriate `read_*` function must be used in a context where an `Enum` is expected.
+
+```wdl
+version 1.2
+
+enum Currency {
+  DOLLARS,
+  YEN,
+  PESOS
+}
+
+struct Transaction {
+  Currency currency
+  Float amount
+}
+
+task deserialize_enum {
+  input {
+    File currency_file
+    Float amount = 100.0
+  }
+
+  Currency currency = read_string(currency_file)
+
+  command <<<
+  echo "That will be ~{amount} ~{currency}, please!"
+  >>>
+
+  output {
+    Transaction txn = Transaction {
+      currency: currency,
+      amount: amount
+    }
+    File txn_file = write_json(txn)
+  }
+}
+```
+
+If the input file `currency_file` contains the string "YEN", then the output file `txn_file` would contain:
+
+```json
+{
+  "currency": "YEN",
+  "amount" 100.0
 }
 ```
 
