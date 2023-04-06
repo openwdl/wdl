@@ -658,7 +658,7 @@ An optional declaration has a default initialization of `None`, which indicates 
     "optionals.test_defined": false,
     "optionals.test_defined2": true,
     "optionals.test_is_none": true,
-    "optionals.test_not_none": false,
+    "optionals.test_not_none": false
   }
   ```
   </p>
@@ -742,6 +742,7 @@ An array value can be initialized with an array literal - a comma-separated list
   Example output:
   
   ```json
+  {}
   ```
 
   Test config:
@@ -836,7 +837,7 @@ Example output:
   "non_empty_optional.nonempty1": [0.0],
   "non_empty_optional.nonempty2": [null, 1],
   "non_empty_optional.nonempty3": [],
-  "non_empty_optional.nonempty4": [0.0],
+  "non_empty_optional.nonempty4": [0.0]
 }
 ```
 </p>
@@ -892,7 +893,7 @@ A `Pair` can be initialized with a pair literal - a comma-separated pair of valu
 Example: test_pairs.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_pairs {
   Pair[Int, Array[String]] data = (5, ["hello", "goodbye"])
@@ -932,7 +933,7 @@ A `Map` can be initialized with a map literal - a comma-separated list of key-va
 Example: test_map.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_map {
   Map[Int, Int] int_to_int = {1: 10, 2: 11}
@@ -974,7 +975,7 @@ Example output:
 Example: test_map_fail.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_map_fail {
   Map[String, Int] string_to_int = { "a": 1, "b": 2 }
@@ -1012,7 +1013,7 @@ A `Map` is insertion-ordered, meaning the order in which elements are added to t
 Example: test_map_ordering.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_map_ordering {
   # declaration using a map literal
@@ -1627,6 +1628,7 @@ Test config:
   "fail": true
 }
 ```
+</p>
 </details>
 
 ### Expressions
@@ -1871,7 +1873,7 @@ Example output:
   "array_map_equality.is_true1": true,
   "array_map_equality.is_true2": true,
   "array_map_equality.is_false1": true,
-  "array_map_equality.is_false2": true,
+  "array_map_equality.is_false2": true
 }
 ```
 </p>
@@ -1955,7 +1957,7 @@ Example output:
   "compare_optionals.is_true1": true,
   "compare_optionals.is_true2": true,
   "compare_optionals.is_false1": false,
-  "compare_optionals.is_false2": false,
+  "compare_optionals.is_false2": false
 }
 ```
 </p>
@@ -2103,7 +2105,7 @@ Example output:
   "nested_access.first_var": "name",
   "nested_access.first_var_from_first_experiment": "name",
   "nested_access.subject_name": "Pinky",
-  "nested_access.subject_name_from_first_experiment": "Pinky",
+  "nested_access.subject_name_from_first_experiment": "Pinky"
 }
 ```
 </p>
@@ -2327,7 +2329,7 @@ Example output:
   "placeholder_coercion.is_true4": true,
   "placeholder_coercion.is_true5": true,
   "placeholder_coercion.is_true6": true,
-  "placeholder_coercion.is_true7": true,
+  "placeholder_coercion.is_true7": true
 }
 ```
 </p>
@@ -2496,7 +2498,7 @@ Example output:
 ```json
 {
   "sep_option_to_function.is_true1": true,
-  "sep_option_to_function.is_true2": true,
+  "sep_option_to_function.is_true2": true
 }
 ```
 </p>
@@ -2778,6 +2780,7 @@ Test config:
 {
   "target": "greet_person"
 }
+```
 </p>
 </details>
 
@@ -3162,7 +3165,7 @@ Example input:
 {
   "input_type_quantifiers.a": [],
   "input_type_quantifiers.b": ["A", "B"],
-  "input_type_quantifiers.e": ["C"],
+  "input_type_quantifiers.e": ["C"]
 }
 ```
 
@@ -4168,6 +4171,7 @@ Example output:
 {
   "test_memory.at_least_two_gb": true
 }
+```
 
 Test config:
 
@@ -4882,7 +4886,7 @@ Example input:
 {
   "hisat2.index_tar_gz": "https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz",
   "hisat2.sra_acc": "SRR3440404",
-  "hisat2.max_reads": 10,
+  "hisat2.max_reads": 10
 }
 ```
 
@@ -5525,7 +5529,7 @@ Example output:
 {
   "test_after.lines1": ["hello", "hello"],
   "test_after.lines2": ["hello hello"],
-  "test_after.lines3": ["default", "default", "default"],
+  "test_after.lines3": ["default", "default", "default"]
 }
 ```
 </p>
@@ -5912,15 +5916,15 @@ Example output:
   "nested_scatter.out_messages": [
     [
       ["Hello Mr. Bilbo, how are you?", "Hello Mr. Bilbo Baggins, how are you?"],
-      ["Goodbye Mr. Bilbo, how are you?", "Goodbye Mr. Bilbo Baggins, how are you?"],
+      ["Goodbye Mr. Bilbo, how are you?", "Goodbye Mr. Bilbo Baggins, how are you?"]
     ],
     [
       ["Hello Wizard Gandalf, how are you?", "Hello Wizard Gandalf the Grey, how are you?"],
-      ["Goodbye Wizard Gandalf, how are you?", "Goodbye Wizard Gandalf the Grey, how are you?"],
+      ["Goodbye Wizard Gandalf, how are you?", "Goodbye Wizard Gandalf the Grey, how are you?"]
     ],
     [
       ["Hello Mr. Merry, how are you?", "Hello Mr. Merry Brandybuck, how are you?"],
-      ["Goodbye Mr. Merry, how are you?", "Goodbye Mr. Merry Brandybuck, how are you?"],
+      ["Goodbye Mr. Merry, how are you?", "Goodbye Mr. Merry Brandybuck, how are you?"]
     ]
   ]
 }
@@ -6172,7 +6176,7 @@ Rounds a floating point number **down** to the next lower integer.
 Example: test_floor.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_floor {
   input {
@@ -6227,7 +6231,7 @@ Rounds a floating point number **up** to the next higher integer.
 Example: test_ceil.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_ceil {
   input {
@@ -6282,7 +6286,7 @@ Rounds a floating point number to the nearest integer based on standard rounding
 Example: test_round.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_round {
   input {
@@ -6343,7 +6347,7 @@ Returns the smaller of two values. If both values are `Int`s, the return value i
 Example: test_min.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_min {
   input {
@@ -6405,7 +6409,7 @@ Returns the larger of two values. If both values are `Int`s, the return value is
 Example: test_max.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_max {
   input {
@@ -6473,7 +6477,7 @@ Regular expressions are written using regular WDL strings, so backslash characte
 Example: test_sub.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_sub {
   String chocolike = "I like chocolate when\nit's late"
@@ -6504,7 +6508,7 @@ Example output:
   "test_sub.chocoearly": "I like chocoearly when\nit's early",
   "test_sub.chocolate": "I like chocolate when\nit's early",
   "test_sub.chocoearlylate": "I like chocearly when\nit's late",
-  "test_sub.choco4": "I 4444 chocolate 4444\nit's late"
+  "test_sub.choco4": "I 4444 chocolate 4444\nit's late",
   "test_sub.no_newline": "I like chocolate when it's late"
 }
 ```
@@ -6518,7 +6522,7 @@ Any arguments are allowed so long as they can be coerced to `String`s. For examp
 Example: change_extension_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task change_extension {
   input {
@@ -6597,7 +6601,7 @@ The optional second parameter specifies a literal suffix to remove from the file
 Example: test_basename.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_basename {
   output {
@@ -6648,7 +6652,7 @@ At least in standard Bash, glob expressions are not evaluated recursively, i.e.,
 Example: gen_files_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task gen_files {
   input {
@@ -6728,7 +6732,7 @@ If the size cannot be represented in the specified unit because the resulting va
 Example: file_sizes_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task file_sizes {
   command <<<
@@ -6785,7 +6789,7 @@ Returns the value of the executed command's standard output (stdout) as a `File`
 Example: echo_stdout.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task echo_stdout {
   command <<< echo "hello world" >>>
@@ -6830,7 +6834,7 @@ Returns the value of the executed command's standard error (stderr) as a `File`.
 Example: echo_stderr.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task echo_stderr {
   command <<< >&2 echo "hello world" >>>
@@ -6879,7 +6883,7 @@ If the file contains any internal newline characters, they are left in tact.
 Example: read_string_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task read_string {
   # this file will contain "this\nfile\nhas\nfive\nlines\n"
@@ -6928,7 +6932,7 @@ Reads a file that contains a single line containing only an integer and (optiona
 Example: read_int_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task read_int {
   command <<<
@@ -6977,7 +6981,7 @@ Reads a file that contains only a numeric value and (optional) whitespace. If th
 Example: read_float_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task read_float {
   command <<<
@@ -7029,7 +7033,7 @@ Reads a file that contains a single line containing only a boolean value and (op
 Example: read_bool_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task read_bool {
   command <<<
@@ -7083,7 +7087,7 @@ The order of the lines in the returned `Array[String]` is the order in which the
 Example: grep_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task grep {
   input {
@@ -7147,7 +7151,7 @@ Writes a file with one line for each element in a `Array[String]`. All lines are
 Example: write_lines_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task write_lines {
   input {
@@ -7216,7 +7220,7 @@ There is no requirement that the rows of the table are all the same length.
 Example: read_tsv_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task read_tsv {
   command <<<
@@ -7271,7 +7275,7 @@ Writes a tab-separated value (TSV) file with one line for each element in a `Arr
 Example: write_tsv_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task write_tsv {
   input {
@@ -7343,7 +7347,7 @@ Each pair is added to a `Map[String, String]` in order. The values in the first 
 Example: read_map_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task read_map {
   command <<<
@@ -7398,7 +7402,7 @@ Since `Map`s are ordered, the order of the lines in the file is guaranteed to be
 Example: write_map_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task write_map {
   input {
@@ -7483,7 +7487,7 @@ The `read_json` function does not have access to any WDL type information, so it
 Example: read_person.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 struct Person {
   String name
@@ -7557,7 +7561,7 @@ When serializing compound types, all nested types must be serializable or an err
 Example: write_json_fail.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow write_json_fail {
   Pair[Int, Map[Int, String]] x = (1, {2: "hello"})
@@ -7594,7 +7598,7 @@ Test config:
 Example: write_json_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task write_json {
   input {
@@ -7680,7 +7684,7 @@ The second row specifies the object member values corresponding to the names in 
 Example: read_object_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task read_object {
   command <<<
@@ -7714,7 +7718,7 @@ Example output:
   "read_object.my_obj": {
     "key_0": "value_0",
     "key_1": "value_1",
-    "key_2": "value_2",
+    "key_2": "value_2"
   }
 }
 ```
@@ -7758,7 +7762,7 @@ There are any number of additional rows, where each additional row contains the 
 Example: read_objects_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task read_objects {
   command <<<
@@ -7791,17 +7795,17 @@ Example output:
     {
       "key_0": "value_A0",
       "key_1": "value_A1",
-      "key_2": "value_A2",
+      "key_2": "value_A2"
     },
     {
       "key_0": "value_B0",
       "key_1": "value_B1",
-      "key_2": "value_B2",
+      "key_2": "value_B2"
     },
     {
       "key_0": "value_C0",
       "key_1": "value_C1",
-      "key_2": "value_C2",
+      "key_2": "value_C2"
     }
   ]
 }
@@ -7853,7 +7857,7 @@ The member values must be serializable to strings, meaning that only primitive t
 Example: write_object_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task write_object {
   input {
@@ -7875,10 +7879,10 @@ Example input:
 
 ```json
 {
-  "write_object": {
+  "write_object.obj": {
     "key_1": "value_1",
     "key_2": "value_2",
-    "key_3": "value_3",
+    "key_3": "value_3"
   }
 }
 ```
@@ -7887,7 +7891,7 @@ Example output:
 
 ```json
 {
-  "write_object": ["key_1", "value_1"]
+  "write_object.results": ["key_1", "value_1"]
 }
 ```
 </p>
@@ -7937,7 +7941,7 @@ The member values must be serializable to strings, meaning that only primitive t
 Example: write_objects_task.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task write_objects {
   input {
@@ -7963,18 +7967,18 @@ Example input:
     {
       "key_1": "value_1",
       "key_2": "value_2",
-      "key_3": "value_3",
+      "key_3": "value_3"
     },
     {
       "key_1": "value_4",
       "key_2": "value_5",
-      "key_3": "value_6",
+      "key_3": "value_6"
     },
     {
       "key_1": "value_7",
       "key_2": "value_8",
-      "key_3": "value_9",
-    },
+      "key_3": "value_9"
+    }
   ]
 }
 ```
@@ -8044,7 +8048,7 @@ Adds a prefix to each element of the input array of primitive values. Equivalent
 Example: test_prefix.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_prefix {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -8080,7 +8084,7 @@ Example output:
 Example: test_prefix_fail.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_prefix_fail {
   Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
@@ -8132,7 +8136,7 @@ Adds a suffix to each element of the input array of primitive values. Equivalent
 Example: test_suffix.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_suffix {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -8168,7 +8172,7 @@ Example output:
 Example: test_suffix_fail.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_suffix_fail {
   Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
@@ -8219,7 +8223,7 @@ Adds double-quotes (`"`) around each element of the input array of primitive val
 Example: test_quote.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_quote {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -8269,7 +8273,7 @@ Adds single-quotes (`'`) around each element of the input array of primitive val
 Example: test_squote.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_squote {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -8320,7 +8324,7 @@ Concatenates the elements of an array together into a string with the given sepa
 Example: test_sep.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_sep {
   Array[String] a = ["file_1", "file_2"]
@@ -8348,7 +8352,7 @@ Example output:
 
 ```json
 {
-  "test_sep.all_true: [true, true, true, true]
+  "test_sep.all_true": [true, true, true, true]
 }
 ```
 </p>
@@ -8378,7 +8382,7 @@ Returns the number of elements in an array as an `Int`.
 Example: test_length.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_length {
   Array[Int] xs = [1, 2, 3]
@@ -8431,7 +8435,7 @@ Creates an array of the given length containing sequential integers starting fro
 Example: test_range.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 task double {
   input {
@@ -8497,7 +8501,7 @@ Transposes a two-dimensional array according to the standard matrix transpositio
 Example: test_transpose.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_transpose {
   # input array is 2 rows * 3 columns
@@ -8550,7 +8554,7 @@ Given `Array[X]` of length `M`, and `Array[Y]` of length `N`, the cross product 
 Example: test_cross.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_cross {
   Array[Int] xs = [1, 2, 3]
@@ -8602,7 +8606,7 @@ Creates an array of `Pair`s containing the [dot product](https://en.wikipedia.or
 Example: test_zip.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_zip {
   Array[Int] xs = [1, 2, 3]
@@ -8637,7 +8641,7 @@ Example output:
 Example: test_zip_fail.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_zip_fail {
   Array[Int] xs = [1, 2, 3]
@@ -8689,7 +8693,7 @@ Creates a `Pair` of `Arrays`, the first containing the elements from the `left` 
 Example: test_unzip.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_unzip {
   Array[Pair[Int, String]] int_str_arr = [(0, "hello"), (42, "goodbye")]
@@ -8742,7 +8746,7 @@ Flattens a nested `Array[Array[X]]` by concatenating all of the element arrays, 
 Example: test_flatten.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_flatten {
   Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
@@ -8799,7 +8803,7 @@ Selects the first - i.e. left-most - non-`None` value from an `Array` of optiona
 Example: test_select_first.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_select_first {
   input {
@@ -8831,7 +8835,7 @@ Example output:
 ```json
 {
   "test_select_first.five1": 5,
-  "test_select_first.five2": 5,
+  "test_select_first.five2": 5
 }
 ```
 </p>
@@ -8842,7 +8846,7 @@ Example output:
 Example: select_first_only_none_fail.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow select_first_only_none_fail {
   Int? maybe_four_but_is_not = None
@@ -8878,7 +8882,7 @@ Test config:
 Example: select_first_empty_fail.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow select_first_empty_fail {
   select_first([])  # error! array is empty
@@ -8927,7 +8931,7 @@ Filters the input `Array` of optional values by removing all `None` values. The 
 Example: test_select_all.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_select_all {
   input {
@@ -8986,7 +8990,7 @@ Converts a `Map` into an `Array` of `Pair`s. Since `Map`s are ordered, the outpu
 Example: test_as_pairs.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_as_pairs {
   Map[String, Int] x = {"a": 1, "c": 3, "b": 2}
@@ -9046,7 +9050,7 @@ Converts an `Array` of `Pair`s into a `Map` in which the left elements of the `P
 Example: test_as_map.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_as_map {
   Array[Pair[String, Int]] x = [("a", 1), ("c", 3), ("b", 2)]
@@ -9082,7 +9086,7 @@ Example output:
 Example: test_as_map_fail.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_as_map_fail {
   # this fails with an error - the "a" key is duplicated
@@ -9132,7 +9136,7 @@ Creates an `Array` of the keys from the input `Map`, in the same order as the el
 Example: test_keys.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_keys {
   Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
@@ -9190,7 +9194,7 @@ The order of the keys in the output `Map` is the same as the order of their firs
 Example: test_collect_by_key.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow test_collect_by_key {
   Array[Pair[String, Int]] x = [("a", 1), ("b", 2), ("a", 3)]
@@ -9249,7 +9253,7 @@ Tests whether the given optional value is defined, i.e., has a non-`None` value.
 Example: is_defined.wdl
 
 ```wdl
-verison 1.1
+version 1.1
 
 workflow is_defined {
   input {
@@ -9568,7 +9572,7 @@ A `Map[X, Y]` can be converted to a `Struct` with two array members: `Array[X] k
 
 <details>
 <summary>
-Example: map_to_struct.wdl
+Example: map_to_struct2.wdl
 
 ```wdl
 version 1.1
@@ -9578,7 +9582,7 @@ struct IntStringMap {
   Array[String] values
 }
 
-workflow map_to_struct {
+workflow map_to_struct2 {
   Map[Int, String] m = {0: "a", 1: "b"}
   Array[Pair[Int, String]] int_string_pairs = as_pairs(m)
   Pair[Array[Int], Array[String]] int_string_arrays = unzip(int_string_pairs)
@@ -9608,7 +9612,7 @@ Example output:
 
 ```json
 {
-  "map_to_struct.sout": {
+  "map_to_struct2.sout": {
     "keys": [0, 1],
     "values": ["a", "b"]
   }
@@ -10330,7 +10334,7 @@ Example input:
   "serde_map_json.read_quality_scores": {
     "read1": 32,
     "read2": 41,
-    "read3": 55,
+    "read3": 55
   }
 }
 ```
@@ -10342,7 +10346,7 @@ Example output:
   "serde_map_json.ascii_values": {
     "read1": 65,
     "read2": 74,
-    "read3": 88,
+    "read3": 88
   }
 }
 ```
