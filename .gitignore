@@ -8,3 +8,4 @@ __pycache__
 *iml
 .vscode
 tests/*.wdl
+tests/test_config.json
