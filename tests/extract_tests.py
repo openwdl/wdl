@@ -41,6 +41,8 @@ def write_test_files(m: re.Match, output_dir: Path, version: str, config: list):
     else:
         config_entry = {}
 
+    config_entry["id"] = target
+    config_entry["path"] = str(wdl_file)
     if "type" not in config_entry:
         config_entry["type"] = "task" if is_task else "workflow"
     if "target" not in config_entry:

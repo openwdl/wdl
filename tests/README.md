@@ -150,12 +150,13 @@ The `test_index.json` file contains a JSON array with one element for each test,
 [
   {
     "id": "foo",
-    "file": "foo.wdl",
+    "path": "foo.wdl",
     "target": "foo",
     "type": "workflow",
     "priority": "required",
     "fail": false,
     "return_code": "*",
+    "exclude_output": [],
     "dependencies": [],
     "input": {
       "foo.x": 1

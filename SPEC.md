@@ -241,7 +241,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
     }
 
     command <<<
-      egrep '~{pattern}' '~{infile}'
+      grep -E '~{pattern}' '~{infile}'
     >>>
 
     runtime {
@@ -312,7 +312,7 @@ Along with the WDL file, the user must provide the execution engine with values 
 Running the `hello` workflow with these inputs would yield the following command line from the call to `hello_task`:
 
 ```sh
-egrep 'hello.*' 'greetings.txt'
+grep -E 'hello.*' 'greetings.txt'
 ```
 
 ### Advanced WDL Features
@@ -568,7 +568,7 @@ The following primitive types exist in WDL:
 
   task write_file_task {
     command <<<
-    echo "hello" > hello.txt
+    printf "hello" > hello.txt
     >>>
 
     output {
@@ -640,6 +640,7 @@ An optional declaration has a default initialization of `None`, which indicates 
       Boolean test_defined2 = defined(maybe_five_and_is)    # Evaluates to true
       Boolean test_is_none = maybe_five_but_is_not == None  # Evaluates to true
       Boolean test_not_none = maybe_five_but_is_not != None # Evaluates to false
+      Boolean test_non_equal = maybe_five_but_is_not == also_maybe_five_but_is_not
     }
   }
   ```
@@ -755,7 +756,7 @@ An array value can be initialized with an array literal - a comma-separated list
   </p>
 </details>
 
-An `Array` may have an empty value (i.e. an array of length zero), unless it is declared using `+`, the non-empty postfix quantifier, which represents a constraint that the `Array` value must contain one-or-more elements. For example, the following task operates on an `Array` of `File`s and it requires at least one file to function:
+An `Array` may have an empty value (i.e. an array of length zero), unless it is declared using `+`, the non-empty postfix quantifier, which represents a constraint that the `Array` value must contain one-or-more elements. For example, the following task operates on an `Array` of `String`s and it requires at least one string to function:
 
 <details>
 <summary>
@@ -766,11 +767,11 @@ version 1.1
 
 task sum {
   input {
-    Array[Int]+ ints
+    Array[String]+ ints
   }
   
   command <<<
-  echo ~{sep(" ", ints)} | awk '{tot=0; for(i=1;i<=NF;i++) tot+=$i; print tot}'
+  printf ~{sep(" ", ints)} | awk '{tot=0; for(i=1;i<=NF;i++) tot+=$i; print tot}'
   >>>
   
   output {
@@ -784,7 +785,7 @@ Example input:
 
 ```json
 {
-  "sum.ints": [0, 1, 2]
+  "sum.ints": ["0", "1", "2"]
 }
 ```
 
@@ -802,7 +803,6 @@ Recall that a type may have an optional postfix quantifier (`?`), which means th
 
 Attempting to assign an empty array literal to a non-empty `Array` declaration results in an error. Otherwise, the non-empty assertion is only checked at runtime: binding an empty array to an `Array[T]+` input or function argument is a runtime error. 
 
-
 <details>
 <summary>
 Example: non_empty_optional.wdl
@@ -817,8 +817,8 @@ workflow non_empty_optional {
     # array that must contain at least one Int? (which may have an undefined value)
     Array[Int?]+ nonempty2 = [None, 1]
     # array that can be undefined or must contain at least one Int
-    Array[Int]+? nonempty3
-    Array[Int]+? nonempty4 = [0.0]
+    Array[Int]+? nonempty3 = None
+    Array[Int]+? nonempty4 = [0]
   }
 }
 ```
@@ -897,8 +897,9 @@ version 1.1
 
 workflow test_pairs {
   Pair[Int, Array[String]] data = (5, ["hello", "goodbye"])
+
   output {
-    Int five = p.left  # evaluates to 5
+    Int five = data.left  # evaluates to 5
     String hello = data.right[0]  # evaluates to "hello"
   }
 }
@@ -1303,7 +1304,6 @@ workflow string_to_file {
   File path3 = path1
 
   output {
-    Boolean string_equals_path = path1 == path2
     Boolean paths_equal = path2 == path3
   }
 }
@@ -1320,7 +1320,6 @@ Example output:
 
 ```json
 {
-  "string_to_file.string_equals_path": true,
   "string_to_file.paths_equal": true
 }
 ```
@@ -1532,7 +1531,7 @@ task greet {
   }
   
   command <<<
-    echo "Hello ~{name}"
+    printf "Hello ~{name}"
   >>>
 
   output {
@@ -1680,7 +1679,7 @@ task expressions {
   }
 
   command <<<
-  echo -n "hello" > hello.txt
+  printf "hello" > hello.txt
   >>>
 
   output {
@@ -1890,11 +1889,13 @@ version 1.1
 
 workflow compare_coerced {
   Array[Int] i = [1, 2, 3]
-  Array[Float] f = [1.0, 2.0, 3.0]
+  Array[Float] f1 = i
+  Array[Float] f2 = [1.0, 2.0, 3.0]
 
   output {
     # Ints are automatically coerced to Floats for comparison
-    Boolean is_true = i == f
+    Boolean is_true = f1 == f2
+  }
 }
 ```
 </summary>
@@ -1935,10 +1936,10 @@ workflow compare_optionals {
     # equal values of the same type are equal even if one is optional
     Boolean is_true1 = i == j
     # k is undefined (None), and so is only equal to None
-    Boolean is_true2 k == None
+    Boolean is_true2 = k == None
     # these comparisons are valid and evaluate to false
     Boolean is_false1 = i == k
-    Boolean is_false2 j == k
+    Boolean is_false2 = j == k
   }
 }
 ```
@@ -2003,8 +2004,12 @@ struct MyType {
 }
 
 task foo {
+  command <<<
+  printf "bar"
+  >>>
+
   output {
-    String bar = "bar"
+    String bar = read_string(stdout())
   }
 }
 
@@ -2126,6 +2131,7 @@ task mem {
   input {
     Array[String] array
   }
+
   Int array_length = length(array)
   # choose how much memory to use for a task
   String memory = if array_length > 100 then "2GB" else "1GB"
@@ -2143,11 +2149,11 @@ workflow ternary {
     Boolean morning
   }
 
-  call mem { input: ["x", "y", "z"] }
+  call mem { input: array = ["x", "y", "z"] }
 
   output {
     # Choose whether to say "good morning" or "good afternoon"
-    String greeting = "good ~{if morning then "morning" else "afternoon}"
+    String greeting = "good ~{if morning then "morning" else "afternoon"}"
   }
 }
 ```
@@ -2193,12 +2199,12 @@ workflow placeholders {
     Int i = 3
     String start
     String end
-    String input
+    String instr
   }
 
   output {
     String s = "~{1 + i}"
-    String command = "grep '~{start}...~{end}' ~{input}"
+    String cmd = "grep '~{start}...~{end}' ~{instr}"
   }
 }
 ```
@@ -2218,7 +2224,7 @@ Example output:
 
 ```json
 {
-  "placeholders.command": "grep 'h...o' hello"
+  "placeholders.cmd": "grep 'h...o' hello"
 }
 ```
 </p>
@@ -2348,7 +2354,7 @@ version 1.1
 
 workflow concat_optional {
   input {
-    String saluation = "hello"
+    String salutation = "hello"
     String? name1
     String? name2 = "Fred"
   }
@@ -2394,20 +2400,20 @@ version 1.1
 
 task flags {
   input {
-    File input
+    File infile
     String pattern
     Int? max_matches
   }
 
   command <<<
     # If `max_matches` is `None`, the command
-    # grep -m ~{max_matches} ~{pattern} ~{input}
+    # grep -m ~{max_matches} ~{pattern} ~{infile}
     # would evaluate to
-    # 'grep -m <pattern> <input>', which would be an error.
+    # 'grep -m <pattern> <infile>', which would be an error.
 
     # Instead, make both the flag and the value conditional on `max_matches`
     # being defined.
-    grep ~{"-m " + max_matches} ~{pattern} ~{input} | wc -l
+    grep ~{"-m " + max_matches} ~{pattern} ~{infile} | wc -l
   >>>
 
   output {
@@ -2421,7 +2427,7 @@ Example input:
 
 ```json
 {
-  "flags.input": "greetings.txt",
+  "flags.infile": "greetings.txt",
   "flags.pattern": "world"
 }
 ```
@@ -2522,12 +2528,12 @@ The `true` and `false` options can be replaced with the use of an if-then-else e
 
 <details>
 <summary>
-Example: true_false_ternary.wdl
+Example: true_false_ternary_task.wdl
 
 ```wdl
 version 1.1
 
-workflow true_false_ternary {
+task true_false_ternary {
   input {
     String message
     Boolean newline
@@ -2535,8 +2541,8 @@ workflow true_false_ternary {
 
   command <<<
     # these two commands have the same result
-    echo ~{true="-n" false="" newline} "~{message}" > result1
-    echo ~{if newline then "-n" else ""} "~{message}" > result2
+    printf "~{message}~{true="\n" false="" newline}" > result1
+    printf "~{message}~{if newline then "\n" else ""}" > result2
   >>>
 
   output {
@@ -2589,9 +2595,9 @@ task default_option {
   }
 
   command <<<
-    echo ~{default="foobar" s} > result1
-    echo ~{if defined(s) then "~{select_first([s])}" else "foobar"} > result2
-    echo ~{select_first([s, "foobar"])} > result3
+    printf ~{default="foobar" s} > result1
+    printf ~{if defined(s) then "~{select_first([s])}" else "foobar"} > result2
+    printf ~{select_first([s, "foobar"])} > result3
   >>>
   
   output {
@@ -2642,7 +2648,7 @@ task missing_file {
   File f = "hello.txt"
 
   command <<<
-  echo "~{sep(","), read_lines(f)}"
+  printf "~{sep(","), read_lines(f)}"
   >>>
 }
 ```
@@ -2725,15 +2731,15 @@ task greet_person {
     Person person
   }
 
-  Array[Pair[String, File]] assay_array = as_pairs(assay_data)
+  Array[Pair[String, File]] assay_array = as_pairs(person.assay_data)
 
   command <<<
-  echo "Hello ~{person.name.first}! You have ~{length(assay_array)} test result(s) available."
+  printf "Hello ~{person.name.first}! You have ~{length(assay_array)} test result(s) available.\n"
 
   if ~{defined(person.income)}; then
     if [ "~{select_first([person.income]).amount}" -gt 1000 ]; then
       currency="~{select_first([select_first([person.income]).currency, "USD"])}"
-      echo "Please transfer $currency 500 to continue"
+      printf "Please transfer $currency 500 to continue"
     fi
   fi
   >>>
@@ -2863,7 +2869,7 @@ Example: import_structs.wdl
 ```wdl
 version 1.1
 
-import "person_struct.wdl"
+import "person_struct_task.wdl"
   alias Person as Patient
   alias Income as PatientIncome
 
@@ -2900,10 +2906,15 @@ task calculate_bill {
     }
   }
   
-  Income income = select_first([patient.income, average_income])
+  PatientIncome income = select_first([patient.income, average_income])
+  String currency = select_first([income.currency, "USD"])
   Float hourly_income = if income.period == "hourly" then income.amount else income.amount / 2000
-  Float hourly_income_usd = if income.currency == "USD" then amount else amount * 100
+  Float hourly_income_usd = if currency == "USD" then hourly_income else hourly_income * 100
 
+  command <<<
+  printf "The patient makes $~{hourly_income_usd} per hour\n"
+  >>>
+  
   output {
     Float amount = hourly_income_usd * 5
   }
@@ -3047,6 +3058,15 @@ task task_inputs {
     String s = "hello"  # an input parameter with a default value
     File? f             # an optional input parameter
   }
+
+  command <<<
+  for i in 1..~{i}; do
+    printf "~{s}\n"
+  done
+  if ~{defined(f)}; then
+    cat ~{f}
+  fi
+  >>>
 }
 ```
 </summary>
@@ -3143,8 +3163,8 @@ task input_type_quantifiers {
     ~{if defined(c) then 
     "cat ~{write_lines(select_first([c]))} >> result"
     else ""}
-    ~{if defined(d) then 
-    "cat ~{write_lines(select_first([d]))} >> result"
+    ~{if defined(e) then 
+    "cat ~{write_lines(select_first([e]))} >> result"
     else ""}
   >>>
 
@@ -3232,13 +3252,13 @@ version 1.1
 task say_hello {
   input {
     String name
-    String? saluation = "hello"
+    String? salutation = "hello"
   }
 
   command <<< >>>
 
   output {
-    String greeting = if defined(saluation) then "~{saluation} ~{name}" else name
+    String greeting = if defined(salutation) then "~{salutation} ~{name}" else name
   }
 }
 
@@ -3263,7 +3283,7 @@ workflow optional_with_default {
   }
 
   output {
-    String greeting = select_first([hello1, hello2])
+    String greeting = select_first([hello1, hello2]).greeting
   }
 }
 ```
@@ -3443,8 +3463,8 @@ task test_placeholders {
   command <<<
     # The `read_lines` function reads the lines from a file into an
     # array. The `sep` function concatenates the lines with a space
-    # (" ") delimiter. The resulting string is then echoed to stdout.
-    echo ~{sep(" ", read_lines(infile))}
+    # (" ") delimiter. The resulting string is then printed to stdout.
+    printf ~{sep(" ", read_lines(infile))}
   >>>
   
   output {
@@ -3494,9 +3514,9 @@ task bash_variables {
     # store value of WDL declaration "str" to Bash variable "s"
     s=${str}
     # echo the string referenced by Bash variable "s"
-    echo $s
+    printf $s
     # this causes an error since "s" is not a WDL declaration
-    echo ${s}
+    printf ${s}
   }
 }
 ```
@@ -3533,7 +3553,7 @@ task bash_comment {
   # String greeting = "hello"
 
   command <<<
-  # echo "~{greeting} John!"
+  # printf "~{greeting} John!"
   >>>
 }
 ```
@@ -3573,7 +3593,7 @@ task python_strip {
 
   command<<<
   python <<CODE
-    with open("~{in}") as fp:
+    with open("~{infile}") as fp:
       for line in fp:
         if not line.startswith('#'):
           print(line.strip())
@@ -3639,7 +3659,7 @@ task outputs {
   }
 
   command <<<
-  echo ~{t} > threshold.txt
+  printf ~{t} > threshold.txt
   touch a.csv b.csv
   >>>
   
@@ -3706,8 +3726,8 @@ task file_output {
   }
 
   command <<<
-    echo "hello" > ~{prefix}.hello
-    echo "goodbye" > ~{prefix}.goodbye
+    printf "hello" > ~{prefix}.hello
+    printf "goodbye" > ~{prefix}.goodbye
   >>>
 
   output {
@@ -3751,7 +3771,7 @@ task glob {
 
   command <<<
   for i in 1..~{num_files}; do
-    echo ~{i} > file_~{i}.txt
+    printf ${i} > file_${i}.txt
   done
   >>>
 
@@ -3801,7 +3821,7 @@ version 1.1
 task relative_and_absolute {
   command <<<
   mkdir -p my/path/to
-  echo -n "something" > my/path/to/something.txt
+  printf "something" > my/path/to/something.txt
   >>>
 
   output {
@@ -3854,9 +3874,9 @@ task optional_output {
     Boolean make_example2
   }
   command <<<
-    echo -n "1" > example1.txt
+    printf "1" > example1.txt
     if ~{make_example2}; do
-      echo -n "2" > example2.txt
+      printf "2" > example2.txt
     fi
   >>>
   output {
@@ -4015,7 +4035,7 @@ Example: test_containers.wdl
 version 1.1
 
 task single_image_task {
-  command <<< echo "hello" >>>
+  command <<< printf "hello" >>>
 
   output {
     String greeting = read_string(stdout())
@@ -4027,7 +4047,7 @@ task single_image_task {
 }
 
 task multi_image_task {
-  command <<< echo "hello" >>>
+  command <<< printf "hello" >>>
 
   output {
     String greeting = read_string(stdout())
@@ -4152,7 +4172,7 @@ task test_memory {
     Boolean at_least_two_gb = read_int(stdout()) >= (2 * 1024 * 1024 * 1024)
   }
 
-  requirements {
+  runtime {
     memory: "2 GiB"
   }
 }
@@ -4205,10 +4225,10 @@ task test_gpu {
   >>>
 
   output {
-    Int at_least_one_gpu = read_int(stdout()) >= 1
+    Boolean at_least_one_gpu = read_int(stdout()) >= 1
   }
   
-  requirements {
+  runtime {
     gpu: true
   }
 }
@@ -4273,7 +4293,7 @@ task one_mount_point {
     Boolean at_least_ten_gb = read_int(stdout()) >= (10 * 1024 * 1024 * 1024)
   }
 
-  requirements {
+  runtime {
     disks: "/mnt/outputs 10 GiB"
   }
 }
@@ -4322,7 +4342,7 @@ task multi_mount_points {
     Boolean at_least_two_gb = read_int(stdout()) >= (2 * 1024 * 1024 * 1024)
   }
 
-  requirements {
+  runtime {
   	# The first value will be mounted at the execution root
     disks: ["2", "/mnt/outputs 4 GiB", "/mnt/tmp 1 GiB"]
   }
@@ -4396,7 +4416,7 @@ task single_return_code {
   exit 1
   >>>
 
-  requirements {
+  runtime {
     return_codes: 1
   }
 }
@@ -4437,7 +4457,7 @@ task multi_return_code {
   exit 42
   >>>
 
-  requirements {
+  runtime {
     return_codes: [1, 2, 5, 10]
   }
 }
@@ -4479,7 +4499,7 @@ task multi_return_code_task {
   exit 42
   >>>
 
-  requirements {
+  runtime {
     return_codes: "*"
   }
 }
@@ -4534,17 +4554,14 @@ task test_hints {
     Int num_lines = read_int(stdout())
   }
 
-  requirements {
+  runtime {
     container: "ubuntu:latest"
-  }
-
-  hints {
     maxMemory: "36 GB"
     maxCpu: 24
     shortTask: true
     localizationOptional: false
-    inputs: {
-      foo: { 
+    inputs: object {
+      foo: object { 
         localizationOptional: true
       }
     }
@@ -4595,7 +4612,7 @@ A `Boolean` value, for which `true` indicates that, if possible, any `File` inpu
 
 * Allowed type: `object`
 
-Provides input-specific hints in the form of a meta object. Each key within this hint should refer to an actual input defined for the current task. A key may also refer to a specific member of a struct/object input.
+Provides input-specific hints in the form of an object. Each key within this hint should refer to an actual input defined for the current task. A key may also refer to a specific member of a struct/object input.
 
 <details>
 <summary>
@@ -4615,13 +4632,19 @@ task input_hint {
   }
 
   command <<<
-  grep "WDL" ~{cv}
+  if ~{defined(person.cv)}; then
+    grep "WDL" ~{person.cv}
+  fi
   >>>
+  
+  output {
+    Array[String] experience = read_lines(stdout())
+  }
 
-  hints {
-    inputs: {
-      person: {
-        cv: {
+  runtime {
+    inputs: object {
+      person: object {
+        cv: object {
           localizationOptional: true
         }
       }
@@ -4845,7 +4868,7 @@ task hisat2 {
     Float disk_size_gb = 100
   }
 
-  String index_id = basename(index, ".tar.gz)
+  String index_id = basename(index, ".tar.gz")
 
   command <<<
     mkdir index
@@ -4936,7 +4959,7 @@ task gatk_haplotype_caller {
   
   String prefix = select_first([sample_id, basename(bam, ".bam")])
   Float disk_size_gb = select_first([
-    disks_gb, 10 + size([bam, reference_fasta], "GB")
+    disks_gb, 10 + size([bam, reference.fasta], "GB")
   ])
 
   command <<<
@@ -5093,6 +5116,8 @@ task double {
     Int int_in
   }
 
+  command <<< >>>
+
   output {
     Int out = int_in * 2
   }
@@ -5218,7 +5243,7 @@ task echo {
   }
   
   command <<<
-  echo -n ~{msg}
+  printf ~{msg}
   >>>
   
   output {
@@ -5280,7 +5305,6 @@ Example: other.wdl
 ```wdl
 version 1.1
 
-```wdl
 task foobar {
   input {
     File infile
@@ -5408,7 +5432,7 @@ task repeat {
   
   command <<<
   for i in 1..~{i}; do
-    echo ~{select_first([opt_string, "default"])}
+    printf ~{select_first([opt_string, "default"])}
   done
   >>>
 
@@ -5493,11 +5517,11 @@ import "call_example.wdl" as lib
 
 workflow test_after {
   # Call repeat
-  call repeat { input: i = 2, opt_string = "hello" }
+  call lib.repeat { input: i = 2, opt_string = "hello" }
 
   # Call `repeat` again with the output from the first call.
   # This call will wait until `repeat` is finished.
-  call repeat as repeat2 {
+  call lib.repeat as repeat2 {
     input:
       i = 1,
       opt_string = sep(" ", repeat.lines)
@@ -5506,7 +5530,7 @@ workflow test_after {
   # Call `repeat` again. This call does not depend on the output 
   # from an earlier call, but we specify explicitly that this 
   # task must wait until `repeat` is complete before executing.
-  call repeat as repeat3 after repeat { input: i = 3 }
+  call lib.repeat as repeat3 after repeat { input: i = 3 }
 
   output {
     Array[String] lines1 = repeat.lines
@@ -5549,7 +5573,7 @@ task greet {
     String greeting
   }
 
-  command <<< echo "~{greeting}, nice to meet you!" >>>
+  command <<< printf "~{greeting}, nice to meet you!" >>>
 
   output {
     # expose the input to s as an output
@@ -5614,7 +5638,7 @@ task inc {
   }
 
   command <<<
-  echo -n ~{y + 1}
+  printf ~{y + 1}
   >>>
 
   output {
@@ -5652,7 +5676,7 @@ workflow allow_nested {
 
   scatter (i in my_ints) {
     call inc {
-      input: y=i, ref=ref_file
+      input: y=i, ref_file=ref_file
     }
   }
 
@@ -5761,7 +5785,7 @@ task say_hello {
   }
 
   command <<<
-  echo -n "~{greeting}, how are you?"
+  printf "~{greeting}, how are you?"
   >>>
 
   output {
@@ -5833,8 +5857,12 @@ task make_name {
     String last
   }
 
+  command <<<
+  printf "~{first} ~{last}"
+  >>>
+
   output {
-    String name = "~{first} ~{last}"
+    String name = read_string(stdout())
   }
 }
 
@@ -5868,11 +5896,11 @@ workflow nested_scatter {
     scatter (salutation in salutations) {
       # `names`, and `salutation` are all accessible here
       String short_greeting = "~{salutation} ~{honorific} ~{names.left}"
-      call say_hello { input: greeting = greeting }
+      call scat.say_hello { input: greeting = short_greeting }
 
       # the output of `make_name` is also accessible
       String long_greeting = "~{salutation} ~{honorific} ~{make_name.name}"
-      call say_hello as say_hello_long { input: greeting = greeting }
+      call scat.say_hello as say_hello_long { input: greeting = long_greeting }
 
       # within the scatter body, when we access the output of the
       # say_hello call, we get a String
@@ -5958,6 +5986,8 @@ task gt_three {
     Int i
   }
 
+  command <<< >>>
+
   output {
     Boolean valid = i > 3
   }
@@ -5987,7 +6017,7 @@ workflow test_conditional {
   # Here there is an implicit `Array[Int?]? result` declaration, since
   # `result` is inside a conditional inside a scatter inside a conditional.
   # We can "unwrap" the other optional using select_first.
-  Array[Int?] maybe_results = select_first([i_out, []])
+  Array[Int?] maybe_results = select_first([result, []])
 
   output {
     Int? j_out = j
@@ -6036,7 +6066,7 @@ task greet {
   }
 
   command <<<
-  echo -n "Good ~{time} buddy!"
+  printf "Good ~{time} buddy!"
   >>>
 
   output {
@@ -6046,16 +6076,16 @@ task greet {
 
 workflow if_else {
   input {
-    Boolean morning = false
+    Boolean is_morning = false
   }
   
   # the body *is not* evaluated since 'b' is false
-  if (morning) {
+  if (is_morning) {
     call greet as morning { time = "morning" }
   }
 
   # the body *is* evaluated since !b is true
-  if (!morning) {
+  if (!is_morning) {
     call greet as afternoon { time = "afternoon" }
   }
 
@@ -6185,10 +6215,10 @@ workflow test_floor {
 
   Int i2 = i1 - 1
   Float f1 = i1
-  Float f2 = i - 0.1
+  Float f2 = i1 - 0.1
   
   output {
-    Boolean all_true = [floor(f1) == i1, floor(f2) == i2]
+    Array[Boolean] all_true = [floor(f1) == i1, floor(f2) == i2]
   }
 }
 ```
@@ -6240,10 +6270,10 @@ workflow test_ceil {
 
   Int i2 = i1 + 1
   Float f1 = i1
-  Float f2 = i + 0.1
+  Float f2 = i1 + 0.1
   
   output {
-    Boolean all_true = [ceil(f1) == i1, ceil(f2) == i2]
+    Array[Boolean] all_true = [ceil(f1) == i1, ceil(f2) == i2]
   }
 }
 ```
@@ -6298,7 +6328,7 @@ workflow test_round {
   Float f2 = i1 + 0.50
   
   output {
-    Boolean all_true = [round(f1) == i1, round(f2) == i2]
+    Array[Boolean] all_true = [round(f1) == i1, round(f2) == i2]
   }
 }
 ```
@@ -6488,7 +6518,7 @@ workflow test_sub {
     String chocolate = sub(chocolike, "late$", "early") # I like chocolate when\nit's early
     String chocoearlylate = sub(chocolike, "[^ ]late", "early") # I like chocearly when\nit's late
     String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate 4444\nit's late
-    String no_newline = sub(chocolike, "\\n", " ") "I like chocolate when it's late"
+    String no_newline = sub(chocolike, "\\n", " ") # "I like chocolate when it's late"
   }
 }
 ```
@@ -6530,12 +6560,13 @@ task change_extension {
   }
 
   command <<<
-    echo "data" > ~{prefix}.data
-    echo "index" > ~{prefix}.index
+    printf "data" > ~{prefix}.data
+    printf "index" > ~{prefix}.index
   >>>
 
   output {
-    String data = read_string("~{prefix}.data")
+    File data_file = "~{prefix}.data"
+    String data = read_string(data_file)
     String index = read_string(sub(data_file, "\\.data$", ".index"))
   }
 
@@ -6560,6 +6591,14 @@ Example output:
 {
   "change_extension.data": "data",
   "change_extension.index": "index"
+}
+```
+
+Test config:
+
+```json
+{
+  "exclude_output": ["data_file"]
 }
 ```
 </p>
@@ -6605,7 +6644,7 @@ version 1.1
 
 workflow test_basename {
   output {
-    Boolean is_true1 = basename("/path/to/file.txt") == "file.txt"`
+    Boolean is_true1 = basename("/path/to/file.txt") == "file.txt"
     Boolean is_true2 = basename("/path/to/file.txt", ".txt") == "file"
   }
 }
@@ -6661,15 +6700,14 @@ task gen_files {
 
   command <<<
     for i in 1..~{num_files}; do
-      echo ~{i} > a_file_~{i}.txt
+      printf ${i} > a_file_${i}.txt
     done
     mkdir a_dir
     touch a_dir/a_inner.txt
   >>>
 
-  Array[File] files = glob("a_*")
-
   output {  
+    Array[File] files = glob("a_*")
     Int glob_len = length(files)
   }
 }
@@ -6689,6 +6727,14 @@ Example output:
 ```json
 {
   "gen_files.glob_len": 2
+}
+```
+
+Test config:
+
+```json
+{
+  "exclude_output": ["files"]
 }
 ```
 </p>
@@ -6736,7 +6782,7 @@ version 1.1
 
 task file_sizes {
   command <<<
-    echo "this file is 22 bytes" > created_file
+    printf "this file is 22 bytes\n" > created_file
   >>>
 
   File? missing_file = None
@@ -6792,7 +6838,7 @@ Example: echo_stdout.wdl
 version 1.1
 
 task echo_stdout {
-  command <<< echo "hello world" >>>
+  command <<< printf "hello world" >>>
 
   output {
     File message = read_string(stdout())
@@ -6837,7 +6883,7 @@ Example: echo_stderr.wdl
 version 1.1
 
 task echo_stderr {
-  command <<< >&2 echo "hello world" >>>
+  command <<< >&2 printf "hello world" >>>
 
   output {
     File message = read_string(stderr())
@@ -6887,11 +6933,15 @@ version 1.1
 
 task read_string {
   # this file will contain "this\nfile\nhas\nfive\nlines\n"
-  File f = write_lines(["this", "file", "has", "file", "lines"])
-
+  File f = write_lines(["this", "file", "has", "five", "lines"])
+  
+  command <<<
+  cat ~{f}
+  >>>
+  
   output {
     # s will contain "this\nfile\nhas\nfive\nlines"
-    String s = read_string(f)
+    String s = read_string(stdout())
   }
 }
 ```
@@ -6936,7 +6986,7 @@ version 1.1
 
 task read_int {
   command <<<
-  echo "  1  \n" > int_file
+  printf "  1  \n" > int_file
   >>>
 
   output {
@@ -6985,8 +7035,8 @@ version 1.1
 
 task read_float {
   command <<<
-  echo "  1  \n" > int_file
-  echo "  2.0  \n" > float_file
+  printf "  1  \n" > int_file
+  printf "  2.0  \n" > float_file
   >>>
 
   output {
@@ -7037,8 +7087,8 @@ version 1.1
 
 task read_bool {
   command <<<
-  echo "  true  \n" > true_file
-  echo "  FALSE  \n" > false_file
+  printf "  true  \n" > true_file
+  printf "  FALSE  \n" > false_file
   >>>
 
   output {
@@ -7224,9 +7274,11 @@ version 1.1
 
 task read_tsv {
   command <<<
-    echo "row1\tvalue1" >> data.tsv
-    echo "row2\tvalue2" >> data.tsv
-    echo "row3\tvalue3" >> data.tsv
+    {
+      printf "row1\tvalue1\n"
+      printf "row2\tvalue2\n"
+      printf "row3\tvalue3\n"
+    } >> data.tsv
   >>>
 
   output {
@@ -7351,8 +7403,8 @@ version 1.1
 
 task read_map {
   command <<<
-    echo "key1\tvalue1" >> map_file
-    echo "key2\tvalue2" >> map_file
+    printf "key1\tvalue1\n" >> map_file
+    printf "key2\tvalue2\n" >> map_file
   >>>
   
   output {
@@ -8280,7 +8332,7 @@ workflow test_squote {
   Array[Int] env2 = [1, 2, 3]
   
   output {
-    Array[String] env1_quoted =  squote(env)
+    Array[String] env1_quoted =  squote(env1)
     Array[String] env2_quoted = squote(env2)
   }
 }
@@ -8331,9 +8383,9 @@ workflow test_sep {
 
   output {
     # these all evaluate to true
-    Boolean all_true = [
+    Array[Boolean] all_true = [
       sep(' ', prefix('-i ', a)) == "-i file_1 -i file_2",
-      sep("", ["a, "b", "c"]) == "abc",
+      sep("", ["a", "b", "c"]) == "abc",
       sep(' ', ["a", "b", "c"]) == "a b c",
       sep(',', [1]) == "1"
     ]
@@ -8441,6 +8493,8 @@ task double {
   input {
     Int n
   }
+
+  command <<< >>>
 
   output {
     Int d = n * n
@@ -8698,10 +8752,11 @@ version 1.1
 workflow test_unzip {
   Array[Pair[Int, String]] int_str_arr = [(0, "hello"), (42, "goodbye")]
   Map[String, Int] m = {"a": 0, "b": 1, "c": 2}
-  Pair[Array[X], Pair[Array[Y]]] keys_and_values = unzip(as_pairs(map))
-
+  Pair[Array[String], Array[Int]] keys_and_values = unzip(as_pairs(m))
+  Pair[Array[Int], Array[String]] expected1 = ([0, 42], ["hello", "goodbye"])
+  
   output {
-    Boolean is_true1 = unzip(int_str_arr) == ([0, 42], ["hello", "goodbye"])
+    Boolean is_true1 = unzip(int_str_arr) == expected1
     Boolean is_true2 = keys_and_values.left == ["a", "b", "c"]
     Boolean is_true3 = keys_and_values.right == [0, 1, 2]
   }
@@ -8749,17 +8804,21 @@ Example: test_flatten.wdl
 version 1.1
 
 workflow test_flatten {
-  Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
-  Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
-  Array[Array[Pair[Float, String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
-  Map[Float, String] f2s = as_map(flatten(aap2D))
-  Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+  input {
+    Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
+    Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
+    Array[Array[Pair[Float, String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
+    Map[Float, String] f2s = as_map(flatten(aap2D))
+    Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+    Array[File] expected2D = ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
+    Array[Array[Int]] expected3D = [[1, 2], [3, 4], [5, 6], [7, 8]]
+  }
 
   output {
     Boolean is_true1 = flatten(ai2D) == [1, 2, 3, 1, 21, 22]
-    Boolean is_true2 = flatten(af2D) == ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
+    Boolean is_true2 = flatten(af2D) == expected2D
     Boolean is_true3 = flatten(aap2D) == [(0.1, "mouse"), (3, "cat"), (15, "dog")]
-    Boolean is_true4 = flatten(ai3D) == [[1, 2], [3, 4], [5, 6], [7, 8]]
+    Boolean is_true4 = flatten(ai3D) == expected3D
   }
 }
 ```
@@ -8817,9 +8876,6 @@ workflow test_select_first {
     Int five1 = select_first([maybe_five, maybe_four_but_is_not, maybe_three])
     Int five2 = select_first([maybe_four_but_is_not, maybe_five, maybe_three])
   }
-
-  select_first([maybe_four_but_is_not])  # error! array contains only None values
-  select_first([])  # error! array is empty
 }
 ```
 </summary>
@@ -8995,7 +9051,10 @@ version 1.1
 workflow test_as_pairs {
   Map[String, Int] x = {"a": 1, "c": 3, "b": 2}
   Map[String, Pair[File, File]] y = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
-  
+  Array[Pair[String, Int]] expected1 = [("a", 1), ("c", 3), ("b", 2)]
+  Array[Pair[File, String]] expected2 = [("a.bam", "a"), ("b.bam", "b")]
+  Map[File, String] expected3 = {"a.bam": "a", "b.bam": "b"}
+
   scatter (item in as_pairs(y)) {
     String s = item.left
     Pair[File, File] files = item.right
@@ -9005,9 +9064,9 @@ workflow test_as_pairs {
   Map[File, String] bam_to_name = as_map(bams)
 
   output {
-    Boolean is_true1 = as_pairs(x) == [("a", 1), ("c", 3), ("b", 2)]
-    Boolean is_true2 = bams == [("a.bam", "a"), ("b.bam", "b")]
-    Boolean is_true3 = bam_to_name == {"a.bam": "a", "b.bam": "b"}
+    Boolean is_true1 = as_pairs(x) == expected1
+    Boolean is_true2 = bams == expected2
+    Boolean is_true3 = bam_to_name == expected3
   }
 }
 ```
@@ -9053,12 +9112,16 @@ Example: test_as_map.wdl
 version 1.1
 
 workflow test_as_map {
-  Array[Pair[String, Int]] x = [("a", 1), ("c", 3), ("b", 2)]
-  Array[Pair[String, Pair[File,File]]] y = [("a", ("a.bam", "a.bai")), ("b", ("b.bam", "b.bai"))]
+  input {
+    Array[Pair[String, Int]] x = [("a", 1), ("c", 3), ("b", 2)]
+    Array[Pair[String, Pair[File,File]]] y = [("a", ("a.bam", "a.bai")), ("b", ("b.bam", "b.bai"))]
+    Map[String, Int] expected1 = {"a": 1, "c": 3, "b": 2}
+    Map[String, Pair[File, File]] expected2 = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+  }
 
   output {
-    Boolean is_true1 = as_map(x) == {"a": 1, "c": 3, "b": 2}
-    Boolean is_true2 = as_map(y) == {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+    Boolean is_true1 = as_map(x) == expected1
+    Boolean is_true2 = as_map(y) == expected2
   }
 }
 ```
@@ -9139,10 +9202,15 @@ Example: test_keys.wdl
 version 1.1
 
 workflow test_keys {
-  Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
-  Map[String, Pair[File, File]] str_to_files = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+  input {
+    Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
+    Map[String, Pair[File, File]] str_to_files = {
+      "a": ("a.bam", "a.bai"), 
+      "b": ("b.bam", "b.bai")
+    }
+  }
 
-  scatter (item in str_to_files) {
+  scatter (item in as_pairs(str_to_files)) {
     String key = item.left
   }
 
@@ -9197,19 +9265,23 @@ Example: test_collect_by_key.wdl
 version 1.1
 
 workflow test_collect_by_key {
-  Array[Pair[String, Int]] x = [("a", 1), ("b", 2), ("a", 3)]
-  Array[Pair[String, Pair[File, File]]] y = [
-    ("a", ("a_1.bam", "a_1.bai")), 
-    ("b", ("b.bam", "b.bai")), 
-    ("a", ("a_2.bam", "a_2.bai"))
-  ]
-
-  output {
-    Boolean is_true1 = collect_by_key(x) == {"a": [1, 3], "b": [2]}
-    Boolean is_true2 = collect_by_key(y) == {
+  input {
+    Array[Pair[String, Int]] x = [("a", 1), ("b", 2), ("a", 3)]
+    Array[Pair[String, Pair[File, File]]] y = [
+      ("a", ("a_1.bam", "a_1.bai")), 
+      ("b", ("b.bam", "b.bai")), 
+      ("a", ("a_2.bam", "a_2.bai"))
+    ]
+    Map[String, Array[Int]] expected1 = {"a": [1, 3], "b": [2]}
+    Map[String, Array[Pair[File, File]]] expected2 = {
       "a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], 
       "b": [("b.bam", "b.bai")]
     }
+  }
+
+  output {
+    Boolean is_true1 = collect_by_key(x) == expected1
+    Boolean is_true2 = collect_by_key(y) == expected2
   }
 }
 ```
@@ -9260,7 +9332,7 @@ workflow is_defined {
     String? name
   }
 
-  if (defined(s)) {
+  if (defined(name)) {
     call say_hello { input: name = select_first([name]) }
   }
 
@@ -9274,7 +9346,7 @@ task say_hello {
     String name
   }
 
-  command <<< echo "Hello ~{name}" >>>
+  command <<< printf "Hello ~{name}" >>>
 
   output {
     String greeting = read_string(stdout())
@@ -9487,7 +9559,7 @@ workflow pair_to_array {
   Pair[Int, Int] p2 = (a[0], a[1])
 
   output {
-    Array[int] aout = a
+    Array[Int] aout = a
   }
 }
 ```
@@ -9521,18 +9593,18 @@ Example: pair_to_struct.wdl
 version 1.1
 
 struct StringIntPair {
-  String left
-  Int right
+  String l
+  Int r
 }
 
 workflow pair_to_struct {
   Pair[String, Int] p = ("hello", 42)
   StringIntPair s = StringIntPair {
-    left: p.left,
-    right: p.right
+    l: p.left,
+    r: p.right
   }
   # We can convert back to Pair as needed
-  Pair[String, Int] p2 = (s.left, s.right)
+  Pair[String, Int] p2 = (s.l, s.r)
 
   output {
     StringIntPair sout = s
@@ -9552,8 +9624,8 @@ Example output:
 ```json
 {
   "pair_to_struct.sout": {
-    "left": "hello",
-    "right": 42
+    "l": "hello",
+    "r": 42
   }
 }
 ```
@@ -9593,10 +9665,11 @@ workflow map_to_struct2 {
   }
 
   # We can convert back to Map
-  Map[Int, String] m2 = as_map(zip(i.keys, i.values))
+  Map[Int, String] m2 = as_map(zip(s.keys, s.values))
   
   output {
     IntStringMap sout = s
+    Boolean is_equal = m == m2
   }
 }
 ```
@@ -9615,7 +9688,8 @@ Example output:
   "map_to_struct2.sout": {
     "keys": [0, 1],
     "values": ["a", "b"]
-  }
+  },
+  "map_to_struct2.is_equal": true
 }
 ```
 </p>
@@ -9636,7 +9710,7 @@ workflow map_to_array {
   Map[Int, Int] m = {0: 7, 1: 42}
   Array[Pair[Int, Int]] int_int_pairs = as_pairs(m)
 
-  for (p in int_string_pairs) {
+  scatter (p in int_int_pairs) {
     Array[Int] a = [p.left, p.right]
   }
 
@@ -9697,8 +9771,8 @@ task read_write_primitives {
   }
 
   command <<<
-  echo ~{s} > str_file
-  echo ~{i} > int_file
+  printf ~{s} > str_file
+  printf ~{i} > int_file
   >>>
 
   output {
@@ -9838,13 +9912,13 @@ version 1.1
 
 task serde_array_lines {
   input {
-    File input
+    File infile
     Array[String] patterns
   }
 
   command <<<
-  while read pattern; do
-    grep $pattern ~{input} | wc -l
+  while read -r pattern; do
+    grep -c "$pattern" ~{infile}
   done < ~{write_lines(patterns)}
   >>>
 
@@ -9859,7 +9933,7 @@ Example input:
 
 ```json
 {
-  "serde_array_lines.input": "greetings.txt",
+  "serde_array_lines.infile": "greetings.txt",
   "serde_array_lines.patterns": ["hello", "world"]
 }
 ```
@@ -10052,7 +10126,7 @@ task serde_int_strings {
     Pair[String, String] int_strings
   }
 
-  Array[String] pair_array = [pair.left, pair.right]
+  Array[String] pair_array = [int_strings.left, int_strings.right]
 
   command <<<
   cat ~{write_lines(pair_array)}
@@ -10141,14 +10215,14 @@ task grep2 {
   }
 
   Pair[Array[String], Array[String]] opts_and_values = unzip(as_pairs(args))
-  Int n = length(opts_and_values[0])
+  Int n = length(opts_and_values.left)
 
   command <<<
-  opts = ( ~{sep(" ", dquote(opts_and_values.left))} )
-  values = ( ~{sep(" ", dquote(opts_and_values.right))} )
-  command = "grep"
+  opts=( ~{sep(" ", quote(opts_and_values.left))} )
+  values=( ~{sep(" ", quote(opts_and_values.right))} )
+  command="grep"
   for i in 1..~{n}; do
-    command = "$command ${opts[i]}"="${values[i]}"
+    command="$command ${opts[i]}"="${values[i]}"
   done
   $command ~{pattern} ~{infile}
   >>>
@@ -10174,8 +10248,8 @@ workflow serialize_map {
   call grep2 { input: infile, pattern, args }
 
   output {
-    Array[String] results1 = task1.results
-    Array[String] results2 = task2.results
+    Array[String] results1 = grep1.results
+    Array[String] results2 = grep2.results
   }
 }
 ```
