@@ -59,8 +59,6 @@ Revisions to this specification are made periodically in order to correct errors
         - [Concatenation of Optional Values](#concatenation-of-optional-values)
       - [🗑 Expression Placeholder Options](#-expression-placeholder-options)
         - [`sep`](#sep)
-        - [`true` and `false`](#true-and-false)
-        - [`default`](#default)
     - [Static Analysis and Dynamic Evaluation](#static-analysis-and-dynamic-evaluation)
   - [WDL Documents](#wdl-documents)
   - [Versioning](#versioning)
@@ -2507,6 +2505,13 @@ Example output:
   "sep_option_to_function.is_true2": true
 }
 ```
+
+Test config:
+
+```json
+{
+  "tags": ["deprecated"]
+}
 </p>
 </details>
 
@@ -2568,6 +2573,13 @@ Example output:
   "true_false_ternary.is_true": true
 }
 ```
+
+Test config:
+
+```json
+{
+  "tags": ["deprecated"]
+}
 </p>
 </details>
 
@@ -3283,7 +3295,7 @@ workflow optional_with_default {
   }
 
   output {
-    String greeting = select_first([hello1, hello2]).greeting
+    String greeting = select_first([hello1.greeting, hello2.greeting])
   }
 }
 ```
