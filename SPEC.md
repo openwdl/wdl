@@ -59,6 +59,8 @@ Revisions to this specification are made periodically in order to correct errors
         - [Concatenation of Optional Values](#concatenation-of-optional-values)
       - [🗑 Expression Placeholder Options](#-expression-placeholder-options)
         - [`sep`](#sep)
+        - [`true` and `false`](#true-and-false)
+        - [`default`](#default)
     - [Static Analysis and Dynamic Evaluation](#static-analysis-and-dynamic-evaluation)
   - [WDL Documents](#wdl-documents)
   - [Versioning](#versioning)
@@ -2512,6 +2514,7 @@ Test config:
 {
   "tags": ["deprecated"]
 }
+```
 </p>
 </details>
 
@@ -2580,6 +2583,7 @@ Test config:
 {
   "tags": ["deprecated"]
 }
+```
 </p>
 </details>
 
