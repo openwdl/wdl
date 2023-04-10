@@ -53,12 +53,20 @@ def write_test_files(m: re.Match, output_dir: Path, version: str, config: list):
         config_entry["fail"] = bool(is_fail)
     if "exclude_output" not in config_entry:
         config_entry["exclude_output"] = []
+    elif isinstance(config_entry["exclude_output"], str):
+        config_entry["exclude_output"] = [config_entry["exclude_output"]]
     if "return_code" not in config_entry:
         config_entry["return_code"] = "*"
+    elif isinstance(config_entry["return_code"], str):
+        config_entry["return_code"] = [config_entry["return_code"]]
     if "dependencies" not in config_entry:
         config_entry["dependencies"] = []
+    elif isinstance(config_entry["dependencies"], str):
+        config_entry["dependencies"] = [config_entry["dependencies"]]
     if "tags" not in config_entry:
         config_entry["tags"] = []
+    elif isinstance(config_entry["tags"], str):
+        config_entry["tags"] = [config_entry["tags"]]
 
     if input_json is not None:
         input_json = input_json.strip()
