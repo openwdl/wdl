@@ -1,4 +1,4 @@
-Beginning with version 1.1.1, all of the examples in the WDL specification represent test cases. They are of the form:
+Beginning with version 1.1.1, most of the examples in the WDL specification represent test cases. They are of the form:
 
 <pre>
 <details>
@@ -38,7 +38,7 @@ The file name is of the form `<target>.wdl`, where `target` is the name of the w
 * If the file name is of the form `<target>_task.wdl` then it is assumed that `target` is a task, otherwise it is assumed to be a workflow (unless the `type` configuration parameter is specified).
 * If the file name is of the form `<target>_fail.wdl` then it is assumed that the test is expected to fail (unless the `fail` configuration parameter is specified).
 * If the file name is of the form `<target>_fail_task.wdl` then it is both `type: "task"` and `fail: true` are assumed unless the configuration parameters specify differently.
-* If the file name ends with `_resource.wdl` then it not executed as a test. Such resource WDLs are intended to be imported by other examples.
+* If the file name ends with `_resource.wdl` then it not executed as a test. Such resource WDLs are intended only to be imported by other examples.
 
 Examples must conform to the following rules:
 
@@ -48,7 +48,7 @@ Examples must conform to the following rules:
 
 The "Example input" is only required if the example has required inputs.
 
-The "Example output" section is used to validate the outputs of the workflow/task executed with the example inputs. Any output of the workflow/task that doesn't appear in the example output JSON is ignored.
+The "Example output" section is used to validate the outputs of the workflow/task executed with the example inputs. If an output should not be validated, it must be listed in the `exclude_outputs` configuration parameter.
 
 An example can import another example using its file name.
 
@@ -65,6 +65,7 @@ An example can import another example using its file name.
   </summary>
   <p>...</p>
 </details>
+
 <details>
   <summary>
   Example: example2.wdl
@@ -141,10 +142,10 @@ tests
 |_ foo.wdl
 |_ bar_task.wdl
 |_ ...
-|_ test_index.json
+|_ test_config.json
 ```
 
-The `test_index.json` file contains a JSON array with one element for each test, where each element is an object with the test inputs, outputs, and configuration parameters. For example:
+The `test_config.json` file contains a JSON array with one element for each test, where each element is an object with the test inputs, outputs, and configuration parameters. For example:
 
 ```json
 [
