@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "antlr4": "~4.7.2",
-    "mocha": "^6.2.3",
+    "mocha": "^10.2.0",
     "unescape-unicode": "^0.2.0"
   }
 }
