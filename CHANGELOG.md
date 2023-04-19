@@ -64,7 +64,7 @@ version 1.1.1
 + Provided codespell configuration and workflow to catch typos.
   [PR 530](https://github.com/openwdl/wdl/pull/530) by @yarikoptic.
 
-+ Fixed typos, thanks to @yarikoptic, @sejyoti, @mmterpstra, @j23414, @jdavcs, @beukueb, @notestaff!
++ Fixed typos, thanks to @yarikoptic, @sejyoti, @mmterpstra, @j23414, @jdavcs, @beukueb, @notestaff, @alberto-mg, @mperf!
 
 version 1.1.0
 ---------------------------
