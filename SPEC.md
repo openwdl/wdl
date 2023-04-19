@@ -358,7 +358,7 @@ WDL also provides features for implementing more complex workflows. For example,
   ```json
   {
     "hello_parallel.pattern": "^[a-z_]+$",
-    "hello_parallel.infile": ["/greetings.txt", "greetings2.txt"]
+    "hello_parallel.files": ["/greetings.txt", "greetings2.txt"]
   }
   ```
   
@@ -366,7 +366,7 @@ WDL also provides features for implementing more complex workflows. For example,
   
   ```json
   {
-    "hello.matches": [["hi_world"], ["hi_pal"]]
+    "hello.all_matches": [["hi_world"], ["hi_pal"]]
   }
   ```
   </p>
