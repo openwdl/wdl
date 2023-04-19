@@ -309,7 +309,7 @@ The inputs to this workflow might look like:
 ```json
 {
   "wf_parallel.pattern": "^[a-z]+$",
-  "wf_parallel.infile": ["/file1.txt", "/file2.txt"]
+  "wf_parallel.files": ["/file1.txt", "/file2.txt"]
 }
 ```
 
