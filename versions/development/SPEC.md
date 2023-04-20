@@ -1110,7 +1110,7 @@ task greet {
   input {
     Boolean morning
   }
-  String greeting = "good ~{if morning then "morning" else "afternoon}"
+  String greeting = "good ~{if morning then "morning" else "afternoon"}"
 }
 ```
 - Choose how much memory to use for a task:
