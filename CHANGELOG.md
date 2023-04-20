@@ -19,7 +19,9 @@ Keep the changelog pleasant to read in the text editor:
 
 version development
 ---------------------------
-
++ Corrected Typo in Ternary operator example
+  [PR 565](https://github.com/openwdl/wdl/pull/564) by @mperf
+  
 + Fixed description of ternary operator to say that the type, not the value,
   of the if-then-else is the same regardless of which side is evaluated.
   [PR 476](https://github.com/openwdl/wdl/pull/476) by @notestaff
@@ -45,8 +47,8 @@ version development
 version 1.1.0
 ---------------------------
 
-+ Corrected Typo
-  [PR 564](https://github.com/openwdl/wdl/pull/564) by @mperf
++ Corrected Typo in Ternary operator example
+  [PR 565](https://github.com/openwdl/wdl/pull/564) by @mperf
   
 + Added [Errata](versions/1.1/Errata.md).
  
