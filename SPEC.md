@@ -410,8 +410,8 @@ A string literal may contain any unicode characters between single or double-quo
 | `\t`            | tab          | `\x09`        |                               |
 | `\'`            | single quote | `\x22`        | within a single-quoted string |
 | `\"`            | double quote | `\x27`        | within a double-quoted string |
-| `~`             | tilde        | `\x7E`        | literal `"~{"`                |
-| `$`             | dollar sign  | `\x24`        | literal `"${"`                |
+| `\~`            | tilde        | `\x7E`        | literal `"~{"`                |
+| `\$`            | dollar sign  | `\x24`        | literal `"${"`                |
 
 Strings can also contain the following types of escape sequences:
 
@@ -3433,7 +3433,7 @@ Test config:
 
 ### Command Section
 
-The `command` section is the only required task section. It defines the command template that is evaluated and executed when the task is called. Specifically, the commands are executed after all of the inputs are staged and before the outputs are evaluated.
+The `command` section is the only required task section. It defines the command template that is evaluated to produce a Bash script that is executed within the task's container. Specifically, the commands are executed after all of the inputs are staged and before the outputs are evaluated.
 
 There are two different syntaxes that can be used to define the command section:
 
@@ -3448,6 +3448,13 @@ command { ... }
 There may be any number of commands within a command section. Commands are not modified by the execution engine, with the following exceptions:
 - Common leading whitespace is [stripped](#stripping-leading-whitespace)
 - String interpolation is performed on the entire command section to replace [expression placeholders](#expression-placeholders) with their actual values.
+
+The characters that must be escaped within a command section are different from those that must be escaped in regular strings:
+
+* Unescaped newlines (`\n`) are allowed.
+* An unescaped backslash (`\`) may appear as the last character on a line - this is treated as a line continuation.
+* In a HEREDOC-style command section, if there are exactly three consecutive right-angle brackets (`>>>`), then at least one of them must be escaped, e.g. `\>>>`.
+* In the older-style command section, any right brace (`}`) that is not part of an expression placeholder must be escaped.
 
 #### Expression Placeholders
 
