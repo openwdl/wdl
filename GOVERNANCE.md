@@ -8,7 +8,7 @@ Current core team members are:
 
 | Name               | Organization            | github                  |
 |:-------------------|:-------------|:------------------
-| Jeff Gentry        | Foundation Medicine                 | [geoffjentry](https://github.com/geoffjentry) |
+| Jeff Gentry        | Fulcrum Genomics                 | [geoffjentry](https://github.com/geoffjentry) |
 | Mike Lin           | Chan Zuckerberg Initiative        | [mlin](https://github.com/mlin) |
 | Patrick Magee      | DNAstack                        | [patmagee](https://github.com/patmagee) |
 | Brian O'Connor     | University of California, Santa Cruz | [briandoconnor](https://github.com/briandoconnor) |
