@@ -18,6 +18,7 @@ Current core team members are:
 | Michael Franklin | Centre for Population Genomics | [illusional](https://github.com/illusional) |
 | Amy Paguirigan | Fred Hutch | [vortexing](https://github.com/vortexing) |
 | Ruben Vorderman | Leiden University Medical Center | [rhpvorderman](https://github.com/rhpvorderman) |
+| Venkat Malladi | Microsoft | [vsmalladi](https://github.com/vsmalladi) |
 
 
 At the core group's discretion a new member may be added by a majority vote. This addition will be done to recognize **significant** contributions to the community. *Contributions* include such things as:
