@@ -1,5 +1,5 @@
 import pytest
-from wdl_parser.WdlParser import WdlParser
+from wdl_parser.WdlV1Parser import WdlV1Parser
 
 from .helpers import *
 
@@ -7,8 +7,8 @@ from .helpers import *
 @pytest.mark.parametrize("file_stream, file_name", get_example_files(False))
 def test_should_parse_successfully(file_stream, file_name):
     print("Testing file {} should pass".format(file_name))
-    lexer = WdlLexer(file_stream)
-    parser = WdlParser(input=CommonTokenStream(lexer))
+    lexer = WdlV1Lexer(file_stream)
+    parser = WdlV1Parser(input=CommonTokenStream(lexer))
     parser.removeErrorListeners()
     error_listener = WdlParserTestErrorListener()
     parser.addErrorListener(error_listener)
@@ -20,7 +20,7 @@ def test_should_parse_successfully(file_stream, file_name):
 def test_should_fail_parsing(file_stream, file_name):
     print("Testing file {} should fail".format(file_name))
     lexer = CommentAggregatingTokenSource(file_stream)
-    parser = WdlParser(input=CommonTokenStream(lexer))
+    parser = WdlV1Parser(input=CommonTokenStream(lexer))
     parser.removeErrorListeners()
     error_listener = WdlParserTestErrorListener()
     parser.addErrorListener(error_listener)
