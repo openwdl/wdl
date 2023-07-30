@@ -85,8 +85,6 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
         - [`localization_optional`](#localization_optional)
         - [`inputs`](#inputs)
         - [`outputs`](#outputs)
-        - [`test_config`](#test_config)
-          - [Restrictions](#restrictions)
       - [Conventions and Best Practices](#conventions-and-best-practices)
     - [Metadata Sections](#metadata-sections)
       - [Task Metadata Section](#task-metadata-section)
@@ -108,7 +106,7 @@ This is version 1.2 of the Workflow Description Language (WDL) specification. It
     - [Workflow Hints](#workflow-hints)
       - [Reserved Workflow Hints](#reserved-workflow-hints)
         - [`allow_nested_inputs`](#allow_nested_inputs)
-        - [`test_config`](#test_config-1)
+        - [`test_config`](#test_config)
     - [Call Statement](#call-statement)
       - [Computing Call Inputs](#computing-call-inputs)
     - [Scatter](#scatter)
@@ -2384,7 +2382,6 @@ Example output:
 </p>
 </details>
 
-
 <details>
 <summary>
 Example: all_return_codes_task.wdl
@@ -2655,38 +2652,6 @@ Reserved input-specific attributes:
 * Allowed type: `object`
 
 Provides outputs specific hints in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task. A key may also refer to a specific member of a struct/object input.
-
-##### `test_config`
-
-* Allowed types: `String` or `Array[String]`
-* Default value: `["required", "succeed"]`
-
-This attribute is reserved for use by testing frameworks, and should be ignored otherwise. It provides directives to the testing framework about how to use the task as a test-case. If the value is an array, then all of the directives must be respected by the testing framework; however, when there are conflicting directives, the *most permissive* one wins. For example, the value `["required", "ignore"]` specifies two conflicting directives; `ignore` is more permissive than `required`, so the test case must be ignored.
-
-The value may be any combination of the following directives, in order of least to most permissive:
-
-* Necessity
-    * `required`: The test is required. The testing framework must execute the test.
-    * `optional`: The test is optional. The test harness may choose whether or not to run the test. If the test harness does run the test and it is unsuccessful, it should be reported as a warning rather than an error. Restrictions can be added using a colon (':') delimiter to indicate that the test is only optional in certain situations. If there are multiple `optional` directives, than the test is optional if any one of them is satisfied.
-    * `ignore`: The test must not be run by the testing framework.
-* Expected result
-    * `succeed`: The test is expected to succeed. It is an error if the test fails to execute successfully.
-    * `fail`: The test is expected to fail. It is an error if the test executes successfully. Restrictions can be added using a colon (':') delimiter to indicate that the test is expected to fail for a specific reason. If there are multiple `fail` directives, than the test may fail for any of the specified reasons.
-
-###### Restrictions
-
-An `optional` test directive may have a restriction. The test harness may ignore any restrictions that it does not support. At a minimum, the test harness should recognize restrictions based on its ability to satisfy the test's `requirements` and `hints`. A restriction can name a specific requirement/hint, or it can use the special value `*` to indicate that it matches any unsatisfiable requirement/hint. Here are some examples:
-
-* `"optional:*"`: Equivalent to "optional" - the test is optional under all circumstances.
-* `"optional:requirements:cpu"`: The test is considered optional if the test harness cannot satisfy the task's `cpu` requirement.
-* `["optional:requriements:memory", "optional:requirements:disks"]`: The test is considered optional if the test harness cannot satisfy both the task's `memory` and `disks` requirements.
-* *optional:hints:*": The test is considered optional if the test harness cannot satisfy all of the task's hints.
-* "optional:hints:aws:*": The test is considered optional if the test harness cannot execute the test on AWS or cannot satisfy any of the AWS-specific configuration hints.
-
-A `fail` test directive may also have a restriction that indicates the test is expected to fail in a specific way or due to a specific cause. At a minimum, the test harness should recognize the following restrictions. If the test harness is not able to determine whether a failure is due to a specific cause, then it may ignore restrictions (i.e., treat the presence of any `fail` directive as `"fail:*"`). Here are some examples:
-
-* `"fail:*"`: Equivalent to "fail" - the test is expected to fail for any reason.
-* `"fail:return_code:<rc>"`: The test is expected to fail with a specific return code.
 
 #### Conventions and Best Practices
 
