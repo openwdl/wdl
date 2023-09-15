@@ -1352,7 +1352,7 @@ During string interpolation, there are some operators for which it is possible t
 
 The `+` operator is overloaded for both numeric addition and `String` concatenation. This can lead to the following kinds of situations:
 
-```
+```wdl
 String s = "1.0"
 Float f = 2.0
 String x = "~{s + f}"
@@ -1363,13 +1363,35 @@ There are two possible ways to evaluate the `s + f` expression:
 1. Coerce `s` to `Float` and perform floating point addition, then coerce to `String` with the result being `x = "3.0"`.
 2. Coerce `f` to `String` and perform string concatenation with result being `x = "1.02.0"`.
 
-Similarly, the equality/inequality operators can be applied to any primitive type.
+Similarly, the equality/inequality operators can be applied to any primitive values.
 
-The order of precedence is:
+When applying `+`, `=`, or `!=` to primitive operands (`X`, `Y`), the order of precedence is:
 
-1. `Int`, `Float`: `Int` coerces to `Float`
-2. `X`, `Y`: For any primitive types `X` != `Y`, both are coerced to `String`
-3. If applying `+` to two values of the same type that cannot otherwise be summed/concatenated (i.e., `Boolean`, `File`, `Directory`), both values are first coerced to `String`
+1. (`Int`, `Int`) or (`Float`, `Float`): perform numeric addition/comparison
+2. (`Int`, `Float`): coerce `Int` to `Float`, then perform numeric addition/comparison
+3. (`String`, `String`): perform string concatenation/comparison
+4. (`String`, `Y`): coerce `Y` to `String`, then perform string concatenation/comparison
+5. Others: coerce `X` and `Y` to `String`, then perform string concatenation/comparison
+
+Examples:
+
+```wdl
+# Evaluates to `"3.0"`: `1` is coerced to Float (`1.0`), then numeric addition
+# is performed, and the result is converted to a string
+String s1 = "~{1 + 2.0}"
+# Evaluates to `"3.01"`: `1` is coerced to String, then concatenated with the 
+# value of `s1`
+String s2 = "~{s1 + 1}"
+# Evaluates to `true`: `1` is coerced to Float (`1.0`), then numeric comparison 
+# is performed
+Boolean b1 = 1 == 1.0
+# Evaluates to `true`: `true` is coerced to String, then string comparison is 
+# performed
+Boolean b2 = true == "true"
+# Evaluates to `false`: `1` and `true` are both coerced to String, then string 
+# comparison is performed
+Boolean b3 = 1 == true
+```
 
 ###### Coercion of Optional Types
 
@@ -4555,7 +4577,7 @@ Test config:
 
 The following attributes are considered "hints" rather than requirements. They are optional for execution engines to support. The purpose of reserving these attributes is to encourage interoperability of tasks and workflows between different execution engines.
 
-In WDL 2.0, these attributes will move to the new `hints` section.
+Note: in a future version of WDL, these attributes will move to a new `hints` section.
 
 <details>
 <summary>

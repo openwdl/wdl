@@ -86,6 +86,7 @@ Each example may specify a configuration for use by the testing framework in its
 
 The following are the configuration parameters that must be supported by all test frameworks. Test frameworks may support additional parameters, and should ignore any unrecognized parameters.
 
+* `id`: The unique identifier of the test case. Defaults to `target` (see below).
 * `type`: One of "task", "workflow", or "resource". The default is "workflow", unless the example name ends with "_task" or "_resource". Must be set explicitly if the example does not contain a workflow, if the test framework should only execute a specific task (which should be specified using the `target` parameter), or if the example should not be executed at all and only contains definitions that should be available for import by other examples (`type: "resource"`).
 * `target`: The name of the workflow or task the test framework should execute. Defaults to the example name (without the ".wdl" extension). Required if the target name is different from the test name, even if the test only contains a single workflow/task.
 * `priority`: The priority of the test. Must be one of the following values. Defaults to "required".
