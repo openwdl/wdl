@@ -21,12 +21,12 @@ Revisions to this specification are made periodically in order to correct errors
 - [WDL Language Specification](#wdl-language-specification)
   - [Global Grammar Rules](#global-grammar-rules)
     - [Whitespace](#whitespace)
-    - [Literals](#literals)
-      - [Strings](#strings)
     - [Comments](#comments)
     - [Reserved Keywords](#reserved-keywords)
+    - [Literals](#literals)
     - [Types](#types)
       - [Primitive Types](#primitive-types)
+        - [Strings](#strings)
       - [Optional Types and None](#optional-types-and-none)
       - [Compound Types](#compound-types)
         - [Array\[X\]](#arrayx)
@@ -380,44 +380,16 @@ WDL files are encoded in UTF-8, with no byte order mark (BOM).
 
 ### Whitespace
 
-```txt
-$ws = (0x20 | 0x09 | 0x0D | 0x0A)+
-```
-
 Whitespace may be used anywhere in a WDL document. Whitespace has no meaning in WDL, and is effectively ignored.
 
-### Literals
+The following characters are treated as whitespace:
 
-```txt
-$identifier = [a-zA-Z][a-zA-Z0-9_]*
-$boolean = 'true' | 'false'
-$integer = [1-9][0-9]*|0[xX][0-9a-fA-F]+|0[0-7]*
-$float = (([0-9]+)?\.([0-9]+)|[0-9]+\.|[0-9]+)([eE][-+]?[0-9]+)?
-$string = "([^\\\"\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"
-$string = '([^\\\'\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*'
-```
-
-Task and workflow inputs may be passed in from an external source, or they may be specified in the WDL document itself using literal values. Input, output, and other declaration values may also be constructed at runtime using [expressions](#expressions) that consist of literals, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), built-in [operators](#operator-precedence-table), and [standard library functions](#standard-library).
-
-#### Strings
-
-A string literal may contain any unicode characters between single or double-quotes, with the exception of a few special characters that must be escaped:
-
-| Escape Sequence | Meaning      | \x Equivalent | Context                       |
-| --------------- | ------------ | ------------- | ----------------------------- |
-| `\\`            | `\`          | `\x5C`        |                               |
-| `\n`            | newline      | `\x0A`        |                               |
-| `\t`            | tab          | `\x09`        |                               |
-| `\'`            | single quote | `\x22`        | within a single-quoted string |
-| `\"`            | double quote | `\x27`        | within a double-quoted string |
-| `\~`            | tilde        | `\x7E`        | literal `"~{"`                |
-| `\$`            | dollar sign  | `\x24`        | literal `"${"`                |
-
-Strings can also contain the following types of escape sequences:
-
-* An octal escape code starts with `\`, followed by 3 digits of value 0 through 7 inclusive.
-* A hexadecimal escape code starts with `\x`, followed by 2 hexadecimal digits `0-9a-fA-F`. 
-* A unicode code point starts with `\u` followed by 4 hexadecimal characters or `\U` followed by 8 hexadecimal characters `0-9a-fA-F`.
+| Name  | Dec | Hex    |
+| ----- | --- | ------ |
+| Space | 32  | `\x20` |
+| Tab   | 9   | `\x09` |
+| CR    | 13  | `\x0D` |
+| LF    | 10  | `\x0A` |
 
 ### Comments
 
@@ -540,6 +512,10 @@ hints
 requirements
 ```
 
+### Literals
+
+Task and workflow inputs may be passed in from an external source, or they may be specified in the WDL document itself using literal values. Input, output, and other declaration values may also be constructed at runtime using [expressions](#expressions) that consist of literals, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), built-in [operators](#operator-precedence-table), and [standard library functions](#standard-library).
+
 ### Types
 
 A [declaration](#declarations) is a name that the user reserves in a given [scope](#appendix-b-wdl-namespaces-and-scopes) to hold a value of a certain type. In WDL *all* declarations (including inputs and outputs) must be typed. This means that the information about the type of data that may be held by each declarations must be specified explicitly.
@@ -551,9 +527,9 @@ In WDL *all* types represent immutable values. For example, a `File` represents 
 The following primitive types exist in WDL:
 
 * A `Boolean` represents a value of `true` or `false`.
-* An `Int` represents a signed integer in the range \[-2^63, 2^63).
+* An `Int` represents a signed 64-bit integer (in the range `[-2^63, 2^63)`).
 * A `Float` represents a finite 64-bit IEEE-754 floating point number.
-* A `String` represents a unicode character string following the format described [above](#strings).
+* A `String` represents a unicode character string following the format described [below](#strings).
 * A `File` represents a file (or file-like object).
     * A `File` declaration can have a string value indicating a relative or absolute path on the local file system.
     * Within a WDL file, literal values for files may only be local (relative or absolute) paths.
@@ -609,6 +585,26 @@ The following primitive types exist in WDL:
   ```
   </p>
 </details>
+
+##### Strings
+
+A string literal may contain any unicode characters between single or double-quotes, with the exception of a few special characters that must be escaped:
+
+| Escape Sequence | Meaning      | \x Equivalent | Context                       |
+| --------------- | ------------ | ------------- | ----------------------------- |
+| `\\`            | `\`          | `\x5C`        |                               |
+| `\n`            | newline      | `\x0A`        |                               |
+| `\t`            | tab          | `\x09`        |                               |
+| `\'`            | single quote | `\x22`        | within a single-quoted string |
+| `\"`            | double quote | `\x27`        | within a double-quoted string |
+| `\~`            | tilde        | `\x7E`        | literal `"~{"`                |
+| `\$`            | dollar sign  | `\x24`        | literal `"${"`                |
+
+Strings can also contain the following types of escape sequences:
+
+* An octal escape code starts with `\`, followed by 3 digits of value 0 through 7 inclusive.
+* A hexadecimal escape code starts with `\x`, followed by 2 hexadecimal digits `0-9a-fA-F`. 
+* A unicode code point starts with `\u` followed by 4 hexadecimal characters or `\U` followed by 8 hexadecimal characters `0-9a-fA-F`.
 
 #### Optional Types and None
 
@@ -1487,10 +1483,6 @@ Implementers may choose to allow limited exceptions to the above rules, with the
 
 ### Declarations
 
-```txt
-$declaration = $type $identifier ('=' $expression)?
-```
-
 A declaration reserves a name that can be referenced anywhere in the [scope](#appendix-b-wdl-namespaces-and-scopes) where it is declared. A declaration has a type, a name, and an optional initialization. Each declaration must be unique within its scope, and may not collide with a [reserved WDL keyword](#reserved-keywords) (e.g., `workflow`, or `input`).
 
 A [task](#task-definition) or [workflow](#workflow-definition) may declare input parameters within its `input` section and output parameters within its `output` section. If a non-optional input declaration does not have an initialization, it is considered a "required" parameter, and its value must be provided by the user before the workflow or task may be run. Declarations may also appear in the body of a task or workflow. All non-input declarations must be initialized.
@@ -1653,34 +1645,6 @@ Test config:
 </details>
 
 ### Expressions
-
-```txt
-$expression = '(' $expression ')'
-$expression = $expression '.' $expression
-$expression = $expression '[' $expression ']'
-$expression = $expression '(' ($expression (',' $expression)*)? ')'
-$expression = '!' $expression
-$expression = '+' $expression
-$expression = '-' $expression
-$expression = if $expression then $expression else $expression
-$expression = $expression '*' $expression
-$expression = $expression '%' $expression
-$expression = $expression '/' $expression
-$expression = $expression '+' $expression
-$expression = $expression '-' $expression
-$expression = $expression '<' $expression
-$expression = $expression '<=' $expression
-$expression = $expression '>' $expression
-$expression = $expression '>=' $expression
-$expression = $expression '==' $expression
-$expression = $expression '!=' $expression
-$expression = $expression '&&' $expression
-$expression = $expression '||' $expression
-$expression = '{' ($expression ':' $expression (',' $expression ':' $expression )*)? '}'
-$expression = object '{' ($identifier ':' $expression (',' $identifier ':' $expression )*)? '}'
-$expression = '[' ($expression (',' $expression)*)? ']'
-$expression = $string | $integer | $float | $boolean | $identifier
-```
 
 An expression is a compound statement that consists of literal values, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), [built-in operators](#built-in-operators) (e.g., `+` or `>=`), and calls to [standard library functions](#standard-library).
 
@@ -2839,12 +2803,6 @@ struct Invalid {
 
 ## Import Statements
 
-```txt
-$import = 'import' $ws+ $string ($ws+ $import_namespace)? ($ws+ $import_alias)*
-$import_namespace = 'as' $ws+ $identifier
-$import_alias = 'alias' $identifier $ws+ 'as' $ws+ $identifier
-```
-
 Although a WDL workflow and the task(s) it calls may be defined completely within a single WDL document, splitting it into multiple documents can be beneficial in terms of modularity and code resuse. Furthermore, complex workflows that consist of multiple subworkflows must be defined in multiple documents because each document is only allowed to contain at most one workflow.
 
 The `import` statement is the basis for modularity in WDL. A WDL document may have any number of `import` statements, each of which references another WDL document and allows access to that document's top-level members (`task`s, `workflow`s, and `struct`s).
@@ -3977,11 +3935,6 @@ Declarations in the output section may reference any input and private declarati
 
 ### Runtime Section
 
-```txt
-$runtime = 'runtime' $ws* '{' ($ws* $runtime_kv $ws*)* '}'
-$runtime_kv = $identifier $ws* '=' $ws* $expression
-```
-
 The `runtime` section defines a set of key/value pairs that represent the minimum requirements needed to run a task and the conditions under which a task should be interpreted as a failure or success. 
 
 During execution of a task, resource requirements within the `runtime` section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task immediately fails. 
@@ -4775,13 +4728,6 @@ The following guidelines should be followed when using hints:
 
 ### Metadata Sections
 
-```txt
-$meta_kv = $identifier $ws* '=' $ws* $meta_value
-$meta_value = $string | $number | $boolean | 'null' | $meta_object | $meta_array
-$meta_object = '{}' | '{' $meta_kv (, $meta_kv)* '}'
-$meta_array = '[]' |  '[' $meta_value (, $meta_value)* ']'
-```
-
 There are two optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are designed to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface. Any attributes that may influence execution behavior should go in the `runtime` section.
 
 Both of these sections can contain key/value pairs. Metadata values are different than in `runtime` and other sections:
@@ -4813,17 +4759,9 @@ Note that, unlike the WDL `Object` type, metadata objects are not deprecated and
 
 #### Task Metadata Section
 
-```txt
-$meta = 'meta' $ws* '{' ($ws* $meta_kv $ws*)* '}'
-```
-
 This section contains task-level metadata. For example: author and contact email.
 
 #### Parameter Metadata Section
-
-```txt
-$parameter_meta = 'parameter_meta' $ws* '{' ($ws* $meta_kv $ws*)* '}'
-```
 
 This section contains metadata specific to input and output parameters. Any key in this section *must* correspond to a task input or output.
 
@@ -5208,11 +5146,6 @@ The control flow of this workflow changes depending on whether the value of `y` 
 * In no input value is provided for `y` then it will need to wait for `d1` to complete before it is assigned.
 
 ### Fully Qualified Names & Namespaced Identifiers
-
-```txt
-$fully_qualified_name = $identifier ('.' $identifier)*
-$namespaced_identifier = $identifier ('.' $identifier)*
-```
 
 A fully qualified name is the unique identifier of any particular call, input, or output, and has the following structure:
 
@@ -5801,12 +5734,6 @@ Example output:
 
 ### Scatter
 
-```txt
-$scatter = 'scatter' $ws* '(' $ws* $scatter_iteration_statement $ws*  ')' $ws* $scatter_body
-$scatter_iteration_statement = $identifier $ws* 'in' $ws* $expression
-$scatter_body = '{' $ws* $workflow_element* $ws* '}'
-```
-
 Scatter/gather is a common parallelization pattern in computer science. Given a collection of inputs (such as an array), the "scatter" step executes a set of operations on each input in parallel. In the "gather" step, the outputs of all the individual scatter-tasks are collected into the final output.
 
 WDL provides a mechanism for scatter/gather using the `scatter` statement. A `scatter` statement begins with the `scatter` keyword and has three essential pieces:
@@ -6006,10 +5933,6 @@ Example output:
 </details>
 
 ### Conditional (`if`)
-
-```txt
-$conditional = 'if' '(' $expression ')' '{' $workflow_element* '}'
-```
 
 A conditional statement consists of the `if` keyword, followed by a `Boolean` expression and a body of (potentially nested) statements. The conditional body is only evaluated if the conditional expression evaluates to `true`.
 
