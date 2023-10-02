@@ -1188,17 +1188,19 @@ This purely optional section contains key/value pairs where the keys are names o
 For example:
 ```wdl
 task wc {
-  File f
-  Boolean l = false
-  String? region
+  input {
+    File f
+    Boolean l = false
+    String? region
+  }
   parameter_meta {
-    f : { help: "Count the number of lines in this file" },
+    f : { help: "Count the number of lines in this file" }
     l : { help: "Count only lines" }
     region: {help: "Cloud region",
              suggestions: ["us-west", "us-east", "asia-pacific", "europe-central"]}
   }
   command {
-    wc ${true="-l", false=' ' l} ${f}
+    wc ${true="-l", false=' ' l} ~{f}
   }
   output {
      String retval = stdout()
