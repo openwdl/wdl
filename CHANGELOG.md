@@ -42,6 +42,9 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
++ Make `input:` optional in call bodies.
+  [PR 524](https://github.com/openwdl/wdl/pull/524) by @mlin.
+
 version 1.1.0
 ---------------------------
 
