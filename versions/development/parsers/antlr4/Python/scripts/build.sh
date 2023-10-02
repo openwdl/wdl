@@ -5,6 +5,5 @@ PYTHON_DIR=$(dirname "${SCRIPTS_DIR}")
 BASE_DIR=$(dirname "${PYTHON_DIR}")
 
 pushd "${BASE_DIR}"
-	antlr4 -Dlanguage=Python3 -o ${PYTHON_DIR}/wdl_parser/ WdlLexer.g4
-	antlr4 -Dlanguage=Python3 -o ${PYTHON_DIR}/wdl_parser/  -listener -visitor WdlParser.g4
+	antlr4 -v 4.13.0 -Dlanguage=Python3 -o ${PYTHON_DIR}/wdl_parser/ -listener -visitor WdlParser.g4 WdlLexer.g4
 popd

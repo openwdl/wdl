@@ -9,7 +9,7 @@ setup(name='wdl_parser',
       url='https://github/openwdl/wdl',
       packages=find_packages(),
       install_requires=[
-          "antlr4-python3-runtime==4.8",
-          "pytest==5.3.5"
+          "antlr4-python3-runtime==4.13.0",
+          "pytest==7.4.0"
       ]
       )

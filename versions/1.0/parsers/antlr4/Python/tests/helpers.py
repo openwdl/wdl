@@ -5,7 +5,7 @@ from typing import TextIO
 
 from antlr4 import *
 from antlr4.error.ErrorListener import ErrorListener
-from wdl_parser.WdlLexer import WdlLexer
+from wdl_parser.WdlV1Lexer import WdlV1Lexer
 
 DEFAULT_EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../examples")
 
@@ -29,7 +29,7 @@ def get_example_files(error: bool):
     return parameters
 
 
-class CommentAggregatingTokenSource(WdlLexer):
+class CommentAggregatingTokenSource(WdlV1Lexer):
 
     def __init__(self, input=None, output: TextIO = sys.stdout):
         super().__init__(input, output)
@@ -37,7 +37,7 @@ class CommentAggregatingTokenSource(WdlLexer):
 
     def nextToken(self) -> Token:
         token = super().nextToken()
-        if token.type == self.COMMENT:
+        if token.type == self.COMMENTS:
             self.comments.append(token.text)
         return token
 
