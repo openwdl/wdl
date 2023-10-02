@@ -1401,7 +1401,7 @@ task name {
 
 ### Task Inputs
 
-A task's `input` section declares its input parameters. The values for declarations within the input section may be specified by the caller of the task. An input declaration may be initialized to a default value or expression that will be used when the caller does not specify a value. Input declarations may also be optional, in which case a value may be specified but is not required. If an input declaration is not optional and does not have an initialization, then it is a required input, meaning the caller must specify a value.
+A task's `input` section declares its input parameters. The values for declarations within the input section may be specified by the caller of the task. An input declaration may be initialized to a default value or expression to use when the caller does not supply a value. Input declarations with the optional type quantifier `?` also may be omitted by the caller even when there is no default initializer. If an input declaration has neither an optional type nor a default initializer, then it is a required input, meaning the caller must specify a value.
 
 ```wdl
 task t {
@@ -1438,7 +1438,7 @@ For example, imagine file `fs://path/to/A.txt` has two versions - `1.0` and `1.1
 #### Input Type Constraints
 
 Recall that a type may have a quantifier:
-* `?` means that the parameter is optional. A user does not need to specify a value for the parameter in order to satisfy all the inputs to the workflow.
+* `?` means that the input is optional and a caller does not need to specify a value for the input.
 * `+` applies only to `Array` types and it represents a constraint that the `Array` value must contain one-or-more elements.
 
 The following task has several inputs with type quantifiers:
@@ -1510,39 +1510,15 @@ Then the command would be instantiated as:
 
 ##### Optional inputs with defaults
 
-It *is* possible to provide a default to an optional input type. This may be desirable in the case where you want to have a defined value by default, but you want the caller to be able to override the default and set the value to undefined (i.e. `None`).
+Inputs with default initializers are implicitly optional: callers may omit the input or supply `None` *whether or not* its declared type carries the optional quantifier `?`. Usually, inputs with defaults should omit the `?` from their type, except when callers need the ability to override the default with `None`.
 
-```wdl
-task say_hello {
-  input {
-    String name
-    String? saluation = "hello"
-  }
-  command <<< >>>
-  output {
-    String greeting = if defined(saluation) then "~{saluation} ~{name}" else name
-  }
-}
+In detail, if a caller omits an input from the call `input:` section, then the default initializer applies whether or not the input type is declared optional. But if the caller explicitly supplies `None` for the input (either literally or by passing an optional value), then the default initializer applies only if the declared type isn't optional. This table illustrates the value taken by an input `x` depending on what the caller supplies:
 
-workflow foo {
-  input {
-    String name
-    Boolean use_salutation
-  }
-  
-  if (use_salutation) {
-    call say_hello { input: name = name }
-  }
-
-  if (!use_salutation) {
-    call say_hello { 
-      input: 
-        name = name,
-        salutation = None 
-    }
-  }
-}
-```
+|    input declaration:|`Int x = 1`|`Int? x = 1`|`Int? x`|`Int x`|
+|----------------------|-----------|------------|--------|-------|
+|call input: `x = 42`  |         42|          42|      42|     42|
+|call input: `x = None`|          1|      `None`|  `None`|*error*|
+|call input: *omitted* |          1|           1|  `None`|*error*|
 
 ### Private Declarations
 
