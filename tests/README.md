@@ -1,6 +1,6 @@
 Beginning with version 1.1.1, most of the examples in the WDL specification represent test cases. They are of the form:
 
-```html
+````html
 <details>
   <summary>
   Example: {file name}
@@ -29,7 +29,7 @@ Beginning with version 1.1.1, most of the examples in the WDL specification repr
   ```
   </p>
 </details>
-```
+````
 
 All examples are written as a single WDL file.
 
