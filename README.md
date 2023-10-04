@@ -9,7 +9,7 @@ WDL versioning follows [semantic versioning](https://semver.org) conventions.
 
 The WDL *language* has a two-number version (e.g., 1.1). An increase in the minor (second) version number (e.g., 1.0 to 1.1) indicates the addition of, or non-breaking changes to, the language or the standard library functions. An increase in the major (first) version number (e.g., 1.0 to 2.0) indicates that breaking changes have been made.
 
-The WDL *specification* has a three-number version (e.g. 1.1.1). The specification version tracks the language version, but there may also be patch releases (indicated by a change to the patch, or third, version number) that include fixes for typos, additional examples, or non-breaking clarifications of ambiguous language.
+The WDL *specification* has a three-number version (e.g., 1.1.1). The specification version tracks the language version, but there may also be patch releases (indicated by a change to the patch, or third, version number) that include fixes for typos, additional examples, or non-breaking clarifications of ambiguous language.
 
 # Language Specifications
 
@@ -57,15 +57,15 @@ WDL is not executable in and of itself, but requires an execution engine to run.
 
 - [Cromwell](https://github.com/broadinstitute/cromwell)
 - [MiniWDL](https://github.com/chanzuckerberg/miniwdl)
-- [dxWDL](https://github.com/dnanexus/dxWDL)
+- [dxCompiler](https://github.com/dnanexus/dxCompiler)
 
 ### Parsers and Language Support
 
-- Basic parsers and their grammar definitions (based on hermes) can be found in the `parsers/` directory for each respective version. Currently there is support for java, python and javascript. We believe these parsers work, however have not validated these claims.
+- Grammar definitions in various formats can be found in the `[grammars repository](https://github.com/openwdl/grammars/)`.
 - [MiniWDL](https://github.com/chanzuckerberg/miniwdl) - MiniWDL provides python bindings for WDL as well as command line validation. It is light weight and easy to use.
 - [WOMTool](https://cromwell.readthedocs.io/en/stable/WOMtool/) - a standalone tool for parsing, validating, linting, and generating a graph of a WDL.
 - [wdl-aid](https://github.com/biowdl/wdl-aid) - generate documentation for the inputs of WDL workflows, based on the parameter_meta information defined in the WDL file.	
-- [wdlTools](https://github.com/dnanexus-rnd/wdlTools) - provides 1) a parser library, based on the new [ANTLR4](https://github.com/openwdl/wdl/tree/main/versions/1.0/parsers/antlr4) grammars, for WDL draft-2, 1.0, and development, and 2) command-line tools for sytanx checking, type-checking, linting, code formatting (including upgrading from older to newer WDL versions), generating documentation, and executing WDL tasks locally.
+- [wdlTools](https://github.com/dnanexus/wdlTools) - provides 1) a parser library, based on the new [ANTLR4](https://github.com/openwdl/grammars/tree/main/antlr4) grammars, for WDL draft-2, 1.0, 1.1, and 2.0, and 2) command-line tools for sytanx checking, type-checking, linting, code formatting (including upgrading from older to newer WDL versions), generating documentation, and executing WDL tasks locally.
 
 ### IDE Support
 
