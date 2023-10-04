@@ -36,7 +36,9 @@ The next *major* version of the specification is [2.0](https://github.com/openwd
 There are a number of places to ask questions and get involved within the WDL community. Our community thrives the more you get involved and we encourage you to ask questions, provide answers, and make contributions.
 
 - [Mailing list](https://groups.google.com/a/openwdl.org/forum/#!forum/community) - Joining our google group allows you to stay up to date with recent developments, be informed when new PR's are ready for voting, and participate in broader discussions about the language.
-- [Issues](https://github.com/OpenWDL/wdl/issues) - Any bugs, ambiguity, or problems with the specification you encounter should be reported here. You can also create issues which are feature requests, however the most likely way to get a feature into the spec is by creating a PR yourself.
+- [GitHub](https://github.com/openwdl/wdl)
+    - [Discussions](https://github.com/openwdl/wdl/discussions) - For discussing the specification, proposing syntax changes or additions to the standard library, and general Q&A.
+    - [Issues](https://github.com/openwdl/wdl/issues) - Any bugs, ambiguity, or problems with the specification you encounter should be reported here. You can also create issues which are feature requests, however the most likely way to get a feature into the spec is by [creating a PR yourself](#contributing).
 - [Slack Channel](https://join.slack.com/t/openwdl/shared_invite/zt-ctmj4mhf-cFBNxIiZYs6SY9HgM9UAVw) - Live chat with WDL users
 - [Support Forum](https://bioinformatics.stackexchange.com/search?q=wdl) - View Previously answered questions about WDL or pose new questions. 
 - [User Guide](https://support.terra.bio/hc/en-us/sections/360007274612-WDL-Documentation) (hosted by the Broad) View a general user guide and simple how-to for WDL
@@ -90,7 +92,7 @@ code tests in case the standard simple YAML tests are not sufficient.
 
 # Contributing
 
-WDL only advances through community contributions. While submitting an issue is a great way to report a bug in the spec, or create disscussion around current or new features, it will ultimately not translate into an actual change in the spec. The best way to make changes is by submitting a PR. For more information on how you can contribute, please see the [Contributing](CONTRIBUTING.md) readme. 
+WDL only advances through community contributions. While submitting an issue is a great way to report a bug in the spec, or create discussion around current or new features, it will ultimately not translate into an actual change in the spec. The best way to make changes is by submitting a PR. For more information on how you can contribute, please see the [Contributing](CONTRIBUTING.md) readme. 
 
 Additionally, once a PR has been submitted, it will be subjected to our [RFC Process](RFC.md).
 

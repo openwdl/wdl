@@ -26,7 +26,7 @@ The execution engine is responsible for implementing all the necessary logic to 
 5. Runtime evaluation:
     * The runtime attributes are evaluated in the context of all input and private declaration values.
     * An appropriate runtime instance type is determined from the resource requirements. If no instance type can satisfy all the requirements, task execution is terminated with an error.
-    * The task may be executed in the current environment (where the evaluation is occurring) if that is acceptable, otherwise the runtime instance is provisioned and the task exection is "moved" to the runtime instance, where moving may involve a direct transfer of state or a relaunching of the task (starting over with stage 1).
+    * The task may be executed in the current environment (where the evaluation is occurring) if that is acceptable, otherwise the runtime instance is provisioned and the task execution is "moved" to the runtime instance, where moving may involve a direct transfer of state or a relaunching of the task (starting over with stage 1).
 6. Input localization: Each `File` typed value - including compound values with nested `File`s - that references a non-local resource is localized, which involves:
     * Creating a local file (or file-like object, such as a `fifo`), according to the [input localization](#task-input-localization) rules.
     * Making the contents of the remote resource readable from that file, either by downloading the remote resource or by streaming its contents.
@@ -40,5 +40,5 @@ The execution engine is responsible for implementing all the necessary logic to 
 9. Command execution: The instantiated command is staged within the container (along with any other necessary volumes) and executed there. All outputs should be created relative to a staged output directory. If the command exits with any return code not specified in `runtime.returnCodes`, task execution exits with an error.
 10. Output ordering: Any output declarations that are initialized with expressions have their expressions examined to determine their dependencies. Declarations are then ordered such that they can be evaluated unambiguously.
 11. Output evaluation: Output declarations are evaluated in order, with the values of all previously evaluated declarations being available to evaluate the next declaration's initialization expression.
-12. Output delocalization: The exection engine may choose to "delocalize" outputs - i.e. to move them from the execution environment to a permanent storage location. If so, the values of any `File` typed output parameters - including compound values with nested `File`s - are updated to replace the local path with the permanent storage location.
+12. Output delocalization: The execution engine may choose to "delocalize" outputs - i.e. to move them from the execution environment to a permanent storage location. If so, the values of any `File` typed output parameters - including compound values with nested `File`s - are updated to replace the local path with the permanent storage location.
 13. Cleanup: The execution engine performs any "cleanup" tasks, such as terminating the cloud worker instance.
