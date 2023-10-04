@@ -31,7 +31,7 @@ Beginning with version 1.1.1, most of the examples in the WDL specification repr
 </details>
 ````
 
-All examples are written as a single WDL file.
+Each example is written to a single WDL file.
 
 The file name is of the form `<target>.wdl`, where `target` is the name of the workflow or task within the example that should be executed by the test framework.
 
@@ -46,13 +46,13 @@ Examples must conform to the following rules:
 * The WDL code must be valid, runnable code.
 * The input and output JSON must be written according to the [standard input/output specification](../SPEC.md#input-and-output-formats), i.e., with the workflow/task name as a prefix for all parameter names.
 
-The "Example input" is only required if the example has required inputs.
+The "Example input" section is only required if the example has required inputs.
 
 The "Example output" section is used to validate the outputs of the workflow/task executed with the example inputs. If an output should not be validated, it must be listed in the `exclude_outputs` configuration parameter.
 
 An example can import another example using its file name.
 
-<pre>
+````html
 <details>
   <summary>
   Example: example1.wdl
@@ -80,7 +80,7 @@ An example can import another example using its file name.
   </summary>
   <p>...</p>
 </details>
-</pre>
+````
 
 Each example may specify a configuration for use by the testing framework in its "Test config" section. The "Test config" section is optional - if it is missing then all configuration parameters have their default values.
 
@@ -103,7 +103,7 @@ For a workflow test, `return_code` and `dependencies` configuration parameters a
 
 The following is an example of a task test that is optional and expected to fail with a return code of `1`:
 
-<pre>
+````html
 <details>
   <summary>
   Example: optional_fail_task.wdl
@@ -131,7 +131,7 @@ The following is an example of a task test that is optional and expected to fail
   ```
   </p>
 </details>
-</pre>
+````
 
 These naming conventions and configuration are used with the intention that an automated testing framework can extract the examples from the specification and write them into the following directory structure. It also enables the implementation to filter out task tests if it does not support executing tasks.
 
@@ -176,7 +176,7 @@ The `test_config.json` file contains a JSON array with one element for each test
 
 The `data` directory contains files that may be referenced by test cases. The data files do not need to follow any special naming conventions. Inputs to/outputs from `File`-type parameters must be given as file names/paths relative to the `data` directory.
 
-<pre>
+````html
 <details>
   <summary>
   Example: example1.wdl
@@ -213,4 +213,4 @@ The `data` directory contains files that may be referenced by test cases. The da
   ``` 
   </p>
 </details>
-</pre>
+````
