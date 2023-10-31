@@ -1287,7 +1287,7 @@ task default_example {
     String? s
   }
   command <<<
-    .my_cmd ~{if defined(s) then "--opt ${s}" else "foobar"}"foobar"}
+    .my_cmd ~{if defined(s) then "--opt ${s}" else "foobar"}
     # OR
     .my_cmd ~{select_first([s, "foobar"])}
   >>>
