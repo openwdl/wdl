@@ -45,6 +45,9 @@ version development
 version 1.1.0
 ---------------------------
 
++ Fixed the syntax of the suggested replacement for the `default` option.
+  [PR 591](https://github.com/openwdl/wdl/pull/591) by @hkeward.
+
 + Added [Errata](versions/1.1/Errata.md).
  
 + Clarified that the `sub` function requires a POSIX Extended Regular Expression (ERE).
