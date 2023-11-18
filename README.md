@@ -35,7 +35,7 @@ The next *major* version of the specification is [2.0](https://github.com/openwd
 
 There are a number of places to ask questions and get involved within the WDL community. Our community thrives the more you get involved and we encourage you to ask questions, provide answers, and make contributions.
 
-- [Mailing list](https://groups.google.com/a/openwdl.org/forum/#!forum/community) - Joining our google group allows you to stay up to date with recent developments, be informed when new PR's are ready for voting, and participate in broader discussions about the language.
+- [Mailing list](https://groups.google.com/a/openwdl.org/forum/#!forum/community) - Joining our google group allows you to stay up to date with recent developments, be informed when new PRs are ready for voting, and participate in broader discussions about the language.
 - [GitHub](https://github.com/openwdl/wdl)
     - [Discussions](https://github.com/openwdl/wdl/discussions) - For discussing the specification, proposing syntax changes or additions to the standard library, and general Q&A.
     - [Issues](https://github.com/openwdl/wdl/issues) - Any bugs, ambiguity, or problems with the specification you encounter should be reported here. You can also create issues which are feature requests, however the most likely way to get a feature into the spec is by [creating a PR yourself](#contributing).
