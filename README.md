@@ -92,7 +92,7 @@ Please see the documentation associated with each tool/platform for information 
 | Implementation                                                                 | Requires Installation | Local Execution | HPC   | Cloud                 |
 | ------------------------------------------------------------------------------ | --------------------- | --------------- | ----- | --------------------- |
 | [AWS HealthOmics](https://docs.aws.amazon.com/omics/latest/dev/workflows.html) | Yes                   | No              | No    | AWS                   |
-| [Cromwell](https://github.com/broadinstitute/cromwell) *                        | Yes                   | Yes             | Many  | AWS Batch, Azure, GCP |
+| [Cromwell](https://github.com/broadinstitute/cromwell) *                       | Yes                   | Yes             | Many  | AWS Batch, Azure, GCP |
 | [dxCompiler](https://github.com/dnanexus/dxCompiler)                           | Yes                   | No              | No    | DNAnexus              |
 | [MiniWDL](https://github.com/chanzuckerberg/miniwdl)                           | Yes                   | Yes             | SLURM | AWS Batch             |
 | [Terra](https://terra.bio/)                                                    | No                    | No              | No    | Azure, GCP            |
@@ -102,7 +102,7 @@ Please see the documentation associated with each tool/platform for information 
 ### Grammars, Parsers, and Language Support
 
 - The WDL [parsers repository](https://github.com/openwdl/wdl-parsers/) provides grammar definitions in various formats and generated parsers for various languages.
-- [MiniWDL](https://github.com/chanzuckerberg/miniwdl) provides python bindings for WDL as well as commandline validation and linting tools.
+- [MiniWDL](https://github.com/chanzuckerberg/miniwdl) provides python bindings for WDL as well as commandline tools for validation, linting, and generating workflow input templates.
 - [WOMTool](https://cromwell.readthedocs.io/en/stable/WOMtool/) is a standalone Java tool for WDL parsing, validating, linting, and diagramming.
 - [wdlTools](https://github.com/dnanexus/wdlTools) - provides 1) a parser Java/Scala library, based on the  [ANTLR4 grammars](https://github.com/openwdl/wdl-parsers) grammars, for WDL draft-2, 1.0, 1.1, and 2.0; and 2) command-line tools for sytanx checking, type-checking, linting, code formatting (including upgrading from older to newer WDL versions), generating documentation, and executing WDL tasks locally.
 
@@ -110,7 +110,6 @@ Please see the documentation associated with each tool/platform for information 
 
 | IDE                | Tool                                                                                             |
 | ------------------ | ------------------------------------------------------------------------------------------------ |
-| Atom               | [Language-WDL](https://atom.io/packages/language-wdl)                                            |
 | Emacs              | [poly-wdl](https://github.com/jmonlong/poly-wdl)                                                 |
 | Emacs              | [wdl-mode](https://github.com/zhanxw/wdl-mode)                                                   |
 | JetBrains          | [Winstanly](https://plugins.jetbrains.com/plugin/8154-winstanley-wdl)                            |
@@ -130,6 +129,7 @@ Please see the documentation associated with each tool/platform for information 
 
 ### Packaging
 
+- [miniwdl zip](https://miniwdl.readthedocs.io/en/latest/zip.html) generates a ZIP file including a given WDL source code file and any other WDL files it imports. The ZIP file can be supplied directly to miniwdl run, which can extract it automatically.
 - [wdl-packager](https://github.com/biowdl/wdl-packager) packages a workflow and all of its imports into a zip file. The zip can be used as an imports zip package for cromwell. The utility can add non-WDL files (such as the license) to the zip package and provides options to package the zip in a binary reproducible way.
 
 ## Contributing

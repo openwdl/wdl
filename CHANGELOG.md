@@ -55,8 +55,6 @@ version 1.1.1
   + "Task Input Localization"
   + "Expression Placeholders" under "Command Section"
 
-+ Added `tests` folder with documentation on adding/converting examples in the specification to a format compatible with automated testing.
-
 + Reformatted all tables.
 
 + Reorganzied the standard library.
