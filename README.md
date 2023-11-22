@@ -124,6 +124,7 @@ Please see the documentation associated with each tool/platform for information 
 
 ### Testing
 
+- [wdl-tests](https://github.com/openwdl/wdl-tests) is a collection of test cases for WDL implementations. A specification is provided for writing new tests that are compatible with automated testing frameworks.
 - [Pytest-workflow](https://github.com/LUMC/pytest-workflow) is a implementation-agnostic workflow tester. It can be used with both Cromwell and MiniWDL. Uses pytest as the underlying test framework. Tests can be specified in either YAML format or python code.
 - [Pytest-wdl](https://github.com/EliLillyCo/pytest-wdl) is a plugin for the pytest unit testing framework that enables testing of WDL tasks and workflows. Tests can be specified in either YAML format or python code.
 
