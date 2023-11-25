@@ -4,7 +4,7 @@ The **Workflow Description Language (WDL)** is an open standard for describing d
 WDL makes it straightforward to define analysis tasks, connect them together in workflows, and parallelize their execution.
 The language strives to be accessible and understantable to all manner of users, including programmers, analysts, and operators of a production system.
 The language enables common patterns, such as scatter-gather and conditional execution, to be expressed simply.
-WDL is designed for portability, and there are several [implementations](#execution-engines) to choose from that run in a variety of environments, including HPC systems and cloud platforms.
+WDL is designed for portability, and there are several [implementations](#execution-engines-and-platforms) to choose from that run in a variety of environments, including HPC systems and cloud platforms.
 
 ## Versioning
 
