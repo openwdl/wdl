@@ -47,6 +47,7 @@ All development of new *breaking* features should be done against that branch.
 The WDL community depends on your involvement to thrive.
 You are encouraged to ask questions, help other users, and make contributions where you can.
 Interactions occur primarily on [GitHub](https://github.com/openwdl/wdl) and [Slack](https://join.slack.com/t/openwdl/shared_invite/zt-ctmj4mhf-cFBNxIiZYs6SY9HgM9UAVw).
+The WDL community also has an official [blog](https://dev.to/openwdl) where announcements are made.
 
 ### Asking a Question
 
