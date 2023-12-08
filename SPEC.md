@@ -1,6 +1,6 @@
 # Workflow Description Language (WDL)
 
-This is version 1.1.1 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.1`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol).
+This is version 1.2.0 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.2`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.1.*](https://github.com/openwdl/wdl/blob/wdl-1.1/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 and 1.1 specifications that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol).
 
 ## Revisions
 
@@ -120,8 +120,8 @@ Revisions to this specification are made periodically in order to correct errors
     - [`floor`](#floor)
     - [`ceil`](#ceil)
     - [`round`](#round)
-    - [✨ `min`](#-min)
-    - [✨ `max`](#-max)
+    - [`min`](#min)
+    - [`max`](#max)
   - [String Functions](#string-functions)
     - [`sub`](#sub)
   - [File Functions](#file-functions)
@@ -149,25 +149,25 @@ Revisions to this specification are made periodically in order to correct errors
     - [`write_objects`](#write_objects)
   - [String Array Functions](#string-array-functions)
     - [`prefix`](#prefix)
-    - [✨ `suffix`](#-suffix)
-    - [✨ `quote`](#-quote)
-    - [✨ `squote`](#-squote)
-    - [✨ `sep`](#-sep)
+    - [`suffix`](#suffix)
+    - [`quote`](#quote)
+    - [`squote`](#squote)
+    - [`sep`](#sep-1)
   - [Generic Array Functions](#generic-array-functions)
     - [`length`](#length)
     - [`range`](#range)
     - [`transpose`](#transpose)
     - [`cross`](#cross)
     - [`zip`](#zip)
-    - [✨ `unzip`](#-unzip)
+    - [`unzip`](#unzip)
     - [`flatten`](#flatten)
     - [`select_first`](#select_first)
     - [`select_all`](#select_all)
   - [Map Functions](#map-functions)
-    - [✨ `as_pairs`](#-as_pairs)
-    - [✨ `as_map`](#-as_map)
-    - [✨ `keys`](#-keys)
-    - [✨ `collect_by_key`](#-collect_by_key)
+    - [`as_pairs`](#as_pairs)
+    - [`as_map`](#as_map)
+    - [`keys`](#keys)
+    - [`collect_by_key`](#collect_by_key)
   - [Other Functions](#other-functions)
     - [`defined`](#defined)
 - [Input and Output Formats](#input-and-output-formats)
@@ -1003,7 +1003,7 @@ Test config:
 </p>
 </details>
 
-A `Map` is insertion-ordered, meaning the order in which elements are added to the `Map` is preserved, for example when [✨ converting a `Map` to an array of `Pair`s](#-as_pairs).
+A `Map` is insertion-ordered, meaning the order in which elements are added to the `Map` is preserved, for example when [converting a `Map` to an array of `Pair`s](#-as_pairs).
 
 <details>
 <summary>
@@ -2453,7 +2453,7 @@ Requirements:
 * `sep` MUST accept only a string as its value
 * `sep` is only allowed if the type of the expression is `Array[P]`
 
-The `sep` option can be replaced with a call to the ✨ [`sep`](#-sep) function:
+The `sep` option can be replaced with a call to the [`sep`](#-sep) function:
 
 <details>
 <summary>
@@ -6320,7 +6320,7 @@ Example output:
 </p>
 </details>
 
-### ✨ `min`
+### `min`
 
 This function has four variants:
 
@@ -6382,7 +6382,7 @@ Example output:
 </p>
 </details>
 
-### ✨ `max`
+### `max`
 
 This function has four variants:
 
@@ -8136,7 +8136,7 @@ Test config:
 </p>
 </details>
 
-### ✨ `suffix`
+### `suffix`
 
 ```
 Array[String] suffix(String, Array[P])
@@ -8224,7 +8224,7 @@ Test config:
 </p>
 </details>
 
-### ✨ `quote`
+### `quote`
 
 ```
 Array[String] quote(Array[P])
@@ -8274,7 +8274,7 @@ Example output:
 </p>
 </details>
 
-### ✨ `squote`
+### `squote`
 
 ```
 Array[String] squote(Array[P])
@@ -8324,7 +8324,7 @@ Example output:
 </p>
 </details>
 
-### ✨ `sep`
+### `sep`
 
 ```
 String sep(String, Array[P])
@@ -8696,7 +8696,7 @@ Test config:
 </p>
 </details>
 
-### ✨ `unzip`
+### `unzip`
 
 ```
 Pair[Array[X], Array[Y]] unzip(Array[Pair[X, Y]])
@@ -8995,7 +8995,7 @@ These functions are generic and take a `Map` as input and/or return a `Map`.
 
 **Restrictions**: None
 
-### ✨ `as_pairs`
+### `as_pairs`
 
 ```
 Array[Pair[P, Y]] as_pairs(Map[P, Y])
@@ -9058,7 +9058,7 @@ Example output:
 </p>
 </details>
 
-### ✨ `as_map`
+### `as_map`
 
 ```
 Map[P, Y] as_map(Array[Pair[P, Y]])
@@ -9148,7 +9148,7 @@ Test config:
 </p>
 </details>
 
-### ✨ `keys`
+### `keys`
 
 ```
 Array[P] keys(Map[P, Y])
@@ -9209,13 +9209,13 @@ Example output:
 </p>
 </details>
 
-### ✨ `collect_by_key`
+### `collect_by_key`
 
 ```
 Map[P, Array[Y]] collect_by_key(Array[Pair[P, Y]])
 ```
 
-Given an `Array` of `Pair`s, creates a `Map` in which the right elements of the `Pair`s are grouped by the left elements. In other words, the input `Array` may have multiple `Pair`s with the same key. Rather than causing an error (as would happen with [`as_map`](#✨-as_map)), all the values with the same key are grouped together into an `Array`.
+Given an `Array` of `Pair`s, creates a `Map` in which the right elements of the `Pair`s are grouped by the left elements. In other words, the input `Array` may have multiple `Pair`s with the same key. Rather than causing an error (as would happen with [`as_map`](#as_map)), all the values with the same key are grouped together into an `Array`.
 
 The order of the keys in the output `Map` is the same as the order of their first occurrence in the input `Array`. The order of the elements in the `Map` values is the same as their order of occurrence in the input `Array`.
 
