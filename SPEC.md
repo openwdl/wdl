@@ -502,11 +502,11 @@ version
 workflow
 ```
 
-The following keywords are not reserved, but it is recommended to avoid their usage since they were reserved keywords in previous versions of WDL:
+The following keywords are not reserved, but it is recommended to avoid their usage since they were reserved in earlier versions of WDL:
 
 ```
 Object
-runtime 
+runtime
 ```
 
 ### Literals
@@ -1176,9 +1176,9 @@ The `Union` type is used for a value that may have any one of several concrete t
 
 ##### Object
 
-An `Object` is an unordered associative array of name-value pairs ("members"), where values may be of any type and are not defined explicitly. `Object` is similar to `Struct`, except that its members are not known in advance.
+An `Object` is an unordered associative array of name-value pairs ("members"), where values may be of any type and are not defined explicitly.
 
-`Object` only appears as a return value of some standard library functions: [`read_object`](#read_object), [`read_objects`](#read_objects), and [`read_json`](#read_json). To assign an `Object` value to a parameter, it must be coerced to a `Struct` type. It is also possible to access an `Object` member without first assigning the `Object` value.
+`Object` only appears as a return value of some standard library functions: [`read_object`](#read_object), [`read_objects`](#read_objects), and [`read_json`](#read_json). To assign an `Object` value to a parameter, it must be coerced to a `Struct` type. It is also possible to pass an `Object` to a function or access one of its members without first assigning it.
 
 <details>
 <summary>
@@ -1205,6 +1205,7 @@ task test_object {
     MyStruct my = read_object(tsv)
     String s = my.s
     Int i = read_int("int_file")
+    File obj_json = write_json(read_object(tsv))
   }
 }
 ```
@@ -1227,7 +1228,8 @@ Example output:
     "i": 10
   },
   "test_object.s": "hello",
-  "test_object.i": 10
+  "test_object.i": 10,
+  "test_object.obj_json": "object.json"
 }
 ```
 </p>
@@ -1336,7 +1338,7 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
 | `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`         |
 | `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                  |
-| `Object`         | `Struct`         |                                                                                                                |
+| `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                     |
 | `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
 
 The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
@@ -10426,7 +10428,7 @@ Where `/jobs/564757/sample_quality_scores.json` would contain:
 
 ### Struct and Object serialization/deserialization
 
-There are two alternative serialization formats for `Struct`s and `Objects:
+There are two alternative serialization formats for `Struct`s and `Object`s:
 
 * JSON: `Struct`s and `Object`s are serialized identically using [`write_json`](#write_json). A JSON object is deserialized to a WDL `Object` using [`read_json](#read_json), which can then be coerced to a `Struct` type if necessary.
 * TSV: `Struct`s and `Object`s can be serialized to TSV format using [`write_object`](#write_object). The generated file has two lines tab-delimited: a header with the member names and the values, which must be coercible to `String`s. An array of `Struct`s or `Object`s can be written using [`write_objects`](#write_objects), in which case the generated file has one line of values for each struct/object. `Struct`s and `Object`s can be deserialized from the same TSV format using [`read_object`](#read_object)/[`read_objects`](#read_objects). Object member values are always of type `String` whereas struct member types must be coercible from `String`.
