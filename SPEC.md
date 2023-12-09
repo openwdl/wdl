@@ -1,6 +1,6 @@
 # Workflow Description Language (WDL)
 
-This is version 2.0.0 of the Workflow Description Language (WDL) specification. It describes WDL `version 2.0`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.*](https://github.com/openwdl/wdl/blob/wdl-1.2/SPEC.md) version of the specification. It also removes several features that were deprecated in earlier versions of the specification.
+This is version 2.0.0 of the Workflow Description Language (WDL) specification. It describes WDL `version 2.0`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.*](https://github.com/openwdl/wdl/blob/wdl-1.2/SPEC.md) version of the specification. It also removes several features that were deprecated in earlier versions of the specification. Deprecated features that will be removed in a future version of the specification are denoted by the 🗑 symbol.
 
 ## Revisions
 
@@ -38,7 +38,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [Type Coercion](#type-coercion)
           - [Order of Precedence](#order-of-precedence)
           - [Coercion of Optional Types](#coercion-of-optional-types)
-          - [Struct/Object coercion from Map](#structobject-coercion-from-map)
+          - [Struct coercion from Map](#struct-coercion-from-map)
           - [🗑 Limited exceptions](#-limited-exceptions)
     - [Declarations](#declarations)
     - [Expressions](#expressions)
@@ -467,12 +467,12 @@ The following (case-sensitive) language keywords are reserved and cannot be used
 ```
 Array
 Boolean
+Directory
 File
 Float
 Int
 Map
 None
-Object
 Pair
 String
 alias
@@ -481,6 +481,7 @@ call
 command
 else
 false
+hints
 if
 in
 import
@@ -490,8 +491,8 @@ meta
 object
 output
 parameter_meta
+requirements
 right
-runtime 
 scatter
 struct
 task
@@ -501,12 +502,11 @@ version
 workflow
 ```
 
-The following keywords should also be considered as reserved - they are not used in the current version of the specification, but they will be used in a future version:
+The following keywords are not reserved, but it is recommended to avoid their usage since they were reserved keywords in previous versions of WDL:
 
 ```
-Directory
-hints
-requirements
+Object
+runtime 
 ```
 
 ### Literals
@@ -1336,8 +1336,6 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
 | `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`         |
 | `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                  |
-| `Object`         | `Map[String, Y]` |                                                                                                                |
-| `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                     |
 | `Object`         | `Struct`         |                                                                                                                |
 | `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
 
@@ -1401,9 +1399,9 @@ There are two exceptions where coercion from `T?` to `T` is allowed:
 * [String concatenation in expression placeholders](#concatenation-of-optional-values)
 * [Equality and inequality comparisons](#equality-and-inequality-comparison-of-optional-types)
 
-###### Struct/Object coercion from Map
+###### Struct coercion from Map
 
-`Struct`s and `Object`s can be coerced from map literals, but beware the difference between `Map` keys (expressions) and `Struct`/`Object` member names.
+`Struct`s can be coerced from map literals, but beware the difference between `Map` keys (expressions) and `Struct` member names.
 
 <details>
 <summary>
@@ -1465,8 +1463,8 @@ Example output:
 </p>
 </details>
 
-- If a `Struct` (or `Object`) declaration is initialized using the struct-literal (or object-literal) syntax `Words literal_syntax = Words { a: ...` then the keys will be `"a"`, `"b"` and `"c"`.
-- If a `Struct` (or `Object`) declaration is initialized using the map-literal syntax `Words map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
+- If a `Struct` declaration is initialized using the struct-literal syntax `Words literal_syntax = Words { a: ...` then the keys will be `"a"`, `"b"` and `"c"`.
+- If a `Struct` declaration is initialized using the map-literal syntax `Words map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
 
 ###### 🗑 Limited exceptions
 
@@ -1478,9 +1476,7 @@ Implementers may choose to allow limited exceptions to the above rules, with the
 * `Array[X]` to `Array[X]+`, when the array is non-empty (an error is raised otherwise).
 * `Map[W, X]` to `Array[Pair[Y, Z]]`, in the case where `W` is coercible to `Y` and `X` is coercible to `Z`.
 * `Array[Pair[W, X]]` to `Map[Y, Z]`, in the case where `W` is coercible to `Y` and `X` is coercible to `Z`.
-* `Map` to `Object`, in the case of `Map[String, X]`.
 * `Map` to struct, in the case of `Map[String, X]` where all members of the struct have type `X`.
-* `Object` to `Map[String, X]`, in the case where all object values are of (or are coercible to) the same type.
 
 ### Declarations
 
@@ -4744,8 +4740,6 @@ task {
 }
 ```
 
-Note that, unlike the WDL `Object` type, metadata objects are not deprecated and will continue to be supported in future versions.
-
 #### Task Metadata Section
 
 This section contains task-level metadata. For example: author and contact email.
@@ -5142,7 +5136,7 @@ A fully qualified name is the unique identifier of any particular call, input, o
 * For inputs and outputs: `<parent namespace>.<input or output name>`
 * For `Struct`s and `Object`s: `<parent namespace>.<member name>`
 
-A [namespace](#namespaces) is a set of names, such that every name is unique within the namespace (but the same name could be used in two different namespaces). The `parent namespace` is the fully qualified name of the workflow containing the call, the workflow or task containing the input or output declaration, or the `Struct` or `Object` declaration containing the member. For the top-level workflow this is equal to the workflow name.
+A [namespace](#namespaces) is a set of names, such that every name is unique within the namespace (but the same name could be used in two different namespaces). The `parent namespace` is the fully qualified name of the workflow containing the call, the workflow or task containing the input or output declaration, or the `Struct` declaration containing the member. For the top-level workflow this is equal to the workflow name.
 
 For example: `ns.ns2.mytask` is a fully-qualified name - `ns.ns2` is the parent namespace, and `mytask` is the task name being referred to within that namespace. Fully-qualified names are left-associative, meaning `ns.ns2.mytask` is interpreted as `((ns.ns2).mytask)`, meaning `ns.ns2` has to resolve to a namespace so that `.mytask` can be applied.
 
@@ -7695,6 +7689,12 @@ Example: read_object_task.wdl
 ```wdl
 version 2.0
 
+struct MyStruct {
+  Int key_1
+  Int key_2
+  Int key_3
+}
+
 task read_object {
   command <<<
     python <<CODE
@@ -7704,7 +7704,7 @@ task read_object {
   >>>
 
   output {
-    Object my_obj = read_object(stdout())
+    MyStruct my_obj = read_object(stdout())
   }
 
   runtime {
@@ -7773,6 +7773,12 @@ Example: read_objects_task.wdl
 ```wdl
 version 2.0
 
+struct MyStruct {
+  String key_1
+  String key_2
+  String key_3
+}
+
 task read_objects {
   command <<<
     python <<CODE
@@ -7784,7 +7790,7 @@ task read_objects {
   >>>
 
   output {
-    Array[Object] my_obj = read_objects(stdout())
+    Array[MyStruct] my_obj = read_objects(stdout())
   }
 }
 ```
@@ -7868,9 +7874,15 @@ Example: write_object_task.wdl
 ```wdl
 version 2.0
 
+struct MyStruct {
+  String key_1
+  String key_2
+  String key_3
+}
+
 task write_object {
   input {
-    Object obj
+    MyStruct obj
   }
 
   command <<<
@@ -7952,9 +7964,15 @@ Example: write_objects_task.wdl
 ```wdl
 version 2.0
 
+struct MyStruct {
+  String key_1
+  String key_2
+  String key_3
+}
+
 task write_objects {
   input {
-    Array[Object] obj_array
+    Array[MyStruct] obj_array
   }
 
   command <<<
