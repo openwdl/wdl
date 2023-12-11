@@ -45,7 +45,7 @@ version development
 version 1.2.0
 ---------------------------
 
-+ Added new task `requirements` and `hints` sections (#540 and #541), and deprecated `runtime` section
++ Added new task `requirements` and `hints` sections (#540 and #541), and deprecated the `runtime` section
 
 + Added new workflow `hints` section (#543)
 
