@@ -42,10 +42,19 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
+version 1.2.0
+---------------------------
+
++ Added new task `requirements` and `hints` sections (#540 and #541), and deprecated `runtime` section
+
++ Added new workflow `hints` section (#543)
+
 version 1.1.1
 ---------------------------
 
 + Applied [Errata](https://github.com/openwdl/wdl/blob/main/versions/1.1/Errata.md) to the 1.1.0 spec.
+
++ Updated most examples to adhere to the new specification for WDL tests.
 
 + Added missing `File` and `version` keywords to the list of reserved words.
 
@@ -54,6 +63,7 @@ version 1.1.1
   + "Static Analysis and Dynamic Evaluation"
   + "Task Input Localization"
   + "Expression Placeholders" under "Command Section"
+  + Hidden types
 
 + Reformatted all tables.
 
