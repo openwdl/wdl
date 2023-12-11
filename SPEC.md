@@ -99,7 +99,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [`max_cpu`](#max_cpu)
         - [✨ `accelerators`](#-accelerators)
         - [`max_memory`](#max_memory)
-        - [`volumes`](#volumes)
+        - [✨ `volumes`](#-volumes)
         - [`short_task`](#short_task)
         - [`localization_optional`](#localization_optional)
         - [`inputs`](#inputs)
@@ -5052,7 +5052,7 @@ This hint may be used to request optional accelerators that are not specified in
 
 Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as [`requirements.memory`](#memory).
 
-##### `volumes`
+##### ✨ `volumes`
 
 * Accepted types: `object`
 
