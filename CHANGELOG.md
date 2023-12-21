@@ -45,6 +45,8 @@ version development
 version 1.2.0
 ---------------------------
 
++ Introduced the concept of "scoped types" to support the use of object-like values within the `hints` section while still keeping the `Object` type as deprecated.
+
 + Added new task `requirements` and `hints` sections (#540 and #541), and deprecated the `runtime` section
 
 + Added new workflow `hints` section (#543)
