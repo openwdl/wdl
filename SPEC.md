@@ -97,8 +97,8 @@ Revisions to this specification are made periodically in order to correct errors
       - [Hints-scoped types](#hints-scoped-types)
       - [Reserved Task Hints](#reserved-task-hints)
         - [`max_cpu`](#max_cpu)
-        - [✨ `gpus` and ✨ `fpgas`](#-gpus-and--fpgas)
         - [`max_memory`](#max_memory)
+        - [✨ `gpus` and ✨ `fpgas`](#-gpus-and--fpgas)
         - [✨ `volumes`](#-volumes)
         - [`short_task`](#short_task)
         - [`localization_optional`](#localization_optional)
@@ -4982,14 +4982,6 @@ Example output:
 
 Specifies the maximum CPU to be provisioned for a task. The value of this hint has the same specification as [`requirements.cpu`](#cpu).
 
-##### ✨ `gpus` and ✨ `fpgas`
-
-* Accepted types:
-    * `Int`: Minimum number of accelerators being requested.
-    * `String`: Specification for a type of accelerator being requested, e.g., manufacturer or model name.
-
-Specifies attributes for any [hardware accelerators](#hardware-accelerators-gpu-and-✨-fpga) that are requested. Accelerator specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#✨-compute-environments).
-
 ##### `max_memory`
 
 * Accepted types:
@@ -4998,6 +4990,14 @@ Specifies attributes for any [hardware accelerators](#hardware-accelerators-gpu-
 * Alias: `maxMemory`
 
 Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as [`requirements.memory`](#memory).
+
+##### ✨ `gpus` and ✨ `fpgas`
+
+* Accepted types:
+    * `Int`: Minimum number of accelerators being requested.
+    * `String`: Specification for a type of accelerator being requested, e.g., manufacturer or model name.
+
+Specifies attributes for any [hardware accelerators](#hardware-accelerators-gpu-and-✨-fpga) that are requested. Accelerator specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#✨-compute-environments).
 
 ##### ✨ `volumes`
 
