@@ -5378,14 +5378,6 @@ The following fully-qualified names exist when calling `workflow main` in `main.
 
 ### Call Statement
 
-```
-$call = 'call' $ws* $namespaced_identifier $ws+ ('as' $identifier $ws+)? ('after $identifier $ws+)* $call_body?
-$call_body = '{' $ws* $inputs? $ws* '}'
-$inputs = 'input' $ws* ':' $ws* $variable_mappings
-$variable_mappings = $variable_mapping_kv (',' $variable_mapping_kv)*
-$variable_mapping_kv = $identifier $ws* ('=' $ws* $expression)?
-```
-
 A workflow calls other tasks/workflows via the `call` keyword. A `call` is followed by the name of the task or subworkflow to run. If a task is defined in the same WDL document as the calling workflow, it may be called using just the task name. A task or workflow in an imported WDL must be called using its [fully-qualified name](#fully-qualified-names--namespaced-identifiers).
 
 Each `call` must be uniquely identifiable. By default, the `call`'s unique identifier is the task or subworkflow name (e.g., `call foo` would be referenced by name `foo`). However, to `call foo` multiple times in the same workflow, it is necessary to give all except one of the `call` statements a unique alias using the `as` clause, e.g., `call foo as bar`.
