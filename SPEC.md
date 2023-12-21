@@ -5829,7 +5829,7 @@ If the `output {...}` section is omitted from a workflow that is called as a sub
 
 The `hints` section is optional and may contain any number of attributes (key/value pairs) that provide hints to the execution engine. Some workflow hint keys are reserved and have well-defined values.
 
-The runtime implementation may ignore any unsupported hint. A workflow execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
+The execution engine may ignore any unsupported hint. A workflow execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
 
 #### Reserved Workflow Hints
 
