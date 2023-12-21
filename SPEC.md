@@ -37,6 +37,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [Custom Types (Structs)](#custom-types-structs)
       - [Hidden Types](#hidden-types)
         - [Union](#union)
+      - [Scoped Types](#scoped-types)
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
@@ -84,7 +85,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [Evaluation of Task Declarations](#evaluation-of-task-declarations)
     - [✨ Requirements Section](#-requirements-section)
       - [Units of Storage](#units-of-storage)
-      - [`requirements` attributes](#requirements-attributes)
+      - [Requirements attributes](#requirements-attributes)
         - [`container`](#container)
         - [`cpu`](#cpu)
         - [`memory`](#memory)
@@ -92,12 +93,11 @@ Revisions to this specification are made periodically in order to correct errors
         - [`disks`](#disks)
         - [`max_retries`](#max_retries)
         - [`return_codes`](#return_codes)
-    - [🗑 Runtime Section](#-runtime-section)
-    - [Meta Values](#meta-values)
     - [✨ Hints Section](#-hints-section)
+      - [Hints-scoped types](#hints-scoped-types)
       - [Reserved Task Hints](#reserved-task-hints)
         - [`max_cpu`](#max_cpu)
-        - [✨ `accelerators`](#-accelerators)
+        - [✨ `gpus` and ✨ `fpgas`](#-gpus-and--fpgas)
         - [`max_memory`](#max_memory)
         - [✨ `volumes`](#-volumes)
         - [`short_task`](#short_task)
@@ -106,7 +106,9 @@ Revisions to this specification are made periodically in order to correct errors
         - [`outputs`](#outputs)
       - [Compute Environments](#compute-environments)
       - [Conventions and Best Practices](#conventions-and-best-practices)
+    - [🗑 Runtime Section](#-runtime-section)
     - [Metadata Sections](#metadata-sections)
+      - [Meta Values](#meta-values)
       - [Task Metadata Section](#task-metadata-section)
       - [Parameter Metadata Section](#parameter-metadata-section)
     - [Advanced Task Examples](#advanced-task-examples)
@@ -1453,6 +1455,12 @@ The `Union` type is used for a value that may have any one of several concrete t
 
 * It is the type of the special [`None`](#optional-types-and-none) value.
 * It is the return type of some standard library functions, such as [`read_json`](#read_json).
+
+#### Scoped Types
+
+A scoped type is one that may only be defined by the execution engine within a specific scope, but which may be instantiated by the user within that scope.
+
+Currently, scoped types limted to the [`hints`](#✨-hints-section) section.
 
 #### Type Conversion
 
@@ -3299,7 +3307,7 @@ A task has a required [`command`](#command-section) that is a template for a Bas
 
 Tasks explicitly define their [`input`s](#task-inputs) and [`output`s](#task-outputs), which is essential for building dependencies between tasks and workflows. The value of an input declaration may be supplied by the caller. Tasks may have additional "private" declarations within the task body. All task declarations may be initialized with hard-coded literal values, or may have their values constructed from expressions. Input and private declarations can be referenced in the command template.
 
-A task may also specify runtime environment [requirements](#requirements-section) (such as the amount of RAM or number of CPU cores) that must be satisfied in order for its commands to execute properly, and [hints](#hints-section) that should be satisfied if possible.
+A task may also specify runtime environment [requirements](#requirements-section) (such as the amount of RAM or number of CPU cores) that must be satisfied in order for its commands to execute properly, and [hints](#✨-hints-section) that should be satisfied if possible.
 
 There are two optional metadata sections: the [`meta`](#metadata-sections) section, for task-level metadata, and the [`parameter_meta`](#parameter-metadata-section) section, for parameter-level metadata.
 
@@ -4366,7 +4374,7 @@ Optional whitespace is allowed between the number/expression and the suffix. For
 
 The decimal and binary units may be shortened by omitting the trailing "B". For example, "K" and "KB" are both interpreted as "kilobytes".
 
-#### `requirements` attributes
+#### Requirements attributes
 
 The following attributes must be supported by the execution engine. The value for each of these attributes must be defined - if it is not specified by the user, then it must be set to the specified default value.
 
@@ -4892,6 +4900,246 @@ Test config:
 </p>
 </details>
 
+### ✨ Hints Section
+
+The `hints` section is optional and may contain any number of attributes (key/value pairs) that provide hints to the execution engine. The execution engine may choose to ignore hints; a task execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
+
+#### Hints-scoped types
+
+There are three [scoped types](#scoped-types) that must be declared by the execution engine within the `hints` section. These types are intentionally given names that are already reserved keywords so that they don't conflict with any user-defined types.
+
+The `hints` type is similar to `Object` in that it can contain arbitrary key-value pairs. However, the members of a `hints` object must have the same semantics as the `hints` section itself (i.e., any [reserved hints](#reserved-task-hints) must have the same types and allowed values), and the `hints` type cannot be nested (i.e., a member of a `hints` object may not have a `hints` type value). The `hints` type is primarily intended to be used to define the [`inputs`](#intputs), [`outputs`](#outputs), and [compute environment](#compute-environments) attributes.
+
+The `input` and `output` types are similar to Structs whose member names are identical to the names of the enclosing task's input and output variables, respectively, and whose member values are all of type `hints`. However, unlike Structs, the keys of `input` and `output` literals may use dotted notation to refer to nested members of input and output Structs. See [`inputs`](#inputs) and [`outputs`](#outputs) for examples.
+
+#### Reserved Task Hints
+
+The following hints are reserved. An implementation is not required to support these attributes, but if it does support a reserved attribute it must enforce the semantics and allowed values defined below. The purpose of reserving these hints is to encourage interoperability of tasks and workflows between different execution engines.
+
+<details>
+<summary>
+Example: test_hints_task.wdl
+
+```wdl
+version 1.2
+
+task test_hints {
+  input {
+    File foo
+  }
+
+  command <<<
+  wc -l ~{foo}
+  >>>
+
+  output {
+    Int num_lines = read_int(stdout())
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+  }
+
+  hints {
+    max_memory: "36 GB"
+    max_cpu: 24
+    short_task: true
+    localization_optional: false
+    inputs: input {
+      foo: hints { 
+        localization_optional: true
+      }
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_hints.foo": "greetings.txt"
+}
+```
+
+Example output:
+
+```json
+{
+  "test_hints.num_lines": 3
+}
+```
+</p>
+</details>
+
+##### `max_cpu`
+
+* Accepted types:
+    * `Int`
+    * `Float`
+* Alias: `maxCpu`
+
+Specifies the maximum CPU to be provisioned for a task. The value of this hint has the same specification as [`requirements.cpu`](#cpu).
+
+##### ✨ `gpus` and ✨ `fpgas`
+
+* Accepted types:
+    * `Int`: Minimum number of accelerators being requested.
+    * `String`: Specification for a type of accelerator being requested, e.g., manufacturer or model name.
+
+Specifies attributes for any [hardware accelerators](#hardware-accelerators-gpu-and-✨-fpga) that are requested. Accelerator specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#✨-compute-environments).
+
+##### `max_memory`
+
+* Accepted types:
+    * `Int`: Bytes of RAM.
+    * `String`: A decimal value with, optionally with a unit suffix.
+* Alias: `maxMemory`
+
+Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as [`requirements.memory`](#memory).
+
+##### ✨ `volumes`
+
+* Accepted types: `Map[String, String]`
+
+Specifies attributes for any [disk mount points](#disks) that are required. The value of this hint is a `Map` with the key being the mount point and the value being a `String` with the volume specification. The values "HDD" and "SSD" should be recognized to indicate that a specific class of hardware is being requested. Volume specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#compute-environments).
+
+##### `short_task`
+
+* Accepted types: `Boolean`
+* Default value: `false`
+
+A `Boolean` value for which `true` indicates that that this task is not expected to take long to execute. The execution engine can interpret this as permission to attempt to optimize the execution of the task. For example, the engine may batch together multiple `short_task`s, or it may use the cost-optimized instance types that many cloud vendors provide, e.g., `preemptible` instances on `GCP` and `spot` instances on `AWS`.
+
+##### `localization_optional`
+
+* Accepted types: `Boolean`
+* Default value: `false`
+* Alias: `localizationOptional`
+
+A `Boolean` value, for which `true` indicates that, if possible, any `File` inputs for this task should not be (immediately) localized. For example, a task that processes its input file once in linear fashion could have that input streamed (e.g., using a `fifo`) rather than requiring the input file to be fully localized prior to execution. This directive must not have any impact on the success or failure of a task (i.e., a task must run the same with or without localization).
+
+##### `inputs`
+
+* Accepted types: [`input`](#hints-scoped-types)
+
+Provides input-specific hints. Each key must refer to a parameter defined in the task's [`input`](#task-inputs) section. A key may also used dotted notation to refer to a specific member of a struct input.
+
+<details>
+<summary>
+Example: input_hint_task.wdl
+
+```wdl
+version 1.2
+
+struct Person {
+  String name
+  File? cv
+}
+
+task input_hint {
+  input {
+    Person person
+  }
+
+  command <<<
+  if ~{defined(person.cv)}; then
+    grep "WDL" ~{person.cv}
+  fi
+  >>>
+  
+  output {
+    Array[String] experience = read_lines(stdout())
+  }
+
+  hints {
+    inputs: input {
+      person.name: hints {
+        min_length: 3
+      },
+      person.cv: hints {
+        localization_optional: true
+      }
+    }
+    outputs: output {
+      experience: hints {
+        max_length: 5
+      }
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "input_hint.person": {
+    "name": "Joe"
+  }
+}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
+
+Reserved input-specific attributes:
+
+* `inputs.<key>.localization_optional`: Indicates that a specific `File` input does not need to be localized for this task.
+
+##### `outputs`
+
+* Accepted types: `output`
+
+Provides output-specific hints. Each key must refer to a parameter defined in the task's [`output`](#task-outputs) section. A key may also use dotted notation to refer to a specific member of a struct output.
+
+#### Compute Environments
+
+The `hints` section should be used to provide hints that are specific to different compute environments such as HPC systems or cloud platforms. Attributes for a compute environment should be specified in a `hints` value, in which any of the [reserved hints](#reserved-task-hints) are allowed to override the values specified at the task level (if any), and other attributes are platform-specific.
+
+```wdl
+task foo {
+  ...
+
+  requirements {
+    gpu: true
+  }
+
+  hints {
+    aws: hints {
+      instance_type: "p5.48xlarge"
+    }
+    gcp: hints {
+      gpus: 2
+    }
+    azure: {
+      ...
+    }
+    alibaba: {
+      ...
+    }
+  }
+}
+```
+
+#### Conventions and Best Practices
+
+To encourage interoperable workflows, WDL authors and execution engine implementors should view hints strictly as runtime optimizations. Hints must not be interpreted as requirements. Following this principle will ensure that a workflow is runnable on all platforms (assuming the `requirements` section has the required attributes) regardless of whether it contains any additional hints.
+
+Please observe the following guidelines when using hints:
+
+* A hint must never be required for successful task execution.
+* Before adding a new hint, ask yourself "do I really need another hint, or is there a better way to specify the behavior I require?".
+* Avoid unnecessary complexity. By allowing any arbitrary keys and compound values, it is possible for the `hints` section to become quite complex. Use the simplest value possible to achieve the desired outcome.
+* Sharing is caring. Users tend to look for similar behavior between different execution engines. It is strongly encouraged that implementers of execution engines agree on common names and accepted values for hints that describe common usage patterns. [Compute environments](#compute-environments) are a good example of hints that have conventions attached to them. 
+
 ### 🗑 Runtime Section
 
 The `runtime` section is essentially the same as the [`requirements`](#-requirements-section) section, with the only difference being that arbitrary attributes *are* allowed in the `runtime` section. All attributes defined in the `requirements` section have the same semantics when used in the `runtime` section and are considered as reserved.
@@ -4900,9 +5148,13 @@ The `runtime` section is mutually exclusive with `requirements` and `hints`, i.e
 
 The `runtime` section is deprecated and will be removed in WDL 2.0.
 
-### Meta Values
+### Metadata Sections
 
-The subsequent three sections ([`hints`](#✨-hints-section), [`meta`](#task-metadata-section), and [`parameter_meta`](#parameter-metadata-section)) are all similar in that they can contain arbitrary key/value pairs. However, the values allowed in these sections ("meta values") are different than in `requirements` and other sections:
+There are two optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are intended to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface or documentation.
+
+#### Meta Values
+
+The metadata sections can contain arbitrary key/value pairs. However, the values allowed in these sections ("meta values") are different than in other sections:
 
 * Only string, numeric, and boolean primitives are allowed.
 * Only array and object compound values are allowed.
@@ -4949,270 +5201,6 @@ Example output:
 ```
 </p>
 </details>
-
-### ✨ Hints Section
-
-The `hints` section is optional and may contain any number of attributes (key/value pairs) that provide hints to the execution engine. Some hint keys are reserved and have well-defined values.
-
-The `requirements` and `hints` sections differ in two important ways:
-
-* A task execution must fail if the execution engine is not able to satisfy all of the requirements, but a task execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
-* The value of a `requirements` attribute may be any valid expression, while only [meta values](#meta-values) may be used in the `hints` section.
-
-#### Reserved Task Hints
-
-The following hints are reserved. An implementation is not required to support these attributes, but if it does support a reserved attribute it must enforce the semantics and allowed values defined below. The purpose of reserving these hints is to encourage interoperability of tasks and workflows between different execution engines.
-
-<details>
-<summary>
-Example: test_hints_task.wdl
-
-```wdl
-version 1.2
-
-task test_hints {
-  input {
-    File foo
-  }
-
-  command <<<
-  wc -l ~{foo}
-  >>>
-
-  output {
-    Int num_lines = read_int(stdout())
-  }
-
-  requirements {
-    container: "ubuntu:latest"
-  }
-
-  hints {
-    max_memory: "36 GB"
-    max_cpu: 24
-    short_task: true
-    localization_optional: false
-    inputs: {
-      foo: { 
-        localization_optional: true
-      }
-    }
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{
-  "test_hints.foo": "greetings.txt"
-}
-```
-
-Example output:
-
-```json
-{
-  "test_hints.num_lines": 3
-}
-```
-</p>
-</details>
-
-##### `max_cpu`
-
-* Accepted types:
-    * `Int`
-    * `Float`
-* Alias: `maxCpu`
-
-Specifies the maximum CPU to be provisioned for a task. The value of this hint has the same specification as [`requirements.cpu`](#cpu).
-
-##### ✨ `accelerators`
-
-* Accepted types: `object`
-
-Specifies attributes for any [hardware accelerators](#hardware-accelerators-gpu-and-✨-fpga) that are requested. The value of this hint is an object with the key being the kind of accelerator (e.g., `gpu` or `fpga`) and the value being one of the following:
-
-* `Int`: Number of accelerators being requested.
-* `String`: Specific type of accelerator being requested, e.g., manufacturer or model name.
-* `object`: Object with one or more attributes, e.g., `number` and `type`.
-
-Accelerator specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#✨-compute-environments).
-
-This hint may be used to request optional accelerators that are not specified in the [`requirements` section](#✨-requirements-section). For example a task may be able to execute different commands based on whether a GPU is available.
-
-##### `max_memory`
-
-* Accepted types:
-    * `Int`: Bytes of RAM.
-    * `String`: A decimal value with, optionally with a unit suffix.
-* Alias: `maxMemory`
-
-Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as [`requirements.memory`](#memory).
-
-##### ✨ `volumes`
-
-* Accepted types: `object`
-
-Specifies attributes for any [disk mount points](#disks) that are required. The value of this hint is an object with the key being the mount point and the value being one of the following:
-
-* `String`: A volume specification. The values "HDD" and "SSD" should be recognized to indicate that a specific class of hardware is being requested.
-* `object`: Object with one or more attributes, e.g. `class` or `permissions`.
-
-Volume specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#compute-environments).
-
-##### `short_task`
-
-* Accepted types: `Boolean`
-* Default value: `false`
-
-A `Boolean` value for which `true` indicates that that this task is not expected to take long to execute. The execution engine can interpret this as permission to attempt to optimize the execution of the task. For example, the engine may batch together multiple `short_task`s, or it may use the cost-optimized instance types that many cloud vendors provide, e.g., `preemptible` instances on `GCP` and `spot` instances on `AWS`.
-
-##### `localization_optional`
-
-* Accepted types: `Boolean`
-* Default value: `false`
-* Alias: `localizationOptional`
-
-A `Boolean` value, for which `true` indicates that, if possible, any `File` inputs for this task should not be (immediately) localized. For example, a task that processes its input file once in linear fashion could have that input streamed (e.g., using a `fifo`) rather than requiring the input file to be fully localized prior to execution. This directive must not have any impact on the success or failure of a task (i.e., a task must run the same with or without localization).
-
-##### `inputs`
-
-* Accepted types: `object`
-
-Provides input-specific hints . Each key should refer to a parameter defined in the task's [`input`](#task-inputs) section. A key may also refer to a specific member of a struct input.
-
-<details>
-<summary>
-Example: input_hint_task.wdl
-
-```wdl
-version 1.2
-
-struct Person {
-  String name
-  File? cv
-}
-
-task input_hint {
-  input {
-    Person person
-  }
-
-  command <<<
-  if ~{defined(person.cv)}; then
-    grep "WDL" ~{person.cv}
-  fi
-  >>>
-  
-  output {
-    Array[String] experience = read_lines(stdout())
-  }
-
-  hints {
-    inputs {
-      person {
-        cv {
-          localization_optional: true
-        }
-      }
-    }
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{
-  "input_hint.person": {
-    "name": "Joe"
-  }
-}
-```
-
-Example output:
-
-```json
-{}
-```
-</p>
-</details>
-
-Reserved input-specific attributes:
-
-* `inputs.<key>.localization_optional`: Indicates that a specific `File` input does not need to be localized for this task.
-
-##### `outputs`
-
-* Accepted types: `object`
-
-Provides output-specific hints. Each key should refer to a parameter defined in the task's [`output`](#task-outputs) section. A key may also refer to a specific member of a struct output.
-
-#### Compute Environments
-
-The `hints` section should be used to provide hints that are specific to different compute environments such as HPC systems or cloud platforms. Attributes for a compute environment should be specified in an `object`, in which any of the [reserved hints](#reserved-task-hints) are allowed to override the values specified at the task level (if any), and other attributes are platform-specific.
-
-```wdl
-task foo {
-  ...
-
-  hints {
-    aws: {
-      instance_type: "p5.48xlarge"
-    }
-    gcp: {
-      accelerators: {
-        gpu: {
-          number: 2
-          type: "nvidia-tesla-k80"
-        }
-      }
-    }
-    azure: {
-      ...
-    }
-    alibaba: {
-      ...
-    }
-  }
-}
-```
-
-#### Conventions and Best Practices
-
-To encourage interoperable workflows, WDL authors and execution engine implementors should view hints strictly as runtime optimizations. Hints must not be interpreted as requirements. Following this principle will ensure that a workflow is runnable on all platforms (assuming the `requirements` section has the required attributes) regardless of whether it contains any additional hints.
-
-Please observe the following guidelines when using hints:
-
-* A hint must never be required for successful task execution.
-* Before adding a new hint, ask yourself "do I really need another hint, or is there a better way to specify the behavior I require?".
-* Avoid unnecessary complexity. By allowing any arbitrary keys and compound values, it is possible for the `hints` section to become quite complex. Use the simplest value possible to achieve the desired outcome.
-* Sharing is caring. Users tend to look for similar behavior between different execution engines. It is strongly encouraged that execution engines agree on common names and accepted values for hints that describe common usage patterns. A good example of hints that have conventions attached to them is [cloud provider-specific details](#compute-environments). 
-* Use objects to avoid collisions. If there are specific hints that are unlikely to ever be shared between execution engines, it is good practice to encapsulate these within their own execution engine-specific hints object:
-    ```wdl
-    task foo {
-      ...
-
-      hints {
-        cromwell: {
-          # cromwell specific 
-          ...
-        }
-        miniwdl: {
-          # miniwdl specific
-          ...
-        }
-      }
-    }
-    ```
-
-### Metadata Sections
-
-There are two optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are intended to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface or documentation. Any attributes that may influence execution behavior should go in the `hints` section.
 
 #### Task Metadata Section
 
