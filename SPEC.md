@@ -1451,10 +1451,11 @@ A hidden type is one that may only be instantiated by the execution engine, and 
 
 ##### Union
 
-The `Union` type is used for a value that may have any one of several concrete types. A `Union` value must always be coerced to a concrete type. The `Union` type is used in two contexts:
+The `Union` type is used for a value that may have any one of several concrete types. A `Union` value must always be coerced to a concrete type. The `Union` type is used in the following contexts:
 
 * It is the type of the special [`None`](#optional-types-and-none) value.
 * It is the return type of some standard library functions, such as [`read_json`](#read_json).
+* It is the type of some reserved [`requirements`](#✨-requirements-section) and [`hints`](#✨-hints-section) attributes.
 
 #### Scoped Types
 
