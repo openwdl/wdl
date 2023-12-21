@@ -98,8 +98,8 @@ Revisions to this specification are made periodically in order to correct errors
       - [Reserved Task Hints](#reserved-task-hints)
         - [`max_cpu`](#max_cpu)
         - [`max_memory`](#max_memory)
-        - [✨ `gpus` and ✨ `fpgas`](#-gpus-and--fpgas)
         - [✨ `volumes`](#-volumes)
+        - [✨ `gpus` and ✨ `fpgas`](#-gpus-and--fpgas)
         - [`short_task`](#short_task)
         - [`localization_optional`](#localization_optional)
         - [`inputs`](#inputs)
@@ -4991,6 +4991,12 @@ Specifies the maximum CPU to be provisioned for a task. The value of this hint h
 
 Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as [`requirements.memory`](#memory).
 
+##### ✨ `volumes`
+
+* Accepted types: `Map[String, String]`
+
+Specifies attributes for any [disk mount points](#disks) that are required. The value of this hint is a `Map` with the key being the mount point and the value being a `String` with the volume specification. The values "HDD" and "SSD" should be recognized to indicate that a specific class of hardware is being requested. Volume specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#compute-environments).
+
 ##### ✨ `gpus` and ✨ `fpgas`
 
 * Accepted types:
@@ -4998,12 +5004,6 @@ Specifies the maximum memory provisioned for a task. The value of this hint has 
     * `String`: Specification for a type of accelerator being requested, e.g., manufacturer or model name.
 
 Specifies attributes for any [hardware accelerators](#hardware-accelerators-gpu-and-✨-fpga) that are requested. Accelerator specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#✨-compute-environments).
-
-##### ✨ `volumes`
-
-* Accepted types: `Map[String, String]`
-
-Specifies attributes for any [disk mount points](#disks) that are required. The value of this hint is a `Map` with the key being the mount point and the value being a `String` with the volume specification. The values "HDD" and "SSD" should be recognized to indicate that a specific class of hardware is being requested. Volume specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#compute-environments).
 
 ##### `short_task`
 
