@@ -42,6 +42,13 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
+version 1.1.2
+---------------------------
+
++ State that `Union` is also the type of some `runtime` attributes.
+
++ Remove some syntax sections that were missed in 1.1.1.
+
 version 1.1.1
 ---------------------------
 
