@@ -4390,13 +4390,15 @@ The following attributes must be supported by the execution engine. The value fo
 
 The `container` attribute accepts a URI string that describes a container resource the execution engine can use when executing the task.
 
-The user is strongly suggested to specify a `container` for every task. If `container` is not specified, or is specified with the special `"*"` value, the execution behavior is determined by the execution engine. A task that depends on the engine to determine the execution environment should be careful to only use built-in Bash operations and tools specified as mandatory by the [POSIX standard](https://unix.stackexchange.com/questions/228888/what-are-the-posix-mandatory-utilities).
+It is strongly suggested to specify a `container` for every task. If `container` is not specified, or is specified with the special `"*"` value, the execution behavior is determined by the execution engine. A task that depends on the engine to determine the execution environment should be careful to only use built-in Bash operations and tools specified as mandatory by the [POSIX standard](https://unix.stackexchange.com/questions/228888/what-are-the-posix-mandatory-utilities).
 
 The format of a container URI is `protocol://location`, where `protocol` is one of the protocols supported by the execution engine. Execution engines must, at a minimum, support the `docker` protocol. If only `location` is specified, the protocol is assumed to be `docker`. An execution engine should ignore any URI with a protocol it does not support.
 
-A container location uses the syntax defined by the container repository. For example, the URI `ubuntu:latest` refers to a Docker image hosted on `DockerHub`, while the URI `quay.io/bitnami/python` refers to an image in a `quay.io` repository.
+A container location uses the syntax defined by the container repository. For example, the URI `ubuntu:latest` refers to a Docker image hosted on `DockerHub`, while the URI `quay.io/bitnami/python` refers to an image in a `quay.io` repository. To promote reproducibility, it is recommended to use the most specific possible URI to refer to a container; e.g. for Docker, using the [digest](https://docs.docker.com/engine/reference/commandline/image_ls/#digests) or a specific version tag rather than `latest`.
 
 The `container` attribute also accepts an unordered array of URI strings. All the URIs must resolve to containers that are equivalent. In other words, when given the same inputs the task should produce the same outputs regardless of which of the containers is used to execute the task. It is the responsibility of the execution engine to specify the container protocols and locations it supports, and to determine which container is the "best" one to use at runtime. Defining multiple images enables greater portability across a broad range of execution environments.
+
+If the value is a `String` or `Array[String]` and none of the specified containers can be sucessfully resolved by the exeution engine, the task fails with an error.
 
 <details>
 <summary>
@@ -5841,7 +5843,7 @@ The following hints are reserved. An implementation is not required to support t
 * Allowed type: `Boolean`
 * Alias: `allowNestedInputs`
 
-By default, when a workflow calls a subworkflow or task it must provide inputs for all of the subworkflow/task inputs. However, if the runtime engine supports the `allow_nested_inputs` hint and it is set to `true` in a workflow's `hints` section, then that workflow is allowed to leave any subworkflow/task inputs unsatisfied. Any unsatisfied inputs must be specified by at runtime. If a runtime engine does not support `allow_nested_inputs` or if any inputs remain unsatisfied at runtime then the workflow fails with an error.
+By default, when a workflow calls a subworkflow or task it must provide inputs for all of the subworkflow/task inputs. However, if the runtime engine supports the `allow_nested_inputs` hint and it is set to `true` in a workflow's `hints` section, then that workflow is allowed to leave any subworkflow/task inputs unsatisfied. Any unsatisfied inputs must be specified at runtime. If a runtime engine does not support `allow_nested_inputs` or if any inputs remain unsatisfied at runtime then the workflow fails with an error.
 
 <details>
 <summary>
