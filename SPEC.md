@@ -5810,7 +5810,7 @@ The following fully-qualified names exist when calling `workflow main` in `main.
 | `main.foobar_results`         | `Int` result from call to `foobar`                                                          | Anywhere in `main`'s output section and by the caller of `main` |
 | `main.echo_array`             | Array of `String` contents of `File` results from calls to `echo` in the scatter            | Anywhere in `main`'s output section and by the caller of `main` |
 
-\* Task inputs are accessible to be set by the caller of `main` if the workflow is called with [`allow_nested_inputs: true`](#computing-call-inputs) in its `meta` section.
+\* Task inputs are accessible to be set by the caller of `main` if the workflow is called with [`allow_nested_inputs: true`](#allow_nested_inputs) in its `hints` section.
 
 ### Workflow Inputs
 
@@ -5834,6 +5834,8 @@ The `hints` section is optional and may contain any number of attributes (key/va
 
 The execution engine may ignore any unsupported hint. A workflow execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
 
+Unlike [task hints](#✨-hints-section), workflow hints must have literal values; expressions are not allowed.
+
 #### Reserved Workflow Hints
 
 The following hints are reserved. An implementation is not required to support these attributes, but if it does support a reserved attribute it must enforce the semantics and allowed values defined below. The purpose of reserving these hints is to encourage interoperability of tasks and workflows between different execution engines.
@@ -5843,7 +5845,11 @@ The following hints are reserved. An implementation is not required to support t
 * Allowed type: `Boolean`
 * Alias: `allowNestedInputs`
 
-By default, when a workflow calls a subworkflow or task it must provide inputs for all of the subworkflow/task inputs. However, if the runtime engine supports the `allow_nested_inputs` hint and it is set to `true` in a workflow's `hints` section, then that workflow is allowed to leave any subworkflow/task inputs unsatisfied. Any unsatisfied inputs must be specified at runtime. If a runtime engine does not support `allow_nested_inputs` or if any inputs remain unsatisfied at runtime then the workflow fails with an error.
+When running a workflow, the user typically is only allowed to specify values for the inputs defined in the top-level workflow's `input` section. However, setting the `allow_nested_inputs` hint to `true` specifies that the execution engine is allowed to let the user set the value of some call inputs at runtime.
+
+A call input value is eligible to be set at runtime if it corresponds to a subworkflow or task input that has a default value *and* its value is not set explicitly in the call's `input` section. The default value is used for an eligible call input when `allow_nested_inputs` is set to `false`, when the user does not specify a value for the input at runtime, or when the execution engine does not suppport `allow_nested_inputs`. 
+
+The execution engine may refuse to execute a workflow when `allow_nested_inputs` is set to `false` and the user attempts to specify a value for a nested input, but if it does execute the workflow and ignore the user-specified value then it should show a warning.
 
 <details>
 <summary>
@@ -5855,7 +5861,7 @@ version 1.2
 task nested {
   input {
     String greeting
-    String name
+    String name = "Joe"
   }
 
   command <<<
@@ -5910,6 +5916,57 @@ Test config:
 </p>
 </details>
 
+Setting `allow_nested_inputs` to `false` in a workflow has the effect of also setting it to `false` in any nested subworkflows called by that workflow. In the following example, `allow_nested_inputs` is set to `false` in the top-level workflow (`multi_nested_inputs`), which overrides the value of `true` in the subworkflow (`test_allow_nested_inputs`).
+
+<details>
+<summary>
+Example: multi_nested_inputs.wdl
+
+```wdl
+version 1.2
+
+import "test_allow_nested_inputs.wdl"
+
+workflow multi_nested_inputs { 
+  call test_allow_nested_inputs
+
+  hints {
+    allow_nested_inputs: false
+  }
+
+  output {
+    String greeting = test_allow_nested_inputs.greeting
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "multi_nested_inputs.test_allow_nested_inputs.nested.name": "John"
+}
+```
+
+Example output:
+
+```json
+{
+  "multi_nested_inputs.greeting": "Hello Joe"
+}
+```
+
+Test config:
+
+```json
+{
+  "dependencies": "allow_nested_inputs"
+}
+```
+</p>
+</details>
+
 ### Call Statement
 
 A workflow calls other tasks/workflows via the `call` keyword. A `call` is followed by the name of the task or subworkflow to run. If a task is defined in the same WDL document as the calling workflow, it may be called using just the task name. A task or workflow in an imported WDL must be called using its [fully-qualified name](#fully-qualified-names--namespaced-identifiers).
@@ -5931,11 +5988,15 @@ import "other.wdl" as lib
 
 task repeat {
   input {
-    Int i
+    Int i = 0  # this will cause the task to fail if not overriden by the caller
     String? opt_string
   }
   
   command <<<
+  if [ "~{i}" -lt "1" ]; then
+    echo "i must be >= 1"
+    exit 1
+  fi
   for i in 1..~{i}; do
     printf ~{select_first([opt_string, "default"])}
   done
@@ -6125,7 +6186,18 @@ Example output:
 
 Any required workflow inputs (i.e., those that are not initialized with a default expression) must have their values provided when invoking the workflow. Inputs may be specified for a workflow invocation using any mechanism supported by the execution engine, including the [standard JSON format](#json-input-format). 
 
-By default, all calls to subworkflows and tasks must have values provided for all required inputs by the caller. However, the execution engine may allow the workflow to leave some subworkflow/task inputs undefined - to be specified by the user at runtime - by setting the `allow_nested_inputs` flag to `true` in the `hints` section of the top-level workflow.
+A call to a subworkflow or task must, at a minimum, provide a value for each required input. The call may also specify values for any optional inputs. Any optional inputs that are not specified in the call may be set by the user at runtime if the execution engine supports the `allow_nested_inputs` hint and it is set to `true` in the workflow's `hints` section.
+
+The following table describes whether a subworkflow or task input's value must be specified in the call inputs and whether it may be set at runtime based on whether it has a default value and the value of the `allow_nested_inputs` hint:
+
+| Has default value? | Value of `allow_nested_inputs` | Must be specified in call inputs? | Can be overriden at runtime? |
+| ------------------ | ------------------------------ | --------------------------------- | ---------------------------- |
+| No                 | `false`                        | Yes                               | No                           |
+| No                 | `true`                         | Yes                               | No                           |
+| Yes                | `false`                        | No                                | No                           |
+| Yes                | `true`                         | No                                | Yes                          |
+
+🗑 Previously, setting `allow_nested_inputs` to `true` also allowed for required task inputs to be left unsatisfied by the calling workflow and only specified at runtime. This behavior is deprecated and will be removed in WDL 2.0.
 
 <details>
 <summary>
@@ -6176,6 +6248,7 @@ workflow allow_nested {
 
   call lib.repeat as repeat2 {
     input:
+      # Note: the default value of `0` for the `i` input causes the task to fail
       opt_string = msg2
   }
 
@@ -6202,7 +6275,8 @@ Example input:
   "allow_nested.msg1": "hello",
   "allow_nested.msg2": "goodbye",
   "allow_nested.my_ints": [1, 2, 3],
-  "allow_nested.ref_file": "hello.txt"
+  "allow_nested.ref_file": "hello.txt",
+  "allow_nested.repeat2.i": 2
 }
 ```
 
@@ -6212,14 +6286,13 @@ Example output:
 {
   "allow_nested.lines1": ["hello", "hello", "hello"],
   "allow_nested.lines2": ["goodbye", "goodbye"],
-  "allow_nested.repeat2.i": 2,
   "allow_nested.incrs": [2, 3, 4]
 }
 ```
 </p>
 </details>
 
-In the preceding example, the required input `i` to call `repeat2` is missing. Normally this would result in an error. However, if the execution engine supports `allow_nested_inputs`, then specifying `allow_nested_inputs: true` in the workflow's `hints` section means that `repeat2.i` may be set by the caller of the workflow, e.g., by including `"allow_nested.repeat2.i": 2,` in the input JSON.
+In the preceding example, the workflow calling `repeat2` does not provide a value for the optional input `i`. Normally this would cause the task to fail, since `i` must have a value `>= 1` and its default value is `0`. However, if the execution engine supports `allow_nested_inputs`, then specifying `allow_nested_inputs: true` in the workflow's `hints` section means that `repeat2.i` may be set by the caller of the workflow, e.g., by including `"allow_nested.repeat2.i": 2,` in the input JSON.
 
 It is not allowed to *override* a call input at runtime, even if nested inputs are allowed. For example, if the user tried to specify `"allow_nested.repeat.opt_string": "hola"` in the input JSON, an error would be raised because the workflow already specifies a value for that input.
 
@@ -9878,7 +9951,7 @@ All WDL implementations are required to support the standard JSON input and outp
 
 The inputs for a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow input. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the input parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
 
-If the WDL implementation supports the [`allow_nested_inputs`](#computing-call-inputs) hint, then task/subworkflow inputs can also be specified in the input JSON.
+If the WDL implementation supports the [`allow_nested_inputs`](#computing-call-inputs) hint, then optional inputs for nested calls can also be specified in the input JSON, provided the call does not already specify a value for the input. Nested inputs are referenced using the name of the `call`, which may be different from the name of the task or subworkflow (i.e., if is imported or called with an alias). When a `call` appears within a `scatter`, setting the value of an input applies to every instance of the call.
 
 Here is an example JSON input file for a workflow `wf`:
 
@@ -9892,8 +9965,8 @@ Here is an example JSON input file for a workflow `wf`:
     "fieldB": 42,
     "fieldC": "/path/to/file.txt"
   },
-  "wf.task1.s": "task 1 input",
-  "wf.task2.s": "task 2 input"
+  "wf.call1.s": "call 1 input",
+  "wf.call2.s": "call 2 input"
 }
 ```
 
@@ -9959,7 +10032,7 @@ The following would all be valid JSON inputs:
 
 Overriding an attribute for a task nested within a `scatter` applies to all invocations of that task.
 
-Unlike inputs, a WDL implementation must support overriding requirements and hints regardless of whether it supports the [`allow_nested_inputs`](#computing-call-inputs) workflow hint. Requirements and hints specified in the input JSON always supersede values supplied directly in the WDL. Any hints that are not supported by the execution engine are ignored.
+Unlike inputs, a WDL implementation must support overriding requirements and hints regardless of whether it supports the [`allow_nested_inputs`](#allow_nested_inputs) workflow hint. Requirements and hints specified in the input JSON always supersede values supplied directly in the WDL. Any hints that are not supported by the execution engine are ignored.
 
 ## JSON Output Format
 
