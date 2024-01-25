@@ -4997,8 +4997,8 @@ Specifies the maximum memory provisioned for a task. The value of this hint has 
 ##### ✨ `volumes`
 
 * Accepted types:
-    * `String`
-    * `Map[String, String]`
+    * `String`: Volume specification.
+    * `Map[String, String]`: Map of mount point to volume specification.
 
 Specifies attributes for any [disk mount points](#disks) that are required. The value of this hint can be a `String` with a specification that applies to all volumes, or a `Map` with the key being the mount point and the value being a `String` with the volume specification for that volume.
 
