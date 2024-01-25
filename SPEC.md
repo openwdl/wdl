@@ -4996,9 +4996,13 @@ Specifies the maximum memory provisioned for a task. The value of this hint has 
 
 ##### ✨ `volumes`
 
-* Accepted types: `Map[String, String]`
+* Accepted types:
+    * `String`
+    * `Map[String, String]`
 
-Specifies attributes for any [disk mount points](#disks) that are required. The value of this hint is a `Map` with the key being the mount point and the value being a `String` with the volume specification. The values "HDD" and "SSD" should be recognized to indicate that a specific class of hardware is being requested. Volume specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#compute-environments).
+Specifies attributes for any [disk mount points](#disks) that are required. The value of this hint can be a `String` with a specification that applies to all volumes, or a `Map` with the key being the mount point and the value being a `String` with the volume specification for that volume.
+
+Volume specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#compute-environments). The values "HDD" and "SSD" should be recognized to indicate that a specific class of hardware is being requested.
 
 ##### ✨ `gpus` and ✨ `fpgas`
 
