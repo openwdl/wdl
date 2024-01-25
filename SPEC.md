@@ -4751,7 +4751,7 @@ Test config:
 
 * Accepted type: `Int`
 * Default value: `0`
-* Alias: `masRetries`
+* Alias: `maxRetries`
 
 The `max_retries` attribute specifies the maximum number of times a task should be retried in the event of failure. The execution engine must retry the task at least once and up to (but not exceeding) the specified number of attempts.
 
