@@ -49,7 +49,9 @@ version 1.2.0
 
 + Added new task `requirements` and `hints` sections (#540 and #541), and deprecated the `runtime` section
 
-+ Added new workflow `hints` section (#543)
++ Added new workflow `hints` section (#543), and moved `allowNestedInputs` from workflow `meta` to `hints`
+
++ Deprecated the previously allowed behavior implied by setting `allowNestedInputs: true` where required task/subworkflow inputs could be left unsatisfied. Now all inputs either need to have a default value or have their value specified in the call inputs. Only optional task/subworkflow inputs that are not explicitly set in the call inputs may have their value set at runtime if the `allow_nested_inputs` hint is `true`.
 
 version 1.1.1
 ---------------------------

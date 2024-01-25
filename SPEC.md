@@ -6199,6 +6199,8 @@ The following table describes whether a subworkflow or task input's value must b
 
 🗑 Previously, setting `allow_nested_inputs` to `true` also allowed for required task inputs to be left unsatisfied by the calling workflow and only specified at runtime. This behavior is deprecated and will be removed in WDL 2.0.
 
+🗑 The ability to set `allowNestedInputs` in the workflow's `meta` section is deprecated and will be removed in WDL 2.0.
+
 <details>
 <summary>
 Example: allow_nested.wdl
