@@ -5010,7 +5010,7 @@ Volume specifications are left intentionally vague as they are primarily intente
     * `Int`: Minimum number of accelerators being requested.
     * `String`: Specification for a type of accelerator being requested, e.g., manufacturer or model name.
 
-Specifies attributes for any [hardware accelerators](#hardware-accelerators-gpu-and-✨-fpga) that are requested. Accelerator specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#✨-compute-environments).
+Specifies attributes for any [hardware accelerators](#hardware-accelerators-gpu-and-✨-fpga) that are requested. Accelerator specifications are left intentionally vague as they are primarily intended to be used in the context of a specific [compute environment](#✨-compute-environments).
 
 ##### `short_task`
 
@@ -5099,7 +5099,7 @@ Example output:
 
 Reserved input-specific attributes:
 
-* `inputs.<key>.localization_optional`: Indicates that a specific `File` input does not need to be localized for this task.
+* `inputs.<key>.localization_optional`: Indicates that a specific `File` input does not need to be localized for this task. This attribute has the same semantics as the task-level [localization_optional](#localization_optional) hint.
 
 ##### `outputs`
 
@@ -5126,10 +5126,10 @@ task foo {
     gcp: hints {
       gpus: 2
     }
-    azure: {
+    azure: hints {
       ...
     }
-    alibaba: {
+    alibaba: hints {
       ...
     }
   }
