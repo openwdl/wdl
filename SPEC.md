@@ -98,8 +98,8 @@ Revisions to this specification are made periodically in order to correct errors
       - [Reserved Task Hints](#reserved-task-hints)
         - [`max_cpu`](#max_cpu)
         - [`max_memory`](#max_memory)
-        - [✨ `volumes`](#-volumes)
-        - [✨ `gpus` and ✨ `fpgas`](#-gpus-and--fpgas)
+        - [✨ `disks`](#-disks)
+        - [✨ `gpu` and ✨ `fpga`](#-gpu-and--fpga)
         - [`short_task`](#short_task)
         - [`localization_optional`](#localization_optional)
         - [`inputs`](#inputs)
@@ -4583,7 +4583,7 @@ Test config:
 
 The `gpu` and `fpga` attributes indicate to the execution engine whether a task requires a GPU and/or FPGA accelerator to run to completion. The execution engine must guarantee that at least one of each of the request types of accelerators is available or immediately fail the task prior to instantiating the command.
 
-The [`accelerators` hint](#✨-accelerators) can be used to request specific attributes for the provisioned accelerators (e.g., quantity, model, driver version).
+The [`gpu` and `fpga` hints](#✨-gpu-and-✨-fpga) can be used to request specific attributes for the provisioned accelerators (e.g., quantity, model, driver version).
 
 <details>
 <summary>
@@ -4648,7 +4648,7 @@ The `disks` attribute provides a way to request one or more persistent volumes, 
 
 If a mount point is specified, then it must be an absolute path to a location in the host environment. If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
 
-The execution engine is free to provision any class(es) of persistent volume it has available (e.g., SSD or HDD). The [`volumes` hint](#✨-volumes) hint can be used to request specific attributes for the provisioned disks.
+The execution engine is free to provision any class(es) of persistent volume it has available (e.g., SSD or HDD). The [`disks` hint](#✨-disks) hint can be used to request specific attributes for the provisioned disks.
 
 <details>
 <summary>
@@ -4905,7 +4905,7 @@ Test config:
 
 ### ✨ Hints Section
 
-The `hints` section is optional and may contain any number of attributes (key/value pairs) that provide hints to the execution engine. The execution engine may choose to ignore hints; a task execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
+The `hints` section is optional and may contain any number of attributes (key/value pairs) that provide hints to the execution engine. A hint provides additional context that the execution engine can use to optimize the execution of the task. The execution engine may also ignore any hint for any reason. A task execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
 
 #### Hints-scoped types
 
@@ -4983,7 +4983,7 @@ Example output:
     * `Float`
 * Alias: `maxCpu`
 
-Specifies the maximum CPU to be provisioned for a task. The value of this hint has the same specification as [`requirements.cpu`](#cpu).
+A hint to the execution engine that the task expects to use no more than the specified number of CPUs. The value of this hint has the same specification as [`requirements.cpu`](#cpu).
 
 ##### `max_memory`
 
@@ -4992,32 +4992,34 @@ Specifies the maximum CPU to be provisioned for a task. The value of this hint h
     * `String`: A decimal value with, optionally with a unit suffix.
 * Alias: `maxMemory`
 
-Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as [`requirements.memory`](#memory).
+A hint to the execution engine that the task expects to use no more than the specified amount of memory. The value of this hint has the same specification as [`requirements.memory`](#memory).
 
-##### ✨ `volumes`
+##### ✨ `disks`
 
 * Accepted types:
-    * `String`: Volume specification.
-    * `Map[String, String]`: Map of mount point to volume specification.
+    * `String`: Disk specification.
+    * `Map[String, String]`: Map of mount point to disk specification.
 
-Specifies attributes for any [disk mount points](#disks) that are required. The value of this hint can be a `String` with a specification that applies to all volumes, or a `Map` with the key being the mount point and the value being a `String` with the volume specification for that volume.
+A hint to the execution engine to mount [disks](#disks) with specific attributes. The value of this hint can be a `String` with a specification that applies to all mount points, or a `Map` with the key being the mount point and the value being a `String` with the specification for that mount point.
 
 Volume specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#compute-environments). The values "HDD" and "SSD" should be recognized to indicate that a specific class of hardware is being requested.
 
-##### ✨ `gpus` and ✨ `fpgas`
+##### ✨ `gpu` and ✨ `fpga`
 
 * Accepted types:
     * `Int`: Minimum number of accelerators being requested.
-    * `String`: Specification for a type of accelerator being requested, e.g., manufacturer or model name.
+    * `String`: Specification for accelerator(s) being requested, e.g., manufacturer or model name.
 
-Specifies attributes for any [hardware accelerators](#hardware-accelerators-gpu-and-✨-fpga) that are requested. Accelerator specifications are left intentionally vague as they are primarily intended to be used in the context of a specific [compute environment](#✨-compute-environments).
+A hint to the execution engine to provision [hardware accelerators](#hardware-accelerators-gpu-and-✨-fpga) with specific attributes. Accelerator specifications are left intentionally vague as they are primarily intended to be used in the context of a specific [compute environment](#✨-compute-environments).
 
 ##### `short_task`
 
 * Accepted types: `Boolean`
 * Default value: `false`
 
-A `Boolean` value for which `true` indicates that that this task is not expected to take long to execute. The execution engine can interpret this as permission to attempt to optimize the execution of the task. For example, the engine may batch together multiple `short_task`s, or it may use the cost-optimized instance types that many cloud vendors provide, e.g., `preemptible` instances on `GCP` and `spot` instances on `AWS`.
+A hint to the execution engine about the expected duration of this task. The value of this hint is a `Boolean` for which `true` indicates that that this task is not expected to take long to execute, which the execution engine can interpret as permission to optimize the execution of the task.
+
+For example, the engine may batch together multiple `short_task`s, or it may use the cost-optimized instance types that many cloud vendors provide, e.g., `preemptible` instances on `GCP` and `spot` instances on `AWS`.
 
 ##### `localization_optional`
 
@@ -5025,7 +5027,9 @@ A `Boolean` value for which `true` indicates that that this task is not expected
 * Default value: `false`
 * Alias: `localizationOptional`
 
-A `Boolean` value, for which `true` indicates that, if possible, any `File` inputs for this task should not be (immediately) localized. For example, a task that processes its input file once in linear fashion could have that input streamed (e.g., using a `fifo`) rather than requiring the input file to be fully localized prior to execution. This directive must not have any impact on the success or failure of a task (i.e., a task must run the same with or without localization).
+A hint to the execution engine about whether the `File` inputs for this task need to be localized prior to executing the task. The value of this hint is a `Boolean` for which `true` indicates that the contents of the `File` inputs may be streamed on demand.
+
+For example, a task that processes its input file once in linear fashion could have that input streamed (e.g., using a `fifo`) rather than requiring the input file to be fully localized prior to execution.
 
 ##### `inputs`
 
@@ -5099,7 +5103,7 @@ Example output:
 
 Reserved input-specific attributes:
 
-* `inputs.<key>.localization_optional`: Indicates that a specific `File` input does not need to be localized for this task. This attribute has the same semantics as the task-level [localization_optional](#localization_optional) hint.
+* `inputs.<key>.localization_optional`: Indicates that a specific `File` input does not need to be localized prior to executing this task. This attribute has the same semantics as the task-level [localization_optional](#localization_optional) hint.
 
 ##### `outputs`
 
@@ -5124,7 +5128,7 @@ task foo {
       instance_type: "p5.48xlarge"
     }
     gcp: hints {
-      gpus: 2
+      gpu: 2
     }
     azure: hints {
       ...
