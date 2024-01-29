@@ -3935,7 +3935,7 @@ Example output:
 
 #### Stripping Leading Whitespace
 
-When a command template is evaluate, the execution engine first strips out all *common leading whitespace*.
+When a command template is evaluated, the execution engine first strips out all *common leading whitespace*.
 
 For example, consider a task that calls the `python` interpreter with an in-line Python script:
 
