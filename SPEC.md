@@ -2538,7 +2538,7 @@ The result of evaluating an expression in a placeholder must ultimately be conve
 - `Float` is printed in the style `[-]ddd.dddddd`, with 6 digits after the decimal point.
 - `Boolean` is converted to the "stringified" version of its literal value, i.e., `true` or `false`.
 
-Compound types cannot be implicitly converted to strings. To convert an `Array` to a string, use the [`sep`](#-sep) function: `~{sep(",", str_array)}`. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for more details and examples.
+Compound types cannot be implicitly converted to `String`s. To convert an `Array` to a `String`, use the [`sep`](#-sep) function: `~{sep(",", str_array)}`. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for more details and examples.
 
 If an expression within a placeholder evaluates to `None`,  and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string.
 <details>
