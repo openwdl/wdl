@@ -167,6 +167,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [✨ `as_pairs`](#-as_pairs)
     - [✨ `as_map`](#-as_map)
     - [✨ `keys`](#-keys)
+    - [✨ `contains_key`](#-contains_key)
     - [✨ `collect_by_key`](#-collect_by_key)
   - [Other Functions](#other-functions)
     - [`defined`](#defined)
@@ -9207,6 +9208,86 @@ Example output:
 }
 ```
 </p>
+</details>
+
+### ✨ `contains_key`
+
+```
+Map[P, Y], P), Boolean contains_key(Map[P?, Y], P?)
+```
+
+Given a key-value type collection (`Map`, `Struct`, or `Object`) and a key, tests whether the collection contains an entry with the given key.
+
+**Parameters**
+
+1. `Map[P, Y]`|`Struct`|`Object`: Collection to search for the key.
+2. `P|Array[String]`: The key to search. If the first argument is a `Map`, then the key must be of the same type as the `Map`'s key type. If the `Map`'s key type is optional then the key may also be optional. If the first argument is a `Map[String, Y]`, `Struct`, or `Object`, then the key may be either a `String` or `Array[String]`.
+
+**Returns**: `true` if the collection contains the key, otherwise false.
+
+**Example**
+
+<details>
+  <summary>
+  Example: get_values.wdl
+  
+  ```wdl
+  version 1.2
+
+  struct Person {
+    String name
+    Map[String, String]? details
+  }
+
+  workflow get_ints_and_exts {
+    input {
+      Map[String, Int] m
+      String key1
+      String key2
+      Person p1
+      Person p2
+    }
+
+    output {
+      Int? i1 = m[s1] if contains_key(m, key1) else None
+      Int? i2 = m[s2] if contains_key(m, key2) else None
+      String? phone1 = p1.details["phone"] if contains_key(p1, ["details", "phone"]) else None
+      String? phone2 = p2.details["phone"] if contains_key(p2, ["details", "phone"]) else None
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+
+  ```json
+  {
+    "get_values.m": {"a": 1, "b": 2},
+    "get_values.key1": "a",
+    "get_values.key2": "c",
+    "get_values.p1": {
+      "name": "John",
+      "details": {
+        "phone": "123-456-7890"
+      }
+    },
+    "get_values.p2": {
+      "name": "Agent X"
+    }
+  }
+  ```
+   
+  Example output:
+
+  ```json
+  {
+    "get_ints_and_exts.i1": 1,
+    "get_ints_and_exts.i2": null,
+    "get_ints_and_exts.phone1": "123-456-7890",
+    "get_ints_and_exts.phone2": null,
+  }
+  ``` 
+  </p>
 </details>
 
 ### ✨ `collect_by_key`
