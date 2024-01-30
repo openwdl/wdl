@@ -3,7 +3,7 @@ RFC Process
 
 Most technical decisions are decided through the "RFC" ([Request for Comments](https://en.wikipedia.org/wiki/Request_for_Comments)) process. Small changes, such as minor grammatical edits to the specification, do not need to need to follow the RFC process. However, if one intends to make a substantive change to the WDL specification , the following process should be adhered to:
 
- 1. Ideally have an informal discussion of the topic on the [mailing list](https://groups.google.com/forum/#!forum/openwdl) and/or the [gitter channel](https://gitter.im/openwdl/wdl) in order to gauge basic viability. As a rule of thumb, receiving encouraging feedback from long-standing community members is a good indication that the RFC is worth pursuing.
+ 1. Ideally have an informal discussion of the topic on [Slack](https://join.slack.com/t/openwdl/shared_invite/zt-ctmj4mhf-cFBNxIiZYs6SY9HgM9UAVw) and/or [GitHub discussions](https://github.com/openwdl/wdl/discussions) in order to gauge basic viability. As a rule of thumb, receiving encouraging feedback from long-standing community members is a good indication that the RFC is worth pursuing.
  2. Write up a formal proposal, including requested changes to the current specification, as a pull request on GitHub
  3. A core team member will be assigned as the *shepherd* of this RFC. The shepherd shall be responsible for keeping the discussion moving and ensuring all concerns are responded to.
  4. Work to build broad support from the community. Encouraging people to comment, show support, show dissent, etc. Ultimately the level of community support for a change will decide its fate. 
