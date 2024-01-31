@@ -42,7 +42,9 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
+
 + Added `contains_key` function to standard library.
+  [PR 603](https://github.com/openwdl/wdl/pull/603)
 
 
 version 1.1.1
