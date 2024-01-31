@@ -21,6 +21,9 @@ Revisions to this specification are made periodically in order to correct errors
 - [WDL Language Specification](#wdl-language-specification)
   - [Global Grammar Rules](#global-grammar-rules)
     - [Whitespace](#whitespace)
+    - [Literals](#literals)
+      - [Strings](#strings)
+        - [Multi-line Strings](#multi-line-strings)
     - [Comments](#comments)
     - [Reserved Keywords](#reserved-keywords)
     - [Literals](#literals)
@@ -77,7 +80,6 @@ Revisions to this specification are made periodically in order to correct errors
     - [Private Declarations](#private-declarations)
     - [Command Section](#command-section)
       - [Expression Placeholders](#expression-placeholders)
-      - [Stripping Leading Whitespace](#stripping-leading-whitespace)
     - [Task Outputs](#task-outputs)
       - [Files and Optional Outputs](#files-and-optional-outputs)
     - [Evaluation of Task Declarations](#evaluation-of-task-declarations)
@@ -390,6 +392,223 @@ The following characters are treated as whitespace:
 | Tab   | 9   | `\x09` |
 | CR    | 13  | `\x0D` |
 | LF    | 10  | `\x0A` |
+
+##### Multi-line Strings
+
+Strings that begin with `<<<` and end with `>>>` may span multiple lines.
+
+<details>
+  <summary>
+  Example: multiline_strings1.wdl
+  
+  ```wdl
+  version 1.2
+
+  workflow multiline_strings1 {
+    output {
+      String s = <<<
+        This is a
+        multi-line string!
+      >>>
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {}
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "multiline_strings1.s": "This is a\nmulti-line string!"
+  }
+  ```
+  </p>
+</details>
+
+In multi-line strings, leading *whitespace* is removed according to the following rules. In the context of multi-line strings, whitespace refers to space (`\x20`) and tab characters only and is treated differently from newline characters.
+
+1. Remove all line continuations and subsequent white space.
+   * A line continuation is a backslash (`\`) immediately preceding the newline. A line continuation indicates that two consecutive lines are actually the same line (e.g. when breaking a long line for better readability).
+   * If a line ends in multiple `\` then standard character escaping applies. Each pair of consecutive backslashes (`\\`) is an escaped backslash. So a line is continued only if it ends in an odd number of backslashes.
+   * Removing a line continuation means removing the last `\` character, the immediately following newline, and all the whitespace preceeding the next non-whitespace character or end of line (whichever comes first).
+2. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
+3. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
+4. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
+   * A blank line contains zero or more whitespace characters followed by a newline.
+   * Common leading whitespace is the minimum number of whitespace characters occuring before the first non-whitespace character in a non-blank line.
+   * Each whitespace character is counted once regardless of whether it is a space or tab (so care should be taken when mixing whitespace characters).
+5. Remove common leading whitespace from each line.
+
+<details>
+  <summary>
+  Example: multiline_strings2.wdl
+  
+  ```wdl
+  version 1.2
+
+  workflow multiline_strings2 {
+    output {
+      # all of these strings evaluate to "hello  world"
+      String hw0 = "hello  world"
+      String hw1 = <<<hello  world>>>
+      String hw2 = <<<   hello  world   >>>
+      String hw3 = <<<   
+          hello world>>>
+      String hw4 = <<<   
+          hello  world
+          >>>
+      String hw5 = <<<   
+          hello  world
+      >>>
+      # The line continuation causes the newline and all whitespace preceding 'world' to be 
+      # removed - to put two spaces between 'hello' and world' we need to put them before 
+      # the line continuation.
+      String hw6 = <<<
+          hello  \
+              world
+      >>>
+
+      # This string is not equivalent - the first line ends in two backslashes, which is an 
+      # escaped backslash, not a line continuation. So this string evaluates to 
+      # "hello \\\n  world".
+      String not_equivalent = <<<
+      hello \\
+        world
+      >>>
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {}
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "multiline_strings2.hw0": "hello  world"
+    "multiline_strings2.hw1": "hello  world"
+    "multiline_strings2.hw2": "hello  world"
+    "multiline_strings2.hw3": "hello  world"
+    "multiline_strings2.hw4": "hello  world"
+    "multiline_strings2.hw5": "hello  world"
+    "multiline_strings2.hw6": "hello  world"
+    "multiline_strings2.not_equivalent": "hello \\\n  world"
+  }
+  ```
+  </p>
+</details>
+
+Common leading whitespace is also removed from blank lines that contain whitespace characters; newlines are *not* removed from blank lines. This means blank lines may be used to ensure that a multi-line string begins/ends with a newline.
+
+<details>
+  <summary>
+  Example: multiline_strings3.wdl
+  
+  ```wdl
+  version 1.2
+
+  workflow multiline_strings3 {
+    output {
+      # These strings are all equivalent. In strings B, C, and D, the middle lines are blank and 
+      # so do not count towards the common leading whitespace determination.
+
+      String multi_line_A = "\nthis is a\n\n  multi-line string\n"
+      
+      # This string's common leading whitespace is 0.
+      String multi_line_B = <<<
+
+      this is a
+      
+        multi-line string
+      
+      >>>
+
+      # This string's common leading whitespace is 2. The middle blank line contains two spaces
+      # that are also removed.
+      String multi_line_C = <<<
+      
+        this is a
+        
+          multi-line string
+      >>>
+      
+      # This string's common leading whitespace is 8.
+      String multi_line_D = <<<
+
+              this is a
+      
+                multi-line string
+      >>>
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {}
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "multiline_strings3.multi_line_A": "\nthis is a\n\n  multi-line string\n"
+    "multiline_strings3.multi_line_B": "\nthis is a\n\n  multi-line string\n"
+    "multiline_strings3.multi_line_C": "\nthis is a\n\n  multi-line string\n"
+    "multiline_strings3.multi_line_D": "\nthis is a\n\n  multi-line string\n"
+  }
+  ```
+  </p>
+</details>
+
+Single- and double-quotes do not need to be escaped within a multi-line string.
+
+<details>
+  <summary>
+  Example: multiline_strings4.wdl
+  
+  ```wdl
+  version 1.2
+
+  workflow multiline_strings4 {
+    output {
+      String multi_line_with_quotes = <<<
+        multi-line string \
+        with 'single' and "double" quotes
+      >>>
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {}
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "multiline_strings4.multi_line_with_quotes": "multi-line string with 'single' and \"double\" quotes"
+  }
+  ```
+  </p>
+</details>
 
 ### Comments
 
@@ -2267,6 +2486,48 @@ Example output:
 </p>
 </details>
 
+Placeholders are evaluated in multi-line strings exactly the same as in regular strings. Common leading whitespace is stripped from a multi-line string *before* placeholder expressions are evaluated.
+
+<details>
+  <summary>
+  Example: multiline_string_placeholders.wdl
+  
+  ```wdl
+  version 1.2
+
+  workflow multiline_strings {
+    output {
+      String spaces = "  "
+      String name = "Henry"
+      String company = "Acme"
+      # This string evaluates to: "  Hello Henry,\n  Welcome to Acme!"
+      # The string still has spaces because the placeholders are evaluated after removing the 
+      # common leading whitespace.
+      String multi_line = <<<
+        ~{spaces}Hello ~{name},
+        ~{spaces}Welcome to ~{company}!
+      >>>
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {}
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "multiline_string_placeholders.multi_line": "  Hello Henry,\n  Welcome to Acme!"
+  }
+  ```
+  </p>
+</details>
+
 ##### Expression Placeholder Coercion
 
 The result of evaluating an expression in a placeholder must ultimately be converted to a string in order to take the place of the placeholder in the command script. This is immediately possible for WDL primitive types due to automatic conversions ("coercions") that occur only within the context of string interpolation:
@@ -2277,10 +2538,9 @@ The result of evaluating an expression in a placeholder must ultimately be conve
 - `Float` is printed in the style `[-]ddd.dddddd`, with 6 digits after the decimal point.
 - `Boolean` is converted to the "stringified" version of its literal value, i.e., `true` or `false`.
 
-Compound types cannot be implicitly converted to strings. To convert an `Array` to a string, use the [`sep`](#-sep) function: `~{sep(",", str_array)}`.
+Compound types cannot be implicitly converted to `String`s. To convert an `Array` to a `String`, use the [`sep`](#-sep) function: `~{sep(",", str_array)}`. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for more details and examples.
 
-If an expression within a placeholder evaluates to `None`, then the placeholder is replaced by the empty string.
-
+If an expression within a placeholder evaluates to `None`,  and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string.
 <details>
 <summary>
 Example: placeholder_coercion.wdl
@@ -2325,6 +2585,41 @@ Example output:
 }
 ```
 </p>
+</details>
+
+<details>
+  <summary>
+  Example: placeholder_none.wdl
+  
+  ```wdl
+  version 1.2
+
+  workflow placeholder_none {
+    output {
+      String? foo = None
+      # The expression in this string results in an error (calling `select_first` on an array 
+      # containing no non-`None` values) and so the placeholder evaluates to the empty string and 
+      # `s` evalutes to: "Foo is "
+      String s = "Foo is ~{select_first([foo])}"
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {}
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "placeholder_none.s": "Foo is "
+  }
+  ```
+  </p>
 </details>
 
 ##### Concatenation of Optional Values
@@ -3413,7 +3708,7 @@ Test config:
 
 ### Command Section
 
-The `command` section is the only required task section. It defines the command template that is evaluated to produce a Bash script that is executed within the task's container. Specifically, the commands are executed after all of the inputs are staged and before the outputs are evaluated.
+The `command` section is the only required task section. It defines the command template that is evaluated to produce a Bash script that is executed within the task's container. Specifically, the commands are executed after all of the inputs are staged and before the outputs are evaluated. There may be any number of commands within a command section.
 
 There are two different syntaxes that can be used to define the command section:
 
@@ -3425,9 +3720,71 @@ command <<< ... >>>
 command { ... }
 ```
 
-There may be any number of commands within a command section. Commands are not modified by the execution engine, with the following exceptions:
-- Common leading whitespace is [stripped](#stripping-leading-whitespace)
-- String interpolation is performed on the entire command section to replace [expression placeholders](#expression-placeholders) with their actual values.
+The command template is evaluated *after* all of the inputs are staged and before the outputs are evaluated. The command template is evaluated similarly to [multi-line strings](#multi-line-strings):
+
+1. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
+2. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
+3. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
+4. Remove common leading whitespace from each line.
+5. Evaluate placeholder expressions.
+
+Notice that there is one major difference between the evaluation of multi-line strings vs the command template: line continuations are removed in the former but left as-is in the latter. This also means that continued lines are considered when determining common leading whitespace, and that common leading whitespace is removed from continued lines as well.
+
+```wdl
+String s = <<<
+  This string has \
+  no newlines
+>>>
+
+command <<<
+  echo "~{s}"
+  echo "This command has line continuations \
+    that still appear in the Bash script \
+    after evaluation"
+>>>
+```
+
+When the above command template is evaluated the resulting Bash script is:
+
+```sh
+echo "This string has no newlines"
+echo "This command has line continuations \
+  that still appear in the Bash script \
+  after evaluation"
+```
+
+For another example, consider a task that calls the `python` interpreter with an in-line Python script:
+
+```wdl
+task heredoc {
+  input {
+    File infile
+  }
+
+  command <<<
+    python <<CODE
+      with open("~{in}") as fp:
+        for line in fp:
+          if not line.startswith('#'):
+            print(line.strip())
+    CODE
+  >>>
+  ....
+}
+```
+
+Given an `infile` value of `/path/to/file`, the execution engine produces the following Bash script, which has removed the 4 spaces that were common to the beginning of each line:
+
+```sh
+python <<CODE
+  with open("/path/to/file") as fp:
+    for line in fp:
+      if not line.startswith('#'):
+        print(line.strip())
+CODE
+```
+
+Each whitespace character is counted once regardless of whether it is a space or tab, so care should be taken when mixing whitespace characters. For example, if a command block has two lines, and the first line begins with `<space><space><space><space>`, and the second line begins with `<tab>` then only one whitespace character is removed from each line.
 
 The characters that must be escaped within a command section are different from those that must be escaped in regular strings:
 
@@ -3438,7 +3795,7 @@ The characters that must be escaped within a command section are different from 
 
 #### Expression Placeholders
 
-The body of the command section (the command "template") can be though of as a single string expression, which (like all string expressions) may contain placeholders.
+The command "template" can be thought of as a single string expression, which (like all string expressions) may contain placeholders.
 
 There are two different syntaxes that can be used to define command expression placeholders, depending on which style of command section definition is used:
 
@@ -3447,7 +3804,7 @@ There are two different syntaxes that can be used to define command expression p
 | `command <<< >>>`        | `~{}` only                 |
 | `command { ... }`        | `~{}` (preferred) or `${}` |
 
-Note that the `~{}` and `${}` styles may be used interchangeably in other string expressions.
+Note that the restriction on using `${}` only applies to the HEREDOC-style command section - it may be used interchangeably with `~{}` in string expressions including multi-line strings.
 
 Any valid WDL expression may be used within a placeholder. For example, a command might reference an input to the task. The expression can also be more complex, such as a function call.
 
@@ -3582,10 +3939,6 @@ When a command template is evaluated, the execution engine first strips out all 
 
 For example, consider a task that calls the `python` interpreter with an in-line Python script:
 
-<details>
-<summary>
-Example: python_strip_task.wdl
-
 ```wdl
 version 1.2
 
@@ -3596,41 +3949,15 @@ task python_strip {
 
   command<<<
   python <<CODE
-    with open("~{infile}") as fp:
+    with open("~{in}") as fp:
       for line in fp:
         if not line.startswith('#'):
           print(line.strip())
   CODE
   >>>
-
-  output {
-    Array[String] lines = read_lines(stdout())
-  }
-
-  runtime {
-    container: "python:latest"
-  }
+  ....
 }
 ```
-</summary>
-<p>
-Example input:
-
-```json
-{
-  "python_strip.infile": "comment.txt"
-}
-```
-
-Example output:
-
-```json
-{
-  "python_strip": ["A", "B", "C"]
-}
-```
-</p>
-</details>
 
 Given an `infile` value of `/path/to/file`, the execution engine will produce the following Bash script, which has removed the two spaces that were common to the beginning of each line:
 
@@ -3643,7 +3970,7 @@ python <<CODE
 CODE
 ```
 
-When leading whitespace is a mix of tabs and spaces, the execution engine should issue a warning and leave the whitespace unmodified.
+If the user mixes tabs and spaces, the behavior is undefined. The execution engine should, at a minimum, issue a warning and leave the whitespace unmodified, though it may choose to raise an exception or to substitute e.g. 4 spaces per tab.
 
 ### Task Outputs
 
