@@ -10415,7 +10415,7 @@ Where `/jobs/564757/sample_quality_scores.json` would contain:
 
 There are two alternative serialization formats for `Struct`s and `Objects:
 
-* JSON: `Struct`s and `Object`s are serialized identically using [`write_json`](#write_json). A JSON object is deserialized to a WDL `Object` using [`read_json](#read_json), which can then be coerced to a `Struct` type if necessary.
+* JSON: `Struct`s and `Object`s are serialized identically using [`write_json`](#write_json). A JSON object is deserialized to a WDL `Object` using [`read_json`](#read_json), which can then be coerced to a `Struct` type if necessary.
 * TSV: `Struct`s and `Object`s can be serialized to TSV format using [`write_object`](#write_object). The generated file has two lines tab-delimited: a header with the member names and the values, which must be coercible to `String`s. An array of `Struct`s or `Object`s can be written using [`write_objects`](#write_objects), in which case the generated file has one line of values for each struct/object. `Struct`s and `Object`s can be deserialized from the same TSV format using [`read_object`](#read_object)/[`read_objects`](#read_objects). Object member values are always of type `String` whereas struct member types must be coercible from `String`.
 
 # Appendix B: WDL Namespaces and Scopes
