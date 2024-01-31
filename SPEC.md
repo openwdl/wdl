@@ -9213,7 +9213,9 @@ Example output:
 ### ✨ `contains_key`
 
 ```
-Map[P, Y], Boolean contains_key(Map[P?, Y], P?)
+* Boolean contains_key(Map[P, Y], P)
+* Boolean contains_key(Object, String)
+* Boolean contains_key(Map[String, Y]|Struct|Object, Array[String])
 ```
 
 Given a key-value type collection (`Map`, `Struct`, or `Object`) and a key, tests whether the collection contains an entry with the given key.
