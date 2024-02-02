@@ -1864,35 +1864,6 @@ Test config:
 
 ### Expressions
 
-```txt
-$expression = '(' $expression ')'
-$expression = $expression '.' $expression
-$expression = $expression '[' $expression ']'
-$expression = $expression '(' ($expression (',' $expression)*)? ')'
-$expression = '!' $expression
-$expression = '+' $expression
-$expression = '-' $expression
-$expression = if $expression then $expression else $expression
-$expression = $expression '**' $expression
-$expression = $expression '*' $expression
-$expression = $expression '%' $expression
-$expression = $expression '/' $expression
-$expression = $expression '+' $expression
-$expression = $expression '-' $expression
-$expression = $expression '<' $expression
-$expression = $expression '<=' $expression
-$expression = $expression '>' $expression
-$expression = $expression '>=' $expression
-$expression = $expression '==' $expression
-$expression = $expression '!=' $expression
-$expression = $expression '&&' $expression
-$expression = $expression '||' $expression
-$expression = '{' ($expression ':' $expression (',' $expression ':' $expression )*)? '}'
-$expression = object '{' ($identifier ':' $expression (',' $identifier ':' $expression )*)? '}'
-$expression = '[' ($expression (',' $expression)*)? ']'
-$expression = $string | $integer | $float | $boolean | $identifier
-```
-
 An expression is a compound statement that consists of literal values, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), [built-in operators](#built-in-operators) (e.g., `+` or `>=`), and calls to [standard library functions](#standard-library).
 
 A "literal" expression is one that consists only of a literal value. For example, `"foo"` is a literal `String` expression and `[1, 2, 3]` is a literal `Array[Int]` expression.
