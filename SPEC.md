@@ -21,15 +21,13 @@ Revisions to this specification are made periodically in order to correct errors
 - [WDL Language Specification](#wdl-language-specification)
   - [Global Grammar Rules](#global-grammar-rules)
     - [Whitespace](#whitespace)
-    - [Literals](#literals)
-      - [Strings](#strings)
-        - [Multi-line Strings](#multi-line-strings)
     - [Comments](#comments)
     - [Reserved Keywords](#reserved-keywords)
     - [Literals](#literals)
     - [Types](#types)
       - [Primitive Types](#primitive-types)
         - [Strings](#strings)
+          - [Multi-line Strings](#multi-line-strings)
       - [Optional Types and None](#optional-types-and-none)
       - [Compound Types](#compound-types)
         - [Array\[X\]](#arrayx)
@@ -80,6 +78,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [Private Declarations](#private-declarations)
     - [Command Section](#command-section)
       - [Expression Placeholders](#expression-placeholders)
+      - [Stripping Leading Whitespace](#stripping-leading-whitespace)
     - [Task Outputs](#task-outputs)
       - [Files and Optional Outputs](#files-and-optional-outputs)
     - [Evaluation of Task Declarations](#evaluation-of-task-declarations)
@@ -393,7 +392,222 @@ The following characters are treated as whitespace:
 | CR    | 13  | `\x0D` |
 | LF    | 10  | `\x0A` |
 
-##### Multi-line Strings
+### Comments
+
+Comments can be used to provide helpful information such as workflow usage, requirements, copyright, etc. A comment is prepended by `#` and can be placed at the start of a line or at the end of any line of WDL code. Any text following the `#` will be completely ignored by the execution engine, with one exception: within the `command` section, *ALL* text will be included in the evaluated script - even lines prepended by `#`.
+
+There is no special syntax for multi-line comments - simply use a `#` at the start of each line.
+
+<details>
+  <summary>
+  Example: workflow_with_comments.wdl
+  
+  ```wdl
+  # Comments are allowed before version
+  version 1.2
+
+  # This is how you
+  # write a long
+  # multiline
+  # comment
+
+  task task_with_comments {
+    input {
+      Int number  # This comment comes after a variable declaration
+    }
+
+    # This comment will not be included within the command
+    command <<<
+      # This comment WILL be included within the command after it has been parsed
+      cat ~{number * 2}
+    >>>
+
+    output {
+      Int result = read_int(stdout())
+    }
+      
+    runtime {
+      container: "ubuntu:latest"
+    }
+  }
+
+  workflow workflow_with_comments {
+    input {
+      Int number
+    }
+
+    # You can have comments anywhere in the workflow
+    call task_with_comments { input: number }
+    
+    output { # You can also put comments after braces
+      Int result = task_with_comments.result
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {
+    "workflow_with_comments.number": 1
+  }
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "workflow_with_comments.result": 2
+  }
+  ```
+  </p>
+</details>
+
+### Reserved Keywords
+
+The following (case-sensitive) language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, struct types, or aliases.
+
+```
+Array
+Boolean
+File
+Float
+Int
+Map
+None
+Object
+Pair
+String
+alias
+as
+call
+command
+else
+false
+if
+in
+import
+input 
+left
+meta
+object
+output
+parameter_meta
+right
+runtime 
+scatter
+struct
+task
+then
+true
+version
+workflow
+```
+
+The following keywords should also be considered as reserved - they are not used in the current version of the specification, but they will be used in a future version:
+
+```
+Directory
+hints
+requirements
+```
+
+### Literals
+
+Task and workflow inputs may be passed in from an external source, or they may be specified in the WDL document itself using literal values. Input, output, and other declaration values may also be constructed at runtime using [expressions](#expressions) that consist of literals, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), built-in [operators](#operator-precedence-table), and [standard library functions](#standard-library).
+
+### Types
+
+A [declaration](#declarations) is a name that the user reserves in a given [scope](#appendix-b-wdl-namespaces-and-scopes) to hold a value of a certain type. In WDL *all* declarations (including inputs and outputs) must be typed. This means that the information about the type of data that may be held by each declarations must be specified explicitly.
+
+In WDL *all* types represent immutable values. For example, a `File` represents a logical "snapshot" of the file at the time when the value was created. It is impossible for a task to change an upstream value that has been provided as an input - even if it modifies its local copy, the original value is unaffected.
+
+#### Primitive Types
+
+The following primitive types exist in WDL:
+
+* A `Boolean` represents a value of `true` or `false`.
+* An `Int` represents a signed 64-bit integer (in the range `[-2^63, 2^63)`).
+* A `Float` represents a finite 64-bit IEEE-754 floating point number.
+* A `String` represents a unicode character string following the format described [below](#strings).
+* A `File` represents a file (or file-like object).
+    * A `File` declaration can have a string value indicating a relative or absolute path on the local file system.
+    * Within a WDL file, literal values for files may only be local (relative or absolute) paths.
+    * An execution engine may support other ways to specify [`File` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
+
+<details>
+  <summary>
+  Example: primitive_literals.wdl
+  
+  ```wdl
+  version 1.2
+
+  task write_file_task {
+    command <<<
+    printf "hello" > hello.txt
+    >>>
+
+    output {
+      File x = "hello.txt"
+    }
+  }
+
+  workflow primitive_literals {
+    call write_file_task
+
+    output {
+      Boolean b = true 
+      Int i = 0
+      Float f = 27.3
+      String s = "hello, world"
+      File x = write_file_task.x
+    }  
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {}
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "primitive_literals.b": true,
+    "primitive_literals.i": 0,
+    "primitive_literals.f": 27.3,
+    "primitive_literals.s": "hello, world",
+    "primitive_literals.x": "hello.txt"
+  }
+  ```
+  </p>
+</details>
+
+##### Strings
+
+A string literal may contain any unicode characters between single or double-quotes, with the exception of a few special characters that must be escaped:
+
+| Escape Sequence | Meaning      | \x Equivalent | Context                       |
+| --------------- | ------------ | ------------- | ----------------------------- |
+| `\\`            | `\`          | `\x5C`        |                               |
+| `\n`            | newline      | `\x0A`        |                               |
+| `\t`            | tab          | `\x09`        |                               |
+| `\'`            | single quote | `\x22`        | within a single-quoted string |
+| `\"`            | double quote | `\x27`        | within a double-quoted string |
+| `\~`            | tilde        | `\x7E`        | literal `"~{"`                |
+| `\$`            | dollar sign  | `\x24`        | literal `"${"`                |
+
+Strings can also contain the following types of escape sequences:
+
+* An octal escape code starts with `\`, followed by 3 digits of value 0 through 7 inclusive.
+* A hexadecimal escape code starts with `\x`, followed by 2 hexadecimal digits `0-9a-fA-F`. 
+* A unicode code point starts with `\u` followed by 4 hexadecimal characters or `\U` followed by 8 hexadecimal characters `0-9a-fA-F`.
+
+###### Multi-line Strings
 
 Strings that begin with `<<<` and end with `>>>` may span multiple lines.
 
@@ -609,221 +823,6 @@ Single- and double-quotes do not need to be escaped within a multi-line string.
   ```
   </p>
 </details>
-
-### Comments
-
-Comments can be used to provide helpful information such as workflow usage, requirements, copyright, etc. A comment is prepended by `#` and can be placed at the start of a line or at the end of any line of WDL code. Any text following the `#` will be completely ignored by the execution engine, with one exception: within the `command` section, *ALL* text will be included in the evaluated script - even lines prepended by `#`.
-
-There is no special syntax for multi-line comments - simply use a `#` at the start of each line.
-
-<details>
-  <summary>
-  Example: workflow_with_comments.wdl
-  
-  ```wdl
-  # Comments are allowed before version
-  version 1.2
-
-  # This is how you
-  # write a long
-  # multiline
-  # comment
-
-  task task_with_comments {
-    input {
-      Int number  # This comment comes after a variable declaration
-    }
-
-    # This comment will not be included within the command
-    command <<<
-      # This comment WILL be included within the command after it has been parsed
-      cat ~{number * 2}
-    >>>
-
-    output {
-      Int result = read_int(stdout())
-    }
-      
-    runtime {
-      container: "ubuntu:latest"
-    }
-  }
-
-  workflow workflow_with_comments {
-    input {
-      Int number
-    }
-
-    # You can have comments anywhere in the workflow
-    call task_with_comments { input: number }
-    
-    output { # You can also put comments after braces
-      Int result = task_with_comments.result
-    }
-  }
-  ```
-  </summary>
-  <p>
-  Example input:
-  
-  ```json
-  {
-    "workflow_with_comments.number": 1
-  }
-  ```
-  
-  Example output:
-  
-  ```json
-  {
-    "workflow_with_comments.result": 2
-  }
-  ```
-  </p>
-</details>
-
-### Reserved Keywords
-
-The following (case-sensitive) language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, struct types, or aliases.
-
-```
-Array
-Boolean
-File
-Float
-Int
-Map
-None
-Object
-Pair
-String
-alias
-as
-call
-command
-else
-false
-if
-in
-import
-input 
-left
-meta
-object
-output
-parameter_meta
-right
-runtime 
-scatter
-struct
-task
-then
-true
-version
-workflow
-```
-
-The following keywords should also be considered as reserved - they are not used in the current version of the specification, but they will be used in a future version:
-
-```
-Directory
-hints
-requirements
-```
-
-### Literals
-
-Task and workflow inputs may be passed in from an external source, or they may be specified in the WDL document itself using literal values. Input, output, and other declaration values may also be constructed at runtime using [expressions](#expressions) that consist of literals, identifiers (references to [declarations](#declarations) or [call](#call-statement) outputs), built-in [operators](#operator-precedence-table), and [standard library functions](#standard-library).
-
-### Types
-
-A [declaration](#declarations) is a name that the user reserves in a given [scope](#appendix-b-wdl-namespaces-and-scopes) to hold a value of a certain type. In WDL *all* declarations (including inputs and outputs) must be typed. This means that the information about the type of data that may be held by each declarations must be specified explicitly.
-
-In WDL *all* types represent immutable values. For example, a `File` represents a logical "snapshot" of the file at the time when the value was created. It is impossible for a task to change an upstream value that has been provided as an input - even if it modifies its local copy, the original value is unaffected.
-
-#### Primitive Types
-
-The following primitive types exist in WDL:
-
-* A `Boolean` represents a value of `true` or `false`.
-* An `Int` represents a signed 64-bit integer (in the range `[-2^63, 2^63)`).
-* A `Float` represents a finite 64-bit IEEE-754 floating point number.
-* A `String` represents a unicode character string following the format described [below](#strings).
-* A `File` represents a file (or file-like object).
-    * A `File` declaration can have a string value indicating a relative or absolute path on the local file system.
-    * Within a WDL file, literal values for files may only be local (relative or absolute) paths.
-    * An execution engine may support other ways to specify [`File` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
-
-<details>
-  <summary>
-  Example: primitive_literals.wdl
-  
-  ```wdl
-  version 1.2
-
-  task write_file_task {
-    command <<<
-    printf "hello" > hello.txt
-    >>>
-
-    output {
-      File x = "hello.txt"
-    }
-  }
-
-  workflow primitive_literals {
-    call write_file_task
-
-    output {
-      Boolean b = true 
-      Int i = 0
-      Float f = 27.3
-      String s = "hello, world"
-      File x = write_file_task.x
-    }  
-  }
-  ```
-  </summary>
-  <p>
-  Example input:
-  
-  ```json
-  {}
-  ```
-  
-  Example output:
-  
-  ```json
-  {
-    "primitive_literals.b": true,
-    "primitive_literals.i": 0,
-    "primitive_literals.f": 27.3,
-    "primitive_literals.s": "hello, world",
-    "primitive_literals.x": "hello.txt"
-  }
-  ```
-  </p>
-</details>
-
-##### Strings
-
-A string literal may contain any unicode characters between single or double-quotes, with the exception of a few special characters that must be escaped:
-
-| Escape Sequence | Meaning      | \x Equivalent | Context                       |
-| --------------- | ------------ | ------------- | ----------------------------- |
-| `\\`            | `\`          | `\x5C`        |                               |
-| `\n`            | newline      | `\x0A`        |                               |
-| `\t`            | tab          | `\x09`        |                               |
-| `\'`            | single quote | `\x22`        | within a single-quoted string |
-| `\"`            | double quote | `\x27`        | within a double-quoted string |
-| `\~`            | tilde        | `\x7E`        | literal `"~{"`                |
-| `\$`            | dollar sign  | `\x24`        | literal `"${"`                |
-
-Strings can also contain the following types of escape sequences:
-
-* An octal escape code starts with `\`, followed by 3 digits of value 0 through 7 inclusive.
-* A hexadecimal escape code starts with `\x`, followed by 2 hexadecimal digits `0-9a-fA-F`. 
-* A unicode code point starts with `\u` followed by 4 hexadecimal characters or `\U` followed by 8 hexadecimal characters `0-9a-fA-F`.
 
 #### Optional Types and None
 
@@ -3939,6 +3938,10 @@ When a command template is evaluated, the execution engine first strips out all 
 
 For example, consider a task that calls the `python` interpreter with an in-line Python script:
 
+<details>
+<summary>
+Example: python_strip_task.wdl
+
 ```wdl
 version 1.2
 
@@ -3949,15 +3952,41 @@ task python_strip {
 
   command<<<
   python <<CODE
-    with open("~{in}") as fp:
+    with open("~{infile}") as fp:
       for line in fp:
         if not line.startswith('#'):
           print(line.strip())
   CODE
   >>>
-  ....
+
+  output {
+    Array[String] lines = read_lines(stdout())
+  }
+
+  runtime {
+    container: "python:latest"
+  }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "python_strip.infile": "comment.txt"
+}
+```
+
+Example output:
+
+```json
+{
+  "python_strip": ["A", "B", "C"]
+}
+```
+</p>
+</details>
 
 Given an `infile` value of `/path/to/file`, the execution engine will produce the following Bash script, which has removed the two spaces that were common to the beginning of each line:
 
