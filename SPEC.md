@@ -124,8 +124,8 @@ Revisions to this specification are made periodically in order to correct errors
     - [`min`](#min)
     - [`max`](#max)
   - [String Functions](#string-functions)
-    - [`find`](#find)
-    - [`matches`](#matches)
+    - [✨ `find`](#-find)
+    - [✨ `matches`](#-matches)
     - [`sub`](#sub)
   - [File Functions](#file-functions)
     - [`basename`](#basename)
@@ -6808,7 +6808,7 @@ These functions operate on `String` arguments.
 
 **Restrictions**: None
 
-### `find`
+### ✨ `find`
 
 Given two `String` parameters `input` and `pattern`, searches for the occurrence of `pattern` within `input` and returns the first match or `None` if there are no matches. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 
@@ -6862,7 +6862,7 @@ Example output:
 </p>
 </details>
 
-### `matches`
+### ✨ `matches`
 
 Given two `String` parameters `input` and `pattern`, tests whether `pattern` matches `input` at least once. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 
