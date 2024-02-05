@@ -35,9 +35,10 @@ Revisions to this specification are made periodically in order to correct errors
         - [Map\[P, Y\]](#mapp-y)
         - [🗑 Object](#-object)
         - [Custom Types (Structs)](#custom-types-structs)
-      - [Hidden Types](#hidden-types)
-        - [Union](#union)
-      - [Scoped Types](#scoped-types)
+      - [Hidden and Scoped Types](#hidden-and-scoped-types)
+        - [`Union` (Hidden Type)](#union-hidden-type)
+        - [`hints`, `input`, and `output` (Scoped Types)](#hints-input-and-output-scoped-types)
+        - [`task` (Hidden Scoped Type)](#task-hidden-scoped-type)
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
@@ -111,6 +112,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Meta Values](#meta-values)
       - [Task Metadata Section](#task-metadata-section)
       - [Parameter Metadata Section](#parameter-metadata-section)
+    - [Runtime Access to Requirements, Hints, and Metadata](#runtime-access-to-requirements-hints-and-metadata)
     - [Advanced Task Examples](#advanced-task-examples)
       - [Example 1: HISAT2](#example-1-hisat2)
       - [Example 2: GATK Haplotype Caller](#example-2-gatk-haplotype-caller)
@@ -1445,23 +1447,29 @@ Example output:
 
 Note that the ability to assign values to `Struct` declarations other than struct literals is deprecated and will be removed in WDL 2.0.
 
-#### Hidden Types
+#### Hidden and Scoped Types
 
-A hidden type is one that may only be instantiated by the execution engine, and cannot be used in a declaration within a WDL file. There is currently only one hidden type, `Union`; however, in WDL 2.0, `Object` will also become a hidden type.
+A hidden type is one that may only be instantiated by the execution engine, and cannot be used in a declaration within a WDL file.
 
-##### Union
+A scoped type is one that is only be defined by the execution engine within a specific scope. A scoped type may also be hidden.
 
-The `Union` type is used for a value that may have any one of several concrete types. A `Union` value must always be coerced to a concrete type. The `Union` type is used in the following contexts:
+The following sections enumerate the hidden and scoped types that are available in the current version of WDL. In WDL 2.0, `Object` will also become a hidden type.
+
+##### `Union` (Hidden Type)
+
+`Union` is a hidden type that is used for a value that may have any one of several concrete types. A `Union` value must always be coerced to a concrete type. The `Union` type is used in the following contexts:
 
 * It is the type of the special [`None`](#optional-types-and-none) value.
 * It is the return type of some standard library functions, such as [`read_json`](#read_json).
 * It is the type of some reserved [`requirements`](#✨-requirements-section) and [`hints`](#✨-hints-section) attributes.
 
-#### Scoped Types
+##### `hints`, `input`, and `output` (Scoped Types)
 
-A scoped type is one that may only be defined by the execution engine within a specific scope, but which may be instantiated by the user within that scope.
+The [`hints`](#✨-hints-section) section has [three scoped types](#hints-scoped-types) that may be instantiated by the user within that scope.
 
-Currently, scoped types limted to the [`hints`](#✨-hints-section) section.
+##### `task` (Hidden Scoped Type)
+
+The [`task` type](#runtime-access-to-requirements-hints-and-metadata) is a hidden type that is scoped to the `command` and `output` sections.
 
 #### Type Conversion
 
@@ -2552,7 +2560,8 @@ The result of evaluating an expression in a placeholder must ultimately be conve
 
 Compound types cannot be implicitly converted to `String`s. To convert an `Array` to a `String`, use the [`sep`](#-sep) function: `~{sep(",", str_array)}`. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for more details and examples.
 
-If an expression within a placeholder evaluates to `None`,  and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string.
+If an expression within a placeholder evaluates to `None`, and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string.
+
 <details>
 <summary>
 Example: placeholder_coercion.wdl
@@ -5285,6 +5294,97 @@ Example output:
 ```
 </p>
 </details>
+
+### Runtime Access to Requirements, Hints, and Metadata
+
+The `requirements` and `hints` sections comprise resource requests to the execution engine. But these requests can be [specified or overridden at runtime](#specifying--overriding-requirements-and-hints), and the execution engine has some latitude in whether and how it fulfills them. Thus, the workflow developer may wish to know exactly what resources are available at runtime, such as:
+
+* What are the actual resource allocations. For example, a task may request at least `8 GB` of memory but may be able to use more memory if it is available.
+* The task metadata, to avoid duplication. For example, the task may wish to write log messages with the task's name and description without having to duplicate the information in the task's `meta` section.
+* The runtime engine may also choose to provide additional information at runtime.
+
+This information is provided by the `task` variable, which is implicitly defined by the execution engine. The type of `task` is a [scoped type](#scoped-types) with the following members:
+
+* `name`: The task name.
+* `id`: A `String` with the unique ID of the task. The execution engine may choose the format for this ID, but it is suggested to include at least the following information:
+    * The task name
+    * The task alias, if it differs from the task name
+    * The index of the task instance, if it is within a scatter statement
+* `container`: The URI `String` of the container in which the task is executing, or `None` if the task is being executed in the host environment. 
+* `cpu`: The allocated number of cpus as a `Float`. Must be greater than `0`.
+* `memory`: The allocated memory in bytes as an `Int`. Must be greater than `0`.
+* `gpu`: An `Array[String]` with one specification per allocated GPU. The specification is execution engine-specific. If no GPUs were allocated, then the value must be an empty array.
+* `fpga`: An `Array[String]` with one specification per allocated FPGA. The specification is execution engine-specific. If no FPGAs were allocated, then the value must be an empty array.
+* `disks`: A `Map[String, Int]` with one entry for each disk mount point. The key is the mount point and the value is the amount of disk space allocated in bytes.
+* `attempt`: The current task attempt. The value must be `0` the first time the task is executed, and incremented by `1` each time the task is retried (if any).
+* `return_code`: An `Int?` whose value is initially `None` and is set to the value of the `command`'s return code. The value is only guaranteed to be defined in the `output` section.
+* `meta`: An `Object` containing a copy of the task's `meta` section.
+* `parameter_meta`: An `Object` containing a copy of the task's `parameter_meta` section.
+* `ext`: An `Object` containing execution engine-specific attributes, or the empty `Object` if there aren't any. Members of `ext` should be considered optional. It is recommended to only access a member of `ext` using [string interpolation](#expression-placeholders-and-string-interpolation) to avoid an error if it is not defined.
+
+If the runtime engine is not able to provide the actual value of a requirement, then it must provide the requested value instead, or the default value if no specific value was requested.
+
+<details>
+<summary>
+Example: test_runtime_info_task.wdl
+
+```wdl
+version 1.2
+
+task test_runtime_info_task {
+  meta {
+    description: "Task that shows how to use the implicit 'task' declaration"
+  }
+
+  command <<<
+  echo "Task name: ~{task.name}"
+  echo "Task description: ~{task.meta.description}"
+  echo "Task container: ~{task.container}"
+  echo "Available cpus: ~{task.cpu}"
+  echo "Available memory: ~{task.memory / (1024 * 1024 * 1024)} GiB"
+  exit 1
+  >>>
+  
+  output {
+    Boolean at_least_two_gb = task.memory >= (2 * 1024 * 1024 * 1024)
+    Int return_code = task.return_code
+  }
+  
+  requirements {
+    container: ["ubuntu:latest", "quay.io/ubuntu:focal"]
+    memory: "2 GiB"
+    return_codes: [0, 1]
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_runtime_info_task.at_least_two_gb": true,
+  "test_runtime_info_task.return_code": 1
+}
+```
+
+Test config:
+
+```json
+{
+  "dependencies": ["cpu", "memory"]
+}
+```
+</p>
+</details>
+
+If a task is using the deprecated [`runtime`](#🗑-runtime-section) section rather than `requirements` and `hints`, then the runtime values of the reserved `runtime` attributes (i.e., the ones that appear in the `requirements` section) are populated in the `requirements` member.
 
 ### Advanced Task Examples
 
