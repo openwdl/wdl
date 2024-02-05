@@ -5318,8 +5318,8 @@ This information is provided by the `task` variable, which is implicitly defined
 * `disks`: A `Map[String, Int]` with one entry for each disk mount point. The key is the mount point and the value is the amount of disk space allocated in bytes.
 * `attempt`: The current task attempt. The value must be `0` the first time the task is executed, and incremented by `1` each time the task is retried (if any).
 * `return_code`: An `Int?` whose value is initially `None` and is set to the value of the `command`'s return code. The value is only guaranteed to be defined in the `output` section.
-* `meta`: An `Object` containing a copy of the task's `meta` section.
-* `parameter_meta`: An `Object` containing a copy of the task's `parameter_meta` section.
+* `meta`: An `Object` containing a copy of the task's `meta` section, or the empty `Object` if there is no `meta` section or if it is empty.
+* `parameter_meta`: An `Object` containing a copy of the task's `parameter_meta` section, or the empty `Object` if there is no `parameter_meta` section or if it is empty.
 * `ext`: An `Object` containing execution engine-specific attributes, or the empty `Object` if there aren't any. Members of `ext` should be considered optional. It is recommended to only access a member of `ext` using [string interpolation](#expression-placeholders-and-string-interpolation) to avoid an error if it is not defined.
 
 If the runtime engine is not able to provide the actual value of a requirement, then it must provide the requested value instead, or the default value if no specific value was requested.
