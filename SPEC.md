@@ -125,6 +125,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [`max`](#max)
   - [String Functions](#string-functions)
     - [`sub`](#sub)
+    - [`split`](#split)
   - [File Functions](#file-functions)
     - [`basename`](#basename)
     - [`glob`](#glob)
@@ -6923,6 +6924,64 @@ Test config:
 ```json
 {
   "exclude_output": ["data_file"]
+}
+```
+</p>
+</details>
+
+### `split`
+
+Given two `String` parameters `input` and `pattern`, splits `input` at each occurrence of `pattern`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
+
+This is the inverse of [`sep`](#sep). Calling `sep(pattern, split(input, pattern))` always yields the original `input` for any fixed `pattern`.
+
+If `pattern` does not occur in `input`, then the single element array `[input]` is returned.
+
+**Parameters**:
+
+1. `String`: the input string to split.
+2. `String`: the pattern to split on.
+
+**Returns**: an array of the parts of the string after splitting on the pattern.
+
+<details>
+<summary>
+Example: test_split_task.wdl
+
+```wdl
+version 1.2
+task test_split {
+  input {
+    Int n
+  }
+  command <<<
+  if [ "~{n}" -gt "1" ]; then
+    for i in 1..~{n-1}; do
+      echo -n "hello "
+    done
+  fi
+  echo "hello"
+  >>>
+  output {
+    Array[String] hellos = split(read_string(stdout()), " ")
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_split.n": 3
+}
+```
+
+Example output:
+
+```json
+{
+  "test_split.hellos": ["hello", "hello", "hello"]
 }
 ```
 </p>
