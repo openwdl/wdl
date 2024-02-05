@@ -42,6 +42,11 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
+version 1.2.0
+---------------------------
++ Added `split` function to split a `String` into an `Array[String]`.
+  [PR 605](https://github.com/openwdl/wdl/pull/605)
+
 version 1.1.1
 ---------------------------
 
