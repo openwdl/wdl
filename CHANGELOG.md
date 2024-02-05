@@ -44,8 +44,8 @@ version development
 
 version 1.2.0
 ---------------------------
-+ Added `split` function to split a `String` into an `Array[String]`.
-  [PR 605](https://github.com/openwdl/wdl/pull/605)
+
++ Added `find`, `matches`, and `split` functions.
 
 version 1.1.1
 ---------------------------
