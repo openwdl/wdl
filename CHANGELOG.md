@@ -45,7 +45,7 @@ version development
 version 1.2.0
 ---------------------------
 
-+ Added `find`, `matches`, and `split` functions.
++ Added `find`, and `matches` functions.
 
 version 1.1.1
 ---------------------------
