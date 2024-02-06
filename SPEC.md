@@ -37,6 +37,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [Custom Types (Structs)](#custom-types-structs)
       - [Hidden Types](#hidden-types)
         - [Union](#union)
+      - [Scoped Types](#scoped-types)
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
@@ -82,25 +83,32 @@ Revisions to this specification are made periodically in order to correct errors
     - [Task Outputs](#task-outputs)
       - [Files and Optional Outputs](#files-and-optional-outputs)
     - [Evaluation of Task Declarations](#evaluation-of-task-declarations)
-    - [Runtime Section](#runtime-section)
+    - [✨ Requirements Section](#-requirements-section)
       - [Units of Storage](#units-of-storage)
-      - [Mandatory `runtime` attributes](#mandatory-runtime-attributes)
+      - [Requirements attributes](#requirements-attributes)
         - [`container`](#container)
         - [`cpu`](#cpu)
         - [`memory`](#memory)
-        - [`gpu`](#gpu)
+        - [Hardware Accelerators (`gpu` and ✨ `fpga`)](#hardware-accelerators-gpu-and--fpga)
         - [`disks`](#disks)
-        - [`maxRetries`](#maxretries)
-        - [`returnCodes`](#returncodes)
-      - [Reserved `runtime` hints](#reserved-runtime-hints)
-        - [`maxCpu`](#maxcpu)
-        - [`maxMemory`](#maxmemory)
-        - [`shortTask`](#shorttask)
-        - [`localizationOptional`](#localizationoptional)
+        - [`max_retries`](#max_retries)
+        - [`return_codes`](#return_codes)
+    - [✨ Hints Section](#-hints-section)
+      - [Hints-scoped types](#hints-scoped-types)
+      - [Reserved Task Hints](#reserved-task-hints)
+        - [`max_cpu`](#max_cpu)
+        - [`max_memory`](#max_memory)
+        - [✨ `disks`](#-disks)
+        - [✨ `gpu` and ✨ `fpga`](#-gpu-and--fpga)
+        - [`short_task`](#short_task)
+        - [`localization_optional`](#localization_optional)
         - [`inputs`](#inputs)
         - [`outputs`](#outputs)
+      - [Compute Environments](#compute-environments)
       - [Conventions and Best Practices](#conventions-and-best-practices)
+    - [🗑 Runtime Section](#-runtime-section)
     - [Metadata Sections](#metadata-sections)
+      - [Meta Values](#meta-values)
       - [Task Metadata Section](#task-metadata-section)
       - [Parameter Metadata Section](#parameter-metadata-section)
     - [Advanced Task Examples](#advanced-task-examples)
@@ -108,10 +116,13 @@ Revisions to this specification are made periodically in order to correct errors
       - [Example 2: GATK Haplotype Caller](#example-2-gatk-haplotype-caller)
   - [Workflow Definition](#workflow-definition)
     - [Workflow Elements](#workflow-elements)
-    - [Workflow Inputs](#workflow-inputs)
-    - [Workflow Outputs](#workflow-outputs)
     - [Evaluation of Workflow Elements](#evaluation-of-workflow-elements)
     - [Fully Qualified Names \& Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
+    - [Workflow Inputs](#workflow-inputs)
+    - [Workflow Outputs](#workflow-outputs)
+    - [Workflow Hints](#workflow-hints)
+      - [Reserved Workflow Hints](#reserved-workflow-hints)
+        - [`allow_nested_inputs`](#allow_nested_inputs)
     - [Call Statement](#call-statement)
       - [Computing Call Inputs](#computing-call-inputs)
     - [Scatter](#scatter)
@@ -174,7 +185,7 @@ Revisions to this specification are made periodically in order to correct errors
 - [Input and Output Formats](#input-and-output-formats)
   - [JSON Input Format](#json-input-format)
     - [Optional Inputs](#optional-inputs)
-    - [Specifying / Overriding Runtime Attributes](#specifying--overriding-runtime-attributes)
+    - [Specifying / Overriding Requirements and Hints](#specifying--overriding-requirements-and-hints)
   - [JSON Output Format](#json-output-format)
   - [JSON Serialization of WDL Types](#json-serialization-of-wdl-types)
     - [Primitive Types](#primitive-types-1)
@@ -245,7 +256,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
       grep -E '~{pattern}' '~{infile}'
     >>>
 
-    runtime {
+    requirements {
       container: "ubuntu:latest"
     }
 
@@ -426,7 +437,7 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
       Int result = read_int(stdout())
     }
       
-    runtime {
+    requirements {
       container: "ubuntu:latest"
     }
   }
@@ -471,6 +482,7 @@ The following (case-sensitive) language keywords are reserved and cannot be used
 ```
 Array
 Boolean
+Directory
 File
 Float
 Int
@@ -485,6 +497,7 @@ call
 command
 else
 false
+hints
 if
 in
 import
@@ -495,6 +508,7 @@ object
 output
 parameter_meta
 right
+requirements
 runtime 
 scatter
 struct
@@ -503,14 +517,6 @@ then
 true
 version
 workflow
-```
-
-The following keywords should also be considered as reserved - they are not used in the current version of the specification, but they will be used in a future version:
-
-```
-Directory
-hints
-requirements
 ```
 
 ### Literals
@@ -1445,10 +1451,17 @@ A hidden type is one that may only be instantiated by the execution engine, and 
 
 ##### Union
 
-The `Union` type is used for a value that may have any one of several concrete types. A `Union` value must always be coerced to a concrete type. The `Union` type is used in two contexts:
+The `Union` type is used for a value that may have any one of several concrete types. A `Union` value must always be coerced to a concrete type. The `Union` type is used in the following contexts:
 
 * It is the type of the special [`None`](#optional-types-and-none) value.
 * It is the return type of some standard library functions, such as [`read_json`](#read_json).
+* It is the type of some reserved [`requirements`](#✨-requirements-section) and [`hints`](#✨-hints-section) attributes.
+
+#### Scoped Types
+
+A scoped type is one that may only be defined by the execution engine within a specific scope, but which may be instantiated by the user within that scope.
+
+Currently, scoped types limted to the [`hints`](#✨-hints-section) section.
 
 #### Type Conversion
 
@@ -2343,7 +2356,7 @@ task mem {
   command <<<
   >>>
 
-  runtime {
+  requirements {
     memory: memory
   }
 }
@@ -3295,7 +3308,7 @@ A task has a required [`command`](#command-section) that is a template for a Bas
 
 Tasks explicitly define their [`input`s](#task-inputs) and [`output`s](#task-outputs), which is essential for building dependencies between tasks and workflows. The value of an input declaration may be supplied by the caller. Tasks may have additional "private" declarations within the task body. All task declarations may be initialized with hard-coded literal values, or may have their values constructed from expressions. Input and private declarations can be referenced in the command template.
 
-A task may also specify [requirements for the runtime environment](#runtime-section) (such as the amount of RAM or number of CPU cores) that must be satisfied in order for its commands to execute properly.
+A task may also specify runtime environment [requirements](#requirements-section) (such as the amount of RAM or number of CPU cores) that must be satisfied in order for its commands to execute properly, and [hints](#✨-hints-section) that should be satisfied if possible.
 
 There are two optional metadata sections: the [`meta`](#metadata-sections) section, for task-level metadata, and the [`parameter_meta`](#parameter-metadata-section) section, for parameter-level metadata.
 
@@ -3317,8 +3330,12 @@ task name {
     # task outputs are declared here
   }
 
-  runtime {
+  requirements {
     # runtime requirements are specified here
+  }
+
+  hints {
+    # runtime hints are specified here
   }
 
   meta {
@@ -3462,7 +3479,7 @@ task input_type_quantifiers {
     Array[String] lines = read_lines("result")
   }
   
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -3963,7 +3980,7 @@ task python_strip {
     Array[String] lines = read_lines(stdout())
   }
 
-  runtime {
+  requirements {
     container: "python:latest"
   }
 }
@@ -4188,7 +4205,7 @@ task relative_and_absolute {
     File bashrc = "/root/.bashrc"
   }
 
-  runtime {
+  requirements {
     container: "ubuntu:focal"
   }
 }
@@ -4232,12 +4249,14 @@ task optional_output {
   input {
     Boolean make_example2
   }
+
   command <<<
     printf "1" > example1.txt
     if ~{make_example2}; do
       printf "2" > example2.txt
     fi
   >>>
+  
   output {
     File example1 = "example1.txt"
     File? example2 = "example2.txt"
@@ -4289,28 +4308,26 @@ Input and private declarations may appear in any order within their respective s
 
 Declarations in the output section may reference any input and private declarations, and may also reference other output declarations.
 
-### Runtime Section
+### ✨ Requirements Section
 
-The `runtime` section defines a set of key/value pairs that represent the minimum requirements needed to run a task and the conditions under which a task should be interpreted as a failure or success. 
+The `requirements` section defines a set of key/value pairs that represent the minimum requirements needed to run a task and the conditions under which a task should be interpreted as a failure or success. The `requirements` section is limited to the attributes defined in this specification. Arbitrary key/value pairs are not allowed in the `requirements` section, and must instead be placed in the [`hints`](#✨-hints-section) section.
 
-During execution of a task, resource requirements within the `runtime` section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task immediately fails. 
+During execution of a task, all resource requirements within the `requirements` section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task immediately fails. 
 
-There are a set of reserved attributes (described below) that must be supported by the execution engine, and which have well-defined meanings and default values. Default values for all optional standard attributes are directly defined by the WDL specification in order to encourage portability of workflows and tasks; execution engines should NOT provide additional mechanisms to set default values for when no runtime attributes are defined.
+All attributes of the `requirements` section have well-defined meanings and default values. Default values for the optional attributes are directly defined by the WDL specification to encourage portability of workflows and tasks; execution engines should not provide additional mechanisms to set default values for when no requirements are defined.
 
-🗑 Additional arbitrary attributes may be specified in the `runtime` section, but these may be ignored by the execution engine. These non-standard attributes are called "hints". The use of hint attributes in the `runtime` section is deprecated; a later version of WDL will introduce a new `hints` section for arbitrary attributes and disallow non-standard attributes in the `runtime` section.
-
-The value of a `runtime` attribute can be any expression that evaluates to the expected type - and in some cases matches the accepted format - for that attribute. Expressions in the `runtime` section may reference (non-output) declarations in the task:
+The value of a `requirements` attribute may be any expression that evaluates to the expected type - and, in some cases, matches the accepted format - for that attribute. Expressions in the `requirements` section may reference input and private declarations.
 
 <details>
 <summary>
-Example: runtime_container_task.wdl
+Example: dynamic_container_task.wdl
 
 ```wdl
 version 1.2
 
-task runtime_container {
+task dynamic_container {
   input {
-    String ubuntu_version
+    String ubuntu_version = "latest"
   }
 
   command <<<
@@ -4321,7 +4338,7 @@ task runtime_container {
     String is_true = ubuntu_version == read_string(stdout())
   }
 
-  runtime {
+  requirements {
     container: "ubuntu:~{ubuntu_version}"
   }
 }
@@ -4332,7 +4349,7 @@ Example input:
 
 ```json
 {
-  "runtime_container.ubuntu_version": "focal"
+  "dynamic_container.ubuntu_version": "focal"
 }
 ```
 
@@ -4340,7 +4357,7 @@ Example output:
 
 ```json
 {
-  "runtime_container.is_true": true
+  "dynamic_container.is_true": true
 }
 ```
 </p>
@@ -4348,7 +4365,7 @@ Example output:
 
 #### Units of Storage
 
-Several of the `runtime` attributes (and some [Standard Library](#standard-library) functions) can accept a string value with an optional unit suffix, using one of the valid [SI or IEC abbreviations](https://en.wikipedia.org/wiki/Binary_prefix). At a minimum, execution engines must support the following suffices in a case-insensitive manner:
+Several of the `requirements` attributes (and some [Standard Library](#standard-library) functions) accept a string value with an optional unit suffix, using one of the valid [SI or IEC abbreviations](https://en.wikipedia.org/wiki/Binary_prefix). At a minimum, execution engines must support the following suffices in a case-insensitive manner:
 
 * B (bytes)
 * Decimal: KB, MB, GB, TB
@@ -4358,28 +4375,30 @@ Optional whitespace is allowed between the number/expression and the suffix. For
 
 The decimal and binary units may be shortened by omitting the trailing "B". For example, "K" and "KB" are both interpreted as "kilobytes".
 
-#### Mandatory `runtime` attributes
+#### Requirements attributes
 
-The following attributes must be supported by the execution engine. The value for each of these attributes must be defined - if it is not specified by the user, then it must be set to the specified default value. 
+The following attributes must be supported by the execution engine. The value for each of these attributes must be defined - if it is not specified by the user, then it must be set to the specified default value.
 
 ##### `container`
 
 * Accepted types:
+    * `"*"`: This special value indicates that the runtime engine may use any POSIX-compliant operating environment it wishes to execute the task, whether that be a container or directly in the host environment.
     * `String`: A single container URI.
     * `Array[String]`: An array of container URIs.
+* Default value: `"*"`
 * Alias: `docker`
 
-The `container` key accepts a URI string that describes a location where the execution engine can attempt to retrieve a container image to execute the task.
+The `container` attribute accepts a URI string that describes a container resource the execution engine can use when executing the task.
 
-The user is strongly suggested to specify a `container` for every task. There is no default value for `container`. If `container` is not specified, the execution behavior is determined by the execution engine. Typically, the task is simply executed in the host environment. 
+It is strongly suggested to specify a `container` for every task. If `container` is not specified, or is specified with the special `"*"` value, the execution behavior is determined by the execution engine. A task that depends on the engine to determine the execution environment should be careful to only use built-in Bash operations and tools specified as mandatory by the [POSIX standard](https://unix.stackexchange.com/questions/228888/what-are-the-posix-mandatory-utilities).
 
-🗑 The ability to omit `container` is deprecated. In WDL 2.0, `container` will be required.
+The format of a container URI is `protocol://location`, where `protocol` is one of the protocols supported by the execution engine. Execution engines must, at a minimum, support the `docker` protocol. If only `location` is specified, the protocol is assumed to be `docker`. An execution engine should ignore any URI with a protocol it does not support.
 
-The format of a container URI string is `protocol://location`, where protocol is one of the protocols supported by the execution engine. Execution engines must, at a minimum, support the `docker://` protocol, and if no protocol is specified, it is assumed to be `docker://`. An execution engine should ignore any URI with a protocol it does not support.
+A container location uses the syntax defined by the container repository. For example, the URI `ubuntu:latest` refers to a Docker image hosted on `DockerHub`, while the URI `quay.io/bitnami/python` refers to an image in a `quay.io` repository. To promote reproducibility, it is recommended to use the most specific possible URI to refer to a container; e.g. for Docker, using the [digest](https://docs.docker.com/engine/reference/commandline/image_ls/#digests) or a specific version tag rather than `latest`.
 
-Container source locations should use the syntax defined by the individual container repository. For example an image defined as `ubuntu:latest` would conventionally refer a docker image living on `DockerHub`, while an image defined as `quay.io/bitnami/python` would refer to a `quay.io` repository.
+The `container` attribute also accepts an unordered array of URI strings. All the URIs must resolve to containers that are equivalent. In other words, when given the same inputs the task should produce the same outputs regardless of which of the containers is used to execute the task. It is the responsibility of the execution engine to specify the container protocols and locations it supports, and to determine which container is the "best" one to use at runtime. Defining multiple images enables greater portability across a broad range of execution environments.
 
-The `container` key also accepts an array of URI strings. All of the locations must point to images that are equivalent, i.e. they must always produce the same final results when the task is run with the same inputs. It is the responsibility of the execution engine to define the specific image sources it supports, and to determine which image is the "best" one to use at runtime. The ordering of the array does not imply any implicit preference or ordering of the containers. All images are expected to be the same, and therefore any choice would be equally valid. Defining multiple images enables greater portability across a broad range of execution environments.
+If the value is a `String` or `Array[String]` and none of the specified containers can be sucessfully resolved by the exeution engine, the task fails with an error.
 
 <details>
 <summary>
@@ -4395,7 +4414,7 @@ task single_image_task {
     String greeting = read_string(stdout())
   }
 
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -4407,7 +4426,7 @@ task multi_image_task {
     String greeting = read_string(stdout())
   }
 
-  runtime {
+  requirements {
     container: ["ubuntu:latest", "https://gcr.io/standard-images/ubuntu:latest"]
   }
 }
@@ -4440,9 +4459,9 @@ Example output:
 </p>
 </details>
 
-The execution engine must cause the task to fail immediately if none of the container URIs can be successfully resolved to a runnable image.
+The execution engine must cause the task to fail immediately if it is not able to resolve at least one of the URIs to a runnable container.
 
-🗑 `docker` is supported as an alias for `container` with the exact same semantics. Exactly one of the `container` or `docker` is required. The `docker` alias will be dropped in WDL 2.0.
+🗑 `docker` is supported as an alias for `container` with the exact same semantics. Exactly one of the `container` or `docker` attributes is required. The `docker` alias is deprecated and will be removed in WDL 2.0.
 
 ##### `cpu`
 
@@ -4469,7 +4488,7 @@ task test_cpu {
     Boolean at_least_two_cpu = read_int(stdout()) >= 2
   }
 
-  runtime {
+  requirements {
     container: "ubuntu:latest"
     cpu: 2
   }
@@ -4526,7 +4545,7 @@ task test_memory {
     Boolean at_least_two_gb = read_int(stdout()) >= (2 * 1024 * 1024 * 1024)
   }
 
-  runtime {
+  requirements {
     memory: "2 GiB"
   }
 }
@@ -4557,14 +4576,14 @@ Test config:
 </p>
 </details>
 
-##### `gpu`
+##### Hardware Accelerators (`gpu` and ✨ `fpga`)
 
 * Accepted type: `Boolean`
 * Default value: `false`
 
-The `gpu` attribute provides a way to accommodate modern workflows that are increasingly becoming reliant on GPU computations. This attribute simply indicates to the execution engine that a task requires a GPU to run to completion. A task with this flag set to `true` is guaranteed to only run if a GPU is a available within the runtime environment. It is the responsibility of the execution engine to check prior to execution whether a GPU is provisionable, and if not, preemptively fail the task.
+The `gpu` and `fpga` attributes indicate to the execution engine whether a task requires a GPU and/or FPGA accelerator to run to completion. The execution engine must guarantee that at least one of each of the request types of accelerators is available or immediately fail the task prior to instantiating the command.
 
-This attribute *cannot* request any specific quantity or types of GPUs to make available to the task. Any such information should be provided using an execution engine-specific attribute.
+The [`gpu` and `fpga` hints](#✨-gpu-and-✨-fpga) can be used to request specific attributes for the provisioned accelerators (e.g., quantity, model, driver version).
 
 <details>
 <summary>
@@ -4582,7 +4601,7 @@ task test_gpu {
     Boolean at_least_one_gpu = read_int(stdout()) >= 1
   }
   
-  runtime {
+  requirements {
     gpu: true
   }
 }
@@ -4618,20 +4637,20 @@ Test config:
 * Accepted types:
     * `Int`: Amount disk space to request, in `GiB`.
     * `String`: A disk specification - one of the following:
-        * `"<size>"`: Amount disk space to request, in `GiB`.
-        * `"<size> <suffix>"`: Amount disk space to request, with the given suffix.
-        * `"<mount-point> <size>"`: A mount point and the amount disk space to request, in `GiB`.
-        * `"<mount-point> <size> <suffix>"`: A mount point and the amount disk space to request, with the given suffix.
+        * `"<size>"`: Amount of disk space to request, in `GiB`.
+        * `"<size> <units>"`: Amount of disk space to request, in the given units.
+        * `"<mount-point> <size>"`: A mount point and the amount of disk space to request, in `GiB`.
+        * `"<mount-point> <size> <units>"`: A mount point and the amount of disk space to request, in the given units.
     * `Array[String]` - An array of disk specifications.
 * Default value: `1 GiB`
 
-The `disks` attribute provides a way to request one or more persistent volumes of at least a specific size and mounted at a specific location. When the `disks` attribute is provided, the execution engine must guarantee the requested resources are available or immediately fail the task prior to instantiating the command.
+The `disks` attribute provides a way to request one or more persistent volumes, each of which has a minimum size and is mounted at a specific location. When the `disks` attribute is provided, the execution engine must guarantee the requested resources are available or immediately fail the task prior to instantiating the command.
 
-This property does not specify exactly what type of persistent volume is being requested (e.g. SSD, HDD), but leaves this up to the engine to decide, based on what hardware is available or on another execution engine-specific attribute.
+If a mount point is specified, then it must be an absolute path to a location in the host environment. If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
 
-If a disk specification string is used to specify a mount point, then the mount point must be an absolute path to a location on the host machine. If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
+The execution engine is free to provision any class(es) of persistent volume it has available (e.g., SSD or HDD). The [`disks` hint](#✨-disks) hint can be used to request specific attributes for the provisioned disks.
 
-details>
+<details>
 <summary>
 Example: one_mount_point_task.wdl
 
@@ -4647,7 +4666,7 @@ task one_mount_point {
     Boolean at_least_ten_gb = read_int(stdout()) >= (10 * 1024 * 1024 * 1024)
   }
 
-  runtime {
+  requirements {
     disks: "/mnt/outputs 10 GiB"
   }
 }
@@ -4696,7 +4715,7 @@ task multi_mount_points {
     Boolean at_least_two_gb = read_int(stdout()) >= (2 * 1024 * 1024 * 1024)
   }
 
-  runtime {
+  requirements {
   	# The first value will be mounted at the execution root
     disks: ["2", "/mnt/outputs 4 GiB", "/mnt/tmp 1 GiB"]
   }
@@ -4728,35 +4747,37 @@ Test config:
 </p>
 </details>
 
-##### `maxRetries`
+##### `max_retries`
 
 * Accepted type: `Int`
 * Default value: `0`
+* Alias: `maxRetries`
 
-The `maxRetries` attribute provides a mechanism for a task to be retried in the event of a failure. If this attribute is defined, the execution engine must retry the task UP TO but not exceeding the number of attempts that it specifies.
+The `max_retries` attribute specifies the maximum number of times a task should be retried in the event of failure. The execution engine must retry the task at least once and up to (but not exceeding) the specified number of attempts.
 
 The execution engine may choose to define an upper bound (>= 1) on the number of retry attempts that it permits.
 
 A value of `0` means that the task as not retryable, and therefore any failure in the task should never result in a retry by the execution engine, and the final status of the task should remain the same.
 
 ```wdl
-task maxRetries_test {
+task max_retries_test {
   #.....
-  runtime {
-    maxRetries: 4
+  requirements {
+    max_retries: 4
   }
 }
 ```
 
-##### `returnCodes`
+##### `return_codes`
 
 * Accepted types:
     * `"*"`: This special value indicates that ALL returnCodes should be considered a success.
     * `Int`: Only the specified return code should be considered a success.
     * `Array[Int]`: Any of the return codes specified in the array should be considered a success.
 * Default value: `0`
+* Alias: `returnCodes`
 
-The `returnCodes` attribute provides a mechanism to specify the return code, or set of return codes, that indicates a successful execution of a task. The engine must honor the return codes specified within the `runtime` section and set the tasks status appropriately. 
+The `return_codes` attribute specifies the return code, or set of return codes, that indicates a successful execution of a task. If the task exits with one of the specified return codes, it must be considered successful if possible (i.e., assuming all output expressions are evaluated successfully). 
 
 <details>
 <summary>
@@ -4770,7 +4791,7 @@ task single_return_code {
   exit 1
   >>>
 
-  runtime {
+  requirements {
     return_codes: 1
   }
 }
@@ -4811,7 +4832,7 @@ task multi_return_code {
   exit 42
   >>>
 
-  runtime {
+  requirements {
     return_codes: [1, 2, 5, 10]
   }
 }
@@ -4848,12 +4869,12 @@ Example: all_return_codes_task.wdl
 ```wdl
 version 1.2
 
-task multi_return_code_task {
+task multi_return_code {
   command <<<
   exit 42
   >>>
 
-  runtime {
+  requirements {
     return_codes: "*"
   }
 }
@@ -4882,11 +4903,21 @@ Test config:
 </p>
 </details>
 
-#### Reserved `runtime` hints
+### ✨ Hints Section
 
-The following attributes are considered "hints" rather than requirements. They are optional for execution engines to support. The purpose of reserving these attributes is to encourage interoperability of tasks and workflows between different execution engines.
+The `hints` section is optional and may contain any number of attributes (key/value pairs) that provide hints to the execution engine. A hint provides additional context that the execution engine can use to optimize the execution of the task. The execution engine may also ignore any hint for any reason. A task execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
 
-Note: in a future version of WDL, these attributes will move to a new `hints` section.
+#### Hints-scoped types
+
+There are three [scoped types](#scoped-types) that must be declared by the execution engine within the `hints` section. These types are intentionally given names that are already reserved keywords so that they don't conflict with any user-defined types.
+
+The `hints` type is similar to `Object` in that it can contain arbitrary key-value pairs. However, the members of a `hints` object must have the same semantics as the `hints` section itself (i.e., any [reserved hints](#reserved-task-hints) must have the same types and allowed values), and the `hints` type cannot be nested (i.e., a member of a `hints` object may not have a `hints` type value). The `hints` type is primarily intended to be used to define the [`inputs`](#intputs), [`outputs`](#outputs), and [compute environment](#compute-environments) attributes.
+
+The `input` and `output` types are similar to Structs whose member names are identical to the names of the enclosing task's input and output variables, respectively, and whose member values are all of type `hints`. However, unlike Structs, the keys of `input` and `output` literals may use dotted notation to refer to nested members of input and output Structs. See [`inputs`](#inputs) and [`outputs`](#outputs) for examples.
+
+#### Reserved Task Hints
+
+The following hints are reserved. An implementation is not required to support these attributes, but if it does support a reserved attribute it must enforce the semantics and allowed values defined below. The purpose of reserving these hints is to encourage interoperability of tasks and workflows between different execution engines.
 
 <details>
 <summary>
@@ -4908,15 +4939,18 @@ task test_hints {
     Int num_lines = read_int(stdout())
   }
 
-  runtime {
+  requirements {
     container: "ubuntu:latest"
-    maxMemory: "36 GB"
-    maxCpu: 24
-    shortTask: true
-    localizationOptional: false
-    inputs: object {
-      foo: object { 
-        localizationOptional: true
+  }
+
+  hints {
+    max_memory: "36 GB"
+    max_cpu: 24
+    short_task: true
+    localization_optional: false
+    inputs: input {
+      foo: hints { 
+        localization_optional: true
       }
     }
   }
@@ -4942,31 +4976,66 @@ Example output:
 </p>
 </details>
 
-##### `maxCpu`
+##### `max_cpu`
 
-Specifies the maximum CPU to be provisioned for a task. The value of this hint has the same specification as [`requirements.cpu`](#cpu).
+* Accepted types:
+    * `Int`
+    * `Float`
+* Alias: `maxCpu`
 
-##### `maxMemory`
+A hint to the execution engine that the task expects to use no more than the specified number of CPUs. The value of this hint has the same specification as [`requirements.cpu`](#cpu).
 
-Specifies the maximum memory provisioned for a task. The value of this hint has the same specification as [`requirements.memory`](#memory).
+##### `max_memory`
 
-##### `shortTask`
+* Accepted types:
+    * `Int`: Bytes of RAM.
+    * `String`: A decimal value with, optionally with a unit suffix.
+* Alias: `maxMemory`
 
-* Allowed type: `Boolean`
+A hint to the execution engine that the task expects to use no more than the specified amount of memory. The value of this hint has the same specification as [`requirements.memory`](#memory).
 
-A `Boolean` value for which `true` indicates that that this task is not expected to take long to execute. The execution engine can interpret this as permission to attempt to optimize the execution of the task - e.g., by batching together multiple `shortTask`s, or by using the cost-optimized instance types that many cloud vendors provide, e.g., `preemptible` instances on `GCP` and `spot` instances on `AWS`. "Short" is a bit ambiguous, but should generally be interpreted as << 24h.
+##### ✨ `disks`
 
-##### `localizationOptional`
+* Accepted types:
+    * `String`: Disk specification.
+    * `Map[String, String]`: Map of mount point to disk specification.
 
-* Allowed type: `Boolean`
+A hint to the execution engine to mount [disks](#disks) with specific attributes. The value of this hint can be a `String` with a specification that applies to all mount points, or a `Map` with the key being the mount point and the value being a `String` with the specification for that mount point.
 
-A `Boolean` value, for which `true` indicates that, if possible, any `File` inputs for this task should not be (immediately) localized. For example, a task that processes its input file once in linear fashion could have that input streamed (e.g., using a `fifo`) rather than requiring the input file to be fully localized prior to execution. This directive must not have any impact on the success or failure of a task (i.e., a task must run the same with or without localization).
+Volume specifications are left intentionally vague as they are primarily intented to be used in the context of a specific [compute environment](#compute-environments). The values "HDD" and "SSD" should be recognized to indicate that a specific class of hardware is being requested.
+
+##### ✨ `gpu` and ✨ `fpga`
+
+* Accepted types:
+    * `Int`: Minimum number of accelerators being requested.
+    * `String`: Specification for accelerator(s) being requested, e.g., manufacturer or model name.
+
+A hint to the execution engine to provision [hardware accelerators](#hardware-accelerators-gpu-and-✨-fpga) with specific attributes. Accelerator specifications are left intentionally vague as they are primarily intended to be used in the context of a specific [compute environment](#✨-compute-environments).
+
+##### `short_task`
+
+* Accepted types: `Boolean`
+* Default value: `false`
+
+A hint to the execution engine about the expected duration of this task. The value of this hint is a `Boolean` for which `true` indicates that that this task is not expected to take long to execute, which the execution engine can interpret as permission to optimize the execution of the task.
+
+For example, the engine may batch together multiple `short_task`s, or it may use the cost-optimized instance types that many cloud vendors provide, e.g., `preemptible` instances on `GCP` and `spot` instances on `AWS`.
+
+##### `localization_optional`
+
+* Accepted types: `Boolean`
+* Default value: `false`
+* Alias: `localizationOptional`
+
+A hint to the execution engine about whether the `File` inputs for this task need to be localized prior to executing the task. The value of this hint is a `Boolean` for which `true` indicates that the contents of the `File` inputs may be streamed on demand.
+
+For example, a task that processes its input file once in linear fashion could have that input streamed (e.g., using a `fifo`) rather than requiring the input file to be fully localized prior to execution.
 
 ##### `inputs`
 
-* Allowed type: `object`
+* Accepted types: [`input`](#hints-scoped-types)
 
-Provides input-specific hints in the form of an object. Each key within this hint should refer to an actual input defined for the current task. A key may also refer to a specific member of a struct/object input.
+Provides input-specific hints. Each key must refer to a parameter defined in the task's [`input`](#task-inputs) section. A key may also used dotted notation to refer to a specific member of a struct input.
 
 <details>
 <summary>
@@ -4995,12 +5064,18 @@ task input_hint {
     Array[String] experience = read_lines(stdout())
   }
 
-  runtime {
-    inputs: object {
-      person: object {
-        cv: object {
-          localizationOptional: true
-        }
+  hints {
+    inputs: input {
+      person.name: hints {
+        min_length: 3
+      },
+      person.cv: hints {
+        localization_optional: true
+      }
+    }
+    outputs: output {
+      experience: hints {
+        max_length: 5
       }
     }
   }
@@ -5028,78 +5103,90 @@ Example output:
 
 Reserved input-specific attributes:
 
-* `inputs.<key>.localizationOptional`: Tells the execution engine that a specific `File` input does not need to be localized for this task.
+* `inputs.<key>.localization_optional`: Indicates that a specific `File` input does not need to be localized prior to executing this task. This attribute has the same semantics as the task-level [localization_optional](#localization_optional) hint.
 
 ##### `outputs`
 
-* Allowed type: `object`
+* Accepted types: `output`
 
-Provides outputs specific hints in the form of a hints object. Each key within this hint should refer to an actual output defined for the current task. A key may also refer to a specific member of a struct/object input.
+Provides output-specific hints. Each key must refer to a parameter defined in the task's [`output`](#task-outputs) section. A key may also use dotted notation to refer to a specific member of a struct output.
+
+#### Compute Environments
+
+The `hints` section should be used to provide hints that are specific to different compute environments such as HPC systems or cloud platforms. Attributes for a compute environment should be specified in a `hints` value, in which any of the [reserved hints](#reserved-task-hints) are allowed to override the values specified at the task level (if any), and other attributes are platform-specific.
+
+```wdl
+task foo {
+  ...
+
+  requirements {
+    gpu: true
+  }
+
+  hints {
+    aws: hints {
+      instance_type: "p5.48xlarge"
+    }
+    gcp: hints {
+      gpu: 2
+    }
+    azure: hints {
+      ...
+    }
+    alibaba: hints {
+      ...
+    }
+  }
+}
+```
 
 #### Conventions and Best Practices
 
-In order to encourage interoperable workflows, WDL authors and execution engine implementors should view hints strictly as an optimization that can be made for a specific task at runtime; hints should not be interpreted as requirements for that task. By following this principle, we can guarantee that a workflow is runnable on all platforms assuming the `runtime` section has the required parameters, regardless of whether it contains any additional hints.
+To encourage interoperable workflows, WDL authors and execution engine implementors should view hints strictly as runtime optimizations. Hints must not be interpreted as requirements. Following this principle will ensure that a workflow is runnable on all platforms (assuming the `requirements` section has the required attributes) regardless of whether it contains any additional hints.
 
-The following guidelines should be followed when using hints:
+Please observe the following guidelines when using hints:
 
-* A hint should never be required.
-* Less is more. Before adding a new hint key, ask yourself "do I really need another hint?", or "is there a better way to specify the behavior I require". If there is, then adding a hint is likely not the right way to achieve your aims.
-* Complexity is killer. By allowing any arbitrary keys, it is possible that the `runtime` section can get quite unruly and complex. This should be discouraged, and instead a pattern of simplicity should be stressed.
-* Sharing is caring. People tend to look for similar behavior between different execution engines. It is strongly encouraged that execution engines agree on common names and accepted values for hints that describe common usage patterns. A good example of hints that have conventions attached to them is cloud provider specific details:
-    ```wdl
-    task foo {
-      .... 
-      runtime {
-        gcp: {
-        ...
-        }
-        aws: {
-        ...
-        }
-        azure: {
-          ...
-        }
-        alibaba: {
-          ...
-        }
-      }
-    }
-    ```
-* Use objects to avoid collisions. If there are specific hints that are unlikely to ever be shared between execution engines, it is good practice to encapsulate these within their own execution engine-specific hints object:
-    ```wdl
-    task foo {
-      .... 
-      runtime {
-        cromwell: {
-          # cromwell specific 
-          ...
-        }
-        miniwdl: {
-          # miniwdl specific
-          ...
-        }
-      }
-    }
-    ```
+* A hint must never be required for successful task execution.
+* Before adding a new hint, ask yourself "do I really need another hint, or is there a better way to specify the behavior I require?".
+* Avoid unnecessary complexity. By allowing any arbitrary keys and compound values, it is possible for the `hints` section to become quite complex. Use the simplest value possible to achieve the desired outcome.
+* Sharing is caring. Users tend to look for similar behavior between different execution engines. It is strongly encouraged that implementers of execution engines agree on common names and accepted values for hints that describe common usage patterns. [Compute environments](#compute-environments) are a good example of hints that have conventions attached to them. 
+
+### 🗑 Runtime Section
+
+The `runtime` section is essentially the same as the [`requirements`](#-requirements-section) section, with the only difference being that arbitrary attributes *are* allowed in the `runtime` section. All attributes defined in the `requirements` section have the same semantics when used in the `runtime` section and are considered as reserved.
+
+The `runtime` section is mutually exclusive with `requirements` and `hints`, i.e., if you use `runtime` in a task, you cannot also use `requirements` or `hints` in that task.
+
+The `runtime` section is deprecated and will be removed in WDL 2.0.
 
 ### Metadata Sections
 
-There are two optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are designed to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface. Any attributes that may influence execution behavior should go in the `runtime` section.
+There are two optional sections that can be used to store metadata with the task: `meta` and `parameter_meta`. These sections are intended to contain metadata that is only of interest to human readers. The engine can ignore these sections with no loss of correctness. The extra information can be used, for example, to generate a user interface or documentation.
 
-Both of these sections can contain key/value pairs. Metadata values are different than in `runtime` and other sections:
+#### Meta Values
+
+The metadata sections can contain arbitrary key/value pairs. However, the values allowed in these sections ("meta values") are different than in other sections:
 
 * Only string, numeric, and boolean primitives are allowed.
-* Only array and "meta object" compound values are allowed.
+* Only array and object compound values are allowed.
 * The special value `null` is allowed for undefined attributes.
 * Expressions are not allowed.
 
 A meta object is similar to a struct literal, except:
 
-* A type name is not required.
+* A `Struct` type name is not required.
 * Its values must conform to the same metadata rules defined above.
 
+Note that, unlike the WDL `Object` type, metadata objects are not deprecated and will continue to be supported in future versions.
+
+<details>
+<summary>
+Example: test_meta_values.wdl
+
 ```wdl
-task {
+version 1.2
+
+workflow test_meta_values {
   meta {
     authors: ["Jim", "Bob"]
     version: 1.1
@@ -5110,8 +5197,21 @@ task {
   }
 }
 ```
+</summary>
+<p>
+Example input:
 
-Note that, unlike the WDL `Object` type, metadata objects are not deprecated and will continue to be supported in future versions.
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+</p>
+</details>
 
 #### Task Metadata Section
 
@@ -5160,7 +5260,7 @@ task ex_paramter_meta {
      String result = stdout()
   }
 
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -5223,7 +5323,7 @@ task hisat2 {
     File sam = "output.sam"
   }
   
-  runtime {
+  requirements {
     container: "quay.io/biocontainers/hisat2:2.2.1--h1b792b2_3"
     cpu: threads
     memory: "~{memory_gb} GB"
@@ -5331,7 +5431,7 @@ task gatk_haplotype_caller {
     email: "joe@company.org"
   }
   
-  runtime {
+  requirements {
     container: "broadinstitute/gatk"
     memory: "~{memory_gb + 1} GB"
     disks: "~{disk_size_gb} GB"
@@ -5397,6 +5497,10 @@ workflow name {
     # workflow outputs are declared here
   }
 
+  hints {
+    # workflow hints are declared here
+  }
+
   meta {
     # workflow-level metadata can go here
   }
@@ -5414,6 +5518,7 @@ Tasks and workflows have several elements in common. These sections have nearly 
 * [`input` section](#task-inputs)
 * [Private declarations](#private-declarations)
 * [`output` section](#task-outputs)
+* [`hints` section](#)
 * [`meta` section](#metadata-sections)
 * [`parameter_meta` section](#parameter-metadata-section)
 
@@ -5422,22 +5527,6 @@ In addition to these sections, a workflow may have any of the following elements
 * [`call`s](#call-statement) to tasks or subworkflows
 * [`scatters`](#scatter), which are used to parallelize operations across collections
 * [Conditional (`if`)](#conditional-if-block) statements, which are only executed when a conditional expression evaluates to `true`
-
-### Workflow Inputs
-
-The workflow and [task `input` sections](#task-inputs) have identical semantics.
-
-### Workflow Outputs
-
-The workflow and [task `output` sections](#task-outputs) have identical semantics.
-
-By default, if the `output {...}` section is omitted from a top-level workflow, then the workflow has no outputs. However, the execution engine may choose allow the user to specify that when the top-level output section is omitted, all outputs from all calls (including nested calls) should be returned.
-
-If the `output {...}` section is omitted from a workflow that is called as a subworkflow, then that call must not have outputs. Formally defined outputs of subworkflows are required for the following reasons:
-
-- To present the same interface when calling subworkflows as when calling tasks.
-- To make it easy for callers of subworkflows to find out exactly what outputs the call is creating.
-- In the case of nested subworkflows, to give the outputs at the top level a simple fixed name rather than a long qualified name like `a.b.c.d.out` (which is liable to change if the underlying implementation of `c` changes, for example).
 
 ### Evaluation of Workflow Elements
 
@@ -5584,7 +5673,7 @@ task echo {
     File results = stdout()
   }
   
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -5652,7 +5741,7 @@ task foobar {
     Int results = read_int(stdout())
   }
 
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -5729,17 +5818,164 @@ The following fully-qualified names exist when calling `workflow main` in `main.
 | `main.foobar_results`         | `Int` result from call to `foobar`                                                          | Anywhere in `main`'s output section and by the caller of `main` |
 | `main.echo_array`             | Array of `String` contents of `File` results from calls to `echo` in the scatter            | Anywhere in `main`'s output section and by the caller of `main` |
 
-\* Task inputs are accessible to be set by the caller of `main` if the workflow is called with [`allowNestedInputs: true`](#computing-call-inputs) in its `meta` section.
+\* Task inputs are accessible to be set by the caller of `main` if the workflow is called with [`allow_nested_inputs: true`](#allow_nested_inputs) in its `hints` section.
+
+### Workflow Inputs
+
+The workflow and [task `input` sections](#task-inputs) have identical semantics.
+
+### Workflow Outputs
+
+The workflow and [task `output` sections](#task-outputs) have identical semantics.
+
+By default, if the `output {...}` section is omitted from a top-level workflow, then the workflow has no outputs. However, the execution engine may choose allow the user to specify that when the top-level output section is omitted, all outputs from all calls (including nested calls) should be returned.
+
+If the `output {...}` section is omitted from a workflow that is called as a subworkflow, then that call must not have outputs. Formally defined outputs of subworkflows are required for the following reasons:
+
+- To present the same interface when calling subworkflows as when calling tasks.
+- To make it easy for callers of subworkflows to find out exactly what outputs the call is creating.
+- In the case of nested subworkflows, to give the outputs at the top level a simple fixed name rather than a long qualified name like `a.b.c.d.out` (which is liable to change if the underlying implementation of `c` changes, for example).
+
+### Workflow Hints
+
+The `hints` section is optional and may contain any number of attributes (key/value pairs) that provide hints to the execution engine. Some workflow hint keys are reserved and have well-defined values.
+
+The execution engine may ignore any unsupported hint. A workflow execution never fails due to the inability of the execution engine to recognize or satisfy a hint.
+
+Unlike [task hints](#✨-hints-section), workflow hints must have literal values; expressions are not allowed.
+
+#### Reserved Workflow Hints
+
+The following hints are reserved. An implementation is not required to support these attributes, but if it does support a reserved attribute it must enforce the semantics and allowed values defined below. The purpose of reserving these hints is to encourage interoperability of tasks and workflows between different execution engines.
+
+##### `allow_nested_inputs`
+
+* Allowed type: `Boolean`
+* Alias: `allowNestedInputs`
+
+When running a workflow, the user typically is only allowed to specify values for the inputs defined in the top-level workflow's `input` section. However, setting the `allow_nested_inputs` hint to `true` specifies that the execution engine is allowed to let the user set the value of some call inputs at runtime.
+
+A call input value is eligible to be set at runtime if it corresponds to a subworkflow or task input that has a default value *and* its value is not set explicitly in the call's `input` section. The default value is used for an eligible call input when `allow_nested_inputs` is set to `false`, when the user does not specify a value for the input at runtime, or when the execution engine does not suppport `allow_nested_inputs`. 
+
+The execution engine may refuse to execute a workflow when `allow_nested_inputs` is set to `false` and the user attempts to specify a value for a nested input, but if it does execute the workflow and ignore the user-specified value then it should show a warning.
+
+<details>
+<summary>
+Example: test_allow_nested_inputs.wdl
+
+```wdl
+version 1.2
+
+task nested {
+  input {
+    String greeting
+    String name = "Joe"
+  }
+
+  command <<<
+  echo "~{greeting} ~{name}"
+  >>>
+
+  output {
+    String greeting = read_string(stdout())
+  }
+}
+
+workflow test_allow_nested_inputs {
+  call nested {
+    input: greeting = "Hello"
+  }
+
+  output {
+    String greeting = nested.greeting
+  }
+
+  hints {
+    allow_nested_inputs: true
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_allow_nested_inputs.nested.name": "John"
+}
+```
+
+Example output:
+
+```json
+{
+  "test_allow_nested_inputs.greeting": "Hello John"
+}
+
+```
+
+Test config:
+
+```json
+{
+  "dependencies": "allow_nested_inputs"
+}
+```
+</p>
+</details>
+
+Setting `allow_nested_inputs` to `false` in a workflow has the effect of also setting it to `false` in any nested subworkflows called by that workflow. In the following example, `allow_nested_inputs` is set to `false` in the top-level workflow (`multi_nested_inputs`), which overrides the value of `true` in the subworkflow (`test_allow_nested_inputs`).
+
+<details>
+<summary>
+Example: multi_nested_inputs.wdl
+
+```wdl
+version 1.2
+
+import "test_allow_nested_inputs.wdl"
+
+workflow multi_nested_inputs { 
+  call test_allow_nested_inputs
+
+  hints {
+    allow_nested_inputs: false
+  }
+
+  output {
+    String greeting = test_allow_nested_inputs.greeting
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "multi_nested_inputs.test_allow_nested_inputs.nested.name": "John"
+}
+```
+
+Example output:
+
+```json
+{
+  "multi_nested_inputs.greeting": "Hello Joe"
+}
+```
+
+Test config:
+
+```json
+{
+  "dependencies": "allow_nested_inputs"
+}
+```
+</p>
+</details>
 
 ### Call Statement
-
-```
-$call = 'call' $ws* $namespaced_identifier $ws+ ('as' $identifier $ws+)? ('after $identifier $ws+)* $call_body?
-$call_body = '{' $ws* $inputs? $ws* '}'
-$inputs = 'input' $ws* ':' $ws* $variable_mappings
-$variable_mappings = $variable_mapping_kv (',' $variable_mapping_kv)*
-$variable_mapping_kv = $identifier $ws* ('=' $ws* $expression)?
-```
 
 A workflow calls other tasks/workflows via the `call` keyword. A `call` is followed by the name of the task or subworkflow to run. If a task is defined in the same WDL document as the calling workflow, it may be called using just the task name. A task or workflow in an imported WDL must be called using its [fully-qualified name](#fully-qualified-names--namespaced-identifiers).
 
@@ -5760,11 +5996,15 @@ import "other.wdl" as lib
 
 task repeat {
   input {
-    Int i
+    Int i = 0  # this will cause the task to fail if not overriden by the caller
     String? opt_string
   }
   
   command <<<
+  if [ "~{i}" -lt "1" ]; then
+    echo "i must be >= 1"
+    exit 1
+  fi
   for i in 1..~{i}; do
     printf ~{select_first([opt_string, "default"])}
   done
@@ -5954,7 +6194,20 @@ Example output:
 
 Any required workflow inputs (i.e., those that are not initialized with a default expression) must have their values provided when invoking the workflow. Inputs may be specified for a workflow invocation using any mechanism supported by the execution engine, including the [standard JSON format](#json-input-format). 
 
-By default, all calls to subworkflows and tasks must have values provided for all required inputs by the caller. However, the execution engine may allow the workflow to leave some subworkflow/task inputs undefined - to be specified by the user at runtime - by setting the `allowNestedInputs` flag to `true` in the `meta` section of the top-level workflow.
+A call to a subworkflow or task must, at a minimum, provide a value for each required input. The call may also specify values for any optional inputs. Any optional inputs that are not specified in the call may be set by the user at runtime if the execution engine supports the `allow_nested_inputs` hint and it is set to `true` in the workflow's `hints` section.
+
+The following table describes whether a subworkflow or task input's value must be specified in the call inputs and whether it may be set at runtime based on whether it has a default value and the value of the `allow_nested_inputs` hint:
+
+| Has default value? | Value of `allow_nested_inputs` | Must be specified in call inputs? | Can be overriden at runtime? |
+| ------------------ | ------------------------------ | --------------------------------- | ---------------------------- |
+| No                 | `false`                        | Yes                               | No                           |
+| No                 | `true`                         | Yes                               | No                           |
+| Yes                | `false`                        | No                                | No                           |
+| Yes                | `true`                         | No                                | Yes                          |
+
+🗑 Previously, setting `allow_nested_inputs` to `true` also allowed for required task inputs to be left unsatisfied by the calling workflow and only specified at runtime. This behavior is deprecated and will be removed in WDL 2.0.
+
+🗑 The ability to set `allowNestedInputs` in the workflow's `meta` section is deprecated and will be removed in WDL 2.0.
 
 <details>
 <summary>
@@ -5979,7 +6232,7 @@ task inc {
     Int incr = read_int(stdout())
   }
   
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -5993,8 +6246,8 @@ workflow allow_nested {
     File ref_file
   }
 
-  meta {
-    allowNestedInputs: true
+  hints {
+    allow_nested_inputs: true
   }
 
   call lib.repeat {
@@ -6005,6 +6258,7 @@ workflow allow_nested {
 
   call lib.repeat as repeat2 {
     input:
+      # Note: the default value of `0` for the `i` input causes the task to fail
       opt_string = msg2
   }
 
@@ -6031,7 +6285,8 @@ Example input:
   "allow_nested.msg1": "hello",
   "allow_nested.msg2": "goodbye",
   "allow_nested.my_ints": [1, 2, 3],
-  "allow_nested.ref_file": "hello.txt"
+  "allow_nested.ref_file": "hello.txt",
+  "allow_nested.repeat2.i": 2
 }
 ```
 
@@ -6041,18 +6296,17 @@ Example output:
 {
   "allow_nested.lines1": ["hello", "hello", "hello"],
   "allow_nested.lines2": ["goodbye", "goodbye"],
-  "allow_nested.repeat2.i": 2,
   "allow_nested.incrs": [2, 3, 4]
 }
 ```
 </p>
 </details>
 
-In the preceding example, the required input `i` to call `repeat2` is missing. Normally this would result in an error. However, if the execution engine supports `allowNestedInputs`, then the fact that `allowNestedInputs: true` appears in the workflow's `meta` section means that `repeat2.i` may be set by the caller of the workflow, e.g., by including `"allow_nested.repeat2.i": 2,` in the input JSON.
+In the preceding example, the workflow calling `repeat2` does not provide a value for the optional input `i`. Normally this would cause the task to fail, since `i` must have a value `>= 1` and its default value is `0`. However, if the execution engine supports `allow_nested_inputs`, then specifying `allow_nested_inputs: true` in the workflow's `hints` section means that `repeat2.i` may be set by the caller of the workflow, e.g., by including `"allow_nested.repeat2.i": 2,` in the input JSON.
 
 It is not allowed to *override* a call input at runtime, even if nested inputs are allowed. For example, if the user tried to specify `"allow_nested.repeat.opt_string": "hola"` in the input JSON, an error would be raised because the workflow already specifies a value for that input.
 
-The `allowNestedInputs` directive only applies to user-supplied inputs. There is no mechanism for the workflow itself to set a value for a nested input when calling a subworkflow. For example, the following workflow is invalid:
+The `allow_nested_inputs` directive only applies to user-supplied inputs. There is no mechanism for the workflow itself to set a value for a nested input when calling a subworkflow. For example, the following workflow is invalid:
 
 <details>
 <summary>
@@ -6065,7 +6319,7 @@ import "copy_input.wdl" as copy
 
 workflow call_subworkflow {
   meta {
-    allowNestedInputs: true
+    allow_nested_inputs: true
   }
 
   # error! A workflow can't specify a nested input for a subworkflow's call.
@@ -6894,7 +7148,7 @@ task change_extension {
     String index = read_string(sub(data_file, "\\.data$", ".index"))
   }
 
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -7117,7 +7371,7 @@ task file_sizes {
     Float multi_file_kb = size(["created_file", missing_file], "K") # 0.022
   }
   
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -7477,7 +7731,7 @@ task grep {
     Array[String] matches = read_lines(stdout())
   }
   
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -7540,7 +7794,7 @@ task write_lines {
     String s = read_string(stdout())
   }
   
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -7666,7 +7920,7 @@ task write_tsv {
     Array[String] ones = read_lines(stdout())
   }
   
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -7793,7 +8047,7 @@ task write_map {
     Array[String] keys = read_lines(stdout())
   }
 
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -7994,7 +8248,7 @@ task write_json {
     Array[String] keys = read_json(stdout())
   }
   
-  runtime {
+  requirements {
     container: "python:latest"
   }
 }
@@ -8074,7 +8328,7 @@ task read_object {
     Object my_obj = read_object(stdout())
   }
 
-  runtime {
+  requirements {
     container: "python:latest"
   }
 }
@@ -9707,7 +9961,7 @@ All WDL implementations are required to support the standard JSON input and outp
 
 The inputs for a workflow invocation may be specified as a single JSON object that contains one member for each top-level workflow input. The name of the object member is the [fully-qualified name](#fully-qualified-names--namespaced-identifiers) of the input parameter, and the value is the [serialized form](#appendix-a-wdl-value-serialization-and-deserialization) of the WDL value.
 
-If the WDL implementation supports the [`allowNestedInputs`](#computing-call-inputs) hint, then task/subworkflow inputs can also be specified in the input JSON.
+If the WDL implementation supports the [`allow_nested_inputs`](#computing-call-inputs) hint, then optional inputs for nested calls can also be specified in the input JSON, provided the call does not already specify a value for the input. Nested inputs are referenced using the name of the `call`, which may be different from the name of the task or subworkflow (i.e., if is imported or called with an alias). When a `call` appears within a `scatter`, setting the value of an input applies to every instance of the call.
 
 Here is an example JSON input file for a workflow `wf`:
 
@@ -9721,8 +9975,8 @@ Here is an example JSON input file for a workflow `wf`:
     "fieldB": 42,
     "fieldC": "/path/to/file.txt"
   },
-  "wf.task1.s": "task 1 input",
-  "wf.task2.s": "task 2 input"
+  "wf.call1.s": "call 1 input",
+  "wf.call2.s": "call 2 input"
 }
 ```
 
@@ -9772,24 +10026,23 @@ The following would all be valid JSON inputs:
 }
 ```
 
-### Specifying / Overriding Runtime Attributes
+### Specifying / Overriding Requirements and Hints
 
-The value for any runtime attribute of any task called by a workflow can be overridden in the JSON input file. Unlike inputs, a WDL implementation must support overriding runtime attributes regardless of whether it supports the [`allowNestedInputs](#computing-call-inputs) hint.
-
-Values for runtime attributes provided in the input JSON always supersede values supplied directly in the WDL. Overriding an attribute for a task nested within a `scatter` applies to all invocations of that task.
-
-Values for standardized runtime attributes must adhere to the [supported types and formats](#runtime-section). Any non-standard runtime attributes that are not supported by the implementation are ignored.
-
-To differentiate runtime attributes from task inputs, the `runtime` namespace is added after the task name.
+[Requirement](#✨-requirements-section) and [hint](#✨-hints-section) attributes can be specified (or overridden) for any task in the JSON input file. To differentiate requirements and hints from task inputs, the `requirements` or `hints` namespace is added after the task name.
 
 ```json
 {
-  "wf.task1.runtime.memory": "16 GB",
-  "wf.task2.runtime.cpu": 2,
-  "wf.task2.runtime.disks": "100",
-  "wf.subwf.task3.runtime.container": "mycontainer:latest"
+  "wf.task1.requirements.memory": "16 GB",
+  "wf.task2.requirements.cpu": 2,
+  "wf.task2.requirements.disks": "100",
+  "wf.subwf.task3.requirements.container": "mycontainer:latest",
+  "wf.task4.hints.foo": "bar"
 }
 ```
+
+Overriding an attribute for a task nested within a `scatter` applies to all invocations of that task.
+
+Unlike inputs, a WDL implementation must support overriding requirements and hints regardless of whether it supports the [`allow_nested_inputs`](#allow_nested_inputs) workflow hint. Requirements and hints specified in the input JSON always supersede values supplied directly in the WDL. Any hints that are not supported by the execution engine are ignored.
 
 ## JSON Output Format
 
@@ -10107,7 +10360,7 @@ task read_write_primitives {
     #Int sint = read_int("str_file")
   }
   
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -10185,7 +10438,7 @@ task serialize_array_delim {
     Array[String] heads = read_lines(stdout())
   }
 
-  runtime {
+  requirements {
     container: "ubuntu:latest"
   }
 }
@@ -10317,7 +10570,7 @@ task serde_array_json {
     Array[String] keys = read_json(stdout())
   }
   
-  runtime {
+  requirements {
     container: "python:latest"
   }
 }
@@ -10718,7 +10971,7 @@ task serde_map_json {
     Map[String, Float] ascii_values = read_json(stdout())
   }
 
-  runtime {
+  requirements {
     container: "python:latest"
   }
 }
@@ -10794,7 +11047,7 @@ The following WDL namespaces exist:
     * A WDL document may contain `struct`s, which are also names within the document's namespace and usable as types in any declarations. Structs from any imported documents are [copied into the document's namespace](#importing-and-aliasing-structs) and may be aliased using the `alias <source name> as <new name>` syntax.
 * A [WDL `task`](#task-definition) is a namespace consisting of:
     * `input`, `output`, and private declarations
-    * A [`runtime`](#runtime-section) namespace that contains all the runtime attributes
+    * A [`requirements`](#✨-requirements-section) namespace that contains all the runtime requirements
 * A [WDL `workflow`](#workflow-definition) is a namespace consisting of:
     * `input`, `output`, and private declarations
     * The [`call`s](#call-statement) made to tasks and subworkflows within the body of the workflow.
@@ -10826,13 +11079,15 @@ A WDL document is the top-level (or "outermost") scope. All elements defined wit
 
 ### Task Scope
 
-A task scope consists of all the declarations in the task `input` section and in the body of the task. The `input` section is used only to delineate which declarations are visible outside the task (i.e., they are part of the task's namespace) and which are private to the task. Input declarations may reference private declarations, and vice-versa. Declarations in the task scope may be referenced in expressions anywhere in the task (i.e., `command`, `runtime`, and `output` sections).
+A task scope consists of all the declarations in the task `input` section and in the body of the task. The `input` section is used only to delineate which declarations are visible outside the task (i.e., they are part of the task's namespace) and which are private to the task. Input declarations may reference private declarations, and vice-versa. Declarations in the task scope may be referenced in expressions anywhere in the task (i.e., `command`, `requirements`, and `output` sections).
 
 The `output` section can be considered a nested scope within the task. Expressions in the output scope may reference declarations in the task scope, but the reverse is not true. This is because declarations in the task scope are evaluated when a task is invoked (i.e., before it's command is evaluated and executed), while declarations in the output scope are only evaluated after execution of the command is completed.
 
 For example, in this task:
 
 ```wdl
+version 1.2
+
 task my_task {
   input {
     Int x
@@ -10850,7 +11105,7 @@ task my_task {
     Int z_plus_one = z + 1
   }
 
-  runtime {
+  requirements {
     memory: "~{y} GB"
   }
 }
@@ -11087,7 +11342,7 @@ workflow my_workflow {
 
 ### Namespaces without Scope
 
-Elements such as structs and task `runtime` sections are namespaces, but they lack scope because their members cannot reference each other. For example, one member of a struct cannot reference another member in that struct, nor can a runtime attribute reference another attribute.
+Elements such as structs and task `requirements` sections are namespaces, but they lack scope because their members cannot reference each other. For example, one member of a struct cannot reference another member in that struct, nor can a `requirements` attribute reference another attribute.
 
 ## Evaluation Order
 
