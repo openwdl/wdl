@@ -49,6 +49,8 @@ version 1.1.2
 
 + Remove some syntax sections that were missed in 1.1.1.
 
++ Replace all :wastebasket: and :sparkles: emojis with their text codes (#616).
+
 version 1.1.1
 ---------------------------
 
