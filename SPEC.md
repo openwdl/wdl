@@ -1799,6 +1799,11 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | 🗑 `File`    | `+`      | `File`    | `File`    | append file paths - error if second path is not relative |
 | 🗑 `File`    | `+`      | `String`  | `File`    | append file paths - error if second path is not relative |
 
+Boolean operator evaluation is minimal (or "short-circuiting"), meaning that:
+
+1. For `A && B`, if `A` evalutes to `false` then `B` is not evaluated
+2. For `A || B`, if `A` evaluates to `true` then `B` is not evaluated.
+
 WDL `String`s are compared by the unicode values of their corresponding characters. Character `a` is less than character `b` if it has a lower unicode value.
 
 Except for `String + File`, all concatenations between `String` and non-`String` types are deprecated and will be removed in WDL 2.0. The same effect can be achieved using [string interpolation](#expression-placeholders-and-string-interpolation).
@@ -2106,7 +2111,7 @@ Example output:
 
 #### Ternary operator (if-then-else)
 
-This operator takes three arguments: a condition expression, an if-true expression, and an if-false expression. The condition is always evaluated. If the condition is true then the if-true value is evaluated and returned. If the condition is false, the if-false expression is evaluated and returned. The if-true and if-false expressions must return values of the same type, such that the value of the if-then-else is the same regardless of which side is evaluated.
+This operator takes three arguments: a condition expression, an if-true expression, and an if-false expression. The condition is always evaluated. If the condition is `true` then the if-true value is evaluated and returned. If the condition is `false`, the if-false expression is evaluated and returned. The if-true and if-false expressions must return values of the same type, such that the value of the if-then-else is the same regardless of which side is evaluated.
 
 <details>
 <summary>

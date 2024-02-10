@@ -49,6 +49,8 @@ version 1.1.2
 
 + Remove some syntax sections that were missed in 1.1.1.
 
++ Clarify short-circuiting of boolean expressions (#199)
+
 version 1.1.1
 ---------------------------
 
