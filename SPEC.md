@@ -6931,7 +6931,7 @@ Example output:
 Int read_int(File)
 ```
 
-Reads a file that contains a single line containing only an integer and (optional) whitespace. If the line contains a valid integer, that value is returned as an `Int`, otherwise an error is raised.
+Reads a file that contains a single line containing only an integer and (optional) whitespace. If the line contains a valid integer, that value is returned as an `Int`. If the file is empty or does not contain a single integer, an error is raised.
 
 **Parameters**
 
@@ -6980,7 +6980,7 @@ Example output:
 Float read_float(File)
 ```
 
-Reads a file that contains only a numeric value and (optional) whitespace. If the line contains a valid floating point number, that value is returned as a `Float`, otherwise an error is raised.
+Reads a file that contains only a numeric value and (optional) whitespace. If the line contains a valid floating point number, that value is returned as a `Float`. If the file is empty or does not contain a single float, an error is raised.
 
 **Parameters**
 
@@ -7032,7 +7032,7 @@ Example output:
 Boolean read_boolean(File)
 ```
 
-Reads a file that contains a single line containing only a boolean value and (optional) whitespace. If the line contains "true" or "false", that value is returned as a `Boolean`, otherwise an error is raised.
+Reads a file that contains a single line containing only a boolean value and (optional) whitespace. If the line contains "true" or "false", that value is returned as a `Boolean`. If the file is empty or does not contain a single boolean, an error is raised.
 
 **Parameters**
 
@@ -7087,6 +7087,8 @@ Array[String] read_lines(File)
 Reads each line of a file as a `String`, and returns all lines in the file as an `Array[String]`. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
 
 The order of the lines in the returned `Array[String]` is the order in which the lines appear in the file.
+
+If the file is empty, an empty array is returned.
 
 **Parameters**
 
@@ -7221,6 +7223,8 @@ Reads a tab-separated value (TSV) file as an `Array[Array[String]]` representing
 
 There is no requirement that the rows of the table are all the same length.
 
+If the file is empty, an empty array is returned.
+
 **Parameters**
 
 1. `File`: Path of the TSV file to read.
@@ -7349,6 +7353,8 @@ Map[String, String] read_map(File)
 Reads a tab-separated value (TSV) file representing a set of pairs. Each row must have exactly two columns, e.g., `col1\tcol2`. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
 
 Each pair is added to a `Map[String, String]` in order. The values in the first column must be unique; if there are any duplicate keys, an error is raised.
+
+If the file is empty, an empty map is returned.
 
 **Parameters**
 
@@ -7489,6 +7495,8 @@ The return value is of type [`Union`](#union) and must be used in a context wher
 If the JSON file contains an array, then all the elements of the array must be coercible to the same type, or an error is raised.
 
 The `read_json` function does not have access to any WDL type information, so it cannot return an instance of a specific `Struct` type. Instead, it returns a generic `Object` value that must be coerced to the desired `Struct` type.
+
+Note that an empty file is not valid according to the JSON specification, and so calling `read_json` on an empty file raises an error.
 
 **Parameters**
 
@@ -7681,7 +7689,7 @@ And `/local/fs/tmp/map.json` would contain:
 Object read_object(File)
 ```
 
-Reads a tab-separated value (TSV) file representing the names and values of the members of an `Object`. There must be two rows, and each row must have the same number of elements. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
+Reads a tab-separated value (TSV) file representing the names and values of the members of an `Object`. There must be exactly two rows, and each row must have the same number of elements, otherwise an error is raised. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
 
 The first row specifies the object member names. The names in the first row must be unique; if there are any duplicate names, an error is raised.
 
@@ -7761,9 +7769,11 @@ Array[Object] read_objects(File)
 
 Reads a tab-separated value (TSV) file representing the names and values of the members of any number of `Object`s. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
 
-There must be a header row with the names of the object members. The names in the first row must be unique; if there are any duplicate names, an error is raised.
+The first line of the file must be a header row with the names of the object members. The names in the first row must be unique; if there are any duplicate names, an error is raised.
 
 There are any number of additional rows, where each additional row contains the values of an object corresponding to the member names. Each row in the file must have the same number of fields as the header row. All of the `Object`'s values are of type `String`.
+
+If the file is empty or contains only a header line, an empty array is returned.
 
 **Parameters**
 
