@@ -1,6 +1,6 @@
 # Workflow Description Language (WDL)
 
-This is version 1.1.2 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.1`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol).
+This is version 1.1.2 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.1`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the :wastebasket: symbol).
 
 ## Revisions
 
@@ -33,7 +33,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [Array\[X\]](#arrayx)
         - [Pair\[X, Y\]](#pairx-y)
         - [Map\[P, Y\]](#mapp-y)
-        - [🗑 Object](#-object)
+        - [:wastebasket: Object](#wastebasket-object)
         - [Custom Types (Structs)](#custom-types-structs)
       - [Hidden Types](#hidden-types)
         - [Union](#union)
@@ -43,7 +43,7 @@ Revisions to this specification are made periodically in order to correct errors
           - [Order of Precedence](#order-of-precedence)
           - [Coercion of Optional Types](#coercion-of-optional-types)
           - [Struct/Object coercion from Map](#structobject-coercion-from-map)
-          - [🗑 Limited exceptions](#-limited-exceptions)
+          - [:wastebasket: Limited exceptions](#wastebasket-limited-exceptions)
     - [Declarations](#declarations)
     - [Expressions](#expressions)
       - [Built-in Operators](#built-in-operators)
@@ -58,7 +58,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Expression Placeholders and String Interpolation](#expression-placeholders-and-string-interpolation)
         - [Expression Placeholder Coercion](#expression-placeholder-coercion)
         - [Concatenation of Optional Values](#concatenation-of-optional-values)
-      - [🗑 Expression Placeholder Options](#-expression-placeholder-options)
+      - [:wastebasket: Expression Placeholder Options](#wastebasket-expression-placeholder-options)
         - [`sep`](#sep)
         - [`true` and `false`](#true-and-false)
         - [`default`](#default)
@@ -1045,7 +1045,7 @@ Example output:
 </p>
 </details>
 
-##### 🗑 Object
+##### :wastebasket: Object
 
 An `Object` is an unordered associative array of name-value pairs, where values may be of any type and are not defined explicitly.
 
@@ -1214,7 +1214,7 @@ Example output:
 </p>
 </details>
 
-🗑 It is also possible to assign an `Object` or `Map[String, X]` value to a `Struct` declaration. In the either case:
+:wastebasket: It is also possible to assign an `Object` or `Map[String, X]` value to a `Struct` declaration. In the either case:
 
 * The `Object`/`Map` must not have any members that are not declared for the struct.
 * The value of each object/map member must be coercible to the declared type of the struct member.
@@ -1469,7 +1469,7 @@ Example output:
 - If a `Struct` (or `Object`) declaration is initialized using the struct-literal (or object-literal) syntax `Words literal_syntax = Words { a: ...` then the keys will be `"a"`, `"b"` and `"c"`.
 - If a `Struct` (or `Object`) declaration is initialized using the map-literal syntax `Words map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
 
-###### 🗑 Limited exceptions
+###### :wastebasket: Limited exceptions
 
 Implementers may choose to allow limited exceptions to the above rules, with the understanding that workflows depending on these exceptions may not be portable. These exceptions are provided for backward-compatibility, are considered deprecated, and will be removed in a future version of WDL.
 
@@ -1727,77 +1727,77 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 
 ##### Binary Operators on Primitive Types
 
-| LHS Type    | Operator | RHS Type  | Result    | Semantics                                                |
-| ----------- | -------- | --------- | --------- | -------------------------------------------------------- |
-| `Boolean`   | `==`     | `Boolean` | `Boolean` |                                                          |
-| `Boolean`   | `!=`     | `Boolean` | `Boolean` |                                                          |
-| `Boolean`   | `\|\|`   | `Boolean` | `Boolean` |                                                          |
-| `Boolean`   | `&&`     | `Boolean` | `Boolean` |                                                          |
-| 🗑 `Boolean` | `>`      | `Boolean` | `Boolean` | true is greater than false                               |
-| 🗑 `Boolean` | `>=`     | `Boolean` | `Boolean` | true is greater than false                               |
-| 🗑 `Boolean` | `<`      | `Boolean` | `Boolean` | true is greater than false                               |
-| 🗑 `Boolean` | `<=`     | `Boolean` | `Boolean` | true is greater than false                               |
-| `Int`       | `+`      | `Int`     | `Int`     |                                                          |
-| `Int`       | `-`      | `Int`     | `Int`     |                                                          |
-| `Int`       | `*`      | `Int`     | `Int`     |                                                          |
-| `Int`       | `/`      | `Int`     | `Int`     | Integer division                                         |
-| `Int`       | `%`      | `Int`     | `Int`     | Integer division, return remainder                       |
-| `Int`       | `==`     | `Int`     | `Boolean` |                                                          |
-| `Int`       | `!=`     | `Int`     | `Boolean` |                                                          |
-| `Int`       | `>`      | `Int`     | `Boolean` |                                                          |
-| `Int`       | `>=`     | `Int`     | `Boolean` |                                                          |
-| `Int`       | `<`      | `Int`     | `Boolean` |                                                          |
-| `Int`       | `<=`     | `Int`     | `Boolean` |                                                          |
-| 🗑 `Int`     | `+`      | `String`  | `String`  |                                                          |
-| `Int`       | `+`      | `Float`   | `Float`   |                                                          |
-| `Int`       | `-`      | `Float`   | `Float`   |                                                          |
-| `Int`       | `*`      | `Float`   | `Float`   |                                                          |
-| `Int`       | `/`      | `Float`   | `Float`   |                                                          |
-| `Int`       | `==`     | `Float`   | `Boolean` |                                                          |
-| `Int`       | `!=`     | `Float`   | `Boolean` |                                                          |
-| `Int`       | `>`      | `Float`   | `Boolean` |                                                          |
-| `Int`       | `>=`     | `Float`   | `Boolean` |                                                          |
-| `Int`       | `<`      | `Float`   | `Boolean` |                                                          |
-| `Int`       | `<=`     | `Float`   | `Boolean` |                                                          |
-| `Float`     | `+`      | `Float`   | `Float`   |                                                          |
-| `Float`     | `-`      | `Float`   | `Float`   |                                                          |
-| `Float`     | `*`      | `Float`   | `Float`   |                                                          |
-| `Float`     | `/`      | `Float`   | `Float`   |                                                          |
-| `Float`     | `%`      | `Float`   | `Float`   |                                                          |
-| `Float`     | `==`     | `Float`   | `Boolean` |                                                          |
-| `Float`     | `!=`     | `Float`   | `Boolean` |                                                          |
-| `Float`     | `>`      | `Float`   | `Boolean` |                                                          |
-| `Float`     | `>=`     | `Float`   | `Boolean` |                                                          |
-| `Float`     | `<`      | `Float`   | `Boolean` |                                                          |
-| `Float`     | `<=`     | `Float`   | `Boolean` |                                                          |
-| 🗑 `Float`   | `+`      | `String`  | `String`  |                                                          |
-| `Float`     | `+`      | `Int`     | `Float`   |                                                          |
-| `Float`     | `-`      | `Int`     | `Float`   |                                                          |
-| `Float`     | `*`      | `Int`     | `Float`   |                                                          |
-| `Float`     | `/`      | `Int`     | `Float`   |                                                          |
-| `Float`     | `%`      | `Int`     | `Float`   |                                                          |
-| `Float`     | `==`     | `Int`     | `Boolean` |                                                          |
-| `Float`     | `!=`     | `Int`     | `Boolean` |                                                          |
-| `Float`     | `>`      | `Int`     | `Boolean` |                                                          |
-| `Float`     | `>=`     | `Int`     | `Boolean` |                                                          |
-| `Float`     | `<`      | `Int`     | `Boolean` |                                                          |
-| `Float`     | `<=`     | `Int`     | `Boolean` |                                                          |
-| `String`    | `+`      | `String`  | `String`  | Concatenation                                            |
-| `String`    | `+`      | `File`    | `File`    |                                                          |
-| `String`    | `==`     | `String`  | `Boolean` | Unicode comparison                                       |
-| `String`    | `!=`     | `String`  | `Boolean` | Unicode comparison                                       |
-| `String`    | `>`      | `String`  | `Boolean` | Unicode comparison                                       |
-| `String`    | `>=`     | `String`  | `Boolean` | Unicode comparison                                       |
-| `String`    | `<`      | `String`  | `Boolean` | Unicode comparison                                       |
-| `String`    | `<=`     | `String`  | `Boolean` | Unicode comparison                                       |
-| 🗑 `String`  | `+`      | `Int`     | `String`  |                                                          |
-| 🗑 `String`  | `+`      | `Float`   | `String`  |                                                          |
-| `File`      | `==`     | `File`    | `Boolean` |                                                          |
-| `File`      | `!=`     | `File`    | `Boolean` |                                                          |
-| `File`      | `==`     | `String`  | `Boolean` |                                                          |
-| `File`      | `!=`     | `String`  | `Boolean` |                                                          |
-| 🗑 `File`    | `+`      | `File`    | `File`    | append file paths - error if second path is not relative |
-| 🗑 `File`    | `+`      | `String`  | `File`    | append file paths - error if second path is not relative |
+| LHS Type                | Operator | RHS Type  | Result    | Semantics                                                |
+| ----------------------- | -------- | --------- | --------- | -------------------------------------------------------- |
+| `Boolean`               | `==`     | `Boolean` | `Boolean` |                                                          |
+| `Boolean`               | `!=`     | `Boolean` | `Boolean` |                                                          |
+| `Boolean`               | `\|\|`   | `Boolean` | `Boolean` |                                                          |
+| `Boolean`               | `&&`     | `Boolean` | `Boolean` |                                                          |
+| :wastebasket: `Boolean` | `>`      | `Boolean` | `Boolean` | true is greater than false                               |
+| :wastebasket: `Boolean` | `>=`     | `Boolean` | `Boolean` | true is greater than false                               |
+| :wastebasket: `Boolean` | `<`      | `Boolean` | `Boolean` | true is greater than false                               |
+| :wastebasket: `Boolean` | `<=`     | `Boolean` | `Boolean` | true is greater than false                               |
+| `Int`                   | `+`      | `Int`     | `Int`     |                                                          |
+| `Int`                   | `-`      | `Int`     | `Int`     |                                                          |
+| `Int`                   | `*`      | `Int`     | `Int`     |                                                          |
+| `Int`                   | `/`      | `Int`     | `Int`     | Integer division                                         |
+| `Int`                   | `%`      | `Int`     | `Int`     | Integer division, return remainder                       |
+| `Int`                   | `==`     | `Int`     | `Boolean` |                                                          |
+| `Int`                   | `!=`     | `Int`     | `Boolean` |                                                          |
+| `Int`                   | `>`      | `Int`     | `Boolean` |                                                          |
+| `Int`                   | `>=`     | `Int`     | `Boolean` |                                                          |
+| `Int`                   | `<`      | `Int`     | `Boolean` |                                                          |
+| `Int`                   | `<=`     | `Int`     | `Boolean` |                                                          |
+| :wastebasket: `Int`     | `+`      | `String`  | `String`  |                                                          |
+| `Int`                   | `+`      | `Float`   | `Float`   |                                                          |
+| `Int`                   | `-`      | `Float`   | `Float`   |                                                          |
+| `Int`                   | `*`      | `Float`   | `Float`   |                                                          |
+| `Int`                   | `/`      | `Float`   | `Float`   |                                                          |
+| `Int`                   | `==`     | `Float`   | `Boolean` |                                                          |
+| `Int`                   | `!=`     | `Float`   | `Boolean` |                                                          |
+| `Int`                   | `>`      | `Float`   | `Boolean` |                                                          |
+| `Int`                   | `>=`     | `Float`   | `Boolean` |                                                          |
+| `Int`                   | `<`      | `Float`   | `Boolean` |                                                          |
+| `Int`                   | `<=`     | `Float`   | `Boolean` |                                                          |
+| `Float`                 | `+`      | `Float`   | `Float`   |                                                          |
+| `Float`                 | `-`      | `Float`   | `Float`   |                                                          |
+| `Float`                 | `*`      | `Float`   | `Float`   |                                                          |
+| `Float`                 | `/`      | `Float`   | `Float`   |                                                          |
+| `Float`                 | `%`      | `Float`   | `Float`   |                                                          |
+| `Float`                 | `==`     | `Float`   | `Boolean` |                                                          |
+| `Float`                 | `!=`     | `Float`   | `Boolean` |                                                          |
+| `Float`                 | `>`      | `Float`   | `Boolean` |                                                          |
+| `Float`                 | `>=`     | `Float`   | `Boolean` |                                                          |
+| `Float`                 | `<`      | `Float`   | `Boolean` |                                                          |
+| `Float`                 | `<=`     | `Float`   | `Boolean` |                                                          |
+| :wastebasket: `Float`   | `+`      | `String`  | `String`  |                                                          |
+| `Float`                 | `+`      | `Int`     | `Float`   |                                                          |
+| `Float`                 | `-`      | `Int`     | `Float`   |                                                          |
+| `Float`                 | `*`      | `Int`     | `Float`   |                                                          |
+| `Float`                 | `/`      | `Int`     | `Float`   |                                                          |
+| `Float`                 | `%`      | `Int`     | `Float`   |                                                          |
+| `Float`                 | `==`     | `Int`     | `Boolean` |                                                          |
+| `Float`                 | `!=`     | `Int`     | `Boolean` |                                                          |
+| `Float`                 | `>`      | `Int`     | `Boolean` |                                                          |
+| `Float`                 | `>=`     | `Int`     | `Boolean` |                                                          |
+| `Float`                 | `<`      | `Int`     | `Boolean` |                                                          |
+| `Float`                 | `<=`     | `Int`     | `Boolean` |                                                          |
+| `String`                | `+`      | `String`  | `String`  | Concatenation                                            |
+| `String`                | `+`      | `File`    | `File`    |                                                          |
+| `String`                | `==`     | `String`  | `Boolean` | Unicode comparison                                       |
+| `String`                | `!=`     | `String`  | `Boolean` | Unicode comparison                                       |
+| `String`                | `>`      | `String`  | `Boolean` | Unicode comparison                                       |
+| `String`                | `>=`     | `String`  | `Boolean` | Unicode comparison                                       |
+| `String`                | `<`      | `String`  | `Boolean` | Unicode comparison                                       |
+| `String`                | `<=`     | `String`  | `Boolean` | Unicode comparison                                       |
+| :wastebasket: `String`  | `+`      | `Int`     | `String`  |                                                          |
+| :wastebasket: `String`  | `+`      | `Float`   | `String`  |                                                          |
+| `File`                  | `==`     | `File`    | `Boolean` |                                                          |
+| `File`                  | `!=`     | `File`    | `Boolean` |                                                          |
+| `File`                  | `==`     | `String`  | `Boolean` |                                                          |
+| `File`                  | `!=`     | `String`  | `Boolean` |                                                          |
+| :wastebasket: `File`    | `+`      | `File`    | `File`    | append file paths - error if second path is not relative |
+| :wastebasket: `File`    | `+`      | `String`  | `File`    | append file paths - error if second path is not relative |
 
 WDL `String`s are compared by the unicode values of their corresponding characters. Character `a` is less than character `b` if it has a lower unicode value.
 
@@ -2430,7 +2430,7 @@ Example output:
 </p>
 </details>
 
-#### 🗑 Expression Placeholder Options
+#### :wastebasket: Expression Placeholder Options
 
 Expression placeholder options are `option="value"` pairs that precede the expression within an expression placeholder and customize the interpolation of the WDL value into the containing string expression.
 
@@ -2839,7 +2839,7 @@ A document is imported using it's [URI](https://en.wikipedia.org/wiki/Uniform_Re
 
 * `http://`
 * `https://`
-* 🗑 `file://` - Using the `file://` protocol for local imports can be problematic. Its use is deprecated and will be removed in WDL 2.0.
+* :wastebasket: `file://` - Using the `file://` protocol for local imports can be problematic. Its use is deprecated and will be removed in WDL 2.0.
 
 In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. In the primary WDL document, a protocol-less import is relative to the host file system. If a protocol-less import starts with `/` it is interpreted as relative to the root of the host in the resolved URI.
 
@@ -3943,7 +3943,7 @@ During execution of a task, resource requirements within the `runtime` section m
 
 There are a set of reserved attributes (described below) that must be supported by the execution engine, and which have well-defined meanings and default values. Default values for all optional standard attributes are directly defined by the WDL specification in order to encourage portability of workflows and tasks; execution engines should NOT provide additional mechanisms to set default values for when no runtime attributes are defined.
 
-🗑 Additional arbitrary attributes may be specified in the `runtime` section, but these may be ignored by the execution engine. These non-standard attributes are called "hints". The use of hint attributes in the `runtime` section is deprecated; a later version of WDL will introduce a new `hints` section for arbitrary attributes and disallow non-standard attributes in the `runtime` section.
+:wastebasket: Additional arbitrary attributes may be specified in the `runtime` section, but these may be ignored by the execution engine. These non-standard attributes are called "hints". The use of hint attributes in the `runtime` section is deprecated; a later version of WDL will introduce a new `hints` section for arbitrary attributes and disallow non-standard attributes in the `runtime` section.
 
 The value of a `runtime` attribute can be any expression that evaluates to the expected type - and in some cases matches the accepted format - for that attribute. Expressions in the `runtime` section may reference (non-output) declarations in the task:
 
@@ -4019,7 +4019,7 @@ The `container` key accepts a URI string that describes a location where the exe
 
 The user is strongly suggested to specify a `container` for every task. There is no default value for `container`. If `container` is not specified, the execution behavior is determined by the execution engine. Typically, the task is simply executed in the host environment. 
 
-🗑 The ability to omit `container` is deprecated. In WDL 2.0, `container` will be required.
+:wastebasket: The ability to omit `container` is deprecated. In WDL 2.0, `container` will be required.
 
 The format of a container URI string is `protocol://location`, where protocol is one of the protocols supported by the execution engine. Execution engines must, at a minimum, support the `docker://` protocol, and if no protocol is specified, it is assumed to be `docker://`. An execution engine should ignore any URI with a protocol it does not support.
 
@@ -4088,7 +4088,7 @@ Example output:
 
 The execution engine must cause the task to fail immediately if none of the container URIs can be successfully resolved to a runnable image.
 
-🗑 `docker` is supported as an alias for `container` with the exact same semantics. Exactly one of the `container` or `docker` is required. The `docker` alias will be dropped in WDL 2.0.
+:wastebasket: `docker` is supported as an alias for `container` with the exact same semantics. Exactly one of the `container` or `docker` is required. The `docker` alias will be dropped in WDL 2.0.
 
 ##### `cpu`
 
@@ -6141,7 +6141,7 @@ A function may be polymorphic, which means it is actually multiple functions ("v
 
 Functions are grouped by their argument types and restrictions. Some functions may be restricted as to where they may be used. An unrestricted function may be used in any expression.
 
-Functions that are new in this version of the specification are denoted by ✨, and deprecated functions are denoted by 🗑.
+Functions that are new in this version of the specification are denoted by ✨, and deprecated functions are denoted by :wastebasket:.
 
 ## Numeric Functions
 
@@ -6454,7 +6454,7 @@ Given 3 String parameters `input`, `pattern`, and `replace`, this function repla
 
 Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped (e.g., `"\\t"`).
 
-🗑 The option for execution engines to allow other regular expression grammars besides POSIX ERE is deprecated.
+:wastebasket: The option for execution engines to allow other regular expression grammars besides POSIX ERE is deprecated.
 
 **Parameters**:
 
