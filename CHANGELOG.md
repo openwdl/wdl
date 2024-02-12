@@ -55,6 +55,10 @@ version 1.2.0
 
 + Added the ability to access the actual values of `requirements`, `meta`, and `parameter_meta` at runtime.
 
++ Added `fpga` requirement and reserved hint for requesting FPGA resources.
+
++ Added `disks` and `gpu` reserved hints for requesting specific resources.
+
 version 1.1.1
 ---------------------------
 
