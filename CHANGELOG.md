@@ -60,6 +60,8 @@ version 1.2.0
 
 + Added `contains_key` function to standard library. [PR 603](https://github.com/openwdl/wdl/pull/603)
 
++ Added exponentiation operator (`**`).
+
 
 version 1.1.1
 ---------------------------
