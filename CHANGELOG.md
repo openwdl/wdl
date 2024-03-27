@@ -62,6 +62,7 @@ version 1.2.0
 
 + Added exponentiation operator (`**`).
 
++ Added `find`, and `matches` functions.
 
 version 1.1.1
 ---------------------------
