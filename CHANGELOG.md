@@ -43,14 +43,30 @@ version development
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
 
-+ Added `contains_key` function to standard library.
-  [PR 603](https://github.com/openwdl/wdl/pull/603)
+version 1.2.0
+---------------------------
+
++ Introduced the concept of "scoped types" to support the use of object-like values within the `hints` section while still keeping the `Object` type as deprecated.
+
++ Added new task `requirements` and `hints` sections (#540 and #541), and deprecated the `runtime` section
+
++ Added new workflow `hints` section (#543), and moved `allowNestedInputs` from workflow `meta` to `hints`
+
++ Deprecated the previously allowed behavior implied by setting `allowNestedInputs: true` where required task/subworkflow inputs could be left unsatisfied. Now all inputs either need to have a default value or have their value specified in the call inputs. Only optional task/subworkflow inputs that are not explicitly set in the call inputs may have their value set at runtime if the `allow_nested_inputs` hint is `true`.
+
++ Added `fpga` requirement and reserved hint for requesting FPGA resources.
+
++ Added `disks` and `gpu` reserved hints for requesting specific resources.
+
++ Added `contains_key` function to standard library. [PR 603](https://github.com/openwdl/wdl/pull/603)
 
 
 version 1.1.1
 ---------------------------
 
 + Applied [Errata](https://github.com/openwdl/wdl/blob/main/versions/1.1/Errata.md) to the 1.1.0 spec.
+
++ Updated most examples to adhere to the new specification for WDL tests.
 
 + Added missing `File` and `version` keywords to the list of reserved words.
 
@@ -59,6 +75,7 @@ version 1.1.1
   + "Static Analysis and Dynamic Evaluation"
   + "Task Input Localization"
   + "Expression Placeholders" under "Command Section"
+  + Hidden types
 
 + Reformatted all tables.
 
@@ -68,6 +85,8 @@ version 1.1.1
   [PR 530](https://github.com/openwdl/wdl/pull/530) by @yarikoptic.
 
 + Fixed typos, thanks to @yarikoptic, @sejyoti, @mmterpstra, @j23414, @jdavcs, @beukueb, @notestaff, @alberto-mg, @mperf!
+
++ Added multiline strings.
 
 version 1.1.0
 ---------------------------
