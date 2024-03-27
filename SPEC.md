@@ -125,8 +125,8 @@ Revisions to this specification are made periodically in order to correct errors
         - [`allow_nested_inputs`](#allow_nested_inputs)
     - [Call Statement](#call-statement)
       - [Computing Call Inputs](#computing-call-inputs)
-    - [Scatter](#scatter)
-    - [Conditional (`if`)](#conditional-if)
+    - [Scatter Statement](#scatter-statement)
+    - [Conditional Statement](#conditional-statement)
 - [Standard Library](#standard-library)
   - [Numeric Functions](#numeric-functions)
     - [`floor`](#floor)
@@ -3304,13 +3304,20 @@ A WDL task can be thought of as a template for running a set of commands - speci
 
 A task is defined using the `task` keyword, followed by a task name that is unique within its WDL document.
 
-A task has a required [`command`](#command-section) that is a template for a Bash script.
+Tasks are comprised of the following elements:
 
-Tasks explicitly define their [`input`s](#task-inputs) and [`output`s](#task-outputs), which is essential for building dependencies between tasks and workflows. The value of an input declaration may be supplied by the caller. Tasks may have additional "private" declarations within the task body. All task declarations may be initialized with hard-coded literal values, or may have their values constructed from expressions. Input and private declarations can be referenced in the command template.
+* A single, optional [`input`](#task-inputs) section, which defines the inputs for the task.
+* A single, required [`command`](#command-section), which defines the Bash script to be executed.
+* A single, optional [`output`](#task-outputs) section, which defines the outputs for the task.
+* 🗑️ A single, optional [`runtime`](#-runtime-section) section, which defines the runtime environment conditions.
+* A single, optional [`requirements`](#✨-requirements-section) section, which defines the minimum, required runtime environment conditions.
+* A single, optional [`hints`](#✨-hints-section) section, which provides hints to the execution engine.
+* A single, optional [`runtime`](#runtime-section) section, which defines the required runtime environment conditions.
+* A single, optional [`meta`](#metadata-sections) section, which defines task-level metadata.
+* A single, optional [`parameter_meta`](#parameter-metadata-section) section, which defines parameter-level metadata.
+* Any number of [private declarations](#private-declarations).
 
-A task may also specify runtime environment [requirements](#requirements-section) (such as the amount of RAM or number of CPU cores) that must be satisfied in order for its commands to execute properly, and [hints](#✨-hints-section) that should be satisfied if possible.
-
-There are two optional metadata sections: the [`meta`](#metadata-sections) section, for task-level metadata, and the [`parameter_meta`](#parameter-metadata-section) section, for parameter-level metadata.
+There is no enforced order for task elements.
 
 The execution engine is responsible for "instantiating" the shell script (i.e., replacing all references with actual values) in an environment that meets all specified runtime requirements, localizing any input files into that environment, executing the script, and generating any requested outputs.
 
@@ -5475,7 +5482,7 @@ Test config:
 
 ## Workflow Definition
 
-A workflow can be thought of as a directed acyclic graph (DAG) of transformations that convert the input data to the desired outputs. Rather than explicitly specifying the sequence of operations, A WDL workflow instead describes the connections between the steps in the workflow (i.e., between the nodes in the graph). It is the responsibility of the execution engine to determine the proper ordering of the workflow steps, and to orchestrate the execution of the different steps.
+A workflow can be thought of as a directed acyclic graph (DAG) of transformations that convert the input data to the desired outputs. Rather than explicitly specifying the sequence of operations, a WDL workflow instead describes the connections between the steps in the workflow (i.e., between the nodes in the graph). It is the responsibility of the execution engine to determine the proper ordering of the workflow steps, and to orchestrate the execution of the different steps.
 
 A workflow is defined using the `workflow` keyword, followed by a workflow name that is unique within its WDL document, followed by any number of workflow elements within braces.
 
@@ -5513,20 +5520,21 @@ workflow name {
 
 ### Workflow Elements
 
-Tasks and workflows have several elements in common. These sections have nearly the same usage in workflows as they do in tasks, so we just link to their earlier descriptions.
+Tasks and workflows have several elements in common. When applicable, the task definition for these sections is linked to rather than duplicated. 
 
-* [`input` section](#task-inputs)
-* [Private declarations](#private-declarations)
-* [`output` section](#task-outputs)
-* [`hints` section](#)
-* [`meta` section](#metadata-sections)
-* [`parameter_meta` section](#parameter-metadata-section)
+A workflow is comprised of the following elements:
 
-In addition to these sections, a workflow may have any of the following elements that are specific to workflows:
+* A single, optional [`input`](#task-inputs) section (_identical to the `input` section within tasks_).
+* Any number of workflow execution elements, which include the following:
+  * A [private declaration](#private-declarations) (_identical to private declarations within tasks_).
+  * A [`call`](#call-statement) statement, which invokes tasks or subworkflows.
+  * A [`scatter`](#scatter-statement) statement, which enables parallelized of workflow execution elements across collections.
+  * A [conditional (`if`)](#conditional-statement) statement, which enables conditional execution of workflow execution elements.
+* A single, optional [`output`](#task-outputs) section (_identical to the `output` section within tasks_).
+* A single, optional [`meta`](#metadata-sections) section (_identical to the `meta` section within tasks_).
+* A single, optional [`parameter_meta`](#parameter-metadata-section) section (_identical to the `parameter_meta` section within tasks_).
 
-* [`call`s](#call-statement) to tasks or subworkflows
-* [`scatters`](#scatter), which are used to parallelize operations across collections
-* [Conditional (`if`)](#conditional-if-block) statements, which are only executed when a conditional expression evaluates to `true`
+There is no enforced order for workflow elements.
 
 ### Evaluation of Workflow Elements
 
@@ -6342,7 +6350,7 @@ Example output:
 </p>
 </details>
 
-### Scatter
+### Scatter Statement
 
 Scatter/gather is a common parallelization pattern in computer science. Given a collection of inputs (such as an array), the "scatter" step executes a set of operations on each input in parallel. In the "gather" step, the outputs of all the individual scatter-tasks are collected into the final output.
 
@@ -6542,7 +6550,7 @@ Example output:
 </p>
 </details>
 
-### Conditional (`if`)
+### Conditional Statement
 
 A conditional statement consists of the `if` keyword, followed by a `Boolean` expression and a body of (potentially nested) statements. The conditional body is only evaluated if the conditional expression evaluates to `true`.
 
