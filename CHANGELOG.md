@@ -42,6 +42,7 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
+
 version 1.2.0
 ---------------------------
 
@@ -56,6 +57,9 @@ version 1.2.0
 + Added `fpga` requirement and reserved hint for requesting FPGA resources.
 
 + Added `disks` and `gpu` reserved hints for requesting specific resources.
+
++ Added `contains_key` function to standard library. [PR 603](https://github.com/openwdl/wdl/pull/603)
+
 
 version 1.1.1
 ---------------------------
