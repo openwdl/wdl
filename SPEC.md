@@ -9918,7 +9918,10 @@ workflow test_keys {
       "a": ("a.bam", "a.bai"), 
       "b": ("b.bam", "b.bai")
     }
-    Name name
+    Name name = Name {
+      first: "John",
+      last: "Doe"
+    }
   }
 
   scatter (item in as_pairs(str_to_files)) {
