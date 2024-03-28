@@ -64,6 +64,8 @@ version 1.2.0
 
 + Added `find`, and `matches` functions.
 
++ Generalized `length` function to also accept `Map`, `Object`, `Struct`, and `String` arguments.
+
 version 1.1.1
 ---------------------------
 
