@@ -64,6 +64,8 @@ version 1.2.0
 
 + Added `find`, and `matches` functions.
 
++ Added `join_paths` function to join two or more paths.
+
 version 1.1.1
 ---------------------------
 
