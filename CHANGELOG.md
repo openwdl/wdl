@@ -64,6 +64,8 @@ version 1.2.0
 
 + Added `find`, and `matches` functions.
 
++ Add `parameter_meta` section to struct definition.
+
 version 1.1.1
 ---------------------------
 
