@@ -10143,6 +10143,7 @@ version 1.2
 struct Name {
   String first
   String last
+  String? middle
 }
 
 workflow test_length {
@@ -10183,7 +10184,7 @@ Example output:
   "test_length.zlen": 0,
   "test_length.mlen": 2,
   "test_length.slen": 2,
-  "test_length.name_len": 2
+  "test_length.name_len": 3
 }
 ```
 </p>
