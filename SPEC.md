@@ -10140,15 +10140,29 @@ Example: test_length.wdl
 ```wdl
 version 1.2
 
+struct Name {
+  String first
+  String last
+}
+
 workflow test_length {
   Array[Int] xs = [1, 2, 3]
   Array[String] ys = ["a", "b", "c"]
   Array[String] zs = []
+  Map[String, Int] m = {"a": 1, "b", 2}
+  String s = "ABCDE"
+  Name name = Name {
+    first: "John",
+    last: "Doe"
+  }
 
   output {
-    Int xlen = length(xs) # 3
-    Int ylen = length(ys) # 3
-    Int zlen = length(zs) # 0
+    Int xlen = length(xs)
+    Int ylen = length(ys)
+    Int zlen = length(zs)
+    Int mlen = length(m)
+    Int slen = length(s)
+    Int name_len = length(name)
   }
 }
 ```
@@ -10166,7 +10180,10 @@ Example output:
 {
   "test_length.xlen": 3,
   "test_length.ylen": 3,
-  "test_length.zlen": 0
+  "test_length.zlen": 0,
+  "test_length.mlen": 2,
+  "test_length.slen": 2,
+  "test_length.name_len": 2
 }
 ```
 </p>
