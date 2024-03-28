@@ -9988,7 +9988,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
 
 <details>
   <summary>
-  Example: get_values.wdl
+  Example: test_contains_key.wdl
   
   ```wdl
   version 1.2
@@ -9998,7 +9998,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
     Map[String, String]? details
   }
 
-  workflow get_ints_and_exts {
+  workflow test_contains_key {
     input {
       Map[String, Int] m
       String key1
@@ -10021,16 +10021,16 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
 
   ```json
   {
-    "get_values.m": {"a": 1, "b": 2},
-    "get_values.key1": "a",
-    "get_values.key2": "c",
-    "get_values.p1": {
+    "test_contains_key.m": {"a": 1, "b": 2},
+    "test_contains_key.key1": "a",
+    "test_contains_key.key2": "c",
+    "test_contains_key.p1": {
       "name": "John",
       "details": {
         "phone": "123-456-7890"
       }
     },
-    "get_values.p2": {
+    "test_contains_key.p2": {
       "name": "Agent X"
     }
   }
@@ -10040,10 +10040,10 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
 
   ```json
   {
-    "get_ints_and_exts.i1": 1,
-    "get_ints_and_exts.i2": null,
-    "get_ints_and_exts.phone1": "123-456-7890",
-    "get_ints_and_exts.phone2": null,
+    "test_contains_key.i1": 1,
+    "test_contains_key.i2": null,
+    "test_contains_key.phone1": "123-456-7890",
+    "test_contains_key.phone2": null,
   }
   ``` 
   </p>
@@ -10081,7 +10081,7 @@ task add {
   Int z = x + y
 
   command <<<
-  echo "~{x} + ~{y} = ~{z}
+  echo "~{x} + ~{y} = ~{z}"
   >>>
 
   output {
