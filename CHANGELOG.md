@@ -51,6 +51,8 @@ version 1.1.2
 
 + Clarify short-circuiting of boolean expressions (#199)
 
++ Clarified that `read_bool` is case-insensitive, and added an example.
+
 version 1.1.1
 ---------------------------
 
