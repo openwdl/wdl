@@ -7458,16 +7458,19 @@ The runtime container may use a non-standard Bash shell that supports more compl
 ### `size`
 
 ```
-Float size(File?|Array[File?], [String])
+Float size(File|File?, [String])
+Float size(X|X?, [String])
 ```
 
-Determines the size of a file, or the sum total of the sizes of files in an array. The files may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage).
+Determines the size of a file, or the sum total sizes of the files contained within a compound value. The files may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage)
+
+In the second variant of the `size` function, the parameter type `X` represents any compound type that contains `File` or `File?` nested at any depth.
 
 If the size cannot be represented in the specified unit because the resulting value is too large to fit in a `Float`, an error is raised. It is recommended to use a unit that will always be large enough to handle any expected inputs without numerical overflow.
 
 **Parameters**
 
-1. `File?|Array[File?]`: A file, or array of files, for which to determine the size.
+1. `File|File?|X|X?`: A file, or a compound value containing files, for which to determine the size.
 2. `String`: (Optional) The unit of storage; defaults to 'B'.
 
 **Returns**: The size of the file(s) as a `Float`.
@@ -7487,9 +7490,16 @@ task file_sizes {
   File? missing_file = None
 
   output {
-    Float missing_file_bytes = size(missing_file) # 0.0
-    Float created_file_bytes = size("created_file", "B") # 22.0
-    Float multi_file_kb = size(["created_file", missing_file], "K") # 0.022
+    File created_file = "created_file"
+    Float missing_file_bytes = size(missing_file)
+    Float created_file_bytes = size(created_file, "B")
+    Float multi_file_kb = size([created_file, missing_file], "K")
+
+    Map[String, Pair[Int, File]] nested = {
+      "a": (10, created_file),
+      "b": (50, missing_file)
+    }
+    Float nested_bytes = size(nested)
   }
   
   requirements {
@@ -7511,7 +7521,8 @@ Example output:
 {
   "file_sizes.missing_file_bytes": 0.0,
   "file_sizes.created_file_bytes": 22.0,
-  "file_sizes.multi_file_kb": 0.022
+  "file_sizes.multi_file_kb": 0.022,
+  "file_sizes.nested_bytes": 22.0
 }
 ```
 </p>

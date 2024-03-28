@@ -64,6 +64,8 @@ version 1.2.0
 
 + Added `find`, and `matches` functions.
 
++ Generalized `size` function to take any compound value.
+
 version 1.1.1
 ---------------------------
 
