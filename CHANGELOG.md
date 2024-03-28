@@ -64,6 +64,8 @@ version 1.2.0
 
 + Added `find`, and `matches` functions.
 
++ Added optional `default` parameter to `select_first`.
+
 version 1.1.1
 ---------------------------
 
