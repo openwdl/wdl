@@ -64,6 +64,8 @@ version 1.2.0
 
 + Added `find`, and `matches` functions.
 
++ Added `chunk` function for chunking an array into sub-arrays.
+
 version 1.1.1
 ---------------------------
 
