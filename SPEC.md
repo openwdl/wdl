@@ -182,7 +182,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [`as_map`](#as_map)
     - [`keys`](#keys)
     - [✨ `contains_key`](#-contains_key)
-    - [`values`](#values)
+    - [✨ `values`](#-values)
     - [`collect_by_key`](#collect_by_key)
   - [Other Functions](#other-functions)
     - [`defined`](#defined)
@@ -10046,7 +10046,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
   </p>
 </details>
 
-### `values`
+### ✨ `values`
 
 ```
 Array[Y] values(Map[P, Y])
