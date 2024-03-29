@@ -9511,7 +9511,7 @@ workflow chunk_array {
   Array[String] s3 = ["a", "b"]
   Array[String] s4 = []
   
-  scatter (a in split(s1, 3)) {
+  scatter (a in chunk(s1, 3)) {
     String concat = sep("", a)
   }
 
