@@ -10183,7 +10183,7 @@ Example output:
   "test_length.ylen": 3,
   "test_length.zlen": 0,
   "test_length.mlen": 2,
-  "test_length.slen": 2,
+  "test_length.slen": 5,
   "test_length.name_len": 3
 }
 ```
