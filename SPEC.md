@@ -10522,7 +10522,7 @@ There is no natural or unambiguous serialization of a `Map` with a non-`String` 
 
 #### Map to Struct
 
-A `Map[X, Y]` can be converted to a `Struct` with two array members: `Array[X] keys` and `Array[Y] values`. This is the suggested approach.
+A `Map[P, Y]` can be converted to a `Struct` with two array members: `Array[X] keys` and `Array[Y] values`. This is the suggested approach.
 
 <details>
 <summary>
@@ -10579,7 +10579,7 @@ Example output:
 
 #### Map to Array
 
-A `Map[X, X]` can be converted to an array of `Pair`s. Each pair can then be converted to a serializable format using one of the methods described in the previous section. This approach is less desirable as it requires the use of a `scatter`.
+A `Map[P, P]` can be converted to an array of `Pair`s. Each pair can then be converted to a serializable format using one of the methods described in the previous section. This approach is less desirable as it requires the use of a `scatter`.
 
 <details>
 <summary>
