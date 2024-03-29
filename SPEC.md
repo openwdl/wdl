@@ -1473,6 +1473,14 @@ WDL has some limited facilities for converting a value of one type to another ty
 
 The execution engine is also responsible for converting (or "serializing") input values when constructing commands, as well as "deserializing" command outputs. For more information, see the [Command Section](#command-section) and the more extensive Appendix on [WDL Value Serialization and Deserialization](#appendix-a-wdl-value-serialization-and-deserialization).
 
+Note that type conversion is non-destructive - the converted value can be considered to be a new value that copies whatever properties of the original value are supported by the target type. If the original value was assigned to a variable, then that variable remains unchanged after the type conversion. For example:
+
+```
+String path = "/path/to/file"
+File file = path
+String new_path = "~{path}_2"  # can still use `path` here
+```
+
 ##### Primitive Conversion to String 
 
 Primitive types can always be converted to `String` using [string interpolation](#expression-placeholders-and-string-interpolation). See [Expression Placeholder Coercion](#expression-placeholder-coercion) for details.
