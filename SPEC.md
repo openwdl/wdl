@@ -10115,21 +10115,21 @@ Example output:
 ### `length`
 
 ```
-Int length(Array[X]|Map[X, Y]|Object|Struct|String)
+Int length(Array[X]|Map[X, Y]|Object|String)
 ```
 
 Returns the length of the input argument as an `Int`:
 
 * For an `Array[X]` argument: the number of elements in the array.
 * For a `Map[X, Y]` argument: the number of items in the map.
-* For a `Struct` or `Object` argument: the number of members in the collection.
+* For an `Object` argument: the number of key-value pairs in the object.
 * For a `String` argument: the number of characters in the string.
 
 Note that every struct of a given type will always have the same length, equal to the number of members in the struct definition, regardless of whether any of the members are optional.
 
 **Parameters**
 
-1. `Array[X]`|`Map[X, Y]`|`Object`|`Struct`|`String`: A collection or string whose elements are to be counted.
+1. `Array[X]`|`Map[X, Y]`|`Object`|`String`: A collection or string whose elements are to be counted.
 
 **Returns**: The length of the collection/string as an `Int`.
 
@@ -10152,10 +10152,6 @@ workflow test_length {
   Array[String] zs = []
   Map[String, Int] m = {"a": 1, "b", 2}
   String s = "ABCDE"
-  Name name = Name {
-    first: "John",
-    last: "Doe"
-  }
 
   output {
     Int xlen = length(xs)
@@ -10163,7 +10159,6 @@ workflow test_length {
     Int zlen = length(zs)
     Int mlen = length(m)
     Int slen = length(s)
-    Int name_len = length(name)
   }
 }
 ```
@@ -10184,7 +10179,6 @@ Example output:
   "test_length.zlen": 0,
   "test_length.mlen": 2,
   "test_length.slen": 5,
-  "test_length.name_len": 3
 }
 ```
 </p>
