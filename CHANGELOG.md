@@ -66,6 +66,8 @@ version 1.2.0
 
 + Generalized `size` function to take any compound value.
 
++ Added parameters to `read_tsv` that enable it to read field names from a header row or an `Array[String]` and return an `Array[Object]`. [PR 627](https://github.com/openwdl/wdl/pull/627)
+
 version 1.1.1
 ---------------------------
 
