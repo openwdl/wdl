@@ -7952,17 +7952,27 @@ And `/local/fs/tmp/array.txt` would contain:
 
 ```
 Array[Array[String]] read_tsv(File)
+Array[Object] read_tsv(File, true)
+Array[Object] read_tsv(File, Boolean, Array[String])
 ```
 
 Reads a tab-separated value (TSV) file as an `Array[Array[String]]` representing a table of values. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
 
-There is no requirement that the rows of the table are all the same length.
+This function has three variants:
+
+1. `Array[Array[String]] read_tsv(File, [false])`: Returns each row of the table as an `Array[String]`. There is no requirement that the rows of the table are all the same length.
+2. `Array[Object] read_tsv(File, true)`: The second parameter must be `true` and specifies that the TSV file contains a header line. Each row is returned as an `Object` with its keys determined by the header (the first line in the file) and its values as `String`s. All rows in the file must be the same length and the field names in the header row must be valid `Object` field names, or an error is raised.
+3. `Array[Object] read_tsv(File, Boolean, Array[String])`: The second parameter specifies whether the TSV file contains a header line, and the third parameter is an array of field names that is used to specify the field names to use for the returned `Object`s. If the second parameter is `true`, the specified field names override those in the file's header (i.e., the header line is ignored).
+
+If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
 
 **Parameters**
 
-1. `File`: Path of the TSV file to read.
+1. `File`: The TSV file to read.
+2. `Boolean`: (Optional) Whether to treat the file's first line as a header.
+3. `Array[String]`: (Optional) An array of field names. If specified, then the second parameter is also required.
 
-**Returns**: An `Array` of rows in the TSV file, where each row is an `Array[String]` of fields.
+**Returns**: An `Array` of rows in the TSV file, where each row is an `Array[String]` of fields or an `Object` with keys determined by the second and third parameters and `String` values.
 
 <details>
 <summary>
@@ -7977,11 +7987,21 @@ task read_tsv {
       printf "row1\tvalue1\n"
       printf "row2\tvalue2\n"
       printf "row3\tvalue3\n"
-    } >> data.tsv
+    } >> data.no_headers.tsv
+
+    {
+      printf "header1\header2\n"
+      printf "row1\tvalue1\n"
+      printf "row2\tvalue2\n"
+      printf "row3\tvalue3\n"
+    } >> data.headers.tsv
   >>>
 
   output {
-    Array[Array[String]] output_table = read_tsv("data.tsv")
+    Array[Array[String]] output_table = read_tsv("data.no_headers.tsv")
+    Array[Object] output_objs1 = read_tsv("data.no_headers.tsv", false, ["name", "value"])
+    Array[Object] output_objs2 = read_tsv("data.headers.tsv", true)
+    Array[Object] output_objs3 = read_tsv("data.headers.tsv", true, ["name", "value"])
   }
 }
 ```
@@ -8001,6 +8021,48 @@ Example output:
     ["row1", "value1"],
     ["row2", "value2"],
     ["row3", "value3"]
+  ],
+  "read_tsv.output_objs1": [
+    {
+      "name": "row1",
+      "value": "value1"
+    },
+    {
+      "name": "row2",
+      "value": "value2"
+    },
+    {
+      "name": "row3",
+      "value": "value3"
+    }
+  ],
+  "read_tsv.output_objs2": [
+    {
+      "header1": "row1",
+      "header2": "value1"
+    },
+    {
+      "header1": "row2",
+      "header2": "value2"
+    },
+    {
+      "header1": "row3",
+      "header2": "value3"
+    }
+  ],  
+  "read_tsv.output_objs3": [
+    {
+      "name": "row1",
+      "row": "value1"
+    },
+    {
+      "name": "row2",
+      "row": "value2"
+    },
+    {
+      "name": "row3",
+      "row": "value3"
+    }
   ]
 }
 ```
@@ -8010,14 +8072,33 @@ Example output:
 ### `write_tsv`
 
 ```
-File write_tsv(Array[Array[String]])
+File write_tsv(Array[Array[String]]|Array[Struct])
+File write_tsv(Array[Array[String]], true, Array[String])
+File write_tsv(Array[Struct], Boolean, Array[String])
 ```
+Given an `Array` of elements, writes a tab-separated value (TSV) file with one line for each element.
 
-Writes a tab-separated value (TSV) file with one line for each element in a `Array[Array[String]]`. Each element is concatenated into a single tab-delimited string. Each line is terminated by the newline (`\n`) character. If the `Array` is empty, an empty file is written.
+There are three variants of this function:
+
+1. `File write_tsv(Array[Array[String]])`: Each element is concatenated using a tab ('\t') delimiter and written as a row in the file. There is no header row.
+
+2. `File write_tsv(Array[Array[String]], true, Array[String])`: The second argument must be `true` and the third argument provides an `Array` of column names. The column names are concatenated to create a header that is written as the first row of the file. All elements must be the same length as the header array.
+
+3. `File write_tsv(Array[Struct], [Boolean, [Array[String]]])`: Each element is a struct whose field values are concatenated in the order the fields are defined. The optional second argument specifies whether to write a header row. If it is `true`, then the header is created from the struct field names. If the second argument is `true`, then the optional third argument may be used to specify column names to use instead of the struct field names.
+
+Each line is terminated by the newline (`\n`) character. 
+
+The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
+
+If the entire contents of the file can not be written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, insufficient disk space to write the file.
+
 
 **Parameters**
 
-1. `Array[Array[String]]`: An array of rows, where each row is an array of column values.
+1. `Array[Array[String]] | Array[Struct]`: An array of rows, where each row is either an `Array` of column values or a struct whose values are the column values.
+2. `Boolean`: (Optional) Whether to write a header row.
+3. `Array[String]`: An array of column names. If the first argument is `Array[Array[String]]` and the second argument is `true` then it is required, otherwise it is optional. Ignored if the second argument is `false`.
+
 
 **Returns**: A `File`.
 
@@ -8031,14 +8112,37 @@ version 1.2
 task write_tsv {
   input {
     Array[Array[String]] array = [["one", "two", "three"], ["un", "deux", "trois"]]
+    Array[Numbers] structs = [
+      Numbers {
+        first: "one",
+        second: "two",
+        third: "three"
+      },
+      Numbers {
+        first: "un",
+        second: "deux",
+        third: "trois"
+      }
+    ]
   }
 
   command <<<
-    cut -f 1 ~{write_tsv(array)}
+    cut -f 1 ~{write_tsv(array)} >> array_no_header.txt
+    cut -f 1 ~{write_tsv(array, true, ["first", "second", "third"])} > array_header.txt
+    cut -f 1 ~{write_tsv(structs)} >> structs_default.txt
+    cut -f 2 ~{write_tsv(structs, false)} >> structs_no_header.txt
+    cut -f 2 ~{write_tsv(structs, true)} >> structs_header.txt
+    cut -f 3 ~{write_tsv(structs, true, ["no1", "no2", "no3"])} >> structs_user_header.txt
   >>>
 
   output {
-    Array[String] ones = read_lines(stdout())
+    Array[String] array_no_header = read_lines("array_no_header.txt")
+    Array[String] array_header = read_lines("array_header.txt")
+    Array[String] structs_default = read_lines("structs_default.txt")
+    Array[String] structs_no_header = read_lines("structs_no_header.txt")
+    Array[String] structs_header = read_lines("structs_header.txt")
+    Array[String] structs_user_header = read_lines("structs_user_header.txt")
+
   }
   
   requirements {
@@ -8058,7 +8162,13 @@ Example output:
 
 ```json
 {
-  "write_tsv.ones": ["one", "un"]
+  "write_tsv.array_no_header": ["one", "un"],
+  "write_tsv.array_header": ["first", "one", "un"],
+  "write_tsv.structs_default": ["first", "one", "un"], 
+  "write_tsv.structs_no_header": ["two", "deux"], 
+  "write_tsv.structs_header": ["second", "two", "deux"], 
+  "write_tsv.structs_user_header": ["no3", "three", "trois"], 
+
 }
 ```
 </p>
@@ -8405,6 +8515,7 @@ CODE
 
 And `/local/fs/tmp/map.json` would contain:
 
+Each line is terminated by the newline (`\n`) character. 
 ```json
 {
   "key1": "value1",
