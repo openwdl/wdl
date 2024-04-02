@@ -66,6 +66,8 @@ version 1.2.0
 
 + Generalized `length` function to also accept `Map`, `Object`, `Struct`, and `String` arguments.
 
++ Added parameters to `read_tsv` that enable it to read field names from a header row or an `Array[String]` and return an `Array[Object]`. [PR 627](https://github.com/openwdl/wdl/pull/627)
+
 version 1.1.1
 ---------------------------
 
