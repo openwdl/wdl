@@ -10125,8 +10125,6 @@ Returns the length of the input argument as an `Int`:
 * For an `Object` argument: the number of key-value pairs in the object.
 * For a `String` argument: the number of characters in the string.
 
-Note that every struct of a given type will always have the same length, equal to the number of members in the struct definition, regardless of whether any of the members are optional.
-
 **Parameters**
 
 1. `Array[X]`|`Map[X, Y]`|`Object`|`String`: A collection or string whose elements are to be counted.
@@ -10139,12 +10137,6 @@ Example: test_length.wdl
 
 ```wdl
 version 1.2
-
-struct Name {
-  String first
-  String last
-  String? middle
-}
 
 workflow test_length {
   Array[Int] xs = [1, 2, 3]
