@@ -70,6 +70,8 @@ version 1.2.0
 
 + Added `values` function for getting the values from a `Map`.
 
++ Added parameters to `read_tsv` that enable it to read field names from a header row or an `Array[String]` and return an `Array[Object]`. [PR 627](https://github.com/openwdl/wdl/pull/627)
+
 version 1.1.1
 ---------------------------
 
