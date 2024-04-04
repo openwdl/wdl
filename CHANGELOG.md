@@ -51,6 +51,8 @@ version 1.1.2
 
 + Clarify short-circuiting of boolean expressions (#199)
 
++ Added requirement for tests to the RFC
+
 version 1.1.1
 ---------------------------
 
