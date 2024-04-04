@@ -43,8 +43,9 @@ Revisions to this specification are made periodically in order to correct errors
         - [Type Coercion](#type-coercion)
           - [Order of Precedence](#order-of-precedence)
           - [Coercion of Optional Types](#coercion-of-optional-types)
-          - [Struct/Object coercion from Map](#structobject-coercion-from-map)
-          - [🗑 Limited exceptions](#-limited-exceptions)
+          - [Struct/Object Coercion from Map](#structobject-coercion-from-map)
+          - [Struct-to-Struct Coercion](#struct-to-struct-coercion)
+          - [🗑 Limited Exceptions](#-limited-exceptions)
     - [Declarations](#declarations)
     - [Expressions](#expressions)
       - [Built-in Operators](#built-in-operators)
@@ -1573,6 +1574,7 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                     |
 | `Object`         | `Struct`         |                                                                                                                |
 | `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
+| `Struct`         | `Struct`         | The two `Struct` types must have members with identical names and compatible types (see [Struct-to-Struct Coercion](#struct-to-struct-coercion)) |
 
 The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
 
@@ -1634,7 +1636,7 @@ There are two exceptions where coercion from `T?` to `T` is allowed:
 * [String concatenation in expression placeholders](#concatenation-of-optional-values)
 * [Equality and inequality comparisons](#equality-and-inequality-comparison-of-optional-types)
 
-###### Struct/Object coercion from Map
+###### Struct/Object Coercion from Map
 
 `Struct`s and `Object`s can be coerced from map literals, but beware the difference between `Map` keys (expressions) and `Struct`/`Object` member names.
 
@@ -1701,7 +1703,78 @@ Example output:
 - If a `Struct` (or `Object`) declaration is initialized using the struct-literal (or object-literal) syntax `Words literal_syntax = Words { a: ...` then the keys will be `"a"`, `"b"` and `"c"`.
 - If a `Struct` (or `Object`) declaration is initialized using the map-literal syntax `Words map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
 
-###### 🗑 Limited exceptions
+###### Struct-to-Struct Coercion
+
+Two `Struct` types are considered compatible when the following are true:
+
+1. They have the same numbers of members
+2. Their members' names are identical
+3. The type of each member in the source struct is coercible to the type of the member with the same name in the target struct
+
+<details>
+<summary>
+Example: struct_to_struct.wdl
+
+```wdl
+version 1.2
+
+struct A {
+  String s
+}
+
+Struct B {
+  A a_struct
+  Int i
+}
+
+struct C {
+  String s
+}
+
+struct D {
+  C a_struct
+  Int i
+}
+
+workflow struct_to_struct {
+  B my_b = B {
+    a_struct: A { s: 'hello' },
+    i: 10
+  }
+  # We can coerce `my_b` from type `B` to type `D` because `B` and `D`
+  # have members with the same names and compatible types. Type `A` can
+  # be coerced to type `C` because they also have members with the same
+  # names and compatible types.
+  
+  output {
+    D my_d = my_b
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "struct_to_struct.my_d": {
+    "a_struct": { 
+      "s": "hello"
+    },
+    "i": 10
+  }
+}
+```
+</p>
+</details>
+
+###### 🗑 Limited Exceptions
 
 Implementers may choose to allow limited exceptions to the above rules, with the understanding that workflows depending on these exceptions may not be portable. These exceptions are provided for backward-compatibility, are considered deprecated, and will be removed in a future version of WDL.
 
