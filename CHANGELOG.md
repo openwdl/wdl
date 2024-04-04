@@ -64,7 +64,7 @@ version 1.2.0
 
 + Added `find`, and `matches` functions.
 
-+ Added clarification about whether identical structs with different origins are compatible.
++ Added allowance for conversion between `Struct` types when certain criteria are met.
 
 version 1.1.1
 ---------------------------
