@@ -35,16 +35,18 @@ Revisions to this specification are made periodically in order to correct errors
         - [Map\[P, Y\]](#mapp-y)
         - [🗑 Object](#-object)
         - [Custom Types (Structs)](#custom-types-structs)
-      - [Hidden Types](#hidden-types)
-        - [Union](#union)
-      - [Scoped Types](#scoped-types)
+      - [Hidden and Scoped Types](#hidden-and-scoped-types)
+        - [`Union` (Hidden Type)](#union-hidden-type)
+        - [`hints`, `input`, and `output` (Scoped Types)](#hints-input-and-output-scoped-types)
+        - [`task` (Hidden Scoped Type)](#task-hidden-scoped-type)
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
           - [Order of Precedence](#order-of-precedence)
           - [Coercion of Optional Types](#coercion-of-optional-types)
-          - [Struct/Object coercion from Map](#structobject-coercion-from-map)
-          - [🗑 Limited exceptions](#-limited-exceptions)
+          - [Struct/Object Coercion from Map](#structobject-coercion-from-map)
+          - [Struct-to-Struct Coercion](#struct-to-struct-coercion)
+          - [🗑 Limited Exceptions](#-limited-exceptions)
     - [Declarations](#declarations)
     - [Expressions](#expressions)
       - [Built-in Operators](#built-in-operators)
@@ -111,6 +113,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Meta Values](#meta-values)
       - [Task Metadata Section](#task-metadata-section)
       - [Parameter Metadata Section](#parameter-metadata-section)
+    - [Runtime Access to Requirements, Hints, and Metadata](#runtime-access-to-requirements-hints-and-metadata)
     - [Advanced Task Examples](#advanced-task-examples)
       - [Example 1: HISAT2](#example-1-hisat2)
       - [Example 2: GATK Haplotype Caller](#example-2-gatk-haplotype-caller)
@@ -168,7 +171,6 @@ Revisions to this specification are made periodically in order to correct errors
     - [`squote`](#squote)
     - [`sep`](#sep-1)
   - [Generic Array Functions](#generic-array-functions)
-    - [`length`](#length)
     - [`range`](#range)
     - [`transpose`](#transpose)
     - [`cross`](#cross)
@@ -182,9 +184,11 @@ Revisions to this specification are made periodically in order to correct errors
     - [`as_map`](#as_map)
     - [`keys`](#keys)
     - [✨ `contains_key`](#-contains_key)
+    - [✨ `values`](#-values)
     - [`collect_by_key`](#collect_by_key)
   - [Other Functions](#other-functions)
     - [`defined`](#defined)
+    - [`length`](#length)
 - [Input and Output Formats](#input-and-output-formats)
   - [JSON Input Format](#json-input-format)
     - [Optional Inputs](#optional-inputs)
@@ -1448,23 +1452,29 @@ Example output:
 
 Note that the ability to assign values to `Struct` declarations other than struct literals is deprecated and will be removed in WDL 2.0.
 
-#### Hidden Types
+#### Hidden and Scoped Types
 
-A hidden type is one that may only be instantiated by the execution engine, and cannot be used in a declaration within a WDL file. There is currently only one hidden type, `Union`; however, in WDL 2.0, `Object` will also become a hidden type.
+A hidden type is one that may only be instantiated by the execution engine, and cannot be used in a declaration within a WDL file.
 
-##### Union
+A scoped type is one that can only be defined by the execution engine within a specific scope. A scoped type may also be hidden.
 
-The `Union` type is used for a value that may have any one of several concrete types. A `Union` value must always be coerced to a concrete type. The `Union` type is used in the following contexts:
+The following sections enumerate the hidden and scoped types that are available in the current version of WDL. In WDL 2.0, `Object` will also become a hidden type.
+
+##### `Union` (Hidden Type)
+
+`Union` is a hidden type that is used for a value that may have any one of several concrete types. A `Union` value must always be coerced to a concrete type. The `Union` type is used in the following contexts:
 
 * It is the type of the special [`None`](#optional-types-and-none) value.
 * It is the return type of some standard library functions, such as [`read_json`](#read_json).
 * It is the type of some reserved [`requirements`](#✨-requirements-section) and [`hints`](#✨-hints-section) attributes.
 
-#### Scoped Types
+##### `hints`, `input`, and `output` (Scoped Types)
 
-A scoped type is one that may only be defined by the execution engine within a specific scope, but which may be instantiated by the user within that scope.
+The [`hints`](#✨-hints-section) section has [three scoped types](#hints-scoped-types) that may be instantiated by the user within that scope.
 
-Currently, scoped types limted to the [`hints`](#✨-hints-section) section.
+##### `task` (Hidden Scoped Type)
+
+The [`task` type](#runtime-access-to-requirements-hints-and-metadata) is a hidden type that is scoped to the `command` and `output` sections.
 
 #### Type Conversion
 
@@ -1573,6 +1583,7 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                     |
 | `Object`         | `Struct`         |                                                                                                                |
 | `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
+| `Struct`         | `Struct`         | The two `Struct` types must have members with identical names and compatible types (see [Struct-to-Struct Coercion](#struct-to-struct-coercion)) |
 
 The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
 
@@ -1634,7 +1645,7 @@ There are two exceptions where coercion from `T?` to `T` is allowed:
 * [String concatenation in expression placeholders](#concatenation-of-optional-values)
 * [Equality and inequality comparisons](#equality-and-inequality-comparison-of-optional-types)
 
-###### Struct/Object coercion from Map
+###### Struct/Object Coercion from Map
 
 `Struct`s and `Object`s can be coerced from map literals, but beware the difference between `Map` keys (expressions) and `Struct`/`Object` member names.
 
@@ -1701,7 +1712,78 @@ Example output:
 - If a `Struct` (or `Object`) declaration is initialized using the struct-literal (or object-literal) syntax `Words literal_syntax = Words { a: ...` then the keys will be `"a"`, `"b"` and `"c"`.
 - If a `Struct` (or `Object`) declaration is initialized using the map-literal syntax `Words map_coercion = { a: ...` then the keys are expressions, and thus `a` will be a variable reference to the previously defined `String a = "beware"`.
 
-###### 🗑 Limited exceptions
+###### Struct-to-Struct Coercion
+
+Two `Struct` types are considered compatible when the following are true:
+
+1. They have the same number of members.
+2. Their members' names are identical.
+3. The type of each member in the source struct is coercible to the type of the member with the same name in the target struct.
+
+<details>
+<summary>
+Example: struct_to_struct.wdl
+
+```wdl
+version 1.2
+
+struct A {
+  String s
+}
+
+Struct B {
+  A a_struct
+  Int i
+}
+
+struct C {
+  String s
+}
+
+struct D {
+  C a_struct
+  Int i
+}
+
+workflow struct_to_struct {
+  B my_b = B {
+    a_struct: A { s: 'hello' },
+    i: 10
+  }
+  # We can coerce `my_b` from type `B` to type `D` because `B` and `D`
+  # have members with the same names and compatible types. Type `A` can
+  # be coerced to type `C` because they also have members with the same
+  # names and compatible types.
+  
+  output {
+    D my_d = my_b
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "struct_to_struct.my_d": {
+    "a_struct": { 
+      "s": "hello"
+    },
+    "i": 10
+  }
+}
+```
+</p>
+</details>
+
+###### 🗑 Limited Exceptions
 
 Implementers may choose to allow limited exceptions to the above rules, with the understanding that workflows depending on these exceptions may not be portable. These exceptions are provided for backward-compatibility, are considered deprecated, and will be removed in a future version of WDL.
 
@@ -2560,7 +2642,8 @@ The result of evaluating an expression in a placeholder must ultimately be conve
 
 Compound types cannot be implicitly converted to `String`s. To convert an `Array` to a `String`, use the [`sep`](#-sep) function: `~{sep(",", str_array)}`. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for more details and examples.
 
-If an expression within a placeholder evaluates to `None`,  and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string.
+If an expression within a placeholder evaluates to `None`, and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string.
+
 <details>
 <summary>
 Example: placeholder_coercion.wdl
@@ -5303,6 +5386,98 @@ Example output:
 </p>
 </details>
 
+### Runtime Access to Requirements, Hints, and Metadata
+
+The `requirements` and `hints` sections comprise resource requests to the execution engine. But these requests can be [specified or overridden at runtime](#specifying--overriding-requirements-and-hints), and the execution engine has some latitude in whether and how it fulfills them. Thus, the workflow developer may wish to know exactly what resources are available at runtime, such as:
+
+* What are the actual resource allocations. For example, a task may request at least `8 GiB` of memory but may be able to use more memory if it is available.
+* The task metadata, to avoid duplication. For example, the task may wish to write log messages with the task's name and description without having to duplicate the information in the task's `meta` section.
+* The runtime engine may also choose to provide additional information at runtime.
+
+This information is provided by the `task` variable, which is implicitly defined by the execution engine. The type of `task` is a [scoped type](#scoped-types) with the following members:
+
+* `name`: The task name.
+* `id`: A `String` with the unique ID of the task. The execution engine may choose the format for this ID, but it is suggested to include at least the following information:
+    * The task name
+    * The task alias, if it differs from the task name
+    * The index of the task instance, if it is within a scatter statement
+* `container`: The URI `String` of the container in which the task is executing, or `None` if the task is being executed in the host environment. 
+* `cpu`: The allocated number of cpus as a `Float`. Must be greater than `0`.
+* `memory`: The allocated memory in bytes as an `Int`. Must be greater than `0`.
+* `gpu`: An `Array[String]` with one specification per allocated GPU. The specification is execution engine-specific. If no GPUs were allocated, then the value must be an empty array.
+* `fpga`: An `Array[String]` with one specification per allocated FPGA. The specification is execution engine-specific. If no FPGAs were allocated, then the value must be an empty array.
+* `disks`: A `Map[String, Int]` with one entry for each disk mount point. The key is the mount point and the value is the initial amount of disk space allocated, in bytes. The execution engine must, at a minimum, provide one entry for each disk mount point requested, but may provide more. The amount of disk space available for a given mount point may increase during the lifetime of the task (e.g., autoscaling volumes provided by some cloud services).
+* `attempt`: The current task attempt. The value must be `0` the first time the task is executed, and incremented by `1` each time the task is retried (if any).
+* `end_time`: An `Int?` whose value is the time by which the task must be completed, as a [Unix time stamp](https://en.wikipedia.org/wiki/Unix_time). A value of `0` means that the execution engine does not impose a time limit. A value of `None` means that the execution engine cannot determine whether the runtime of the task is limited. A positive value is a guarantee that the task will be preempted at the specified time, but is *not* a guarantee that the task won't be preempted earlier.
+* `return_code`: An `Int?` whose value is initially `None` and is set to the value of the `command`'s return code. The value is only guaranteed to be defined in the `output` section.
+* `meta`: An `Object` containing a copy of the task's `meta` section, or the empty `Object` if there is no `meta` section or if it is empty.
+* `parameter_meta`: An `Object` containing a copy of the task's `parameter_meta` section, or the empty `Object` if there is no `parameter_meta` section or if it is empty.
+* `ext`: An `Object` containing execution engine-specific attributes, or the empty `Object` if there aren't any. Members of `ext` should be considered optional. It is recommended to only access a member of `ext` using [string interpolation](#expression-placeholders-and-string-interpolation) to avoid an error if it is not defined.
+
+If the runtime engine is not able to provide the actual value of a requirement, then it must provide the requested value instead, or the default value if no specific value was requested.
+
+<details>
+<summary>
+Example: test_runtime_info_task.wdl
+
+```wdl
+version 1.2
+
+task test_runtime_info_task {
+  meta {
+    description: "Task that shows how to use the implicit 'task' declaration"
+  }
+
+  command <<<
+  echo "Task name: ~{task.name}"
+  echo "Task description: ~{task.meta.description}"
+  echo "Task container: ~{task.container}"
+  echo "Available cpus: ~{task.cpu}"
+  echo "Available memory: ~{task.memory / (1024 * 1024 * 1024)} GiB"
+  exit 1
+  >>>
+  
+  output {
+    Boolean at_least_two_gb = task.memory >= (2 * 1024 * 1024 * 1024)
+    Int return_code = task.return_code
+  }
+  
+  requirements {
+    container: ["ubuntu:latest", "quay.io/ubuntu:focal"]
+    memory: "2 GiB"
+    return_codes: [0, 1]
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_runtime_info_task.at_least_two_gb": true,
+  "test_runtime_info_task.return_code": 1
+}
+```
+
+Test config:
+
+```json
+{
+  "dependencies": ["cpu", "memory"]
+}
+```
+</p>
+</details>
+
+If a task is using the deprecated [`runtime`](#🗑-runtime-section) section rather than `requirements` and `hints`, then the runtime values of the reserved `runtime` attributes (i.e., the ones that appear in the `requirements` section) are populated in the `requirements` member.
+
 ### Advanced Task Examples
 
 #### Example 1: HISAT2
@@ -5920,6 +6095,7 @@ Example input:
 {
   "test_allow_nested_inputs.nested.name": "John"
 }
+
 ```
 
 Example output:
@@ -7467,16 +7643,19 @@ The runtime container may use a non-standard Bash shell that supports more compl
 ### `size`
 
 ```
-Float size(File?|Array[File?], [String])
+Float size(File|File?, [String])
+Float size(X|X?, [String])
 ```
 
-Determines the size of a file, or the sum total of the sizes of files in an array. The files may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage).
+Determines the size of a file, or the sum total sizes of the files contained within a compound value. The files may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage)
+
+In the second variant of the `size` function, the parameter type `X` represents any compound type that contains `File` or `File?` nested at any depth.
 
 If the size cannot be represented in the specified unit because the resulting value is too large to fit in a `Float`, an error is raised. It is recommended to use a unit that will always be large enough to handle any expected inputs without numerical overflow.
 
 **Parameters**
 
-1. `File?|Array[File?]`: A file, or array of files, for which to determine the size.
+1. `File|File?|X|X?`: A file, or a compound value containing files, for which to determine the size.
 2. `String`: (Optional) The unit of storage; defaults to 'B'.
 
 **Returns**: The size of the file(s) as a `Float`.
@@ -7496,9 +7675,16 @@ task file_sizes {
   File? missing_file = None
 
   output {
-    Float missing_file_bytes = size(missing_file) # 0.0
-    Float created_file_bytes = size("created_file", "B") # 22.0
-    Float multi_file_kb = size(["created_file", missing_file], "K") # 0.022
+    File created_file = "created_file"
+    Float missing_file_bytes = size(missing_file)
+    Float created_file_bytes = size(created_file, "B")
+    Float multi_file_kb = size([created_file, missing_file], "K")
+
+    Map[String, Pair[Int, File]] nested = {
+      "a": (10, created_file),
+      "b": (50, missing_file)
+    }
+    Float nested_bytes = size(nested)
   }
   
   requirements {
@@ -7520,7 +7706,8 @@ Example output:
 {
   "file_sizes.missing_file_bytes": 0.0,
   "file_sizes.created_file_bytes": 22.0,
-  "file_sizes.multi_file_kb": 0.022
+  "file_sizes.multi_file_kb": 0.022,
+  "file_sizes.nested_bytes": 22.0
 }
 ```
 </p>
@@ -9235,58 +9422,6 @@ These functions are generic and take an `Array` as input and/or return an `Array
 
 **Restrictions**: None
 
-### `length`
-
-```
-Int length(Array[X])```
-
-Returns the number of elements in an array as an `Int`.
-
-**Parameters**
-
-1. `Array[X]`: An array with any element type.
-
-**Returns**: The length of the array as an `Int`.
-
-<details>
-<summary>
-Example: test_length.wdl
-
-```wdl
-version 1.2
-
-workflow test_length {
-  Array[Int] xs = [1, 2, 3]
-  Array[String] ys = ["a", "b", "c"]
-  Array[String] zs = []
-
-  output {
-    Int xlen = length(xs) # 3
-    Int ylen = length(ys) # 3
-    Int zlen = length(zs) # 0
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{}
-```
-
-Example output:
-
-```json
-{
-  "test_length.xlen": 3,
-  "test_length.ylen": 3,
-  "test_length.zlen": 0
-}
-```
-</p>
-</details>
-
 ### `range`
 
 ```
@@ -9666,15 +9801,17 @@ Example output:
 
 ```
 X select_first(Array[X?]+)
+X select_first(Array[X?], X)
 ```
 
-Selects the first - i.e. left-most - non-`None` value from an `Array` of optional values. It is an error if the array is empty, or if the array only contains `None` values. 
+Selects the first - i.e., left-most - non-`None` value from an `Array` of optional values. The optional second parameter provides a default value that is returned if the array is empty or contains only `None` values. If the default value is not provided and the array is empty or contains only `None` values, then an error is raised.
 
 **Parameters**
 
 1. `Array[X?]+`: Non-empty `Array` of optional values.
+2. `X`: (Optional) The default value.
 
-**Returns**: The first non-`None` value in the input array.
+**Returns**: The first non-`None` value in the input array, or the default value if it is provided and the array does not contain any non-`None` values.
 
 <details>
 <summary>
@@ -9691,9 +9828,11 @@ workflow test_select_first {
   }
 
   output {
-    # both of these statements evaluate to 5
-    Int five1 = select_first([maybe_five, maybe_four_but_is_not, maybe_three])
-    Int five2 = select_first([maybe_four_but_is_not, maybe_five, maybe_three])
+    # all of these statements evaluate to 5
+    Int fiveA = select_first([maybe_five, maybe_four_but_is_not, maybe_three])
+    Int fiveB = select_first([maybe_four_but_is_not, maybe_five, maybe_three])
+    Int fiveC = select_first([], 5)
+    Int fiveD = select_first([None], 5)
   }
 }
 ```
@@ -9709,8 +9848,10 @@ Example output:
 
 ```json
 {
-  "test_select_first.five1": 5,
-  "test_select_first.five2": 5
+  "test_select_first.fiveA": 5,
+  "test_select_first.fiveB": 5,
+  "test_select_first.fiveC": 5,
+  "test_select_first.fiveD": 5
 }
 ```
 </p>
@@ -10003,15 +10144,20 @@ Test config:
 
 ```
 Array[P] keys(Map[P, Y])
+Array[String] keys(Struct|Object)
 ```
 
-Creates an `Array` of the keys from the input `Map`, in the same order as the elements in the map.
+Given a key-value type collection (`Map`, `Struct`, or `Object`), returns an `Array` of the keys from the input collection, in the same order as the elements in the collection.
+
+When the argument is a `Struct`, the returned array will contain the keys in the same order they appear in the struct definition. When the argument is an `Object`, the returned array has no guaranteed order.
+
+When the input `Map` or `Object` is empty, an empty array is returned.
 
 **Parameters**
 
-1. `Map[P, Y]`: `Map` from which to extract keys.
+1. `Map[P, Y]`|`Struct`|`Object`: Collection from which to extract keys.
 
-**Returns**: `Array[P]` of the input `Map`s keys.
+**Returns**: `Array[P]` of the input collection's keys. If the input is a `Struct` or `Object`, then the returned array will be of type `Array[String]`.
 
 <details>
 <summary>
@@ -10020,12 +10166,21 @@ Example: test_keys.wdl
 ```wdl
 version 1.2
 
+struct Name {
+  String first
+  String last
+}
+
 workflow test_keys {
   input {
-    Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
+    Map[String, Int] x = {"a": 1, "b": 2, "c": 3}
     Map[String, Pair[File, File]] str_to_files = {
       "a": ("a.bam", "a.bai"), 
       "b": ("b.bam", "b.bai")
+    }
+    Name name = Name {
+      first: "John",
+      last: "Doe"
     }
   }
 
@@ -10038,6 +10193,7 @@ workflow test_keys {
   output {
     Boolean is_true1 = keys(x) == ["a", "b", "c"]
     Boolean is_true2 = str_to_files_keys == keys(str_to_files)
+    Boolean is_true3 = keys(name) == ["first", "last"]
   }
 }
 ```
@@ -10054,7 +10210,8 @@ Example output:
 ```json
 {
   "test_keys.is_true1": true,
-  "test_keys.is_true2": true
+  "test_keys.is_true2": true,
+  "test_keys.is_true3": true
 }
 ```
 </p>
@@ -10091,7 +10248,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
 
 <details>
   <summary>
-  Example: get_values.wdl
+  Example: test_contains_key.wdl
   
   ```wdl
   version 1.2
@@ -10101,7 +10258,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
     Map[String, String]? details
   }
 
-  workflow get_ints_and_exts {
+  workflow test_contains_key {
     input {
       Map[String, Int] m
       String key1
@@ -10124,16 +10281,16 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
 
   ```json
   {
-    "get_values.m": {"a": 1, "b": 2},
-    "get_values.key1": "a",
-    "get_values.key2": "c",
-    "get_values.p1": {
+    "test_contains_key.m": {"a": 1, "b": 2},
+    "test_contains_key.key1": "a",
+    "test_contains_key.key2": "c",
+    "test_contains_key.p1": {
       "name": "John",
       "details": {
         "phone": "123-456-7890"
       }
     },
-    "get_values.p2": {
+    "test_contains_key.p2": {
       "name": "Agent X"
     }
   }
@@ -10143,13 +10300,88 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
 
   ```json
   {
-    "get_ints_and_exts.i1": 1,
-    "get_ints_and_exts.i2": null,
-    "get_ints_and_exts.phone1": "123-456-7890",
-    "get_ints_and_exts.phone2": null,
+    "test_contains_key.i1": 1,
+    "test_contains_key.i2": null,
+    "test_contains_key.phone1": "123-456-7890",
+    "test_contains_key.phone2": null,
   }
   ``` 
   </p>
+</details>
+
+### ✨ `values`
+
+```
+Array[Y] values(Map[P, Y])
+```
+
+Returns an `Array` of the values from the input `Map`, in the same order as the elements in the map. If the map is empty, an empty array is returned.
+
+**Parameters**
+
+1. `Map[P, Y]`: `Map` from which to extract values.
+
+**Returns**: `Array[Y]` of the input `Map`s values.
+
+**Example**
+
+<details>
+<summary>
+Example: test_values.wdl
+
+```wdl
+version 1.2
+
+task add {
+  input {
+    Int x
+    Int y
+  }
+
+  Int z = x + y
+
+  command <<<
+  echo "~{x} + ~{y} = ~{z}"
+  >>>
+
+  output {
+    Int sum = z
+  }
+}
+
+workflow test_values {
+  input {
+    Map[String, Pair[Int, Int]] str_to_ints = {
+      "a": (1, 2),
+      "b": (3, 4)
+    }
+  }
+  
+  scatter (files in values(str_to_files)) {
+    call add { input: x=ints.left, y=ints.right }
+  }
+  
+  output {
+    Array[Int] sums = add.sum
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test.values.sums": [3, 7]
+}
+```
+</p>
 </details>
 
 ### `collect_by_key`
@@ -10279,6 +10511,70 @@ Example output:
 ```json
 {
   "is_defined.greeting": "Hello John"
+}
+```
+</p>
+</details>
+
+### `length`
+
+```
+Int length(Array[X]|Map[X, Y]|Object|String)
+```
+
+Returns the length of the input argument as an `Int`:
+
+* For an `Array[X]` argument: the number of elements in the array.
+* For a `Map[X, Y]` argument: the number of items in the map.
+* For an `Object` argument: the number of key-value pairs in the object.
+* For a `String` argument: the number of characters in the string.
+
+**Parameters**
+
+1. `Array[X]`|`Map[X, Y]`|`Object`|`String`: A collection or string whose elements are to be counted.
+
+**Returns**: The length of the collection/string as an `Int`.
+
+<details>
+<summary>
+Example: test_length.wdl
+
+```wdl
+version 1.2
+
+workflow test_length {
+  Array[Int] xs = [1, 2, 3]
+  Array[String] ys = ["a", "b", "c"]
+  Array[String] zs = []
+  Map[String, Int] m = {"a": 1, "b", 2}
+  String s = "ABCDE"
+
+  output {
+    Int xlen = length(xs)
+    Int ylen = length(ys)
+    Int zlen = length(zs)
+    Int mlen = length(m)
+    Int slen = length(s)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_length.xlen": 3,
+  "test_length.ylen": 3,
+  "test_length.zlen": 0,
+  "test_length.mlen": 2,
+  "test_length.slen": 5,
 }
 ```
 </p>
@@ -10550,7 +10846,7 @@ There is no natural or unambiguous serialization of a `Map` with a non-`String` 
 
 #### Map to Struct
 
-A `Map[X, Y]` can be converted to a `Struct` with two array members: `Array[X] keys` and `Array[Y] values`. This is the suggested approach.
+A `Map[P, Y]` can be converted to a `Struct` with two array members: `Array[X] keys` and `Array[Y] values`. This is the suggested approach.
 
 <details>
 <summary>
@@ -10607,7 +10903,7 @@ Example output:
 
 #### Map to Array
 
-A `Map[X, X]` can be converted to an array of `Pair`s. Each pair can then be converted to a serializable format using one of the methods described in the previous section. This approach is less desirable as it requires the use of a `scatter`.
+A `Map[P, P]` can be converted to an array of `Pair`s. Each pair can then be converted to a serializable format using one of the methods described in the previous section. This approach is less desirable as it requires the use of a `scatter`.
 
 <details>
 <summary>
