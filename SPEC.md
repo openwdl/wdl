@@ -1446,9 +1446,9 @@ Example output:
 
 🗑 It is also possible to assign an `Object` or `Map[String, X]` value to a `Struct` declaration. In the either case:
 
-* The value of each  `Object`/`Map` member must be coercible to the declared type of the struct member.
+* The value of each `Object`/`Map` member must be coercible to the declared type of the struct member.
 * The `Object`/`Map` must at least contain values for all of the struct's non-optional members.
-* A key in the `Object`/`Map` that does not correspond to a member of the struct is ignored.
+* An `Object`/`Map` member that does not correspond to a member of the struct is ignored.
 
 Note that the ability to assign values to `Struct` declarations other than struct literals is deprecated and will be removed in WDL 2.0.
 
