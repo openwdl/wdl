@@ -1718,7 +1718,7 @@ Two `Struct` types are considered compatible when the following are true:
 
 1. They have the same number of members.
 2. Their members' names are identical.
-3. The type of each member in the source struct is coercible to the type of the member with the same name in the target struct
+3. The type of each member in the source struct is coercible to the type of the member with the same name in the target struct.
 
 <details>
 <summary>
