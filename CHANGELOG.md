@@ -53,6 +53,8 @@ version 1.1.2
 
 + Added requirement for tests to the RFC
 
++ Clarified that `read_bool` is case-insensitive, and added an example.
+
 version 1.1.1
 ---------------------------
 
