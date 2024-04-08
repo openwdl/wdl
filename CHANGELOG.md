@@ -67,6 +67,8 @@ version 1.2.0
 
 + Relaxed the requirements on coercing object/map to struct - extra keys are allowed and ignored. Note that this *may* constitute a breaking change if you rely on a task to fail when coercing an object/map with extra keys.
 
++ Added `join_paths` function to join two or more paths.
+
 + Added allowance for conversion between `Struct` types when certain criteria are met.
 
 + Generalized `size` function to take any compound value.
