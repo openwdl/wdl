@@ -53,6 +53,8 @@ version 1.2.0
 
 + Deprecated the previously allowed behavior implied by setting `allowNestedInputs: true` where required task/subworkflow inputs could be left unsatisfied. Now all inputs either need to have a default value or have their value specified in the call inputs. Only optional task/subworkflow inputs that are not explicitly set in the call inputs may have their value set at runtime if the `allow_nested_inputs` hint is `true`.
 
++ Added the ability to access the actual values of `requirements`, `meta`, and `parameter_meta` at runtime.
+
 + Added `fpga` requirement and reserved hint for requesting FPGA resources.
 
 + Added `disks` and `gpu` reserved hints for requesting specific resources.
