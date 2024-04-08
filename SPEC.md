@@ -7045,7 +7045,7 @@ Example output:
 Boolean read_boolean(File)
 ```
 
-Reads a file that contains a single line containing only a boolean value and (optional) whitespace. If the line contains "true" or "false", that value is returned as a `Boolean`. If the file is empty or does not contain a single boolean, an error is raised.
+Reads a file that contains a single line containing only a boolean value and (optional) whitespace. If the non-whitespace content of the line is "true" or "false", that value is returned as a `Boolean`. If the file is empty or does not contain a single boolean, an error is raised. The comparison is case- and whitespace-insensitive.
 
 **Parameters**
 
