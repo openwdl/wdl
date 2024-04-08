@@ -177,6 +177,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [`cross`](#cross)
     - [`zip`](#zip)
     - [`unzip`](#unzip)
+    - [✨ `contains`](#-contains)
     - [`flatten`](#flatten)
     - [`select_first`](#select_first)
     - [`select_all`](#select_all)
@@ -1569,21 +1570,21 @@ Example output:
 
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
-| Target Type      | Source Type      | Notes/Constraints                                                                                              |
-| ---------------- | ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| `File`           | `String`         |                                                                                                                |
-| `Float`          | `Int`            | May cause overflow error                                                                                       |
-| `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                   |
-| `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                   |
-| `Array[Y]`       | `Array[X]+`      | `X` must be coercible to `Y`                                                                                   |
-| `Map[X, Z]`      | `Map[W, Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
-| `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
-| `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`         |
-| `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                  |
-| `Object`         | `Map[String, Y]` |                                                                                                                |
-| `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                     |
-| `Object`         | `Struct`         |                                                                                                                |
-| `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
+| Target Type      | Source Type      | Notes/Constraints                                                                                                                                |
+| ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `File`           | `String`         |                                                                                                                                                  |
+| `Float`          | `Int`            | May cause overflow error                                                                                                                         |
+| `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                                                     |
+| `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                                                     |
+| `Array[Y]`       | `Array[X]+`      | `X` must be coercible to `Y`                                                                                                                     |
+| `Map[X, Z]`      | `Map[W, Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                                                    |
+| `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                                                    |
+| `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`                                           |
+| `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                                                    |
+| `Object`         | `Map[String, Y]` |                                                                                                                                                  |
+| `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                                                       |
+| `Object`         | `Struct`         |                                                                                                                                                  |
+| `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types                                   |
 | `Struct`         | `Struct`         | The two `Struct` types must have members with identical names and compatible types (see [Struct-to-Struct Coercion](#struct-to-struct-coercion)) |
 
 The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
@@ -9813,6 +9814,89 @@ Example output:
   "test_unzip.is_true1": true,
   "test_unzip.is_true2": true,
   "test_unzip.is_true3": true
+}
+```
+</p>
+</details>
+
+### ✨ `contains`
+
+```
+Boolean contains(Array[P], P)
+Boolean contains(Array[P?], P?)
+```
+
+Tests whether the given array contains at least one occurrence of the given value.
+
+**Parameters**
+
+1. `Array[P]` or `Array[P?]`: an array of any primitive type.
+2. `P` or `P?`: a primitive value of the same type as the array. If the array's type is optional, then the value may also be optional.
+
+**Returns**: `true` if the array contains at least one occurrence of the value, otherwise `false`.
+
+**Example**
+
+<details>
+<summary>
+Example: test_contains.wdl
+
+```wdl
+version 1.2
+
+task null_sample {
+  command <<<
+  echo "Sample array contains a null value!"
+  >>>
+}
+
+task missing_sample {
+  input {
+    String name
+  }
+
+  command <<<
+  echo "Sample ~{name} is missing!"
+  >>>
+}
+
+workflow test_contains {
+  input {
+    Array[String?] samples
+    String name
+  }
+
+  Boolean has_null = contains(samples, None)
+  if (has_null) {
+    call null_sample
+  }
+  
+  Boolean has_missing = !contains(samples, name)
+  if (has_missing) {
+    call missing_sample { input: name }
+  }
+
+  output {
+    Boolean samples_are_valid = !(has_null || has_missing)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_contains.samples": [null, "foo"],
+  "test_contains.name": "bar"
+}
+```
+
+Example output:
+
+```json
+{
+  "test_contains.samples_are_valid": false
 }
 ```
 </p>
