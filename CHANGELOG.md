@@ -42,7 +42,6 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
-
 version 1.2.0
 ---------------------------
 
@@ -53,6 +52,8 @@ version 1.2.0
 + Added new workflow `hints` section (#543), and moved `allowNestedInputs` from workflow `meta` to `hints`
 
 + Deprecated the previously allowed behavior implied by setting `allowNestedInputs: true` where required task/subworkflow inputs could be left unsatisfied. Now all inputs either need to have a default value or have their value specified in the call inputs. Only optional task/subworkflow inputs that are not explicitly set in the call inputs may have their value set at runtime if the `allow_nested_inputs` hint is `true`.
+
++ Added the ability to access the actual values of `requirements`, `meta`, and `parameter_meta` at runtime.
 
 + Added `fpga` requirement and reserved hint for requesting FPGA resources.
 
@@ -65,6 +66,20 @@ version 1.2.0
 + Added `find`, and `matches` functions.
 
 + Added `join_paths` function to join two or more paths.
+
++ Added allowance for conversion between `Struct` types when certain criteria are met.
+
++ Generalized `size` function to take any compound value.
+
++ Added optional `default` parameter to `select_first`.
+
++ Generalized `length` function to also accept `Map`, `Object`, and `String` arguments.
+
++ Added multi-line strings. [PR 602](https://github.com/openwdl/wdl/pull/602)
+
++ Added the `Array[String] keys(Struct|Object)` function variant for getting the member names for a struct or object.
+
++ Added `values` function for getting the values from a `Map`.
 
 + Added parameters to `read_tsv` that enable it to read field names from a header row or an `Array[String]` and return an `Array[Object]`. [PR 627](https://github.com/openwdl/wdl/pull/627)
 
