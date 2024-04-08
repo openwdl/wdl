@@ -1455,7 +1455,7 @@ Note that the ability to assign values to `Struct` declarations other than struc
 
 A hidden type is one that may only be instantiated by the execution engine, and cannot be used in a declaration within a WDL file.
 
-A scoped type is one that is only be defined by the execution engine within a specific scope. A scoped type may also be hidden.
+A scoped type is one that can only be defined by the execution engine within a specific scope. A scoped type may also be hidden.
 
 The following sections enumerate the hidden and scoped types that are available in the current version of WDL. In WDL 2.0, `Object` will also become a hidden type.
 
