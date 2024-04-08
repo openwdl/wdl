@@ -9608,7 +9608,7 @@ This function is the inverse of [`flatten`](#flatten); i.e., `flatten`ing a `chu
 1. `Array[X]`: The array to split. May be empty.
 2. `Int`: The desired length of the sub-arrays. Must be > 0.
 
-**Returns**: An array of sub-arrays, where each sub-array is the same length except possibly the last one.
+**Returns**: An array of sub-arrays, where each sub-array is of length `N` except possibly the last one.
 
 <details>
 <summary>
