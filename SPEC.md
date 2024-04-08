@@ -1448,7 +1448,7 @@ Example output:
 
 * The value of each `Object`/`Map` member must be coercible to the declared type of the struct member.
 * The `Object`/`Map` must at least contain values for all of the struct's non-optional members.
-* An `Object`/`Map` member that does not correspond to a member of the struct is ignored.
+* Any `Object`/`Map` member that does not correspond to a member of the struct is ignored.
 
 Note that the ability to assign values to `Struct` declarations other than struct literals is deprecated and will be removed in WDL 2.0.
 
