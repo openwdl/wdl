@@ -137,6 +137,8 @@ Revisions to this specification are made periodically in order to correct errors
     - [`min`](#min)
     - [`max`](#max)
   - [String Functions](#string-functions)
+    - [✨ `find`](#-find)
+    - [✨ `matches`](#-matches)
     - [`sub`](#sub)
   - [File Functions](#file-functions)
     - [`basename`](#basename)
@@ -181,6 +183,8 @@ Revisions to this specification are made periodically in order to correct errors
     - [`as_pairs`](#as_pairs)
     - [`as_map`](#as_map)
     - [`keys`](#keys)
+    - [✨ `contains_key`](#-contains_key)
+    - [✨ `values`](#-values)
     - [`collect_by_key`](#collect_by_key)
   - [Other Functions](#other-functions)
     - [`defined`](#defined)
@@ -1978,6 +1982,7 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | `Int`       | `-`      | `Int`     | `Int`     |                                                          |
 | `Int`       | `*`      | `Int`     | `Int`     |                                                          |
 | `Int`       | `/`      | `Int`     | `Int`     | Integer division                                         |
+| `Int`       | `**`     | `Int`     | `Int`     | Integer exponentiation                                   |
 | `Int`       | `%`      | `Int`     | `Int`     | Integer division, return remainder                       |
 | `Int`       | `==`     | `Int`     | `Boolean` |                                                          |
 | `Int`       | `!=`     | `Int`     | `Boolean` |                                                          |
@@ -1990,6 +1995,7 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | `Int`       | `-`      | `Float`   | `Float`   |                                                          |
 | `Int`       | `*`      | `Float`   | `Float`   |                                                          |
 | `Int`       | `/`      | `Float`   | `Float`   |                                                          |
+| `Int`       | `**`     | `Float`   | `Float`   |                                                          |
 | `Int`       | `==`     | `Float`   | `Boolean` |                                                          |
 | `Int`       | `!=`     | `Float`   | `Boolean` |                                                          |
 | `Int`       | `>`      | `Float`   | `Boolean` |                                                          |
@@ -2000,6 +2006,7 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | `Float`     | `-`      | `Float`   | `Float`   |                                                          |
 | `Float`     | `*`      | `Float`   | `Float`   |                                                          |
 | `Float`     | `/`      | `Float`   | `Float`   |                                                          |
+| `Float`     | `**`     | `Float`   | `Float`   |                                                          |
 | `Float`     | `%`      | `Float`   | `Float`   |                                                          |
 | `Float`     | `==`     | `Float`   | `Boolean` |                                                          |
 | `Float`     | `!=`     | `Float`   | `Boolean` |                                                          |
@@ -2012,6 +2019,7 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | `Float`     | `-`      | `Int`     | `Float`   |                                                          |
 | `Float`     | `*`      | `Int`     | `Float`   |                                                          |
 | `Float`     | `/`      | `Int`     | `Float`   |                                                          |
+| `Float`     | `**`     | `Int`     | `Float`   |                                                          |
 | `Float`     | `%`      | `Int`     | `Float`   |                                                          |
 | `Float`     | `==`     | `Int`     | `Boolean` |                                                          |
 | `Float`     | `!=`     | `Int`     | `Boolean` |                                                          |
@@ -2193,12 +2201,13 @@ Example output:
 
 | Precedence | Operator type         | Associativity | Example      |
 | ---------- | --------------------- | ------------- | ------------ |
-| 11         | Grouping              | n/a           | `(x)`        |
-| 10         | Member Access         | left-to-right | `x.y`        |
-| 9          | Index                 | left-to-right | `x[y]`       |
-| 8          | Function Call         | left-to-right | `x(y,z,...)` |
-| 7          | Logical NOT           | right-to-left | `!x`         |
+| 12         | Grouping              | n/a           | `(x)`        |
+| 11         | Member Access         | left-to-right | `x.y`        |
+| 10         | Index                 | left-to-right | `x[y]`       |
+| 9          | Function Call         | left-to-right | `x(y,z,...)` |
+| 8          | Logical NOT           | right-to-left | `!x`         |
 |            | Unary Negation        | right-to-left | `-x`         |
+| 7          | Exponentiation        | left-to-right | `x**y`       |
 | 6          | Multiplication        | left-to-right | `x*y`        |
 |            | Division              | left-to-right | `x/y`        |
 |            | Remainder             | left-to-right | `x%y`        |
@@ -6004,6 +6013,7 @@ Example input:
 {
   "test_allow_nested_inputs.nested.name": "John"
 }
+
 ```
 
 Example output:
@@ -7161,14 +7171,127 @@ These functions operate on `String` arguments.
 
 **Restrictions**: None
 
+### ✨ `find`
+
+Given two `String` parameters `input` and `pattern`, searches for the occurrence of `pattern` within `input` and returns the first match or `None` if there are no matches. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
+
+Note that regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
+
+```wdl
+String? first_match = find("hello\tBob", "\\t")
+```
+
+**Parameters**
+
+1. `String`: the input string to search.
+2. `String`: the pattern to search for.
+
+**Returns**: The contents of the first match, or `None` if `pattern` does not match `input`.
+
+<details>
+<summary>
+Example: test_find_task.wdl
+
+```wdl
+version 1.2
+workflow find_string {
+  input {
+    String in = "hello world"
+    String pattern1 = "e..o"
+    String pattern2 = "goodbye"
+  }
+  output {
+    String? match1 = find(in, pattern1)  # "ello"
+    String? match2 = find(in, pattern2)  # None
+  }  
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_find.match1": "ello",
+  "test_matches.is_read1": null
+}
+```
+</p>
+</details>
+
+### ✨ `matches`
+
+Given two `String` parameters `input` and `pattern`, tests whether `pattern` matches `input` at least once. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
+
+To test whether `pattern` matches the entire `input`, make sure to begin and end the pattern with anchors. For example:
+
+```wdl
+Boolean full_match = matches("abc123", "^a.+3$")
+```
+
+Note that regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped. For example:
+
+```wdl
+Boolean has_tab = matches("hello\tBob", "\\t")
+```
+
+**Parameters**
+
+1. `String`: the input string to search.
+2. `String`: the pattern to search for.
+
+**Returns**: `true` if `pattern` matches `input` at least once, otherwise `false`.
+
+<details>
+<summary>
+Example: test_matches_task.wdl
+
+```wdl
+version 1.2
+workflow contains_string {
+  input {
+    File fastq
+  }
+  output {
+    Boolean is_compressed = matches(basename(fastq), "\\.(gz|zip|zstd)")
+    Boolean is_read1 = matches(basename(fastq), "_R1")
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "fastq": "sample1234_R1.fastq"
+}
+```
+
+Example output:
+
+```json
+{
+  "test_matches.is_compressed": false,
+  "test_matches.is_read1": true
+}
+```
+</p>
+</details>
+
 ### `sub`
 
 ```
 String sub(String, String, String)
 ```
 
-Given 3 String parameters `input`, `pattern`, and `replace`, this function replaces all non-overlapping occurrences of `pattern` in `input` by `replace`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) that will be evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
-
+Given three String parameters `input`, `pattern`, `replace`, this function replaces all non-overlapping occurrences of `pattern` in `input` by `replace`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped (e.g., `"\\t"`).
 
 🗑 The option for execution engines to allow other regular expression grammars besides POSIX ERE is deprecated.
@@ -7932,17 +8055,27 @@ And `/local/fs/tmp/array.txt` would contain:
 
 ```
 Array[Array[String]] read_tsv(File)
+Array[Object] read_tsv(File, true)
+Array[Object] read_tsv(File, Boolean, Array[String])
 ```
 
 Reads a tab-separated value (TSV) file as an `Array[Array[String]]` representing a table of values. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
 
-There is no requirement that the rows of the table are all the same length.
+This function has three variants:
+
+1. `Array[Array[String]] read_tsv(File, [false])`: Returns each row of the table as an `Array[String]`. There is no requirement that the rows of the table are all the same length.
+2. `Array[Object] read_tsv(File, true)`: The second parameter must be `true` and specifies that the TSV file contains a header line. Each row is returned as an `Object` with its keys determined by the header (the first line in the file) and its values as `String`s. All rows in the file must be the same length and the field names in the header row must be valid `Object` field names, or an error is raised.
+3. `Array[Object] read_tsv(File, Boolean, Array[String])`: The second parameter specifies whether the TSV file contains a header line, and the third parameter is an array of field names that is used to specify the field names to use for the returned `Object`s. If the second parameter is `true`, the specified field names override those in the file's header (i.e., the header line is ignored).
+
+If the entire contents of the file can not be read for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having access to the file, resource limitations (e.g. memory) when reading the file, and implementation-imposed file size limits.
 
 **Parameters**
 
-1. `File`: Path of the TSV file to read.
+1. `File`: The TSV file to read.
+2. `Boolean`: (Optional) Whether to treat the file's first line as a header.
+3. `Array[String]`: (Optional) An array of field names. If specified, then the second parameter is also required.
 
-**Returns**: An `Array` of rows in the TSV file, where each row is an `Array[String]` of fields.
+**Returns**: An `Array` of rows in the TSV file, where each row is an `Array[String]` of fields or an `Object` with keys determined by the second and third parameters and `String` values.
 
 <details>
 <summary>
@@ -7957,11 +8090,21 @@ task read_tsv {
       printf "row1\tvalue1\n"
       printf "row2\tvalue2\n"
       printf "row3\tvalue3\n"
-    } >> data.tsv
+    } >> data.no_headers.tsv
+
+    {
+      printf "header1\header2\n"
+      printf "row1\tvalue1\n"
+      printf "row2\tvalue2\n"
+      printf "row3\tvalue3\n"
+    } >> data.headers.tsv
   >>>
 
   output {
-    Array[Array[String]] output_table = read_tsv("data.tsv")
+    Array[Array[String]] output_table = read_tsv("data.no_headers.tsv")
+    Array[Object] output_objs1 = read_tsv("data.no_headers.tsv", false, ["name", "value"])
+    Array[Object] output_objs2 = read_tsv("data.headers.tsv", true)
+    Array[Object] output_objs3 = read_tsv("data.headers.tsv", true, ["name", "value"])
   }
 }
 ```
@@ -7981,6 +8124,48 @@ Example output:
     ["row1", "value1"],
     ["row2", "value2"],
     ["row3", "value3"]
+  ],
+  "read_tsv.output_objs1": [
+    {
+      "name": "row1",
+      "value": "value1"
+    },
+    {
+      "name": "row2",
+      "value": "value2"
+    },
+    {
+      "name": "row3",
+      "value": "value3"
+    }
+  ],
+  "read_tsv.output_objs2": [
+    {
+      "header1": "row1",
+      "header2": "value1"
+    },
+    {
+      "header1": "row2",
+      "header2": "value2"
+    },
+    {
+      "header1": "row3",
+      "header2": "value3"
+    }
+  ],  
+  "read_tsv.output_objs3": [
+    {
+      "name": "row1",
+      "row": "value1"
+    },
+    {
+      "name": "row2",
+      "row": "value2"
+    },
+    {
+      "name": "row3",
+      "row": "value3"
+    }
   ]
 }
 ```
@@ -7990,14 +8175,33 @@ Example output:
 ### `write_tsv`
 
 ```
-File write_tsv(Array[Array[String]])
+File write_tsv(Array[Array[String]]|Array[Struct])
+File write_tsv(Array[Array[String]], true, Array[String])
+File write_tsv(Array[Struct], Boolean, Array[String])
 ```
+Given an `Array` of elements, writes a tab-separated value (TSV) file with one line for each element.
 
-Writes a tab-separated value (TSV) file with one line for each element in a `Array[Array[String]]`. Each element is concatenated into a single tab-delimited string. Each line is terminated by the newline (`\n`) character. If the `Array` is empty, an empty file is written.
+There are three variants of this function:
+
+1. `File write_tsv(Array[Array[String]])`: Each element is concatenated using a tab ('\t') delimiter and written as a row in the file. There is no header row.
+
+2. `File write_tsv(Array[Array[String]], true, Array[String])`: The second argument must be `true` and the third argument provides an `Array` of column names. The column names are concatenated to create a header that is written as the first row of the file. All elements must be the same length as the header array.
+
+3. `File write_tsv(Array[Struct], [Boolean, [Array[String]]])`: Each element is a struct whose field values are concatenated in the order the fields are defined. The optional second argument specifies whether to write a header row. If it is `true`, then the header is created from the struct field names. If the second argument is `true`, then the optional third argument may be used to specify column names to use instead of the struct field names.
+
+Each line is terminated by the newline (`\n`) character. 
+
+The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
+
+If the entire contents of the file can not be written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, insufficient disk space to write the file.
+
 
 **Parameters**
 
-1. `Array[Array[String]]`: An array of rows, where each row is an array of column values.
+1. `Array[Array[String]] | Array[Struct]`: An array of rows, where each row is either an `Array` of column values or a struct whose values are the column values.
+2. `Boolean`: (Optional) Whether to write a header row.
+3. `Array[String]`: An array of column names. If the first argument is `Array[Array[String]]` and the second argument is `true` then it is required, otherwise it is optional. Ignored if the second argument is `false`.
+
 
 **Returns**: A `File`.
 
@@ -8011,14 +8215,37 @@ version 1.2
 task write_tsv {
   input {
     Array[Array[String]] array = [["one", "two", "three"], ["un", "deux", "trois"]]
+    Array[Numbers] structs = [
+      Numbers {
+        first: "one",
+        second: "two",
+        third: "three"
+      },
+      Numbers {
+        first: "un",
+        second: "deux",
+        third: "trois"
+      }
+    ]
   }
 
   command <<<
-    cut -f 1 ~{write_tsv(array)}
+    cut -f 1 ~{write_tsv(array)} >> array_no_header.txt
+    cut -f 1 ~{write_tsv(array, true, ["first", "second", "third"])} > array_header.txt
+    cut -f 1 ~{write_tsv(structs)} >> structs_default.txt
+    cut -f 2 ~{write_tsv(structs, false)} >> structs_no_header.txt
+    cut -f 2 ~{write_tsv(structs, true)} >> structs_header.txt
+    cut -f 3 ~{write_tsv(structs, true, ["no1", "no2", "no3"])} >> structs_user_header.txt
   >>>
 
   output {
-    Array[String] ones = read_lines(stdout())
+    Array[String] array_no_header = read_lines("array_no_header.txt")
+    Array[String] array_header = read_lines("array_header.txt")
+    Array[String] structs_default = read_lines("structs_default.txt")
+    Array[String] structs_no_header = read_lines("structs_no_header.txt")
+    Array[String] structs_header = read_lines("structs_header.txt")
+    Array[String] structs_user_header = read_lines("structs_user_header.txt")
+
   }
   
   requirements {
@@ -8038,7 +8265,13 @@ Example output:
 
 ```json
 {
-  "write_tsv.ones": ["one", "un"]
+  "write_tsv.array_no_header": ["one", "un"],
+  "write_tsv.array_header": ["first", "one", "un"],
+  "write_tsv.structs_default": ["first", "one", "un"], 
+  "write_tsv.structs_no_header": ["two", "deux"], 
+  "write_tsv.structs_header": ["second", "two", "deux"], 
+  "write_tsv.structs_user_header": ["no3", "three", "trois"], 
+
 }
 ```
 </p>
@@ -8385,6 +8618,7 @@ CODE
 
 And `/local/fs/tmp/map.json` would contain:
 
+Each line is terminated by the newline (`\n`) character. 
 ```json
 {
   "key1": "value1",
@@ -9863,15 +10097,20 @@ Test config:
 
 ```
 Array[P] keys(Map[P, Y])
+Array[String] keys(Struct|Object)
 ```
 
-Creates an `Array` of the keys from the input `Map`, in the same order as the elements in the map.
+Given a key-value type collection (`Map`, `Struct`, or `Object`), returns an `Array` of the keys from the input collection, in the same order as the elements in the collection.
+
+When the argument is a `Struct`, the returned array will contain the keys in the same order they appear in the struct definition. When the argument is an `Object`, the returned array has no guaranteed order.
+
+When the input `Map` or `Object` is empty, an empty array is returned.
 
 **Parameters**
 
-1. `Map[P, Y]`: `Map` from which to extract keys.
+1. `Map[P, Y]`|`Struct`|`Object`: Collection from which to extract keys.
 
-**Returns**: `Array[P]` of the input `Map`s keys.
+**Returns**: `Array[P]` of the input collection's keys. If the input is a `Struct` or `Object`, then the returned array will be of type `Array[String]`.
 
 <details>
 <summary>
@@ -9880,12 +10119,21 @@ Example: test_keys.wdl
 ```wdl
 version 1.2
 
+struct Name {
+  String first
+  String last
+}
+
 workflow test_keys {
   input {
-    Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
+    Map[String, Int] x = {"a": 1, "b": 2, "c": 3}
     Map[String, Pair[File, File]] str_to_files = {
       "a": ("a.bam", "a.bai"), 
       "b": ("b.bam", "b.bai")
+    }
+    Name name = Name {
+      first: "John",
+      last: "Doe"
     }
   }
 
@@ -9898,6 +10146,7 @@ workflow test_keys {
   output {
     Boolean is_true1 = keys(x) == ["a", "b", "c"]
     Boolean is_true2 = str_to_files_keys == keys(str_to_files)
+    Boolean is_true3 = keys(name) == ["first", "last"]
   }
 }
 ```
@@ -9914,7 +10163,175 @@ Example output:
 ```json
 {
   "test_keys.is_true1": true,
-  "test_keys.is_true2": true
+  "test_keys.is_true2": true,
+  "test_keys.is_true3": true
+}
+```
+</p>
+</details>
+
+### ✨ `contains_key`
+
+```
+* Boolean contains_key(Map[P, Y], P)
+* Boolean contains_key(Object, String)
+* Boolean contains_key(Map[String, Y]|Struct|Object, Array[String])
+```
+
+Given a key-value type collection (`Map`, `Struct`, or `Object`) and a key, tests whether the collection contains an entry with the given key.
+
+This function has thre variants:
+
+1. `Boolean contains_key(Map[P, Y], P)`: Tests whether the `Map` has an entry with the given key. If `P` is an optional type (e.g., `String?`), then the second argument may be `None`.
+2. `Boolean contains_key(Object, String)`: Tests whether the `Object` has an entry with the given name.
+3. `Boolean contains_key(Map[String, Y]|Struct|Object, Array[String])`: Tests recursively for the presence of a compound key within a nested collection.
+
+For the third variant, the first argument is a collection that may be nested to any level, i.e., contain values that are collections, which themselves may contain collections, and so on. The second argument is an array of keys that are resolved recursively. If the value associated with any except the last key in the array is `None` or not a collection type, this function returns `false`.
+
+For example, if the first argument is a `Map[String, Map[String, Int]]` and the second argument is `["foo", "bar"]`, then the outer `Map` is tested for the presence of key "foo", and if it is present, then its value is tested for the presence of key "bar". This only tests for the presence of the named element, *not* whether or not it is `defined`.
+
+**Parameters**
+
+1. `Map[P, Y]`|`Struct`|`Object`: Collection to search for the key.
+2. `P|Array[String]`: The key to search. If the first argument is a `Map`, then the key must be of the same type as the `Map`'s key type. If the `Map`'s key type is optional then the key may also be optional. If the first argument is a `Map[String, Y]`, `Struct`, or `Object`, then the key may be either a `String` or `Array[String]`.
+
+**Returns**: `true` if the collection contains the key, otherwise false.
+
+**Example**
+
+<details>
+  <summary>
+  Example: test_contains_key.wdl
+  
+  ```wdl
+  version 1.2
+
+  struct Person {
+    String name
+    Map[String, String]? details
+  }
+
+  workflow test_contains_key {
+    input {
+      Map[String, Int] m
+      String key1
+      String key2
+      Person p1
+      Person p2
+    }
+
+    output {
+      Int? i1 = m[s1] if contains_key(m, key1) else None
+      Int? i2 = m[s2] if contains_key(m, key2) else None
+      String? phone1 = p1.details["phone"] if contains_key(p1, ["details", "phone"]) else None
+      String? phone2 = p2.details["phone"] if contains_key(p2, ["details", "phone"]) else None
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+
+  ```json
+  {
+    "test_contains_key.m": {"a": 1, "b": 2},
+    "test_contains_key.key1": "a",
+    "test_contains_key.key2": "c",
+    "test_contains_key.p1": {
+      "name": "John",
+      "details": {
+        "phone": "123-456-7890"
+      }
+    },
+    "test_contains_key.p2": {
+      "name": "Agent X"
+    }
+  }
+  ```
+   
+  Example output:
+
+  ```json
+  {
+    "test_contains_key.i1": 1,
+    "test_contains_key.i2": null,
+    "test_contains_key.phone1": "123-456-7890",
+    "test_contains_key.phone2": null,
+  }
+  ``` 
+  </p>
+</details>
+
+### ✨ `values`
+
+```
+Array[Y] values(Map[P, Y])
+```
+
+Returns an `Array` of the values from the input `Map`, in the same order as the elements in the map. If the map is empty, an empty array is returned.
+
+**Parameters**
+
+1. `Map[P, Y]`: `Map` from which to extract values.
+
+**Returns**: `Array[Y]` of the input `Map`s values.
+
+**Example**
+
+<details>
+<summary>
+Example: test_values.wdl
+
+```wdl
+version 1.2
+
+task add {
+  input {
+    Int x
+    Int y
+  }
+
+  Int z = x + y
+
+  command <<<
+  echo "~{x} + ~{y} = ~{z}"
+  >>>
+
+  output {
+    Int sum = z
+  }
+}
+
+workflow test_values {
+  input {
+    Map[String, Pair[Int, Int]] str_to_ints = {
+      "a": (1, 2),
+      "b": (3, 4)
+    }
+  }
+  
+  scatter (files in values(str_to_files)) {
+    call add { input: x=ints.left, y=ints.right }
+  }
+  
+  output {
+    Array[Int] sums = add.sum
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test.values.sums": [3, 7]
 }
 ```
 </p>
@@ -10318,7 +10735,7 @@ There is no natural or unambiguous serialization of a `Map` with a non-`String` 
 
 #### Map to Struct
 
-A `Map[X, Y]` can be converted to a `Struct` with two array members: `Array[X] keys` and `Array[Y] values`. This is the suggested approach.
+A `Map[P, Y]` can be converted to a `Struct` with two array members: `Array[X] keys` and `Array[Y] values`. This is the suggested approach.
 
 <details>
 <summary>
@@ -10375,7 +10792,7 @@ Example output:
 
 #### Map to Array
 
-A `Map[X, X]` can be converted to an array of `Pair`s. Each pair can then be converted to a serializable format using one of the methods described in the previous section. This approach is less desirable as it requires the use of a `scatter`.
+A `Map[P, P]` can be converted to an array of `Pair`s. Each pair can then be converted to a serializable format using one of the methods described in the previous section. This approach is less desirable as it requires the use of a `scatter`.
 
 <details>
 <summary>
