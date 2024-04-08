@@ -51,6 +51,9 @@ version 1.1.2
 
 + Clarify short-circuiting of boolean expressions (#199)
 
++ Clarifies number of sections allowed within `task` and `workflow` blocks.
+  [PR 598](https://github.com/openwdl/wdl/pull/598) by @claymcleod
+
 version 1.1.1
 ---------------------------
 
