@@ -7547,7 +7547,7 @@ Example output:
 ### ✨ `join_paths`
 
 ```
-File join_paths(File|String, String)
+File join_paths(File, String)
 File join_paths(File, Array[String]+)
 File join_paths(Array[String]+)
 ```
@@ -7556,16 +7556,18 @@ Joins together two or more paths into an absolute path in the host filesystem.
 
 There are three variants of this function:
 
-1. `File join_paths(File|String, String)`: Joins together exactly two paths. The first path may be either absolute or relative and must specify a directory; the second path is relative to the first path and may specify a file or directory.
+1. `File join_paths(File, String)`: Joins together exactly two paths. The first path may be either absolute or relative and must specify a directory; the second path is relative to the first path and may specify a file or directory.
 2. `File join_paths(File, Array[String]+)`: Joins together any number of relative paths with a base path. The first argument may be either an absolute or a relative path and must specify a directory. The paths in the second array argument must all be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
 3. `File join_paths(Array[String]+)`: Joins together any number of paths. The array must not be empty. The *first* element of the array may be either absolute or relative; subsequent path(s) must be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
 
-An absolute path starts with `/` and indicates that the path is relative to the root of the container in which the task is executed. A relative path does not start with `/` and indicates the path is relative to its parent directory. It is up to the execution engine to determine which directory to use as the parent when resolving relative paths; by default it is the working directory in which the task is executed.
+An absolute path starts with `/` and indicates that the path is relative to the root of the environment in which the task is executed. Only the first path may be absolute. If any subsequent paths are absolute, it is an error.
+
+A relative path does not start with `/` and indicates the path is relative to its parent directory. It is up to the execution engine to determine which directory to use as the parent when resolving relative paths; by default it is the working directory in which the task is executed.
 
 **Parameters**
 
-1. `File|String|Array[String]+`: Either a path or an array of paths.
-2. `String|Array[String]+`: A relative path or paths; only allowed if the first argument is not an array.
+1. `File|Array[String]+`: Either a path or an array of paths.
+2. `String|Array[String]+`: A relative path or paths; only allowed if the first argument is a `File`.
 
 **Returns**: A `File` representing an absolute path that results from joining all the paths in order (left-to-right), and resolving the resulting path against the default parent directory if it is relative.
 
@@ -7591,7 +7593,8 @@ task resolve_paths_task {
   File bin2 = join_paths(abs_str, [rel_str_dir, rel_file])
   File bin3 = join_paths([abs_str, rel_str_dir, rel_file])
   
-  # this resolves to '<working dir>/mydir/mydata.txt'
+  # the default behavior is that this resolves to 
+  # '<working dir>/mydir/mydata.txt'
   File data = join_paths(rel_dir_file, rel_str)
   
   # this resolves to '<working dir>/bin/echo', which is non-existent
