@@ -2038,7 +2038,7 @@ Example output:
 
 WDL provides the standard unary and binary mathematical and logical operators. The following tables list the valid operand and result type combinations for each operator. Using an operator with unsupported types results in an error.
 
-In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is first coerced to `Float`, and the result type is `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by a `Float`. A `Float` can be converted to `Int` with the [`ceil`](#ceil), [`round`](#round), or [`floor`](#floor) functions.
+In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is first is coerced to `Float`, and the result type is `Float`. This may result in loss of precision, for example if the `Int` is too large to be represented exactly by a `Float`. A `Float` can be converted to `Int` with the [`ceil`](#ceil), [`round`](#round), or [`floor`](#floor) functions.
 
 ##### Unary Operators
 
