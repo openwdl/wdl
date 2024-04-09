@@ -280,7 +280,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
     }
 
     call hello_task {
-      input: infile, pattern
+      infile, pattern
     }
 
     output {
@@ -356,9 +356,8 @@ WDL also provides features for implementing more complex workflows. For example,
     
     scatter (path in files) {
       call hello.hello_task {
-        input: 
-          infile = path,
-          pattern = pattern
+        infile = path,
+        pattern = pattern
       }
     }
 
@@ -456,7 +455,7 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
     }
 
     # You can have comments anywhere in the workflow
-    call task_with_comments { input: number }
+    call task_with_comments { number }
     
     output { # You can also put comments after braces
       Int result = task_with_comments.result
@@ -1894,16 +1893,16 @@ task count_lines {
 
 workflow task_outputs {
   call greet as x {
-    input: name="John"
+    name="John"
   }
   
   call greet as y {
-    input: name="Sarah"
+    name="Sarah"
   }
 
   Array[String] greetings = [x.greeting, y.greeting]
   call count_lines {
-    input: array=greetings
+    array=greetings
   }
 
   output {
@@ -2465,7 +2464,7 @@ workflow ternary {
     Boolean morning
   }
 
-  call mem { input: array = ["x", "y", "z"] }
+  call mem { array = ["x", "y", "z"] }
 
   output {
     # Choose whether to say "good morning" or "good afternoon"
@@ -3229,11 +3228,11 @@ workflow wf {
 
   # file_size is from "http://example.com/lib/stdlib"
   call stdlib.file_size {
-    input: file=bam_file
+    file=bam_file
   }
   
   call analysis.my_analysis_task {
-    input: size=file_size.bytes, file=bam_file
+    size=file_size.bytes, file=bam_file
   }
 }
 ```
@@ -3355,11 +3354,11 @@ workflow import_structs {
   }
 
   call person_struct.greet_person {
-    input: person = patient
+    person = patient
   }
 
   call calculate_bill {
-    input: doctor = doctor, patient = patient
+    doctor = doctor, patient = patient
   }
 
   output {
@@ -3677,15 +3676,14 @@ workflow optional_with_default {
   
   if (use_salutation) {
     call say_hello as hello1 { 
-      input: name = name 
+      name = name 
     }
   }
 
   if (!use_salutation) {
-    call say_hello as hello2 { 
-      input: 
-        name = name,
-        salutation = None 
+    call say_hello as hello2 {
+      name = name,
+      salutation = None 
     }
   }
 
@@ -3787,9 +3785,8 @@ task test {
 
 workflow private_declaration_fail {
   call test {
-    input:
-      i = 1,         # this is fine - "i" is in the input section
-      s = "goodbye"  # error! "s" is private
+    i = 1,         # this is fine - "i" is in the input section
+    s = "goodbye"  # error! "s" is private
   }
 
   output {
@@ -5681,7 +5678,7 @@ workflow name {
  
   # there may be any number of (potentially nested) 
   # calls, scatters, or conditionals
-  call target { input: ... }
+  call target { ... }
   scatter (i in collection) { ... }
   if (condition) { ... }
 
@@ -5749,8 +5746,8 @@ workflow input_ref_call {
     Int y = d1.out
   }
 
-  call double as d1 { input: int_in = x }
-  call double as d2 { input: int_in = y }
+  call double as d1 { int_in = x }
+  call double as d2 { int_in = y }
 
   output {
     Int result = d2.out
@@ -5811,8 +5808,8 @@ workflow call_imported_task {
     Int y = d1.out
   }
 
-  call ns1.double as d1 { input: int_in = x }
-  call ns1.double as d2 { input: int_in = y }
+  call ns1.double as d1 { int_in = x }
+  call ns1.double as d2 { int_in = y }
 
   output {
     Int result = d2.out
@@ -5875,13 +5872,13 @@ workflow main {
 
   call echo
   call echo as echo2
-  call other_wf.foobar { input: infile = echo2.results }
-  call other_wf.other { input: b = true, f = echo2.results }
-  call other_wf.other as other2 { input: b = false }
+  call other_wf.foobar { infile = echo2.results }
+  call other_wf.other { b = true, f = echo2.results }
+  call other_wf.other as other2 { b = false }
   
   scatter(x in arr) {
     call echo as scattered_echo {
-      input: msg = x
+      msg = x
     }
     String scattered_echo_results = read_string(scattered_echo.results)
   }
@@ -5945,7 +5942,7 @@ workflow other {
   }
 
   if (b && defined(f)) {
-    call foobar { input: infile = select_first([f]) }
+    call foobar { infile = select_first([f]) }
   }
 
   output {
@@ -6075,7 +6072,7 @@ task nested {
 
 workflow test_allow_nested_inputs {
   call nested {
-    input: greeting = "Hello"
+    greeting = "Hello"
   }
 
   output {
@@ -6174,9 +6171,9 @@ A workflow calls other tasks/workflows via the `call` keyword. A `call` is follo
 
 Each `call` must be uniquely identifiable. By default, the `call`'s unique identifier is the task or subworkflow name (e.g., `call foo` would be referenced by name `foo`). However, to `call foo` multiple times in the same workflow, it is necessary to give all except one of the `call` statements a unique alias using the `as` clause, e.g., `call foo as bar`.
 
-A `call` has an optional body in braces (`{}`). The only element that may appear in the call body is the `input:` keyword, followed by an optional, comma-delimited list of inputs to the call. A `call` must, at a minimum, provide values for all of the task/subworkflow's required inputs, and each input value/expression must match the type of the task/subworkflow's corresponding input parameter. An input value may be any valid expression, not just a reference to another call output. If a task has no required parameters, then the `call` body may be empty or omitted.
+A `call` has an optional body in braces (`{}`), which may contain a comma-delimited list of inputs to the call. A `call` must, at a minimum, provide values for all of the task/subworkflow's required inputs, and each input value/expression must match the type of the task/subworkflow's corresponding input parameter. An input value may be any valid expression, not just a reference to another call output. If a task has no required parameters, then the `call` body may be empty or omitted.
 
-If a call input has the same name as a declaration from the current scope, the name of the input may appear alone (without an expression) to implicitly bind the value of that declaration. For example, if a workflow and task both have inputs `x` and `z` of the same types, then `call mytask {input: x, y=b, z}` is equivalent to `call mytask {input: x=x, y=b, z=z}`.
+If a call input has the same name as a declaration from the current scope, the name of the input may appear alone (without an expression) to implicitly bind the value of that declaration. For example, if a workflow and task both have inputs `x` and `z` of the same types, then `call mytask {x, y=b, z}` is equivalent to `call mytask {x=x, y=b, z=z}`.
 
 <details>
 <summary>
@@ -6216,19 +6213,18 @@ workflow call_example {
 
   # Calls repeat with one required input - it is okay to not
   # specify a value for repeat.opt_string since it is optional.
-  call repeat { input: i = 3 }
+  call repeat { i = 3 }
 
   # Calls repeat a second time, this time with both inputs.
   # We need to give this one an alias to avoid name-collision.
   call repeat as repeat2 {
-    input:
-      i = i * 2,
-      opt_string = s
+    i = i * 2,
+    opt_string = s
   }
 
   # Calls repeat with one required input using the abbreviated 
   # syntax for `i`.
-  call repeat as repeat3 { input: i, opt_string = s }
+  call repeat as repeat3 { i, opt_string = s }
 
   # Calls a workflow imported from lib with no inputs.
   call lib.other
@@ -6269,6 +6265,68 @@ Example output:
 </p>
 </details>
 
+For historical reasons, the keyword `input:` may optionally precede the list of inputs inside the braces. In the following example, all the `call` statements are equivalent.
+
+<details>
+<summary>
+Example: test_input_keyword.wdl
+
+```wdl
+version 1.2
+
+import "call_example.wdl" as lib
+
+workflow test_input_keyword {
+  input {
+    Int i
+  }
+
+  # These three calls are equivalent
+  call lib.repeat as rep1 { i }
+
+  call lib.repeat as rep2 { i = i}
+
+  call lib.repeat as rep3 {
+    input:  # optional (for backward compatibility)
+      i
+  }
+
+  call lib.repeat as rep4 {
+    input:  # optional (for backward compatibility)
+      i = i
+  }
+
+  output {
+    Array[String] lines1 = rep1.lines
+    Array[String] lines2 = rep2.lines
+    Array[String] lines3 = rep3.lines
+    Array[String] lines4 = rep4.lines
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_input_keyword.i": 2
+}
+```
+
+Example output:
+
+```json
+{
+  "test_input_keyword.lines1": ["default", "default"],
+  "test_input_keyword.lines2": ["default", "default"],
+  "test_input_keyword.lines3": ["default", "default"],
+  "test_input_keyword.lines4": ["default", "default"]
+}
+```
+</p>
+</details>
+
 The execution engine may execute a `call` as soon as all its inputs are available. If `call x`'s inputs are based on `call y`'s outputs (i.e., `x` depends on `y`), `x` can be run as soon as - but not before - `y` has completed. 
 
 An `after` clause can be used to create an explicit dependency between `x` and `y` (i.e., one that isn't based on the availability of `y`'s outputs). For example, `call x after y after z`. An explicit dependency is only required if `x` must not execute until after `y` and `x` doesn't already depend on output from `y`.
@@ -6284,20 +6342,19 @@ import "call_example.wdl" as lib
 
 workflow test_after {
   # Call repeat
-  call lib.repeat { input: i = 2, opt_string = "hello" }
+  call lib.repeat { i = 2, opt_string = "hello" }
 
   # Call `repeat` again with the output from the first call.
   # This call will wait until `repeat` is finished.
   call lib.repeat as repeat2 {
-    input:
-      i = 1,
-      opt_string = sep(" ", repeat.lines)
+    i = 1,
+    opt_string = sep(" ", repeat.lines)
   }
 
   # Call `repeat` again. This call does not depend on the output 
   # from an earlier call, but we specify explicitly that this 
   # task must wait until `repeat` is complete before executing.
-  call lib.repeat as repeat3 after repeat { input: i = 3 }
+  call lib.repeat as repeat3 after repeat { i = 3 }
 
   output {
     Array[String] lines1 = repeat.lines
@@ -6354,7 +6411,7 @@ workflow copy_input {
     String name
   }
 
-  call greet { input: greeting = "Hello ~{name}" }
+  call greet { greeting = "Hello ~{name}" }
   
   output {
     String greeting = greet.greeting_out
@@ -6444,20 +6501,18 @@ workflow allow_nested {
   }
 
   call lib.repeat {
-    input:
-      i = int_val,
-      opt_string = msg1
+    i = int_val,
+    opt_string = msg1
   }
 
   call lib.repeat as repeat2 {
-    input:
-      # Note: the default value of `0` for the `i` input causes the task to fail
-      opt_string = msg2
+    # Note: the default value of `0` for the `i` input causes the task to fail
+    opt_string = msg2
   }
 
   scatter (i in my_ints) {
     call inc {
-      input: y=i, ref_file=ref_file
+      y=i, ref_file=ref_file
     }
   }
 
@@ -6516,7 +6571,7 @@ workflow call_subworkflow {
   }
 
   # error! A workflow can't specify a nested input for a subworkflow's call.
-  call copy.copy_input { input: greet.greeting = "hola" }
+  call copy.copy_input { greet.greeting = "hola" }
 }
 ```
 </summary>
@@ -6581,7 +6636,7 @@ workflow test_scatter {
   scatter (name in name_array) {
     # these statements are evaluated for each different value of `name`,s
     String greeting = "~{salutation} ~{name}"
-    call say_hello { input: greeting = greeting }
+    call say_hello { greeting = greeting }
   }
 
   output {
@@ -6663,19 +6718,18 @@ workflow nested_scatter {
     String honorific = honorifics[name_and_index.right % 2]
     
     call make_name {
-      input:
-        first = names.left,
-        last = names.right
+      first = names.left,
+      last = names.right
     }
 
     scatter (salutation in salutations) {
       # `names`, and `salutation` are all accessible here
       String short_greeting = "~{salutation} ~{honorific} ~{names.left}"
-      call scat.say_hello { input: greeting = short_greeting }
+      call scat.say_hello { greeting = short_greeting }
 
       # the output of `make_name` is also accessible
       String long_greeting = "~{salutation} ~{honorific} ~{make_name.name}"
-      call scat.say_hello as say_hello_long { input: greeting = long_greeting }
+      call scat.say_hello as say_hello_long { greeting = long_greeting }
 
       # within the scatter body, when we access the output of the
       # say_hello call, we get a String
@@ -6774,7 +6828,7 @@ workflow test_conditional {
     Int j = 2
 
     scatter (i in scatter_range) {
-      call gt_three { input: i = i + j }
+      call gt_three { i = i + j }
       
       if (gt_three.valid) {
         Int result = i * j
@@ -9552,7 +9606,7 @@ workflow test_range {
 
   Array[Int] indexes = range(i)
   scatter (idx in indexes) {
-    call double { input: n = idx }
+    call double { n = idx }
   }
 
   output {
@@ -10448,7 +10502,7 @@ workflow test_values {
   }
   
   scatter (files in values(str_to_files)) {
-    call add { input: x=ints.left, y=ints.right }
+    call add { x=ints.left, y=ints.right }
   }
   
   output {
@@ -10566,7 +10620,7 @@ workflow is_defined {
   }
 
   if (defined(name)) {
-    call say_hello { input: name = select_first([name]) }
+    call say_hello { name = select_first([name]) }
   }
 
   output {
@@ -11370,7 +11424,7 @@ workflow serde_pair {
 
   scatter (item in as_pairs(to_tail)) {
     call tail {
-      input: to_tail = item
+      to_tail = item
     }
     Pair[String, String]? two_lines = 
       if item.right >= 2 then (tail.lines[0], tail.lines[1]) else None
@@ -11439,7 +11493,7 @@ workflow serde_homogeneous_pair {
   }
 
   scatter (pair in as_pairs(int_strings)) {
-    call serde_int_strings { input: int_strings = pair }
+    call serde_int_strings { int_strings = pair }
   }
 
   output {
@@ -11539,9 +11593,9 @@ workflow serialize_map {
     String arg_str = "~{arg.left}=~{arg.right}"
   }
 
-  call grep1 { input: infile, pattern, args = arg_str }
+  call grep1 { infile, pattern, args = arg_str }
 
-  call grep2 { input: infile, pattern, args }
+  call grep2 { infile, pattern, args }
 
   output {
     Array[String] results1 = grep1.results
@@ -11857,10 +11911,9 @@ workflow my_workflow {
     Int x = 2
   }
 
-  call my_task { 
-    input:
-      x = x,
-      f = file
+  call my_task {
+    x = x,
+    f = file
   }
 
   output {
@@ -11894,9 +11947,8 @@ workflow my_workflow {
 
   scatter (x in xs) {
     call my_task {
-      input:
-        x = x,
-        f = file
+      x = x,
+      f = file
     }
 
     Int z = my_task.z
@@ -11964,7 +12016,7 @@ workflow cyclic {
 
   Int j = mytask.out - 2
 
-  call mytask { input: inp = i }
+  call mytask { inp = i }
 }
 ```
 
@@ -12084,9 +12136,8 @@ workflow my_workflow {
   }
 
   call my_task {
-    input:
-      x = x_modified,
-      f = file
+    x = x_modified,
+    f = file
   }
 
   Int x_modified = x

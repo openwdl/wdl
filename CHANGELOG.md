@@ -85,6 +85,9 @@ version 1.2.0
 
 + Added parameters to `read_tsv` that enable it to read field names from a header row or an `Array[String]` and return an `Array[Object]`. [PR 627](https://github.com/openwdl/wdl/pull/627)
 
++ Make `input:` optional in call bodies.
+  [PR 524](https://github.com/openwdl/wdl/pull/524) by @mlin.
+
 version 1.1.1
 ---------------------------
 
