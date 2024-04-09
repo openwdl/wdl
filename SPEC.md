@@ -143,6 +143,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [`sub`](#sub)
   - [File Functions](#file-functions)
     - [`basename`](#basename)
+    - [✨ `join_paths`](#-join_paths)
     - [`glob`](#glob)
       - [Non-standard Bash](#non-standard-bash)
     - [`size`](#size)
@@ -1446,9 +1447,9 @@ Example output:
 
 🗑 It is also possible to assign an `Object` or `Map[String, X]` value to a `Struct` declaration. In the either case:
 
-* The `Object`/`Map` must not have any members that are not declared for the struct.
-* The value of each object/map member must be coercible to the declared type of the struct member.
+* The value of each `Object`/`Map` member must be coercible to the declared type of the struct member.
 * The `Object`/`Map` must at least contain values for all of the struct's non-optional members.
+* Any `Object`/`Map` member that does not correspond to a member of the struct is ignored.
 
 Note that the ability to assign values to `Struct` declarations other than struct literals is deprecated and will be removed in WDL 2.0.
 
@@ -1481,6 +1482,14 @@ The [`task` type](#runtime-access-to-requirements-hints-and-metadata) is a hidde
 WDL has some limited facilities for converting a value of one type to another type. Some of these are explicitly provided by [standard library](#standard-library) functions, while others are [implicit](#type-coercion). When converting between types, it is best to be explicit whenever possible, even if an implicit conversion is allowed.
 
 The execution engine is also responsible for converting (or "serializing") input values when constructing commands, as well as "deserializing" command outputs. For more information, see the [Command Section](#command-section) and the more extensive Appendix on [WDL Value Serialization and Deserialization](#appendix-a-wdl-value-serialization-and-deserialization).
+
+Note that type conversion is non-destructive - the converted value can be considered to be a new value that copies whatever properties of the original value are supported by the target type. If the original value was assigned to a variable, then that variable remains unchanged after the type conversion. For example:
+
+```
+String path = "/path/to/file"
+File file = path
+String new_path = "~{path}_2"  # can still use `path` here
+```
 
 ##### Primitive Conversion to String 
 
@@ -7549,6 +7558,96 @@ Example output:
   "test_basename.is_true2": true
 }
 ```
+</p>
+</details>
+
+### ✨ `join_paths`
+
+```
+File join_paths(File, String)
+File join_paths(File, Array[String]+)
+File join_paths(Array[String]+)
+```
+
+Joins together two or more paths into an absolute path in the host filesystem.
+
+There are three variants of this function:
+
+1. `File join_paths(File, String)`: Joins together exactly two paths. The first path may be either absolute or relative and must specify a directory; the second path is relative to the first path and may specify a file or directory.
+2. `File join_paths(File, Array[String]+)`: Joins together any number of relative paths with a base path. The first argument may be either an absolute or a relative path and must specify a directory. The paths in the second array argument must all be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
+3. `File join_paths(Array[String]+)`: Joins together any number of paths. The array must not be empty. The *first* element of the array may be either absolute or relative; subsequent path(s) must be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
+
+An absolute path starts with `/` and indicates that the path is relative to the root of the environment in which the task is executed. Only the first path may be absolute. If any subsequent paths are absolute, it is an error.
+
+A relative path does not start with `/` and indicates the path is relative to its parent directory. It is up to the execution engine to determine which directory to use as the parent when resolving relative paths; by default it is the working directory in which the task is executed.
+
+**Parameters**
+
+1. `File|Array[String]+`: Either a path or an array of paths.
+2. `String|Array[String]+`: A relative path or paths; only allowed if the first argument is a `File`.
+
+**Returns**: A `File` representing an absolute path that results from joining all the paths in order (left-to-right), and resolving the resulting path against the default parent directory if it is relative.
+
+<details>
+<summary>
+Example: join_paths_task.wdl
+
+```wdl
+version 1.2
+
+task resolve_paths_task {
+  input {
+    File abs_file = "/usr"
+    String abs_str = "/usr"
+    String rel_dir_str = "bin"
+    File rel_file = "echo"
+    File rel_dir_file = "mydir"
+    String rel_str = "mydata.txt"
+  }
+
+  # these are all equivalent to '/usr/bin/echo'
+  File bin1 = join_paths(abs_file, [rel_str_dir, rel_file])
+  File bin2 = join_paths(abs_str, [rel_str_dir, rel_file])
+  File bin3 = join_paths([abs_str, rel_str_dir, rel_file])
+  
+  # the default behavior is that this resolves to 
+  # '<working dir>/mydir/mydata.txt'
+  File data = join_paths(rel_dir_file, rel_str)
+  
+  # this resolves to '<working dir>/bin/echo', which is non-existent
+  File doesnt_exist = join_paths([rel_dir_str, rel_file])
+  command <<<
+    mkdir ~{rel_dir_file}
+    ~{bin1} -n "hello" > ~{data}
+  >>>
+
+  output {
+    Boolean bins_equal = (bin1 == bin2) && (bin1 == bin3)
+    String result = read_string(data)
+    File? missing_file = doesnt_exist
+  }
+  
+  runtime {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "join_paths_task.bins_equal": true,
+  "join_paths_task.result": "hello"
+}
+``` 
 </p>
 </details>
 
