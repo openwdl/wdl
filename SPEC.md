@@ -3110,7 +3110,7 @@ A `Struct` type is a user-defined data type. Structs enable the creation of comp
 
 A struct is defined using the `struct` keyword, followed by a name that is unique within the WDL document, and a body containing the member declarations. A struct member may be of any type, including compound types and even other `Struct` types. A struct member may be optional. Declarations in a struct body differ from those in a task or workflow in that struct members cannot have default initializers.
 
-A `struct` definition may include a `parameter_meta` section with metadata about any of the struct's members. This section has identical sematics to [task and workflow `parameter_meta`](#parameter-metadata-section). Any key in this section *must* correspond to a member of the `struct`.
+A `struct` definition may include a `meta` section with metadata about the struct, and a `parameter_meta` section with metadata about any of the struct's members. These sections have identical sematics to task and workflow [`meta` and `parameter_meta` sections](#metadata-sections). Any key in the `parameter_meta` section *must* correspond to a member of the `struct`.
 
 <details>
 <summary>
@@ -3135,6 +3135,10 @@ struct Person {
   Int age
   Income? income
   Map[String, File] assay_data
+  
+  meta {
+    description: "Encapsulates data about a person"
+  }
 
   paramter_meta {
     name: "The person's name"
