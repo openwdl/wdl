@@ -563,7 +563,7 @@ The following primitive types exist in WDL:
     >>>
 
     output {
-      File x = "test/hello.txt"
+      File x = "testdir/hello.txt"
       Directory d = "testdir"
     }
   }
