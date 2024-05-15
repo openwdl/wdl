@@ -28,6 +28,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Primitive Types](#primitive-types)
         - [Strings](#strings)
           - [Multi-line Strings](#multi-line-strings)
+        - [Files and Directories](#files-and-directories)
       - [Optional Types and None](#optional-types-and-none)
       - [Compound Types](#compound-types)
         - [Array\[X\]](#arrayx)
@@ -547,10 +548,6 @@ The following primitive types exist in WDL:
 * A `String` represents a unicode character string following the format described [below](#strings).
 * A `File` represents a file (or file-like object).
 * ✨ A `Directory` represents a (possibly nested) directory of files.
-    * A `File` or `Directory` declaration may have have a string value indicating a relative or absolute path on the local file system.
-    * Within a WDL file, literal values for files may only be local (relative or absolute) paths.
-    * An execution engine may support other ways to specify [`File` and `Directory` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path.
-
 
 <details>
   <summary>
@@ -561,12 +558,13 @@ The following primitive types exist in WDL:
 
   task write_file_task {
     command <<<
-    printf "hello" > test/hello.txt
+    mkdir -p testdir
+    printf "hello" > testdir/hello.txt
     >>>
 
     output {
       File x = "test/hello.txt"
-      Directory d = "test"
+      Directory d = "testdir"
     }
   }
 
@@ -600,7 +598,7 @@ The following primitive types exist in WDL:
     "primitive_literals.f": 27.3,
     "primitive_literals.s": "hello, world",
     "primitive_literals.x": "hello.txt",
-    "primitive_literals.d": "hello.txt"
+    "primitive_literals.d": "testdir/hello.txt"
   }
   ```
   </p>
@@ -842,6 +840,28 @@ Single- and double-quotes do not need to be escaped within a multi-line string.
   ```
   </p>
 </details>
+
+##### Files and Directories
+
+A `File` or `Directory` declaration may have have a string value indicating a relative or absolute path on the local file system.
+
+Within a WDL file, literal values for files may only be (relative or absolute) paths that are local to the execution environment. If the specified path does not exist, it is an error unless the declaration is optional.
+
+```wdl
+task literals_paths {
+  input {
+    # If the user does not overide the value of `f1`, and /foo/bar.txt
+    # does not exist, it is an error.
+    File f1 = "/foo/bar.txt"
+
+    # If the user does not override the value of `f2` and /foo/bar.txt
+    # does not exist, then `f2` is set to `None`.
+    File? f2 = "/foo/bar.txt"
+  }
+}
+```
+
+An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path.
 
 #### Optional Types and None
 
@@ -3517,7 +3537,7 @@ Example input:
   - The original file/directory name (the "basename") must be preserved even if the path to it has changed.
   - Two inputs with the same basename must be located separately, to avoid name collision.
   - Two inputs that originated in the same storage directory must also be localized into the same parent directory for task execution (see the special case handling for Versioning Filesystems below).
--When a WDL author uses a `File` or `Directory` input in their [Command Section](#command-section), the absolute path to the localized file/directory is substituted when that declaration is referenced.
+- When a WDL author uses a `File` or `Directory` input in their [Command Section](#command-section), the absolute path to the localized file/directory is substituted when that declaration is referenced.
 
 The above rules do *not* guarantee that two files will be localized to the same directory *unless* they originate from the same parent location. If you are writing a task for a tool that assumes two files will be co-located, then it is safest to manually co-locate them prior to running the tool. For example, the following task runs a variant caller (`varcall`) on a BAM file and expects the BAM's index file (`.bai` extension) to be in the same directory as the BAM file.
 
@@ -7596,7 +7616,7 @@ The optional second parameter specifies a literal suffix to remove from the file
 
 **Parameters**
 
-1. `File|Directory`: Path of the file or direcoty to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
+1. `File|Directory`: Path of the file or directory to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
 2. `String`: (Optional) Suffix to remove from the file name.
 
 **Returns**: The file's basename as a `String`.
@@ -7829,7 +7849,7 @@ If the size cannot be represented in the specified unit because the resulting va
 
 **Parameters**
 
-1. `File|File?|Directory|Directory?|X|X?`: A file, or directory or a compound value containing files/directories, for which to determine the size.
+1. `File|File?|Directory|Directory?|X|X?`: A file, directory, or a compound value containing files/directories, for which to determine the size.
 2. `String`: (Optional) The unit of storage; defaults to 'B'.
 
 **Returns**: The size of the files/directories as a `Float`.
