@@ -105,6 +105,7 @@ Please see the documentation associated with each tool/platform for information 
 - [MiniWDL](https://github.com/chanzuckerberg/miniwdl) provides python bindings for WDL as well as commandline tools for validation, linting, and generating workflow input templates.
 - [WOMTool](https://cromwell.readthedocs.io/en/stable/WOMtool/) is a standalone Java tool for WDL parsing, validating, linting, and diagramming.
 - [wdlTools](https://github.com/dnanexus/wdlTools) - provides 1) a parser Java/Scala library, based on the  [ANTLR4 grammars](https://github.com/openwdl/wdl-parsers) grammars, for WDL draft-2, 1.0, 1.1, and 2.0; and 2) command-line tools for sytanx checking, type-checking, linting, code formatting (including upgrading from older to newer WDL versions), generating documentation, and executing WDL tasks locally.
+- [sprocket](https://github.com/stjude-rust-labs/sprocket) a package manager and linter for WDL files.
 
 ### IDE Support
 
