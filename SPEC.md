@@ -1577,21 +1577,21 @@ Example output:
 
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
-| Target Type      | Source Type      | Notes/Constraints                                                                                              |
-| ---------------- | ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| `File`           | `String`         |                                                                                                                |
-| `Float`          | `Int`            | May cause overflow error                                                                                       |
-| `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                   |
-| `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                   |
-| `Array[Y]`       | `Array[X]+`      | `X` must be coercible to `Y`                                                                                   |
-| `Map[X, Z]`      | `Map[W, Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
-| `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
-| `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`         |
-| `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                  |
-| `Object`         | `Map[String, Y]` |                                                                                                                |
-| `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                     |
-| `Object`         | `Struct`         |                                                                                                                |
-| `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
+| Target Type      | Source Type      | Notes/Constraints                                                                                                                                |
+| ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `File`           | `String`         |                                                                                                                                                  |
+| `Float`          | `Int`            | May cause overflow error                                                                                                                         |
+| `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                                                     |
+| `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                                                     |
+| `Array[Y]`       | `Array[X]+`      | `X` must be coercible to `Y`                                                                                                                     |
+| `Map[X, Z]`      | `Map[W, Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                                                    |
+| `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                                                    |
+| `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`                                           |
+| `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                                                    |
+| `Object`         | `Map[String, Y]` |                                                                                                                                                  |
+| `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                                                       |
+| `Object`         | `Struct`         |                                                                                                                                                  |
+| `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types                                   |
 | `Struct`         | `Struct`         | The two `Struct` types must have members with identical names and compatible types (see [Struct-to-Struct Coercion](#struct-to-struct-coercion)) |
 
 The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
@@ -3540,7 +3540,8 @@ For example, imagine two versions of file `fs://path/to/A.txt` are being localiz
 #### Input Type Constraints
 
 Recall that a type may have a quantifier:
-* `?` means that the input is optional and a caller does not need to specify a value for the input.applies only to `Array` types and it represents a constraint that the `Array` value must contain one-or-more elements.
+
+* `?` means that the input is optional and a caller does not need to specify a value for the input.* `+` applies only to `Array` types and it represents a constraint that the `Array` value must contain one-or-more elements.
 
 The following task has several inputs with type quantifiers:
 
@@ -3650,11 +3651,11 @@ Inputs with default initializers are implicitly optional: callers may omit the i
 
 In detail, if a caller omits an input from the call `input:` section, then the default initializer applies whether or not the input type is declared optional. But if the caller explicitly supplies `None` for the input (either literally or by passing an optional value), then the default initializer applies only if the declared type isn't optional. This table illustrates the value taken by an input `x` depending on what the caller supplies:
 
-|    input declaration:|`Int x = 1`|`Int? x = 1`|`Int? x`|`Int x`|
-|----------------------|-----------|------------|--------|-------|
-|call input: `x = 42`  |         42|          42|      42|     42|
-|call input: `x = None`|          1|      `None`|  `None`|*error*|
-|call input: *omitted* |          1|           1|  `None`|*error*|
+| input declaration:     | `Int x = 1` | `Int? x = 1` | `Int? x` | `Int x` |
+| ---------------------- | ----------- | ------------ | -------- | ------- |
+| call input: `x = 42`   | 42          | 42           | 42       | 42      |
+| call input: `x = None` | 1           | `None`       | `None`   | *error* |
+| call input: *omitted*  | 1           | 1            | `None`   | *error* |
 
 <details>
 <summary>
