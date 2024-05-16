@@ -9848,8 +9848,6 @@ Array[Array[X]] chunk(Array[X], Int)
 
 Given an array and a length *n*, splits the array into consecutive, non-overlapping arrays of *n* elements. If the length of the array is not a multiple *n* then the final sub-array will have `length(array) % n` elements.
 
-This function is the inverse of [`flatten`](#flatten); i.e., `flatten`ing a `chunk` array will always yield the original array.
-
 **Parameters**
 
 1. `Array[X]`: The array to split. May be empty.
