@@ -1602,6 +1602,50 @@ Example output:
 </p>
 </details>
 
+Attempting to use a declaration that is both of the wrong type and for which there is no coercion to the correct type results in an error.
+
+<details>
+<summary>
+Example: coercion_fail.wdl
+
+```wdl
+version 1.2
+
+workflow coercion_fail {
+  Array[String] strings = ["/foo/bar"]
+  Boolean is_true1 = contains(strings, "/foo/bar")
+  
+  File foobar = "/foo/bar"
+  # returns `true` - string interpolation creates a string from `foobar`
+  Boolean is_true2 = contains(strings, "~{foobar}")
+  # error - `foobar` is not of type `String` and is not coercible to `String`
+  contains(strings, foobar)
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
+
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
 | Target Type      | Source Type      | Notes/Constraints                                                                                              |
