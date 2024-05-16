@@ -65,6 +65,8 @@ version 1.2.0
 
 + Added `find`, and `matches` functions.
 
++ Add `parameter_meta` section to struct definition.
+
 + Relaxed the requirements on coercing object/map to struct - extra keys are allowed and ignored. Note that this *may* constitute a breaking change if you rely on a task to fail when coercing an object/map with extra keys.
 
 + Added `join_paths` function to join two or more paths.
@@ -87,6 +89,15 @@ version 1.2.0
 
 + Clarify how inputs with defaults are implicitly optional
   [PR 464](https://github.com/openwdl/wdl/pull/464) by @mlin
+
++ Make `input:` optional in call bodies.
+  [PR 524](https://github.com/openwdl/wdl/pull/524) by @mlin.
+
++ Added `Directory` type. [PR 641](https://github.com/openwdl/wdl/pull/641)
+
++ Added clarification that input files and directories should be treated as read-only. [PR 642](https://github.com/openwdl/wdl/pull/642)
+
++ Added JSON extended file/directory input/output format. [PR 643] (https://github.com/openwdl/wdl/pull/643)
 
 version 1.1.1
 ---------------------------

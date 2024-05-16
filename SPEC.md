@@ -28,6 +28,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Primitive Types](#primitive-types)
         - [Strings](#strings)
           - [Multi-line Strings](#multi-line-strings)
+        - [Files and Directories](#files-and-directories)
       - [Optional Types and None](#optional-types-and-none)
       - [Compound Types](#compound-types)
         - [Array\[X\]](#arrayx)
@@ -83,7 +84,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Expression Placeholders](#expression-placeholders)
       - [Stripping Leading Whitespace](#stripping-leading-whitespace)
     - [Task Outputs](#task-outputs)
-      - [Files and Optional Outputs](#files-and-optional-outputs)
+      - [File, Directory, and Optional Outputs](#file-directory-and-optional-outputs)
     - [Evaluation of Task Declarations](#evaluation-of-task-declarations)
     - [✨ Requirements Section](#-requirements-section)
       - [Units of Storage](#units-of-storage)
@@ -195,6 +196,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [Optional Inputs](#optional-inputs)
     - [Specifying / Overriding Requirements and Hints](#specifying--overriding-requirements-and-hints)
   - [JSON Output Format](#json-output-format)
+  - [Extended File/Directory Input/Output Format](#extended-filedirectory-inputoutput-format)
   - [JSON Serialization of WDL Types](#json-serialization-of-wdl-types)
     - [Primitive Types](#primitive-types-1)
     - [Array](#array)
@@ -280,7 +282,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
     }
 
     call hello_task {
-      input: infile, pattern
+      infile, pattern
     }
 
     output {
@@ -356,9 +358,8 @@ WDL also provides features for implementing more complex workflows. For example,
     
     scatter (path in files) {
       call hello.hello_task {
-        input: 
-          infile = path,
-          pattern = pattern
+        infile = path,
+        pattern = pattern
       }
     }
 
@@ -456,7 +457,7 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
     }
 
     # You can have comments anywhere in the workflow
-    call task_with_comments { input: number }
+    call task_with_comments { number }
     
     output { # You can also put comments after braces
       Int result = task_with_comments.result
@@ -546,9 +547,7 @@ The following primitive types exist in WDL:
 * A `Float` represents a finite 64-bit IEEE-754 floating point number.
 * A `String` represents a unicode character string following the format described [below](#strings).
 * A `File` represents a file (or file-like object).
-    * A `File` declaration can have a string value indicating a relative or absolute path on the local file system.
-    * Within a WDL file, literal values for files may only be local (relative or absolute) paths.
-    * An execution engine may support other ways to specify [`File` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
+* ✨ A `Directory` represents a (possibly nested) directory of files.
 
 <details>
   <summary>
@@ -559,11 +558,13 @@ The following primitive types exist in WDL:
 
   task write_file_task {
     command <<<
-    printf "hello" > hello.txt
+    mkdir -p testdir
+    printf "hello" > testdir/hello.txt
     >>>
 
     output {
-      File x = "hello.txt"
+      File x = "testdir/hello.txt"
+      Directory d = "testdir"
     }
   }
 
@@ -576,6 +577,7 @@ The following primitive types exist in WDL:
       Float f = 27.3
       String s = "hello, world"
       File x = write_file_task.x
+      Directory d = write_file_task.d
     }  
   }
   ```
@@ -595,7 +597,8 @@ The following primitive types exist in WDL:
     "primitive_literals.i": 0,
     "primitive_literals.f": 27.3,
     "primitive_literals.s": "hello, world",
-    "primitive_literals.x": "hello.txt"
+    "primitive_literals.x": "hello.txt",
+    "primitive_literals.d": "testdir/hello.txt"
   }
   ```
   </p>
@@ -837,6 +840,28 @@ Single- and double-quotes do not need to be escaped within a multi-line string.
   ```
   </p>
 </details>
+
+##### Files and Directories
+
+A `File` or `Directory` declaration may have have a string value indicating a relative or absolute path on the local file system.
+
+Within a WDL file, literal values for files may only be (relative or absolute) paths that are local to the execution environment. If the specified path does not exist, it is an error unless the declaration is optional.
+
+```wdl
+task literals_paths {
+  input {
+    # If the user does not overide the value of `f1`, and /foo/bar.txt
+    # does not exist, it is an error.
+    File f1 = "/foo/bar.txt"
+
+    # If the user does not override the value of `f2` and /foo/bar.txt
+    # does not exist, then `f2` is set to `None`.
+    File? f2 = "/foo/bar.txt"
+  }
+}
+```
+
+An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path.
 
 #### Optional Types and None
 
@@ -1577,21 +1602,22 @@ Example output:
 
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
-| Target Type      | Source Type      | Notes/Constraints                                                                                                                                |
-| ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `File`           | `String`         |                                                                                                                                                  |
-| `Float`          | `Int`            | May cause overflow error                                                                                                                         |
-| `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                                                     |
-| `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                                                     |
-| `Array[Y]`       | `Array[X]+`      | `X` must be coercible to `Y`                                                                                                                     |
-| `Map[X, Z]`      | `Map[W, Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                                                    |
-| `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                                                    |
-| `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`                                           |
-| `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                                                    |
-| `Object`         | `Map[String, Y]` |                                                                                                                                                  |
-| `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                                                       |
-| `Object`         | `Struct`         |                                                                                                                                                  |
-| `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types                                   |
+| Target Type      | Source Type      | Notes/Constraints                                                                                              |
+| ---------------- | ---------------- | -------------------------------------------------------------------------------------------------------------- |
+| `File`           | `String`         |                                                                                                                |
+| `Directory`      | `String`         |                                                                              
+| `Float`          | `Int`            | May cause overflow error                                                                                       |
+| `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                   |
+| `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                   |
+| `Array[Y]`       | `Array[X]+`      | `X` must be coercible to `Y`                                                                                   |
+| `Map[X, Z]`      | `Map[W, Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
+| `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
+| `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`         |
+| `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                  |
+| `Object`         | `Map[String, Y]` |                                                                                                                |
+| `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                     |
+| `Object`         | `Struct`         |                                                                                                                |
+| `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
 | `Struct`         | `Struct`         | The two `Struct` types must have members with identical names and compatible types (see [Struct-to-Struct Coercion](#struct-to-struct-coercion)) |
 
 The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
@@ -1894,16 +1920,16 @@ task count_lines {
 
 workflow task_outputs {
   call greet as x {
-    input: name="John"
+    name="John"
   }
   
   call greet as y {
-    input: name="Sarah"
+    name="Sarah"
   }
 
   Array[String] greetings = [x.greeting, y.greeting]
   call count_lines {
-    input: array=greetings
+    array=greetings
   }
 
   output {
@@ -2465,7 +2491,7 @@ workflow ternary {
     Boolean morning
   }
 
-  call mem { input: array = ["x", "y", "z"] }
+  call mem { array = ["x", "y", "z"] }
 
   output {
     # Choose whether to say "good morning" or "good afternoon"
@@ -3110,6 +3136,8 @@ A `Struct` type is a user-defined data type. Structs enable the creation of comp
 
 A struct is defined using the `struct` keyword, followed by a name that is unique within the WDL document, and a body containing the member declarations. A struct member may be of any type, including compound types and even other `Struct` types. A struct member may be optional. Declarations in a struct body differ from those in a task or workflow in that struct members cannot have default initializers.
 
+A `struct` definition may include a `meta` section with metadata about the struct, and a `parameter_meta` section with metadata about any of the struct's members. These sections have identical sematics to task and workflow [`meta` and `parameter_meta` sections](#metadata-sections). Any key in the `parameter_meta` section *must* correspond to a member of the `struct`.
+
 <details>
 <summary>
 Example: person_struct_task.wdl
@@ -3133,6 +3161,17 @@ struct Person {
   Int age
   Income? income
   Map[String, File] assay_data
+  
+  meta {
+    description: "Encapsulates data about a person"
+  }
+
+  paramter_meta {
+    name: "The person's name"
+    age: "The person's age"
+    income: "How much the person makes (optional)"
+    assay_data: "Mapping of assay name to the file that contains the assay data"
+  }
 }
 
 task greet_person {
@@ -3229,11 +3268,11 @@ workflow wf {
 
   # file_size is from "http://example.com/lib/stdlib"
   call stdlib.file_size {
-    input: file=bam_file
+    file=bam_file
   }
   
   call analysis.my_analysis_task {
-    input: size=file_size.bytes, file=bam_file
+    size=file_size.bytes, file=bam_file
   }
 }
 ```
@@ -3355,11 +3394,11 @@ workflow import_structs {
   }
 
   call person_struct.greet_person {
-    input: person = patient
+    person = patient
   }
 
   call calculate_bill {
-    input: doctor = doctor, patient = patient
+    doctor = doctor, patient = patient
   }
 
   output {
@@ -3464,6 +3503,7 @@ task task_inputs {
     Int i               # a required input parameter
     String s = "hello"  # an input parameter with a default value
     File? f             # an optional input parameter
+    Directory? d = "/etc"             # an optional input parameter with a default value
   }
 
   command <<<
@@ -3485,25 +3525,19 @@ Example input:
   "task_inputs.i": 1
 }
 ```
-
-Example output:
-
-```json
-{}
-```
 </p>
 </details>
 
 #### Task Input Localization
 
-`File` inputs may require localization to the execution environment. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
+`File` and `Directory` inputs may require localization to the execution environment. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
 
-- Files are localized into the execution environment prior to the task execution commencing.
-- When localizing a `File`, the engine may choose to place the file wherever it likes so long as it adheres to these rules:
-  - The original file name must be preserved even if the path to it has changed.
-  - Two input files with the same name must be located separately, to avoid name collision.
-  - Two input files that have the same parent location must be localized into the same directory for task execution. For example, `http://foo.com/bar/a.txt` and `http://foo.com/bar/b.txt` have the same parent (`http://foo.com/bar/`), so they must be localized into the same directory. See below for special-case handling for Versioning Filesystems.
-- When a WDL author uses a `File` input in their [Command Section](#command-section), the fully qualified, localized path to the file is substituted when the command is instantiated.
+- `File`s and `Directory`s  are localized into the execution environment prior to the task execution commencing.
+- When localizing a `File` or `Directory`, the engine may choose to place the local resource wherever it likes so long as it adheres to these rules:
+  - The original file/directory name (the "basename") must be preserved even if the path to it has changed.
+  - Two inputs with the same basename must be located separately, to avoid name collision.
+  - Two inputs that originated in the same storage directory must also be localized into the same parent directory for task execution (see the special case handling for Versioning Filesystems below).
+- When a WDL author uses a `File` or `Directory` input in their [Command Section](#command-section), the absolute path to the localized file/directory is substituted when that declaration is referenced.
 
 The above rules do *not* guarantee that two files will be localized to the same directory *unless* they originate from the same parent location. If you are writing a task for a tool that assumes two files will be co-located, then it is safest to manually co-locate them prior to running the tool. For example, the following task runs a variant caller (`varcall`) on a BAM file and expects the BAM's index file (`.bai` extension) to be in the same directory as the BAM file.
 
@@ -3526,6 +3560,28 @@ task call_variants_safe {
   output {
     File vcf = "~{prefix}.vcf"
   }
+}
+```
+
+Runtime engines **should** treat input `File`s and `Directory`s as read-only, e.g., by setting their permissions appropriately on the local file system, or by localizing them to a directory marked as read-only.
+
+Note starting in WDL 2.0 engines **must** treat input `File`s and `Directory`s as read-only.
+
+A common pattern for tasks that require multiple input files to be in the same directory is to create a new directory in the execution environment and soft-link the files into that directory.
+
+```wdl
+task two_files_one_directory {
+  input {
+    File bam
+    File bai
+  }
+  String prefix = basename(bam, ".bam")
+  command <<<
+  mkdir inputs
+  ln -s ~{bam} inputs/~{prefix}.bam
+  ln -s ~{bai} inputs/~{prefix}.bam.bai
+  varcall inputs/~{prefix}.bam
+  >>>
 }
 ```
 
@@ -3685,15 +3741,14 @@ workflow optional_with_default {
   
   if (use_salutation) {
     call say_hello as hello1 { 
-      input: name = name 
+      name = name 
     }
   }
 
   if (!use_salutation) {
-    call say_hello as hello2 { 
-      input: 
-        name = name,
-        salutation = None 
+    call say_hello as hello2 {
+      name = name,
+      salutation = None 
     }
   }
 
@@ -3795,9 +3850,8 @@ task test {
 
 workflow private_declaration_fail {
   call test {
-    input:
-      i = 1,         # this is fine - "i" is in the input section
-      s = "goodbye"  # error! "s" is private
+    i = 1,         # this is fine - "i" is in the input section
+    s = "goodbye"  # error! "s" is private
   }
 
   output {
@@ -4191,9 +4245,9 @@ After the command is executed, the following outputs are expected to be found in
 
 See the [WDL Value Serialization](#appendix-a-wdl-value-serialization-and-deserialization) section for more details.
 
-#### Files and Optional Outputs
+#### File, Directory, and Optional Outputs
 
-File outputs are represented as string paths.
+`File` and `Directory` outputs are represented as path strings.
 
 A common pattern is to use a placeholder in a string expression to construct a file name as a function of the task input. For example:
 
@@ -4238,6 +4292,8 @@ Example output:
 ```
 </p>
 </details>
+
+In the preceding example, if `prefix` were specified as `"foobar"`, then `"~{prefix}.out"` would be evaluated to `"foobar.out"`.
 
 Another common pattern is to use the [`glob`](#glob) function to define outputs that might contain zero, one, or many files.
 
@@ -4344,7 +4400,7 @@ Test config:
 </p>
 </details>
 
-All file outputs are required to exist, otherwise the task will fail. However, an output may be declared as optional (e.g., `File?` or `Array[File?]`), in which case the value will be undefined if the file does not exist.
+All `File` and `Directory` outputs are required to exist, otherwise the task will fail. However, an output may be declared as optional (e.g. `File?`, `Directory?`, or `Array[File?]`), in which case the value will be undefined if the file does not exist.
 
 <details>
 <summary>
@@ -4407,6 +4463,49 @@ Executing the above task with `make_example2 = true` will result in the followin
 * `optional_output.example1` will resolve to a`File`
 * `optional_output.example2` will resolve to `None`
 * `optional_output.file_array` will resolve to `[<File>, None]`
+
+The execution engine may need to "de-localize" `File` and `Directory` outputs. For example, if the WDL is executed on a cloud instance, then the outputs must be copied to cloud storage after execution completes successfully.
+
+When a `File` or `Directory` is de-localized, its name and contents (including subdirectories) are preserved, but not necessarily its local path. Any hard- or soft-links shall be resolved into regular files/directories.
+
+For example, if a task produces the following `Directory` output:
+
+```txt
+dir/
+ - a           # a file, 10 MB
+ - b -> a      # a softlink to 'a'
+```
+
+Then, after de-localization, it would be:
+
+```txt
+dir/
+ - a           # a file, 10 MB
+ - b           # another file, 10 MB
+```
+
+If this were then passed to the `Directory` input of another task, it would contain two independent files, `dir/a` and `dir/b`, with identical contents.
+
+WDL does not have any built-in way to specify that an output `Directory` should only contain a subset of files in the local directory, so a common pattern is to create an output directory with the desired structure and soft-link the desired output files into that directory.
+
+```wdl
+task output_subset {
+  command <<<
+  for i in 1..10; do
+    touch file${i}
+  done
+  # we only want the first three files in the output directory
+  mkdir -p outdir/subdir
+  ln -s file1 outdir
+  ln -s file2 outdir
+  ln -s file3 outdir/subdir
+  >>>
+  
+  output {
+    Directory outdir = "outdir"
+  }
+}
+```
 
 ### Evaluation of Task Declarations
 
@@ -5689,7 +5788,7 @@ workflow name {
  
   # there may be any number of (potentially nested) 
   # calls, scatters, or conditionals
-  call target { input: ... }
+  call target { ... }
   scatter (i in collection) { ... }
   if (condition) { ... }
 
@@ -5757,8 +5856,8 @@ workflow input_ref_call {
     Int y = d1.out
   }
 
-  call double as d1 { input: int_in = x }
-  call double as d2 { input: int_in = y }
+  call double as d1 { int_in = x }
+  call double as d2 { int_in = y }
 
   output {
     Int result = d2.out
@@ -5819,8 +5918,8 @@ workflow call_imported_task {
     Int y = d1.out
   }
 
-  call ns1.double as d1 { input: int_in = x }
-  call ns1.double as d2 { input: int_in = y }
+  call ns1.double as d1 { int_in = x }
+  call ns1.double as d2 { int_in = y }
 
   output {
     Int result = d2.out
@@ -5883,13 +5982,13 @@ workflow main {
 
   call echo
   call echo as echo2
-  call other_wf.foobar { input: infile = echo2.results }
-  call other_wf.other { input: b = true, f = echo2.results }
-  call other_wf.other as other2 { input: b = false }
+  call other_wf.foobar { infile = echo2.results }
+  call other_wf.other { b = true, f = echo2.results }
+  call other_wf.other as other2 { b = false }
   
   scatter(x in arr) {
     call echo as scattered_echo {
-      input: msg = x
+      msg = x
     }
     String scattered_echo_results = read_string(scattered_echo.results)
   }
@@ -5953,7 +6052,7 @@ workflow other {
   }
 
   if (b && defined(f)) {
-    call foobar { input: infile = select_first([f]) }
+    call foobar { infile = select_first([f]) }
   }
 
   output {
@@ -6083,7 +6182,7 @@ task nested {
 
 workflow test_allow_nested_inputs {
   call nested {
-    input: greeting = "Hello"
+    greeting = "Hello"
   }
 
   output {
@@ -6182,9 +6281,9 @@ A workflow calls other tasks/workflows via the `call` keyword. A `call` is follo
 
 Each `call` must be uniquely identifiable. By default, the `call`'s unique identifier is the task or subworkflow name (e.g., `call foo` would be referenced by name `foo`). However, to `call foo` multiple times in the same workflow, it is necessary to give all except one of the `call` statements a unique alias using the `as` clause, e.g., `call foo as bar`.
 
-A `call` has an optional body in braces (`{}`). The only element that may appear in the call body is the `input:` keyword, followed by an optional, comma-delimited list of inputs to the call. A `call` must, at a minimum, provide values for all of the task/subworkflow's required inputs, and each input value/expression must match the type of the task/subworkflow's corresponding input parameter. An input value may be any valid expression, not just a reference to another call output. If a task has no required parameters, then the `call` body may be empty or omitted.
+A `call` has an optional body in braces (`{}`), which may contain a comma-delimited list of inputs to the call. A `call` must, at a minimum, provide values for all of the task/subworkflow's required inputs, and each input value/expression must match the type of the task/subworkflow's corresponding input parameter. An input value may be any valid expression, not just a reference to another call output. If a task has no required parameters, then the `call` body may be empty or omitted.
 
-If a call input has the same name as a declaration from the current scope, the name of the input may appear alone (without an expression) to implicitly bind the value of that declaration. For example, if a workflow and task both have inputs `x` and `z` of the same types, then `call mytask {input: x, y=b, z}` is equivalent to `call mytask {input: x=x, y=b, z=z}`.
+If a call input has the same name as a declaration from the current scope, the name of the input may appear alone (without an expression) to implicitly bind the value of that declaration. For example, if a workflow and task both have inputs `x` and `z` of the same types, then `call mytask {x, y=b, z}` is equivalent to `call mytask {x=x, y=b, z=z}`.
 
 <details>
 <summary>
@@ -6224,19 +6323,18 @@ workflow call_example {
 
   # Calls repeat with one required input - it is okay to not
   # specify a value for repeat.opt_string since it is optional.
-  call repeat { input: i = 3 }
+  call repeat { i = 3 }
 
   # Calls repeat a second time, this time with both inputs.
   # We need to give this one an alias to avoid name-collision.
   call repeat as repeat2 {
-    input:
-      i = i * 2,
-      opt_string = s
+    i = i * 2,
+    opt_string = s
   }
 
   # Calls repeat with one required input using the abbreviated 
   # syntax for `i`.
-  call repeat as repeat3 { input: i, opt_string = s }
+  call repeat as repeat3 { i, opt_string = s }
 
   # Calls a workflow imported from lib with no inputs.
   call lib.other
@@ -6277,6 +6375,68 @@ Example output:
 </p>
 </details>
 
+For historical reasons, the keyword `input:` may optionally precede the list of inputs inside the braces. In the following example, all the `call` statements are equivalent.
+
+<details>
+<summary>
+Example: test_input_keyword.wdl
+
+```wdl
+version 1.2
+
+import "call_example.wdl" as lib
+
+workflow test_input_keyword {
+  input {
+    Int i
+  }
+
+  # These three calls are equivalent
+  call lib.repeat as rep1 { i }
+
+  call lib.repeat as rep2 { i = i}
+
+  call lib.repeat as rep3 {
+    input:  # optional (for backward compatibility)
+      i
+  }
+
+  call lib.repeat as rep4 {
+    input:  # optional (for backward compatibility)
+      i = i
+  }
+
+  output {
+    Array[String] lines1 = rep1.lines
+    Array[String] lines2 = rep2.lines
+    Array[String] lines3 = rep3.lines
+    Array[String] lines4 = rep4.lines
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_input_keyword.i": 2
+}
+```
+
+Example output:
+
+```json
+{
+  "test_input_keyword.lines1": ["default", "default"],
+  "test_input_keyword.lines2": ["default", "default"],
+  "test_input_keyword.lines3": ["default", "default"],
+  "test_input_keyword.lines4": ["default", "default"]
+}
+```
+</p>
+</details>
+
 The execution engine may execute a `call` as soon as all its inputs are available. If `call x`'s inputs are based on `call y`'s outputs (i.e., `x` depends on `y`), `x` can be run as soon as - but not before - `y` has completed. 
 
 An `after` clause can be used to create an explicit dependency between `x` and `y` (i.e., one that isn't based on the availability of `y`'s outputs). For example, `call x after y after z`. An explicit dependency is only required if `x` must not execute until after `y` and `x` doesn't already depend on output from `y`.
@@ -6292,20 +6452,19 @@ import "call_example.wdl" as lib
 
 workflow test_after {
   # Call repeat
-  call lib.repeat { input: i = 2, opt_string = "hello" }
+  call lib.repeat { i = 2, opt_string = "hello" }
 
   # Call `repeat` again with the output from the first call.
   # This call will wait until `repeat` is finished.
   call lib.repeat as repeat2 {
-    input:
-      i = 1,
-      opt_string = sep(" ", repeat.lines)
+    i = 1,
+    opt_string = sep(" ", repeat.lines)
   }
 
   # Call `repeat` again. This call does not depend on the output 
   # from an earlier call, but we specify explicitly that this 
   # task must wait until `repeat` is complete before executing.
-  call lib.repeat as repeat3 after repeat { input: i = 3 }
+  call lib.repeat as repeat3 after repeat { i = 3 }
 
   output {
     Array[String] lines1 = repeat.lines
@@ -6362,7 +6521,7 @@ workflow copy_input {
     String name
   }
 
-  call greet { input: greeting = "Hello ~{name}" }
+  call greet { greeting = "Hello ~{name}" }
   
   output {
     String greeting = greet.greeting_out
@@ -6452,20 +6611,18 @@ workflow allow_nested {
   }
 
   call lib.repeat {
-    input:
-      i = int_val,
-      opt_string = msg1
+    i = int_val,
+    opt_string = msg1
   }
 
   call lib.repeat as repeat2 {
-    input:
-      # Note: the default value of `0` for the `i` input causes the task to fail
-      opt_string = msg2
+    # Note: the default value of `0` for the `i` input causes the task to fail
+    opt_string = msg2
   }
 
   scatter (i in my_ints) {
     call inc {
-      input: y=i, ref_file=ref_file
+      y=i, ref_file=ref_file
     }
   }
 
@@ -6524,7 +6681,7 @@ workflow call_subworkflow {
   }
 
   # error! A workflow can't specify a nested input for a subworkflow's call.
-  call copy.copy_input { input: greet.greeting = "hola" }
+  call copy.copy_input { greet.greeting = "hola" }
 }
 ```
 </summary>
@@ -6589,7 +6746,7 @@ workflow test_scatter {
   scatter (name in name_array) {
     # these statements are evaluated for each different value of `name`,s
     String greeting = "~{salutation} ~{name}"
-    call say_hello { input: greeting = greeting }
+    call say_hello { greeting = greeting }
   }
 
   output {
@@ -6671,19 +6828,18 @@ workflow nested_scatter {
     String honorific = honorifics[name_and_index.right % 2]
     
     call make_name {
-      input:
-        first = names.left,
-        last = names.right
+      first = names.left,
+      last = names.right
     }
 
     scatter (salutation in salutations) {
       # `names`, and `salutation` are all accessible here
       String short_greeting = "~{salutation} ~{honorific} ~{names.left}"
-      call scat.say_hello { input: greeting = short_greeting }
+      call scat.say_hello { greeting = short_greeting }
 
       # the output of `make_name` is also accessible
       String long_greeting = "~{salutation} ~{honorific} ~{make_name.name}"
-      call scat.say_hello as say_hello_long { input: greeting = long_greeting }
+      call scat.say_hello as say_hello_long { greeting = long_greeting }
 
       # within the scatter body, when we access the output of the
       # say_hello call, we get a String
@@ -6782,7 +6938,7 @@ workflow test_conditional {
     Int j = 2
 
     scatter (i in scatter_range) {
-      call gt_three { input: i = i + j }
+      call gt_three { i = i + j }
       
       if (gt_three.valid) {
         Int result = i * j
@@ -7498,11 +7654,11 @@ Test config:
 
 ## File Functions
 
-These functions have a `File` as an input and/or output. Due to [type coercion](#type-coercion), `File` arguments may be specified as `String` values.
+These functions have a `File` or `Directory` as an input and/or output. Due to [type coercion](#type-coercion), `File` or `Directory` arguments may be specified as `String` values.
 
-For functions that read from or write to the file system, if the entire contents of the file cannot be read/written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having appropriate permissions, resource limitations (e.g., memory) when reading the file, and implementation-imposed file size limits.
+For functions that read from or write to the file system, if the entire contents of the  cannot be read/written for any reason, the calling task or workflow fails with an error. Examples of failure include, but are not limited to, not having appropriate permissions, resource limitations (e.g., memory) when reading the file, and implementation-imposed file size limits.
 
-For functions that write to the file system, the implementatuion should generate a random file name in a temporary directory so as not to conflict with any other task output files.
+For functions that write to the file system, the implementation should generate a random file name in a temporary directory so as not to conflict with any other task output files.
 
 **Restrictions**
 
@@ -7514,17 +7670,18 @@ For functions that write to the file system, the implementatuion should generate
 
 ```
 String basename(File, [String])
+String basename(Directory, [String])
 ```
 
-Returns the "basename" of a file - the name after the last directory separator in the file's path. 
+Returns the "basename" of a file or directory - the name after the last directory separator in the path. 
 
-The optional second parameter specifies a literal suffix to remove from the file name.
+The optional second parameter specifies a literal suffix to remove from the file name. If the file name does not end with the specified suffix then it is ignored.
 
 **Parameters**
 
-1. `File`: Path of the file to read.
+1. `File|Directory`: Path of the file or directory to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
 2. `String`: (Optional) Suffix to remove from the file name.
- 
+
 **Returns**: The file's basename as a `String`.
 
 <details>
@@ -7538,6 +7695,7 @@ workflow test_basename {
   output {
     Boolean is_true1 = basename("/path/to/file.txt") == "file.txt"
     Boolean is_true2 = basename("/path/to/file.txt", ".txt") == "file"
+    Boolean is_true3 = basename("/path/to/dir") == "dir" 
   }
 }
 ```
@@ -7742,10 +7900,11 @@ The runtime container may use a non-standard Bash shell that supports more compl
 
 ```
 Float size(File|File?, [String])
+Float size(Directory|Directory?, [String])
 Float size(X|X?, [String])
 ```
 
-Determines the size of a file, or the sum total sizes of the files contained within a compound value. The files may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage)
+Determines the size of a file, directory, or the sum total sizes of the files/directories contained within a compound value. The files may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage)
 
 In the second variant of the `size` function, the parameter type `X` represents any compound type that contains `File` or `File?` nested at any depth.
 
@@ -7753,10 +7912,10 @@ If the size cannot be represented in the specified unit because the resulting va
 
 **Parameters**
 
-1. `File|File?|X|X?`: A file, or a compound value containing files, for which to determine the size.
+1. `File|File?|Directory|Directory?|X|X?`: A file, directory, or a compound value containing files/directories, for which to determine the size.
 2. `String`: (Optional) The unit of storage; defaults to 'B'.
 
-**Returns**: The size of the file(s) as a `Float`.
+**Returns**: The size of the files/directories as a `Float`.
 
 <details>
 <summary>
@@ -9178,6 +9337,7 @@ value_4\tvalue_5\tvalue_6
 value_7\tvalue_8\tvalue_9
 ```
 
+
 ## String Array Functions
 
 These functions take an `Array` as input and return a `String` or `Array[String]`. Due to type coercion, the `Array` argument may be of any primitive type (denoted by `P`).
@@ -9560,7 +9720,7 @@ workflow test_range {
 
   Array[Int] indexes = range(i)
   scatter (idx in indexes) {
-    call double { input: n = idx }
+    call double { n = idx }
   }
 
   output {
@@ -10456,7 +10616,7 @@ workflow test_values {
   }
   
   scatter (files in values(str_to_files)) {
-    call add { input: x=ints.left, y=ints.right }
+    call add { x=ints.left, y=ints.right }
   }
   
   output {
@@ -10574,7 +10734,7 @@ workflow is_defined {
   }
 
   if (defined(name)) {
-    call say_hello { input: name = select_first([name]) }
+    call say_hello { name = select_first([name]) }
   }
 
   output {
@@ -10810,20 +10970,108 @@ The output JSON will look like:
 
 It is recommended (but not required) that JSON outputs be "pretty printed" to be more human-readable.
 
+## Extended File/Directory Input/Output Format
+
+There is no guarantee that executing a workflow multiple times with the same input file or directory URIs will result in the same outputs. For example the contents of a file may change between one execution and the next, or a file may be added to or removed from a directory.
+
+To help ensure the reproducibility of workflow executions, and to support job output reuse features of the runtime engine (sometimes called "call caching"), it is strongly recommended that runtime engines support the more explicit extended format for `File` and `Directory` inputs and outputs.
+
+In the extended format, `File` and `Directory` inputs and outputs may be specified using either a JSON string or object.
+
+A directory object has the following attributes:
+
+* `type`: Always "Directory"; optional for the top-level inputs/outputs but required within directory listings.
+* `location`: The directory URI. This is equivalent to the string value in the simple form. May be absent if the directory is within a listing as long as `basename` is specified. If location is not specified, then `basename` and `listing` are both required, and all files/directories in the listing must have a location that is an absolute path or URI.
+* `basename`: The name of the directory relative to the containing directory. If the basename differs from the actual directory name at the given location, the file must be localized with the given basename.
+* `listing`: An array of files/subdirectories within the directory. May be nested to any degree.
+
+A file object has the following attributes:
+
+* `type`: Always "File"; optional for top-level inputs/outputs but required within directory listings.
+* `location`: The file URI. This is equivalent to the string value in the simple form. May be absent if the file is within a listing so long as `basename` is specified.
+* `basename`: The name of the file relative to the containing directory. If the basename differs from the actual file name at the given location, the file must be localized with the given basename.
+
+It is recommended that the runtime engine support additional attributes to promote reproducibility, such as a file checksum.
+
+The following example shows a directory input in extended format. The directory listing makes explicit the structure of the directory. If a file were added to the source directory between one execution and the next, the new file would be ignored since it doesn't appear in the listing. If a file were removed from the source directory between one execution and the next, the workflow execution would fail because the input directory would not match the expected structure.
+
+```json
+{
+  "wf.indir": {
+    "location": "/mnt/data/results/foo",
+    "listing": [
+      {
+        "type": "File",
+        "location": "/mnt/data/results/foo/bar.txt",
+        "basename": "something_else.txt"
+      },
+      {
+        "type": "Directory",
+        "basename": "baz",
+        "listing": [
+          {
+            "type": "File",
+            "basename": "qux.fa"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+When this directory is localized, it will result in the following local folder structure:
+
+```
+<workdir>
+|_ foo
+   |_ something_else.txt
+   |_ baz
+      |_ qux.fa
+```
+
+A directory listing can also be used to construct an input directory from files that originate from disparate locations. The following input would result in the same local directory structure as above:
+
+```json
+{
+  "wf.indir": {
+    "basename": "foo",
+    "listing": [
+      {
+        "type": "File",
+        "location": "/mnt/data/results/foo/bar.txt",
+        "basename": "something_else.txt"
+      },
+      {
+        "type": "Directory",
+        "basename": "baz",
+        "listing": [
+          {
+            "type": "File",
+            "location": "/home/fred/qux.fa"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
 ## JSON Serialization of WDL Types
 
 ### Primitive Types
 
 All primitive WDL types serialize naturally to JSON values:
 
-| WDL Type  | JSON Type |
-| --------- | --------- |
-| `Int`     | `number`  |
-| `Float`   | `number`  |
-| `Boolean` | `boolean` |
-| `String`  | `string`  |
-| `File`    | `string`  |
-| `None`    | `null`    |
+| WDL Type    | JSON Type |
+| ----------- | --------- |
+| `Int`       | `number`  |
+| `Float`     | `number`  |
+| `Boolean`   | `boolean` |
+| `String`    | `string`  |
+| `File`      | `string`  |
+| `Directory` | `string`  |
+| `None`      | `null`    |
 
 JSON has a single numeric type - it does not differentiate between integral and floating point values. A JSON `number` is always deserialized to a WDL `Float`, which may then be [coerced](#type-coercion) to an `Int` if necessary.
 
@@ -11378,7 +11626,7 @@ workflow serde_pair {
 
   scatter (item in as_pairs(to_tail)) {
     call tail {
-      input: to_tail = item
+      to_tail = item
     }
     Pair[String, String]? two_lines = 
       if item.right >= 2 then (tail.lines[0], tail.lines[1]) else None
@@ -11447,7 +11695,7 @@ workflow serde_homogeneous_pair {
   }
 
   scatter (pair in as_pairs(int_strings)) {
-    call serde_int_strings { input: int_strings = pair }
+    call serde_int_strings { int_strings = pair }
   }
 
   output {
@@ -11547,9 +11795,9 @@ workflow serialize_map {
     String arg_str = "~{arg.left}=~{arg.right}"
   }
 
-  call grep1 { input: infile, pattern, args = arg_str }
+  call grep1 { infile, pattern, args = arg_str }
 
-  call grep2 { input: infile, pattern, args }
+  call grep2 { infile, pattern, args }
 
   output {
     Array[String] results1 = grep1.results
@@ -11865,10 +12113,9 @@ workflow my_workflow {
     Int x = 2
   }
 
-  call my_task { 
-    input:
-      x = x,
-      f = file
+  call my_task {
+    x = x,
+    f = file
   }
 
   output {
@@ -11902,9 +12149,8 @@ workflow my_workflow {
 
   scatter (x in xs) {
     call my_task {
-      input:
-        x = x,
-        f = file
+      x = x,
+      f = file
     }
 
     Int z = my_task.z
@@ -11972,7 +12218,7 @@ workflow cyclic {
 
   Int j = mytask.out - 2
 
-  call mytask { input: inp = i }
+  call mytask { inp = i }
 }
 ```
 
@@ -12092,9 +12338,8 @@ workflow my_workflow {
   }
 
   call my_task {
-    input:
-      x = x_modified,
-      f = file
+    x = x_modified,
+    f = file
   }
 
   Int x_modified = x
