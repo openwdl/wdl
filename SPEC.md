@@ -1648,22 +1648,22 @@ Test config:
 
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
-| Target Type      | Source Type      | Notes/Constraints                                                                                              |
-| ---------------- | ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| `File`           | `String`         |                                                                                                                |
-| `Directory`      | `String`         |                                                                              
-| `Float`          | `Int`            | May cause overflow error                                                                                       |
-| `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                   |
-| `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                   |
-| `Array[Y]`       | `Array[X]+`      | `X` must be coercible to `Y`                                                                                   |
-| `Map[X, Z]`      | `Map[W, Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
-| `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
-| `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`         |
-| `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                  |
-| `Object`         | `Map[String, Y]` |                                                                                                                |
-| `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                     |
-| `Object`         | `Struct`         |                                                                                                                |
-| `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
+| Target Type      | Source Type      | Notes/Constraints                                                                                                                                |
+| ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `File`           | `String`         |                                                                                                                                                  |
+| `Directory`      | `String`         |
+| `Float`          | `Int`            | May cause overflow error                                                                                                                         |
+| `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                                                     |
+| `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                                                     |
+| `Array[Y]`       | `Array[X]+`      | `X` must be coercible to `Y`                                                                                                                     |
+| `Map[X, Z]`      | `Map[W, Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                                                    |
+| `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                                                    |
+| `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`                                           |
+| `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                                                    |
+| `Object`         | `Map[String, Y]` |                                                                                                                                                  |
+| `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                                                       |
+| `Object`         | `Struct`         |                                                                                                                                                  |
+| `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types                                   |
 | `Struct`         | `Struct`         | The two `Struct` types must have members with identical names and compatible types (see [Struct-to-Struct Coercion](#struct-to-struct-coercion)) |
 
 The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
@@ -3578,7 +3578,7 @@ Example input:
 
 `File` and `Directory` inputs may require localization to the execution environment. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
 
-- `File`s and `Directory`s  are localized into the execution environment prior to the task execution commencing.
+- `File`s and `Directory`s are localized into the execution environment prior to evaluating any expressions. This means that references to `File` or `Directory` declarations in input declaration expressions, private declaration expressions, and the command section are always replaced with the local paths to those files/directories.
 - When localizing a `File` or `Directory`, the engine may choose to place the local resource wherever it likes so long as it adheres to these rules:
   - The original file/directory name (the "basename") must be preserved even if the path to it has changed.
   - Two inputs with the same basename must be located separately, to avoid name collision.
