@@ -103,6 +103,8 @@ version 1.2.0
 
 + Added JSON extended file/directory input/output format. [PR 643] (https://github.com/openwdl/wdl/pull/643)
 
++ Clarified that local paths are always used when evaluating input/private/command expressions.
+
 version 1.1.1
 ---------------------------
 
