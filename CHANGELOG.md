@@ -105,6 +105,8 @@ version 1.2.0
 
 + Clarified that local paths are always used when evaluating input/private/command expressions.
 
++ Clarified that accessing a non-existent member of an object, struct, or call is an error.
+
 version 1.1.1
 ---------------------------
 
