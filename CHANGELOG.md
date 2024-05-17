@@ -107,6 +107,8 @@ version 1.2.0
 
 + Clarified the meaning of a remote parent folder for the purposes of localization.
 
++ Clarified that accessing a non-existent member of an object, struct, or call is an error.
+
 version 1.1.1
 ---------------------------
 

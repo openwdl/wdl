@@ -2504,6 +2504,55 @@ Example output:
 </p>
 </details>
 
+Attempting to access a non-existent member of an object, struct, or call results in an error.
+
+<details>
+<summary>
+Example: illegal_access_fail.wdl
+
+```wdl
+version 1.2
+
+import "member_access.wdl"
+
+workflow illegal_access {
+  input {
+    MyStruct my
+  }
+
+  Int i = my.x  # error: field 'x' does not exist in MyStruct
+  
+  call foo
+
+  output {
+    String baz = foo.baz  # error: 'baz' is not an output field of task 'foo'    
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
+
 #### Ternary operator (if-then-else)
 
 This operator takes three arguments: a condition expression, an if-true expression, and an if-false expression. The condition is always evaluated. If the condition is true then the if-true value is evaluated and returned. If the condition is false, the if-false expression is evaluated and returned. The if-true and if-false expressions must return values of the same type, such that the value of the if-then-else is the same regardless of which side is evaluated.
