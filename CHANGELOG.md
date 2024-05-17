@@ -105,6 +105,8 @@ version 1.2.0
 
 + Clarified that local paths are always used when evaluating input/private/command expressions.
 
++ Clarified the meaning of a remote parent folder for the purposes of localization.
+
 version 1.1.1
 ---------------------------
 
