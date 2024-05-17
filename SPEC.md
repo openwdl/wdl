@@ -3582,7 +3582,11 @@ Example input:
 - When localizing a `File` or `Directory`, the engine may choose to place the local resource wherever it likes so long as it adheres to these rules:
   - The original file/directory name (the "basename") must be preserved even if the path to it has changed.
   - Two inputs with the same basename must be located separately, to avoid name collision.
-  - Two inputs that originated in the same storage directory must also be localized into the same parent directory for task execution (see the special case handling for Versioning Filesystems below).
+  - Two input files that originate from the same "parent" must be localized into the same directory for task execution.
+    - For local paths, "parent" means the parent directory.
+    - For remote paths specified as a URI, "parent" means the entire URI up to the last '/' of the path (i.e., excluding the final component and any parameters). For example, http://foo.com/bar/a.txt and http://foo.com/bar/b.txt have the same parent (http://foo.com/bar/), so they must be localized into the same directory.
+    - For remote paths specified by other means, it is up to the execution engine to determine what is meant by "parent".
+  - See the [special case handling for Versioning Filesystems](#special-case-versioning-filesystem) below.
 - When a WDL author uses a `File` or `Directory` input in their [Command Section](#command-section), the absolute path to the localized file/directory is substituted when that declaration is referenced.
 
 The above rules do *not* guarantee that two files will be localized to the same directory *unless* they originate from the same parent location. If you are writing a task for a tool that assumes two files will be co-located, then it is safest to manually co-locate them prior to running the tool. For example, the following task runs a variant caller (`varcall`) on a BAM file and expects the BAM's index file (`.bai` extension) to be in the same directory as the BAM file.
