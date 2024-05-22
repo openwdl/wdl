@@ -3427,7 +3427,9 @@ annotated with `env` either through the shell semantics (`${FOO}`) or through no
 
 When an input is annotated with `env` it is the engine's responsibility to serialize the value appropriately into a string (see section on [Serialization of WDL values](#appendix-a-wdl-value-serialization-and-deserialization))
 that will then be set as an environment variable. Engines may impose limits on the total length a single environment variable is allowed to occupy as well as the number of environment variables that are allowed to be passed into a single task.
-If such limitations exist, it is the engine's responsibility to provide clear documentation outlining what they are for the user.
+If such limitations exist, it is the engine's responsibility to provide clear documentation outlining what they are for the user. 
+
+The environment variable should be evaluated by the engine prior to injecting it into the execution environment. if the task is run in a container the env var is "injected" into the container and not applied to the shell on the host that runs the container.
 
 
 <details>
