@@ -39,6 +39,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [Map\[P, Y\]](#mapp-y)
         - [🗑 Object](#-object)
         - [Custom Types (Structs)](#custom-types-structs)
+        - [Enumeration Types (Enums)](#enumeration-types-enums)
       - [Hidden and Scoped Types](#hidden-and-scoped-types)
         - [`Union` (Hidden Type)](#union-hidden-type)
         - [`hints`, `input`, and `output` (Scoped Types)](#hints-input-and-output-scoped-types)
@@ -73,9 +74,12 @@ Revisions to this specification are made periodically in order to correct errors
   - [WDL Documents](#wdl-documents)
   - [Versioning](#versioning)
   - [Struct Definition](#struct-definition)
+  - [Enum Definition](#enum-definition)
+    - [Enum Usage](#enum-usage)
   - [Import Statements](#import-statements)
     - [Import URIs](#import-uris)
     - [Importing and Aliasing Structs](#importing-and-aliasing-structs)
+    - [Importing and Aliasing Enums](#importing-and-aliasing-enums)
   - [Task Definition](#task-definition)
     - [Task Inputs](#task-inputs)
       - [Task Input Localization](#task-input-localization)
@@ -1357,7 +1361,7 @@ Due to the lack of explicitness in the typing of `Object` being at odds with the
 
 ##### Custom Types (Structs)
 
-WDL provides the ability to define custom compound types called [structs](#struct-definition). `Struct` types are defined directly in the WDL document and are usable like any other type. A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A struct definition contains any number of declarations of any types, including other `Struct`s.
+WDL provides the ability to define custom compound types called [structs](#struct-definition). `Struct` types are defined at the top-level of the WDL document and are usable like any other type. A struct is defined using the `struct` keyword, followed by a unique name, followed by member declarations within braces. A struct definition contains any number of declarations of any types, including other `Struct`s.
 
 A declaration with a custom type can be initialized with a struct literal, which begins with the `Struct` type name followed by a comma-separated list of name-value pairs in braces (`{}`), where name-value pairs are delimited by `:`. The member names in a struct literal are not quoted. A struct literal must provide values for all of the struct's non-optional members, and may provide values for any of the optional members. The members of a struct literal are validated against the struct's definition at the time of creation. Members do not need to be in any specific order. Once a struct literal is created, it is immutable like any other WDL value.
 
@@ -1484,6 +1488,45 @@ Example output:
 * Any `Object`/`Map` member that does not correspond to a member of the struct is ignored.
 
 Note that the ability to assign values to `Struct` declarations other than struct literals is deprecated and will be removed in WDL 2.0.
+
+##### Enumeration Types (Enums)
+
+An enumeration (or "enum") is a closed set of alternatives that are considered semantically valid in a specific context. An enum is [defined]() at the top-level of the WDL document and can be used as a declaration type anywhere in the document.
+
+An enum is defined using the `enum` keyword, followed by a globally unique name, followed by a comma-delimited list of identifiers in braces. The value for an enum cannot be created; rather, it must be selected from the list of available values using the `<name>.<value>` syntax.
+
+```wdl
+enum FileKind {
+  FASTQ,
+  BAM
+}
+task process_file {
+  input {
+    File infile
+    FileKind kind = FileKind.FASTQ
+  }
+  
+  command <<<
+  echo "Processing ~{kind} file"
+  ...
+  >>>
+}
+workflow process_files {
+  input {
+    Array[File] files
+    FileKind kind
+  }
+  scatter (file in files) {
+    call process_file {
+      input:
+        infile = file,
+        kind = kind
+    }
+  }
+}
+```
+
+As an example, consider a workflow that processes different types of NGS files and has a `file_kind` input parameter that is expected to be either "fastq" or "bam". Using `String` as the type of `file_kind` is not ideal - if the user specifies an invalid value, the error will not be caught until runtime, perhaps after the workflow has already run for several hours. Alternatively, using an `enum` type for `file_kind` restricts the allowed values such that the execution engine can validate the input prior to executing the workflow.
 
 #### Hidden and Scoped Types
 
@@ -3352,6 +3395,94 @@ struct Invalid {
 }
 ```
 
+## Enum Definition
+
+An `Enum` is an enumerated type. Enums enable the creation of types that represent closed sets of alternatives (called "variants") that are semantically valid in a specific context. Once defined, an `Enum` type can be used as the type of a declaration like any other type. However, new variants of an `Enum` cannot be created. Instead, a declaration having an `Enum` type must be assigned one of the variants created as part of the `Enum`'s definition.
+
+An enum definition is a top-level WDL element, meaning it is defined at the same level as tasks, workflows, and structs, and it cannot be defined within a task or workflow body. An enum is defined using the `enum` keyword, followed by a name that is unique within the WDL document, and a body containing a comma-delimited list of varaints in braces (`{}`).
+
+```wdl
+enum Color {
+  RED,
+  BLUE,
+  GREEN
+}
+```
+
+An enum can be thought of as two different constructs sharing the same name:
+
+* A `Struct` with one `String`-type member, `name`, whose value is the "stringified" version of the variant's identifier. For example, the name of `Color.RED` is `"RED"`. Unlike structs, it is not possible to create new instances of an `Enum` outside of the enum's definition.
+* A global variable of type `Object` whose members have names equal to the enum variant names, and whose values are instances of the `Enum`.
+
+For example, the above definition of `Color` can be thought of as shorthand for:
+
+```wdl
+version 1.2
+struct Color {
+  String name
+}
+Object Color = object {
+  RED: Color { name: "RED" },
+  BLUE: Color { name: "BLUE" },
+  GREEN: Color { name: "GREEN" }
+}
+workflow test {
+  input {
+    # The first usage of `Color` on the left is a reference to the struct type.
+    # The second usage of `Color` on the right is a reference to the object declaration.
+    Color color = Color.RED
+  }
+  # Error! Creating additional instances of `Color` is not allowed.
+  Color pink = Color { name: "PINK" }
+}
+```
+
+Keep in mind that the above example is illustrative - it is not actually possible to have a top-level declaration, nor is it possible to create a struct that is not able to be instantiated. The example just shows the closest semantic equivalent of Enums using existing WDL syntax.
+
+
+### Enum Usage
+
+An `Enum`'s variants are [accessed](#member-access) using a `.` to separate the variant name from the `Enum`'s identifier. Each variant has single member, `String name`, that can be accessed through a `.` separator.
+
+A declaration with an `Enum` type can only be initialized by referencing a variant directly or by assigning it to the value of another declaration of the same `Enum` type.
+
+Two enum values can be tested for equality (i.e., using `==` or `!=`). To be equal, two enum values must be the same variant of the same `Enum` type. Enum variants are not ordered, so they cannot be compared (i.e., using `>`, `>=`, `<`, `<=`).
+
+An `Enum` cannot be coerced to or from any other type. However, an enum value can be [serialized to/deserialized from a `String`]() or to/from [JSON]().
+
+```wdl
+version 1.2
+enum Pet {
+  CAT,
+  DOG,
+  RAT
+}
+enum HotFood {
+  DOG,
+  POTATO,
+  TAMALE
+}
+task pet_pet {
+  input {
+    Pet? pet
+  }
+  Pet my_pet = select_first([pet, Pet.DOG])
+  Array[String] all_pet_names = [
+    Pet.CAT.name,
+    Pet.DOG.name,
+    Pet.RAT.name
+  ]
+  command <<<
+  echo "There are ~{length(all_pet_names)} kinds of pet: ~{sep(", ", all_pet_names)}"
+  echo "I have a pet ~{my_pet.name}"
+  echo "I am petting my ~{my_pet}"
+  >>>
+  output {
+    Boolean is_false = Pet.DOG == HotFood.DOG
+  }
+}
+```
+
 ## Import Statements
 
 Although a WDL workflow and the task(s) it calls may be defined completely within a single WDL document, splitting it into multiple documents can be beneficial in terms of modularity and code resuse. Furthermore, complex workflows that consist of multiple subworkflows must be defined in multiple documents because each document is only allowed to contain at most one workflow.
@@ -3539,6 +3670,21 @@ struct Patient {
   Int age
   PatientIncome? income
   Map[String, Array[File]] assay_data
+}
+```
+
+### Importing and Aliasing Enums
+
+Enums are [imported in the same way as `Struct`s](#struct-namespacing) and have the same namespacing rules, namely that Enums exist in the document's global scope, and importing an `Enum` copies its definition into the global scope of the importing document (potentially using an alias).
+
+```wdl
+version 1.2
+import "color.wdl" alias Color as Hue
+workflow another_wf {
+  input {
+    Hue hue = Hue.BLUE
+  }
+  ...
 }
 ```
 
