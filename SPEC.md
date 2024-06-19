@@ -6340,7 +6340,7 @@ Example output:
 
 ```json
 {
-  "test_round.all_true": [true, false]
+  "test_round.all_true": [true, true]
 }
 ```
 </p>
