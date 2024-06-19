@@ -1,14 +1,15 @@
 # Workflow Description Language (WDL)
 
-This is version 1.1.2 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.1`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol).
+This is version 1.1.3 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.1`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol).
 
 ## Revisions
 
 Revisions to this specification are made periodically in order to correct errors, clarify language, or add additional examples. Revisions are released as "patches" to the specification, i.e., the third number in the specification version is incremented. No functionality is added or removed after the initial revision of the specification is ratified.
 
-* [1.1.2](https://github.com/openwdl/wdl/tree/release-1.1.2/SPEC.md): 2024-04-12
-* [1.1.1](https://github.com/openwdl/wdl/tree/release-1.1.1/SPEC.md): 2023-10-04
-* [1.1.0](https://github.com/openwdl/wdl/tree/release-1.1.0/SPEC.md): 2021-01-29
+* [v1.1.3](https://github.com/openwdl/wdl/releases/tag/v1.1.3): 2025-01-23
+* [v1.1.2](https://github.com/openwdl/wdl/releases/tag/v1.1.2): 2024-04-15
+* [v1.1.1](https://github.com/openwdl/wdl/releases/tag/v1.1.1): 2023-10-04
+* [v1.1.0](https://github.com/openwdl/wdl/releases/tag/v1.1.0): 2021-01-29
  
 ## Table of Contents
 
@@ -367,7 +368,7 @@ WDL also provides features for implementing more complex workflows. For example,
   
   ```json
   {
-    "hello.all_matches": [["hi_world"], ["hi_pal"]]
+    "hello_parallel.all_matches": [["hi_world"], ["hello"]]
   }
   ```
   </p>
@@ -419,7 +420,7 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
     # This comment will not be included within the command
     command <<<
       # This comment WILL be included within the command after it has been parsed
-      cat ~{number * 2}
+      echo ~{number * 2}
     >>>
 
     output {
@@ -534,7 +535,12 @@ The following primitive types exist in WDL:
 * A `File` represents a file (or file-like object).
     * A `File` declaration can have a string value indicating a relative or absolute path on the local file system.
     * Within a WDL file, literal values for files may only be local (relative or absolute) paths.
+    * The path assigned to a `File` is not required to be valid unless and until it is accessed.
+      * To read from a file, it must exist and be assigned appropriate permissions.
+      * To write to a file, the parent directory must be assigned appropriate permissions.
     * An execution engine may support other ways to specify [`File` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
+      * Remote files must be treated as read-only.
+      * A remote file is only required to be vaild at the time that the execution engine needs to localize it.
 
 <details>
   <summary>
@@ -656,7 +662,8 @@ An optional declaration has a default initialization of `None`, which indicates 
     "optionals.test_defined": false,
     "optionals.test_defined2": true,
     "optionals.test_is_none": true,
-    "optionals.test_not_none": false
+    "optionals.test_not_none": false,
+    "optionals.test_non_equal": true
   }
   ```
   </p>
@@ -768,7 +775,7 @@ task sum {
   }
   
   command <<<
-  printf ~{sep(" ", ints)} | awk '{tot=0; for(i=1;i<=NF;i++) tot+=$i; print tot}'
+  printf "~{sep(" ", ints)}" | awk '{tot=0; for(i=1;i<=NF;i++) tot+=$i; print tot}'
   >>>
   
   output {
@@ -833,8 +840,8 @@ Example output:
 {
   "non_empty_optional.nonempty1": [0.0],
   "non_empty_optional.nonempty2": [null, 1],
-  "non_empty_optional.nonempty3": [],
-  "non_empty_optional.nonempty4": [0.0]
+  "non_empty_optional.nonempty3": null,
+  "non_empty_optional.nonempty4": [0]
 }
 ```
 </p>
@@ -1148,7 +1155,7 @@ Example output:
 
 ```json
 {
-  "test_struct.person": {
+  "test_struct.john": {
     "name": "John",
     "account": {
       "account_number": "123456",
@@ -1295,14 +1302,17 @@ Example: string_to_file.wdl
 version 1.1
 
 workflow string_to_file {
-  String path1 = "/path/to/file"
-  File path2 = "/path/to/file"
+  input {
+    File infile
+  }
+
+  String path1 = "~{infile}"
 
   # valid - String coerces unambiguously to File
-  File path3 = path1
+  File path2 = path1
 
   output {
-    Boolean paths_equal = path2 == path3
+    Boolean paths_equal = infile == path2
   }
 }
 ```
@@ -1311,7 +1321,9 @@ workflow string_to_file {
 Example input:
 
 ```json
-{}
+{
+  "string_to_file.infile": "hello.txt"
+}
 ```
 
 Example output:
@@ -1424,18 +1436,20 @@ workflow map_to_struct {
   String b = "key"
   String c = "lookup"
 
-  # What are the keys to this Struct?
-  Words literal_syntax = Words {
-    a: 10,
-    b: 11,
-    c: 12
-  }
-
-  # What are the keys to this Struct?
-  Words map_coercion = {
-    a: 10,
-    b: 11,
-    c: 12
+  output {
+    # What are the keys to this Struct?
+    Words literal_syntax = Words {
+      a: 10,
+      b: 11,
+      c: 12
+    }
+  
+    # What are the keys to this Struct?
+    Words map_coercion = {
+      a: 10,
+      b: 11,
+      c: 12
+    }
   }
 }
 ```
@@ -1561,7 +1575,7 @@ task count_lines {
   }
 
   command <<<
-    wc -l ~{write_lines(array)}
+    wc -l < ~{write_lines(array)}
   >>>
   
   output {
@@ -1864,8 +1878,8 @@ Example output:
 {
   "array_map_equality.is_true1": true,
   "array_map_equality.is_true2": true,
-  "array_map_equality.is_false1": true,
-  "array_map_equality.is_false2": true
+  "array_map_equality.is_false1": false,
+  "array_map_equality.is_false2": false
 }
 ```
 </p>
@@ -2048,7 +2062,7 @@ version 1.1
 struct Experiment {
   String id
   Array[String] variables
-  Map[String, Float] data
+  Map[String, String] data
 }
 
 workflow nested_access {
@@ -2081,7 +2095,7 @@ Example input:
       "variables": ["name", "height"],
       "data": {
         "name": "Pinky",
-        "height": 7
+        "height": "10"
       }
     },
     {
@@ -2089,7 +2103,7 @@ Example input:
       "variables": ["name", "weight"],
       "data": {
         "name": "Porky",
-        "weight": 1000
+        "weight": "100"
       }
     }
   ]
@@ -2209,7 +2223,7 @@ Example input:
 {
   "placeholders.start": "h",
   "placeholders.end": "o",
-  "placeholders.input": "hello"
+  "placeholders.instr": "hello"
 }
 ```
 
@@ -2217,7 +2231,8 @@ Example output:
 
 ```json
 {
-  "placeholders.cmd": "grep 'h...o' hello"
+  "placeholders.cmd": "grep 'h...o' hello",
+  "placeholders.s": "4"
 }
 ```
 </p>
@@ -2296,12 +2311,15 @@ Example: placeholder_coercion.wdl
 version 1.1
 
 workflow placeholder_coercion {
-  File x = "/hij"
+  input {
+    File x
+  }
+  String x_as_str = x
   Int? i = None
 
   output {
     Boolean is_true1 = "~{"abc"}" == "abc"
-    Boolean is_true2 = "~{x}" == "/hij"
+    Boolean is_true2 = "~{x}" == x_as_str
     Boolean is_true3 = "~{5}" == "5"
     Boolean is_true4 = "~{3.141}" == "3.141000"
     Boolean is_true5 = "~{3.141 * 1E-10}" == "0.000000"
@@ -2315,7 +2333,9 @@ workflow placeholder_coercion {
 Example input:
 
 ```json
-{}
+{
+  "placeholder_coercion.x": "hello.txt"
+}
 ```
 
 Example output:
@@ -2429,7 +2449,7 @@ Example output:
 
 ```json
 {
-  "flags.num_matches": 2
+  "flags.num_matches": "2"
 }
 ```
 </p>
@@ -2746,7 +2766,7 @@ task greet_person {
   printf "Hello ~{person.name.first}! You have ~{length(assay_array)} test result(s) available.\n"
 
   if ~{defined(person.income)}; then
-    if [ "~{select_first([person.income]).amount}" -gt 1000 ]; then
+    if [ ~{round(select_first([person.income]).amount)} -gt 1000 ]; then
       currency="~{select_first([select_first([person.income]).currency, "USD"])}"
       printf "Please transfer $currency 500 to continue"
     fi
@@ -2764,7 +2784,7 @@ Example input:
 
 ```json
 {
-  "person_struct.person": {
+  "greet_person.person": {
     "name": {
       "first": "Richard",
       "last": "Rich"
@@ -2785,7 +2805,7 @@ Example output:
 
 ```json
 {
-  "person_struct.message": "Hello Richard! You have 1 test result(s) available.\nPlease transfer USD 500 to continue"
+  "greet_person.message": "Hello Richard! You have 1 test result(s) available.\nPlease transfer USD 500 to continue"
 }
 ```
 
@@ -2925,6 +2945,7 @@ task calculate_bill {
 
 workflow import_structs {
   input {
+    File infile
     Person doctor = Person {
       age: 10,
       name: Name {
@@ -2949,12 +2970,12 @@ workflow import_structs {
         period: "hourly"
       },
       assay_data: {
-        "glucose": "hello.txt"
+        "glucose": infile
       }
     }
   }
 
-  call person_struct.greet_person {
+  call person_struct_task.greet_person {
     input: person = patient
   }
 
@@ -2972,14 +2993,16 @@ workflow import_structs {
 Example input:
 
 ```json
-{}
+{
+  "import_structs.infile": "hello.txt"
+}
 ```
 
 Example output:
 
 ```json
 {
-  "import_structs.bill": 175000
+  "import_structs.bill": 175000.0
 }
 ```
 </p>
@@ -3478,7 +3501,7 @@ task test_placeholders {
     # The `read_lines` function reads the lines from a file into an
     # array. The `sep` function concatenates the lines with a space
     # (" ") delimiter. The resulting string is then printed to stdout.
-    printf ~{sep(" ", read_lines(infile))}
+    printf "~{sep(" ", read_lines(infile))}"
   >>>
   
   output {
@@ -3607,10 +3630,10 @@ task python_strip {
 
   command<<<
   python <<CODE
-    with open("~{infile}") as fp:
-      for line in fp:
-        if not line.startswith('#'):
-          print(line.strip())
+  with open("~{infile}") as fp:
+    for line in fp:
+      if not line.startswith('#'):
+        print(line.strip())
   CODE
   >>>
 
@@ -3637,7 +3660,7 @@ Example output:
 
 ```json
 {
-  "python_strip": ["A", "B", "C"]
+  "python_strip.lines": ["A", "B", "C"]
 }
 ```
 </p>
@@ -3647,10 +3670,10 @@ Given an `infile` value of `/path/to/file`, the execution engine will produce th
 
 ```sh
 python <<CODE
-  with open("/path/to/file") as fp:
-    for line in fp:
-      if not line.startswith('#'):
-        print(line.strip())
+with open("/path/to/file") as fp:
+  for line in fp:
+    if not line.startswith('#'):
+      print(line.strip())
 CODE
 ```
 
@@ -3690,8 +3713,7 @@ Example input:
 
 ```json
 {
-  "outputs.t": 5,
-  "outputs.write_outstr": false
+  "outputs.t": 5
 }
 ```
 
@@ -3784,7 +3806,7 @@ task glob {
   }
 
   command <<<
-  for i in 1..~{num_files}; do
+  for i in {1..~{num_files}}; do
     printf ${i} > file_${i}.txt
   done
   >>>
@@ -3839,7 +3861,7 @@ task relative_and_absolute {
   >>>
 
   output {
-    File something = read_string("my/path/to/something.txt")
+    String something = read_string("my/path/to/something.txt")
     File bashrc = "/root/.bashrc"
   }
 
@@ -3889,7 +3911,7 @@ task optional_output {
   }
   command <<<
     printf "1" > example1.txt
-    if ~{make_example2}; do
+    if ~{make_example2}; then
       printf "2" > example2.txt
     fi
   >>>
@@ -3916,15 +3938,9 @@ Example output:
 ```json
 {
   "optional_output.example2": null,
-  "optional_output.file_array_len": 1
-}
-```
-
-Test config:
-
-```json
-{
-  "exclude_output": ["example1", "file_array"]
+  "optional_output.file_array_len": 1,
+  "optional_output.example1": "example1.txt",
+  "optional_output.file_array": ["example1.txt", null]
 }
 ```
 </p>
@@ -3973,7 +3989,7 @@ task runtime_container {
   >>>
   
   output {
-    String is_true = ubuntu_version == read_string(stdout())
+    Boolean is_true = ubuntu_version == read_string(stdout())
   }
 
   runtime {
@@ -4238,6 +4254,7 @@ task test_gpu {
   }
   
   runtime {
+    container: "archlinux:latest"
     gpu: true
   }
 }
@@ -4556,7 +4573,7 @@ task test_hints {
   }
 
   command <<<
-  wc -l ~{foo}
+  wc -l < ~{foo}
   >>>
 
   output {
@@ -4591,7 +4608,7 @@ Example output:
 
 ```json
 {
-  "test_hints.num_lines": 3
+  "test_hints.num_lines": 2
 }
 ```
 </p>
@@ -4676,7 +4693,9 @@ Example input:
 Example output:
 
 ```json
-{}
+{
+  "input_hint.experience": []
+}
 ```
 </p>
 </details>
@@ -4808,11 +4827,11 @@ task ex_paramter_meta {
   }
 
   command <<<
-    wc ~{if lines_only then '-l' else ''} ~{infile}
+    wc ~{if lines_only then '-l' else ''} < ~{infile}
   >>>
 
   output {
-     String result = stdout()
+     String result = read_int(stdout())
   }
 
   runtime {
@@ -4835,7 +4854,7 @@ Example output:
 
 ```json
 {
-  "ex_paramter_meta.result": "3"
+  "ex_paramter_meta.result": "2"
 }
 ```
 </p>
@@ -4854,7 +4873,7 @@ version 1.1
 
 task hisat2 {
   input {
-    File index
+    File index_tar_gz
     String sra_acc
     Int? max_reads
     Int threads = 8
@@ -4862,15 +4881,15 @@ task hisat2 {
     Float disk_size_gb = 100
   }
 
-  String index_id = basename(index, ".tar.gz")
+  String index_id = basename(index_tar_gz, ".tar.gz")
 
   command <<<
-    mkdir index
-    tar -C index -xzf ~{index}
+    mkdir "~{index_id}"
+    tar -C "~{index_id}" --strip-components 2 -xzf "~{index_tar_gz}"
     hisat2 \
       -p ~{threads} \
       ~{if defined(max_reads) then "-u ~{select_first([max_reads])}" else ""} \
-      -x index/~{index_id} \
+      -x "~{index_id}" \
       --sra-acc ~{sra_acc} > ~{sra_acc}.sam
   >>>
   
@@ -4890,7 +4909,7 @@ task hisat2 {
   }
 
   parameter_meta {
-    index: "Gzipped tar file with HISAT2 index files"
+    index_tar_gz: "Gzipped tar file with HISAT2 index files"
     sra_acc: "SRA accession number or reads to align"
   }
 }
@@ -5234,7 +5253,7 @@ task echo {
   }
   
   command <<<
-  printf ~{msg}
+  printf '~{msg}\n'
   >>>
   
   output {
@@ -5302,7 +5321,7 @@ task foobar {
   }
 
   command <<<
-  wc -l ~{infile}
+  wc -l < ~{infile}
   >>>
 
   output {
@@ -5344,7 +5363,7 @@ Example output:
 
 ```json
 {
-  "other.results": 3
+  "other.results": 2
 }
 ```
 </p>
@@ -5414,8 +5433,8 @@ task repeat {
   }
   
   command <<<
-  for i in 1..~{i}; do
-    printf ~{select_first([opt_string, "default"])}
+  for i in {1..~{i}}; do
+    printf '~{select_first([opt_string, "default"])}\n'
   done
   >>>
 
@@ -5680,7 +5699,8 @@ Example input:
   "allow_nested.msg1": "hello",
   "allow_nested.msg2": "goodbye",
   "allow_nested.my_ints": [1, 2, 3],
-  "allow_nested.ref_file": "hello.txt"
+  "allow_nested.ref_file": "hello.txt",
+  "allow_nested.repeat2.i": 2
 }
 ```
 
@@ -5690,7 +5710,6 @@ Example output:
 {
   "allow_nested.lines1": ["hello", "hello", "hello"],
   "allow_nested.lines2": ["goodbye", "goodbye"],
-  "allow_nested.repeat2.i": 2,
   "allow_nested.incrs": [2, 3, 4]
 }
 ```
@@ -5850,7 +5869,7 @@ workflow nested_scatter {
     Array[String] salutations = ["Hello", "Goodbye"]
   }
 
-  Array[String] honorifics = ["Wizard", "Mr."]
+  Array[String] honorifics = ["Mr.", "Wizard"]
 
   # the zip() function creates an array of pairs
   Array[Pair[String, String]] name_pairs = zip(first_names, last_names)
@@ -5931,7 +5950,8 @@ Example output:
       ["Hello Mr. Merry, how are you?", "Hello Mr. Merry Brandybuck, how are you?"],
       ["Goodbye Mr. Merry, how are you?", "Goodbye Mr. Merry Brandybuck, how are you?"]
     ]
-  ]
+  ],
+  "nested_scatter.used_honorifics": ["Mr.", "Wizard", "Mr."]
 }
 ```
 </p>
@@ -6018,7 +6038,8 @@ Example output:
 ```json
 {
   "test_conditional.result_array": [4, 6, 8, 10],
-  "test_conditional.maybe_result2": [0, 4, 6, 8, 10]
+  "test_conditional.maybe_result2": [0, 4, 6, 8, 10],
+  "test_conditional.j_out": 2
 }
 ```
 </p>
@@ -6054,12 +6075,12 @@ workflow if_else {
   
   # the body *is not* evaluated since 'b' is false
   if (is_morning) {
-    call greet as morning { time = "morning" }
+    call greet as morning { input: time = "morning" }
   }
 
   # the body *is* evaluated since !b is true
   if (!is_morning) {
-    call greet as afternoon { time = "afternoon" }
+    call greet as afternoon { input: time = "afternoon" }
   }
 
   output {
@@ -6104,7 +6125,7 @@ workflow nested_if {
 
   if (morning) {
     if (friendly) {
-      call if_else.greet { time = "morning" }
+      call if_else.greet { input: time = "morning" }
     }
   }
 
@@ -6209,7 +6230,7 @@ Example output:
 
 ```json
 {
-  "test_floor.all_true": true
+  "test_floor.all_true": [true, true]
 }
 ```
 </p>
@@ -6264,7 +6285,7 @@ Example output:
 
 ```json
 {
-  "test_ceil.all_true": true
+  "test_ceil.all_true": [true, true]
 }
 ```
 </p>
@@ -6319,7 +6340,7 @@ Example output:
 
 ```json
 {
-  "test_round.all_true": true
+  "test_round.all_true": [true, false]
 }
 ```
 </p>
@@ -6422,8 +6443,8 @@ workflow test_max {
 
   output {
     # these two expressions are equivalent
-    Float min1 = if value1 > value2 then value1 else value2
-    Float min2 = max(value1, value2)
+    Float max1 = if value1 > value2 then value1 else value2
+    Float max2 = max(value1, value2)
   }
 }
 ```
@@ -6442,8 +6463,8 @@ Example output:
 
 ```json
 {
-  "test_max.min1": 1.0,
-  "test_max.min2": 1.0
+  "test_max.max1": 2.0,
+  "test_max.max2": 2.0
 }
 ```
 </p>
@@ -6490,7 +6511,7 @@ workflow test_sub {
     String chocoearly = sub(chocolike, "late", "early") # I like chocoearly when\nit's early
     String chocolate = sub(chocolike, "late$", "early") # I like chocolate when\nit's early
     String chocoearlylate = sub(chocolike, "[^ ]late", "early") # I like chocearly when\nit's late
-    String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate 4444\nit's late
+    String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate when\nit's late
     String no_newline = sub(chocolike, "\\n", " ") # "I like chocolate when it's late"
   }
 }
@@ -6511,7 +6532,7 @@ Example output:
   "test_sub.chocoearly": "I like chocoearly when\nit's early",
   "test_sub.chocolate": "I like chocolate when\nit's early",
   "test_sub.chocoearlylate": "I like chocearly when\nit's late",
-  "test_sub.choco4": "I 4444 chocolate 4444\nit's late",
+  "test_sub.choco4": "I 4444 chocolate when\nit's late",
   "test_sub.no_newline": "I like chocolate when it's late"
 }
 ```
@@ -6672,7 +6693,7 @@ task gen_files {
   }
 
   command <<<
-    for i in 1..~{num_files}; do
+    for i in {1..~{num_files}}; do
       printf ${i} > a_file_${i}.txt
     done
     mkdir a_dir
@@ -6814,7 +6835,7 @@ task echo_stdout {
   command <<< printf "hello world" >>>
 
   output {
-    File message = read_string(stdout())
+    String message = read_string(stdout())
   }
 }
 ```
@@ -6859,7 +6880,7 @@ task echo_stderr {
   command <<< >&2 printf "hello world" >>>
 
   output {
-    File message = read_string(stderr())
+    String message = read_string(stderr())
   }
 }
 ```
@@ -7382,8 +7403,8 @@ version 1.1
 
 task read_map {
   command <<<
-    printf "key1\tvalue1\n" >> map_file
-    printf "key2\tvalue2\n" >> map_file
+    printf "key1\tvalue1\n"
+    printf "key2\tvalue2\n"
   >>>
   
   output {
@@ -7641,9 +7662,10 @@ task write_json {
   command <<<
     python <<CODE
     import json
+    import sys
     with open("~{write_json(map)}") as js:
       d = json.load(js)
-      print(list(d.keys()))
+    json.dump(list(d.keys()), sys.stdout)
     CODE
   >>>
 
@@ -8090,7 +8112,7 @@ workflow test_prefix {
   Array[Int] env2 = [1, 2, 3]
 
   output {
-    Array[String] env_prefixed = prefix("-e ", env1)
+    Array[String] env1_prefixed = prefix("-e ", env1)
     Array[String] env2_prefixed = prefix("-f ", env2)
   }
 }
@@ -8178,7 +8200,7 @@ workflow test_suffix {
   Array[Int] env2 = [1, 2, 3]
 
   output {
-    Array[String] env1_suffix = suffix(".txt ", env1)
+    Array[String] env1_suffix = suffix(".txt", env1)
     Array[String] env2_suffix = suffix(".0", env2)
   }
 }
@@ -8480,7 +8502,7 @@ task double {
   command <<< >>>
 
   output {
-    Int d = n * n
+    Int d = 2 * n
   }
 }
 
@@ -8505,7 +8527,7 @@ Example input:
 
 ```json
 {
-  "test_range.n": 5
+  "test_range.i": 5
 }
 ```
 
@@ -8548,6 +8570,9 @@ workflow test_transpose {
   
   output {
     Boolean is_true = transpose(input_array) == expected_output_array
+    Array[Array[Int]] out = transpose(input_array)
+    Array[Array[Int]] expected = expected_output_array
+
   }
 }
 ```
@@ -8563,6 +8588,8 @@ Example output:
 
 ```json
 {
+  "test_transpose.expected": [[0, 3], [1, 4], [2, 5]],
+  "test_transpose.out": [[0, 3], [1, 4], [2, 5]],
   "test_transpose.is_true": true
 }
 ```
@@ -9864,7 +9891,7 @@ Example output:
 
 ```json
 {
-  "serialize_array_delim.strings": [
+  "serialize_array_delim.heads": [
     "hello world",
     "hello world",
     "hi_world"
@@ -10198,13 +10225,13 @@ task grep2 {
   }
 
   Pair[Array[String], Array[String]] opts_and_values = unzip(as_pairs(args))
-  Int n = length(opts_and_values.left)
+  Int n = length(opts_and_values.left) - 1
 
   command <<<
   opts=( ~{sep(" ", quote(opts_and_values.left))} )
   values=( ~{sep(" ", quote(opts_and_values.right))} )
   command="grep"
-  for i in 1..~{n}; do
+  for i in {0..~{n}}; do
     command="$command ${opts[i]}"="${values[i]}"
   done
   $command ~{pattern} ~{infile}
@@ -10287,7 +10314,7 @@ task serde_map_tsv {
   >>>
 
   output {
-    Map[String, String] new_items = read_map("lines")
+    Map[String, String] new_items = read_map(stdout())
   }
 }
 ```
@@ -10358,7 +10385,7 @@ version 1.1
 
 task serde_map_json {
   input {
-    Map[String, Float] read_quality_scores
+    Map[String, Int] read_quality_scores
   }
 
   command <<<
@@ -10374,7 +10401,7 @@ task serde_map_json {
   >>>
 
   output {
-    Map[String, Float] ascii_values = read_json(stdout())
+    Map[String, Int] ascii_values = read_json(stdout())
   }
 
   runtime {
