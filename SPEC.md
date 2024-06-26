@@ -1750,18 +1750,20 @@ workflow map_to_struct {
   String b = "key"
   String c = "lookup"
 
-  # What are the keys to this Struct?
-  Words literal_syntax = Words {
-    a: 10,
-    b: 11,
-    c: 12
-  }
+  output {
+    # What are the keys to this Struct?
+    Words literal_syntax = Words {
+      a: 10,
+      b: 11,
+      c: 12
+    }
 
-  # What are the keys to this Struct?
-  Words map_coercion = {
-    a: 10,
-    b: 11,
-    c: 12
+    # What are the keys to this Struct?
+    Words map_coercion = {
+      a: 10,
+      b: 11,
+      c: 12
+    }
   }
 }
 ```
