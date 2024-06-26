@@ -849,23 +849,37 @@ Single- and double-quotes do not need to be escaped within a multi-line string.
 
 A `File` or `Directory` declaration may have have a string value indicating a relative or absolute path on the local file system.
 
-Within a WDL file, literal values for files may only be (relative or absolute) paths that are local to the execution environment. If the specified path does not exist, it is an error unless the declaration is optional.
-
 ```wdl
 task literals_paths {
   input {
-    # If the user does not overide the value of `f1`, and /foo/bar.txt
-    # does not exist, it is an error.
     File f1 = "/foo/bar.txt"
-
-    # If the user does not override the value of `f2` and /foo/bar.txt
-    # does not exist, then `f2` is set to `None`.
-    File? f2 = "/foo/bar.txt"
+    File? f2
   }
+
+  command <<<
+    # If the user does not overide the value of `f1`, and /foo/bar.txt
+    # does not exist, an error will occur when the file is accessed here.
+    cat "~{f1}"
+
+    # If the user does not specify the value of `f2` it's value is `None`,
+    # which results in the empty-string when interpolated. `-f ""` is
+    # always false.
+    if [ -f "~{f2}" ]; then
+      echo "~{f2}"
+    fi
+  >>>
 }
 ```
 
-An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path.
+Within a WDL file, literal values for files and directories may only be (relative or absolute) paths that are local to the execution environment.
+
+A path is only required to be valid if and when it is accessed. A path assigned to an input or private declaration is only accessed if it is referred to in the `command` or `output` sections. A path assigned to an output declaration must be valid unless the declaration is optional.
+
+* To read from a path, the file/directory must exist and be accessible for reading (i.e., be assigned the appropriate permissions).
+* To write to a file, the path's parent directory must be accessible for writing.
+* To write to a directory, it must exist and be accessible for writing.
+
+An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path. Remote files must be treated as read-only. A remote file is only required to be vaild at the time that the execution engine needs to localize it.
 
 #### Optional Types and None
 
