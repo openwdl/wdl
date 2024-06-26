@@ -9613,7 +9613,7 @@ workflow test_prefix {
   Array[Int] env2 = [1, 2, 3]
 
   output {
-    Array[String] env_prefixed = prefix("-e ", env1)
+    Array[String] env1_prefixed = prefix("-e ", env1)
     Array[String] env2_prefixed = prefix("-f ", env2)
   }
 }
@@ -11822,7 +11822,7 @@ Example output:
 
 ```json
 {
-  "serialize_array_delim.strings": [
+  "serialize_array_delim.heads": [
     "hello world",
     "hello world",
     "hi_world"
