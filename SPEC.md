@@ -6836,7 +6836,6 @@ workflow allow_nested {
   input {
     Int int_val
     String msg1
-    String msg2
     Array[Int] my_ints
     File ref_file
   }
@@ -6852,7 +6851,7 @@ workflow allow_nested {
 
   call lib.repeat as repeat2 {
     # Note: the default value of `0` for the `i` input causes the task to fail
-    opt_string = msg2
+    i = 2
   }
 
   scatter (i in my_ints) {
@@ -6876,10 +6875,9 @@ Example input:
 {
   "allow_nested.int_val": 3,
   "allow_nested.msg1": "hello",
-  "allow_nested.msg2": "goodbye",
   "allow_nested.my_ints": [1, 2, 3],
   "allow_nested.ref_file": "hello.txt",
-  "allow_nested.repeat2.i": 2
+  "allow_nested.repeat2.opt_string": "goodbye"
 }
 ```
 
