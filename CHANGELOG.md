@@ -17,6 +17,11 @@ Keep the changelog pleasant to read in the text editor:
 + Properly indent blocks.
 -->
 
+version 1.2.1
+---------------------------
+
+* Fix issues with examples (#653, #654, ). Thanks to @stxue1!
+
 version 1.2.0
 ---------------------------
 
@@ -35,7 +40,7 @@ version 1.2.0
 + Added `disks` and `gpu` reserved hints for requesting specific resources.
 
 + Added `contains_key` function to standard library. [PR 603](https://github.com/openwdl/wdl/pull/603)
-
+****
 + Added exponentiation operator (`**`).
 
 + Added `find`, and `matches` functions.
