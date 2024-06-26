@@ -4394,7 +4394,7 @@ Example output:
 
 ```json
 {
-  "python_strip": ["A", "B", "C"]
+  "python_strip.lines": ["A", "B", "C"]
 }
 ```
 </p>
