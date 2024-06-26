@@ -6850,7 +6850,6 @@ workflow allow_nested {
   }
 
   call lib.repeat as repeat2 {
-    # Note: the default value of `0` for the `i` input causes the task to fail
     i = 2
   }
 
@@ -7249,12 +7248,12 @@ workflow if_else {
   
   # the body *is not* evaluated since 'b' is false
   if (is_morning) {
-    call greet as morning { time = "morning" }
+    call greet as morning { input: time = "morning" }
   }
 
   # the body *is* evaluated since !b is true
   if (!is_morning) {
-    call greet as afternoon { time = "afternoon" }
+    call greet as afternoon { input: time = "afternoon" }
   }
 
   output {
@@ -7299,7 +7298,7 @@ workflow nested_if {
 
   if (morning) {
     if (friendly) {
-      call if_else.greet { time = "morning" }
+      call if_else.greet { input: time = "morning" }
     }
   }
 
