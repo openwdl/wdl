@@ -1590,14 +1590,17 @@ Example: string_to_file.wdl
 version 1.2
 
 workflow string_to_file {
-  String path1 = "/path/to/file"
-  File path2 = "/path/to/file"
+  input {
+    File infile
+  }
+
+  String path1 = "~{infile}"
 
   # valid - String coerces unambiguously to File
-  File path3 = path1
+  File path2 = path1
 
   output {
-    Boolean paths_equal = path2 == path3
+    Boolean paths_equal = path1 == path2
   }
 }
 ```
@@ -1606,7 +1609,9 @@ workflow string_to_file {
 Example input:
 
 ```json
-{}
+{
+  "string_to_file.infile": "hello.txt"
+}
 ```
 
 Example output:
@@ -2282,8 +2287,8 @@ Example output:
 {
   "array_map_equality.is_true1": true,
   "array_map_equality.is_true2": true,
-  "array_map_equality.is_false1": true,
-  "array_map_equality.is_false2": true
+  "array_map_equality.is_false1": false,
+  "array_map_equality.is_false2": false
 }
 ```
 </p>
