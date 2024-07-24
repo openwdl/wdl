@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
+* Clarify that `disks` mount points ephemeral and should not already exist
+
 * Include fixes to examples introduced in v1.1.3
 
 version 1.2.0

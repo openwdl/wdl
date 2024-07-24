@@ -5099,9 +5099,11 @@ Test config:
     * `Array[String]` - An array of disk specifications.
 * Default value: `1 GiB`
 
-The `disks` attribute provides a way to request one or more persistent volumes, each of which has a minimum size and is mounted at a specific location. When the `disks` attribute is provided, the execution engine must guarantee the requested resources are available or immediately fail the task prior to instantiating the command.
+The `disks` attribute provides a way to request one or more persistent volumes, each of which has a minimum size and is mounted at a specific location with both read and write permissions. When the `disks` attribute is provided, the execution engine must guarantee the requested resources are available or immediately fail the task prior to instantiating the command.
 
-If a mount point is specified, then it must be an absolute path to a location in the host environment. If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
+If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
+
+If a mount point is specified, then it must be an absolute path to a location in the host environment (i.e., within the container). The specified path either must not already exist in the host environment, or it must be empty and have at least the requested amount of space available. The mount point should be assumed to be ephemeral, i.e., it will be deleted after the task completes.
 
 The execution engine is free to provision any class(es) of persistent volume it has available (e.g., SSD or HDD). The [`disks` hint](#-disks) hint can be used to request specific attributes for the provisioned disks.
 
