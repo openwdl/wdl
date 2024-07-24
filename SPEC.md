@@ -9178,9 +9178,10 @@ task write_json {
   command <<<
     python <<CODE
     import json
+    import sys
     with open("~{write_json(map)}") as js:
       d = json.load(js)
-      print(list(d.keys()))
+    json.dump(list(d.keys()), sys.stdout)
     CODE
   >>>
 
