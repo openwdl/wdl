@@ -3298,7 +3298,7 @@ struct Person {
     description: "Encapsulates data about a person"
   }
 
-  paramter_meta {
+  parameter_meta {
     name: "The person's name"
     age: "The person's age"
     income: "How much the person makes (optional)"
