@@ -871,13 +871,15 @@ task literals_paths {
 }
 ```
 
-Within a WDL file, literal values for files and directories may only be (relative or absolute) paths that are local to the execution environment.
+Within a WDL file, literal values for files and directories may only be paths that are local to the execution environment.
 
 A path is only required to be valid if and when it is accessed. A path assigned to an input or private declaration is only accessed if it is referred to in the `command` or `output` sections. A path assigned to an output declaration must be valid unless the declaration is optional.
 
 * To read from a path, the file/directory must exist and be accessible for reading (i.e., be assigned the appropriate permissions).
 * To write to a file, the path's parent directory must be accessible for writing.
 * To write to a directory, it must exist and be accessible for writing.
+
+Path literals should be absolute paths, since the execution engine is free to set the working directory of a task execution, and thus relative paths may not exist at runtime. 🗑 Use of relative path literals when defining input and private declarations is currently allowed but is deprecated and will be disallowed in WDL 2.0. 
 
 An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path. Remote files must be treated as read-only. A remote file is only required to be vaild at the time that the execution engine needs to localize it.
 
