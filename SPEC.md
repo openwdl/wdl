@@ -871,7 +871,7 @@ task literals_paths {
 }
 ```
 
-Within a WDL file, literal values for files and directories may only be paths that are local to the execution environment.
+Within a WDL file, the execution engine is only required to support literal values for files and directories that are paths local to the execution environment.
 
 A path is only required to be valid if and when it is accessed. A path assigned to an input or private declaration is only accessed if it is referred to in the `command` or `output` sections. A path assigned to an output declaration must be valid unless the declaration is optional.
 
