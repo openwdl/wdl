@@ -3417,7 +3417,7 @@ A document is imported using it's [URI](https://en.wikipedia.org/wiki/Uniform_Re
 * `https://`
 * 🗑 `file://` - Using the `file://` protocol for local imports can be problematic. Its use is deprecated and will be removed in WDL 2.0.
 
-In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. In the primary WDL document, a protocol-less import is relative to the host file system. If a protocol-less import starts with `/` it is interpreted as relative to the root of the host in the resolved URI.
+In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. In the primary WDL document, a protocol-less import is relative to the folder that contains the primary WDL file. If a protocol-less import starts with `/` it is interpreted as relative to the root of the file system that contains the primary WDL file.
 
 Some examples of correct import resolution:
 
@@ -5121,7 +5121,7 @@ The `disks` attribute provides a way to request one or more persistent volumes, 
 
 If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
 
-If a mount point is specified, then it must be an absolute path to a location in the host environment (i.e., within the container). The specified path either must not already exist in the host environment, or it must be empty and have at least the requested amount of space available. The mount point should be assumed to be ephemeral, i.e., it will be deleted after the task completes.
+If a mount point is specified, then it must be an absolute path to a location in the execution environment (i.e., within the container). The specified path either must not already exist in the execution environment, or it must be empty and have at least the requested amount of space available. The mount point should be assumed to be ephemeral, i.e., it will be deleted after the task completes.
 
 The execution engine is free to provision any class(es) of persistent volume it has available (e.g., SSD or HDD). The [`disks` hint](#-disks) hint can be used to request specific attributes for the provisioned disks.
 
@@ -7994,7 +7994,7 @@ File join_paths(File, Array[String]+)
 File join_paths(Array[String]+)
 ```
 
-Joins together two or more paths into an absolute path in the host filesystem.
+Joins together two or more paths into an absolute path in the execution environment's filesystem.
 
 There are three variants of this function:
 
@@ -10073,6 +10073,8 @@ Example output:
 
 ```json
 {
+  "test_transpose.out": [[0, 3], [1, 4], [2, 5]],
+  "test_transpose.expected": [[0, 3], [1, 4], [2, 5]],
   "test_transpose.is_true": true
 }
 ```
