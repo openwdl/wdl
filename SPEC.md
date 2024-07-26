@@ -197,9 +197,11 @@ Revisions to this specification are made periodically in order to correct errors
     - [`length`](#length)
 - [Input and Output Formats](#input-and-output-formats)
   - [JSON Input Format](#json-input-format)
+    - [File/Directory Inputs](#filedirectory-inputs)
     - [Optional Inputs](#optional-inputs)
     - [Specifying / Overriding Requirements and Hints](#specifying--overriding-requirements-and-hints)
   - [JSON Output Format](#json-output-format)
+    - [File/Directory Outputs](#filedirectory-outputs)
   - [Extended File/Directory Input/Output Format](#extended-filedirectory-inputoutput-format)
   - [JSON Serialization of WDL Types](#json-serialization-of-wdl-types)
     - [Primitive Types](#primitive-types-1)
@@ -11299,6 +11301,12 @@ Here is an example JSON input file for a workflow `wf`:
 
 WDL implementations are only required to support workflow execution, and not necessarily task execution, so a JSON input format for tasks is not specified. However, it is strongly suggested that if an implementation does support task execution, that it also supports this JSON input format for tasks. It is left to the discretion of the WDL implementation whether it is required to prefix the task input with the task name, i.e., `mytask.infile` vs. `infile`.
 
+### File/Directory Inputs
+
+It is up to the execution engine to resolve input files and directories and stage them into the execution environment. The execution engine is free to specify the values that are allowed for `File` and `Directory` parameters, but at a minimum it is required to support POSIX absolute file paths (e.g., `/path/to/file`).
+
+It is strongly recommended that input files and directories be specified as absolute paths to local files or as URLs. If relative paths are allowed, then it is suggested that they be resolved relative to the directory that contains the input JSON file (if a file is provided) or to the working directory in which the workflow is initially launched.
+
 ### Optional Inputs
 
 If a workflow has an optional input, its value may or may not be specified in the JSON input. It is also valid to explicitly set the value of an optional input to be undefined using JSON `null`.
@@ -11399,6 +11407,12 @@ The output JSON will look like:
 ```
 
 It is recommended (but not required) that JSON outputs be "pretty printed" to be more human-readable.
+
+### File/Directory Outputs
+
+It is up to the execution engine to provide workflow `File` and `Directory` outputs to the user that persist following a successful execution of the workflow. The execution engine is free to specify the values that are allowed for `File` and `Directory` parameters, but at a minimum it is required to support POSIX absolute file paths (e.g., `/path/to/file`).
+
+It is strongly recommended that output files and directories be specified as absolute paths to local files or as URLs. If relative paths are allowed, then it is suggested that they be resolved relative to the directory that contains the output JSON file (if a file is written) or to a single common directory containing all the workflow outputs.
 
 ## Extended File/Directory Input/Output Format
 
