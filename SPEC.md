@@ -1491,15 +1491,16 @@ Note that the ability to assign values to `Struct` declarations other than struc
 
 ##### Enumeration Types (Enums)
 
-An enumeration (or "enum") is a closed set of alternatives that are considered semantically valid in a specific context. An enum is [defined]() at the top-level of the WDL document and can be used as a declaration type anywhere in the document.
+An enumeration (or "enum") is a closed set of enumerated values (known as "variants") that are considered semantically valid in a specific context. An enum is defined at the top-level of the WDL document and can be used as a declaration type anywhere in the document.
 
-An enum is defined using the `enum` keyword, followed by a globally unique name, followed by a comma-delimited list of identifiers in braces. The value for an enum cannot be created; rather, it must be selected from the list of available values using the `<name>.<value>` syntax.
+An enum is defined using the `enum` keyword, followed by a globally unique name, followed by a comma-delimited list of identifiers—optionally tagged with values—in braces. When referring to a variant within an enum, for example, when assigning to an enum declaration, the `<name>.<variant>` syntax should be used.
 
 ```wdl
 enum FileKind {
   FASTQ,
   BAM
 }
+
 task process_file {
   input {
     File infile
@@ -1516,6 +1517,7 @@ workflow process_files {
     Array[File] files
     FileKind kind
   }
+
   scatter (file in files) {
     call process_file {
       input:
@@ -1526,7 +1528,49 @@ workflow process_files {
 }
 ```
 
-As an example, consider a workflow that processes different types of NGS files and has a `file_kind` input parameter that is expected to be either "fastq" or "bam". Using `String` as the type of `file_kind` is not ideal - if the user specifies an invalid value, the error will not be caught until runtime, perhaps after the workflow has already run for several hours. Alternatively, using an `enum` type for `file_kind` restricts the allowed values such that the execution engine can validate the input prior to executing the workflow.
+As an example, consider a workflow that processes different types of NGS files and has a `file_kind` input parameter that is expected to be either "FASTQ" or "BAM". Using `String` as the type of `file_kind` is not ideal - if the user specifies an invalid value, the error will not be caught until runtime, perhaps after the workflow has already run for several hours. Alternatively, using an `enum` type for `file_kind` restricts the allowed values such that the execution engine can validate the input prior to executing the workflow.
+
+Enums are valued, meaning that each variant within an enum has an associated value. To assign a type to the values therein, enums can either be _explicitly_ or _implicitly_ typed.
+
+* Explicitly typed enums take an explicit type assigment within square brackets after the enum's identifier that declares the type of the value. Where possible, explicitly typed enums should resolve ambiguities via coercion.
+* Implicitly typed enums are enums where the values can be unambiguously mapped to a single [primitive type](#primitive-types). Enums that are implicitly typed and for which no values are assigned are assumed to be `String` valued with values matching the variant names. All values within an enum must have the same type or an error is thrown.
+
+```wdl
+# An explicitly typed enum that is `String`-valued.
+enum FruitColors[String] {
+  Banana = "yellow",
+  Orange = "orange",
+  Apple = "red",
+}
+
+# An explicitly typed enum that is `Float`-valued. Because the enum is
+# explicitly typed, the `ThreePointOh` variant can be coerced to a `Float`,
+# which is a valid enumeration definition.
+enum FavoriteFloat[Float] {
+  ThreePointOh = 3,
+  FourPointOh = 4.0
+}
+
+# ERROR: because the enum is implicitly typed, the type cannot be unambiguously
+# resolved, which results in an error.
+enum FavoriteNumber {
+  ThreePointOh = 3,
+  FourPointOh = 4.0
+}
+
+# An implicitly typed enum that is `String`-valued.
+enum Whitespace {
+  Tab = "\t",
+  Space = " "
+}
+
+# An implicitly typed enum that is implied to be `String`-valued with the
+# values "FASTQ" and "BAM" respectively.
+enum FileKind {
+  FASTQ,
+  BAM
+}
+```
 
 #### Hidden and Scoped Types
 
@@ -3397,7 +3441,7 @@ struct Invalid {
 
 ## Enum Definition
 
-An `Enum` is an enumerated type. Enums enable the creation of types that represent closed sets of alternatives (called "variants") that are semantically valid in a specific context. Once defined, an `Enum` type can be used as the type of a declaration like any other type. However, new variants of an `Enum` cannot be created. Instead, a declaration having an `Enum` type must be assigned one of the variants created as part of the `Enum`'s definition.
+An `enum` is an enumerated type. Enums enable the creation of types that represent closed sets of alternatives (called "variants") that are semantically valid in a specific context. Once defined, an `enum` type can be used as the type of a declaration like any other type. However, new variants of an `enum` cannot be created. Instead, a declaration having an `enum` type must be assigned one of the variants created as part of the `enum`'s definition.
 
 An enum definition is a top-level WDL element, meaning it is defined at the same level as tasks, workflows, and structs, and it cannot be defined within a task or workflow body. An enum is defined using the `enum` keyword, followed by a name that is unique within the WDL document, and a body containing a comma-delimited list of varaints in braces (`{}`).
 
@@ -3411,8 +3455,8 @@ enum Color {
 
 An enum can be thought of as two different constructs sharing the same name:
 
-* A `Struct` with one `String`-type member, `name`, whose value is the "stringified" version of the variant's identifier. For example, the name of `Color.RED` is `"RED"`. Unlike structs, it is not possible to create new instances of an `Enum` outside of the enum's definition.
-* A global variable of type `Object` whose members have names equal to the enum variant names, and whose values are instances of the `Enum`.
+* A `Struct` with one `String`-type member, `name`, whose value is the "stringified" version of the variant's identifier. For example, the name of `Color.RED` is `"RED"`. Unlike structs, it is not possible to create new instances of an `enum` outside of the enum's definition.
+* A global variable of type `Object` whose members have names equal to the enum variant names, and whose values are instances of the `enum`.
 
 For example, the above definition of `Color` can be thought of as shorthand for:
 
@@ -3442,13 +3486,13 @@ Keep in mind that the above example is illustrative - it is not actually possibl
 
 ### Enum Usage
 
-An `Enum`'s variants are [accessed](#member-access) using a `.` to separate the variant name from the `Enum`'s identifier. Each variant has single member, `String name`, that can be accessed through a `.` separator.
+An `enum`'s variants are [accessed](#member-access) using a `.` to separate the variant name from the `enum`'s identifier. Each variant has single member, `String name`, that can be accessed through a `.` separator.
 
-A declaration with an `Enum` type can only be initialized by referencing a variant directly or by assigning it to the value of another declaration of the same `Enum` type.
+A declaration with an `enum` type can only be initialized by referencing a variant directly or by assigning it to the value of another declaration of the same `enum` type.
 
-Two enum values can be tested for equality (i.e., using `==` or `!=`). To be equal, two enum values must be the same variant of the same `Enum` type. Enum variants are not ordered, so they cannot be compared (i.e., using `>`, `>=`, `<`, `<=`).
+Two enum values can be tested for equality (i.e., using `==` or `!=`). To be equal, two enum values must be the same variant of the same `enum` type. Enum variants are not ordered, so they cannot be compared (i.e., using `>`, `>=`, `<`, `<=`).
 
-An `Enum` cannot be coerced to or from any other type. However, an enum value can be [serialized to/deserialized from a `String`]() or to/from [JSON]().
+An `enum` cannot be coerced to or from any other type. However, an enum value can be [serialized to/deserialized from a `String`]() or to/from [JSON]().
 
 ```wdl
 version 1.2
@@ -3675,7 +3719,7 @@ struct Patient {
 
 ### Importing and Aliasing Enums
 
-Enums are [imported in the same way as `Struct`s](#struct-namespacing) and have the same namespacing rules, namely that Enums exist in the document's global scope, and importing an `Enum` copies its definition into the global scope of the importing document (potentially using an alias).
+Enums are [imported in the same way as `Struct`s](#struct-namespacing) and have the same namespacing rules, namely that Enums exist in the document's global scope, and importing an `enum` copies its definition into the global scope of the importing document (potentially using an alias).
 
 ```wdl
 version 1.2
