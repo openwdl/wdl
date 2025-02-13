@@ -26,6 +26,8 @@ version 1.2.1
 
 * Include fixes to examples introduced in v1.1.3
 
+* Include fixes to examples that don't comile in `wdl-tests`
+
 version 1.2.0
 ---------------------------
 
@@ -252,4 +254,3 @@ draft-2
 ---------------------------
 
 + Added ANTLR4 grammar
-
