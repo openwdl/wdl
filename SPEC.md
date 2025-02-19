@@ -1061,7 +1061,7 @@ Example input:
 
 ```json
 {
-  "sum.ints": ["0", "1", "2"]
+  "ints": ["0", "1", "2"]
 }
 ```
 
@@ -2112,7 +2112,7 @@ Example input:
 
 ```json
 {
-  "expressions.x": 5
+  "x": 5
 }
 ```
 
@@ -2980,8 +2980,8 @@ Example input:
 
 ```json
 {
-  "flags.infile": "greetings.txt",
-  "flags.pattern": "world"
+  "infile": "greetings.txt",
+  "pattern": "world"
 }
 ```
 
@@ -3117,8 +3117,8 @@ Example input:
 
 ```json
 {
-  "true_false_ternary.message": "hello world",
-  "true_false_ternary.newline": false
+  "message": "hello world",
+  "newline": false
 }
 ```
 
@@ -3665,7 +3665,7 @@ Example input:
 
 ```json
 {
-  "task_inputs.i": 1
+  "i": 1
 }
 ```
 </p>
@@ -3793,9 +3793,9 @@ Example input:
 
 ```json
 {
-  "input_type_quantifiers.a": [],
-  "input_type_quantifiers.b": ["A", "B"],
-  "input_type_quantifiers.e": ["C"]
+  "a": [],
+  "b": ["A", "B"],
+  "e": ["C"]
 }
 ```
 
@@ -3961,7 +3961,7 @@ Example input:
 
 ```json
 {
-  "private_declaration.lines": ["A", "B", "C", "D"]
+  "lines": ["A", "B", "C", "D"]
 }
 ```
 
@@ -4286,7 +4286,7 @@ Example input:
 
 ```json
 {
-  "test_placeholders.infile": "greetings.txt"
+  "infile": "greetings.txt"
 }
 ```
 
@@ -4421,7 +4421,7 @@ Example input:
 
 ```json
 {
-  "python_strip.infile": "comment.txt"
+  "infile": "comment.txt"
 }
 ```
 
@@ -4482,7 +4482,7 @@ Example input:
 
 ```json
 {
-  "outputs.t": 5
+  "t": 5
 }
 ```
 
@@ -4546,7 +4546,7 @@ Example input:
 
 ```json
 {
-  "file_output.prefix": "foo"
+  "prefix": "foo"
 }
 ```
 
@@ -4594,7 +4594,7 @@ Example input:
 
 ```json
 {
-  "glob.num_files": 3
+  "num_files": 3
 }
 ```
 
@@ -4702,7 +4702,7 @@ Example input:
 
 ```json
 {
-  "optional_output.make_example2": false
+  "make_example2": false
 }
 ```
 
@@ -5441,7 +5441,7 @@ Example input:
 
 ```json
 {
-  "test_hints.foo": "greetings.txt"
+  "foo": "greetings.txt"
 }
 ```
 
@@ -5566,7 +5566,7 @@ Example input:
 
 ```json
 {
-  "input_hint.person": {
+  "person": {
     "name": "Joe"
   }
 }
@@ -5750,8 +5750,8 @@ Example input:
 
 ```json
 {
-  "ex_paramter_meta.infile": "greetings.txt",
-  "ex_paramter_meta.lines_only": true
+  "infile": "greetings.txt",
+  "lines_only": true
 }
 ```
 
@@ -5917,9 +5917,9 @@ Example input:
 
 ```json
 {
-  "hisat2.index_tar_gz": "https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz",
-  "hisat2.sra_acc": "SRR3440404",
-  "hisat2.max_reads": 10
+  "index_tar_gz": "https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz",
+  "sra_acc": "SRR3440404",
+  "max_reads": 10
 }
 ```
 
@@ -6015,14 +6015,14 @@ Example input:
 
 ```json
 {
-  "gatk_haplotype_caller.bam": "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/RMNISTHS_30xdownsample.bam",
-  "gatk_haplotype_caller.reference": {
+  "bam": "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/RMNISTHS_30xdownsample.bam",
+  "reference": {
     "id":"Homo_sapiens_assembly38",
     "fasta": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta",
     "index": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta.fai",
     "dict": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.dict"
   },
-  "gatk_haplotype_caller.interval": "chr1:1000000-1010000"
+  "interval": "chr1:1000000-1010000"
 }
 ```
 
@@ -7901,7 +7901,7 @@ Example input:
 
 ```json
 {
-  "change_extension.prefix": "foo"
+  "prefix": "foo"
 }
 ```
 
@@ -8130,7 +8130,7 @@ Example input:
 
 ```json
 {
-  "gen_files.num_files": 2
+  "num_files": 2
 }
 ```
 
@@ -8590,8 +8590,8 @@ Example input:
 
 ```json
 {
-  "grep.pattern": "world",
-  "grep.file": "greetings.txt"
+  "pattern": "world",
+  "file": "greetings.txt"
 }
 ```
 
@@ -9477,7 +9477,7 @@ Example input:
 
 ```json
 {
-  "write_object.obj": {
+  "obj": {
     "key_1": "value_1",
     "key_2": "value_2",
     "key_3": "value_3"
@@ -9561,7 +9561,7 @@ Example input:
 
 ```json
 {
-  "write_objects.obj_array": [
+  "obj_array": [
     {
       "key_1": "value_1",
       "key_2": "value_2",
@@ -11792,8 +11792,8 @@ Example input:
 
 ```json
 {
-  "read_write_primitives.s": "hello",
-  "read_write_primitives.i": 42
+  "s": "hello",
+  "i": 42
 }
 ```
 
@@ -11870,8 +11870,8 @@ Example input:
 
 ```json
 {
-  "serialize_array_delim.infile": "greetings.txt",
-  "serialize_array_delim.counts": [1, 2]
+  "infile": "greetings.txt",
+  "counts": [1, 2]
 }
 ```
 
@@ -11931,8 +11931,8 @@ Example input:
 
 ```json
 {
-  "serde_array_lines.infile": "greetings.txt",
-  "serde_array_lines.patterns": ["hello", "world"]
+  "infile": "greetings.txt",
+  "patterns": ["hello", "world"]
 }
 ```
 
@@ -12002,7 +12002,7 @@ Example input:
 
 ```json
 {
-  "serde_array_json.string_to_int": {
+  "string_to_int": {
     "a": 1,
     "b": 2
   }
