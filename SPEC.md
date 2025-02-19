@@ -12101,7 +12101,7 @@ Example output:
 ```json
 {
   "serde_pair.tails_of_two": {
-    "Houston": "Chicago"
+    "Chicago": "Piscataway"
   }
 }
 ```
