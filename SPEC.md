@@ -12312,7 +12312,7 @@ Example input:
 
 ```json
 {
-  "serde_map_tsv.items": {
+  "items": {
     "a": "b",
     "c": "d",
     "e": "f"
@@ -12403,7 +12403,7 @@ Example input:
 
 ```json
 {
-  "serde_map_json.read_quality_scores": {
+  "read_quality_scores": {
     "read1": 32,
     "read2": 41,
     "read3": 55
