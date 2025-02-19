@@ -3337,7 +3337,7 @@ Example input:
 
 ```json
 {
-  "greet_person.person": {
+  "person": {
     "name": {
       "first": "Richard",
       "last": "Rich"
@@ -4332,7 +4332,7 @@ Example input:
 
 ```json
 {
-  "bash_variables.str": "hello"
+  "str": "hello"
 }
 ```
 
