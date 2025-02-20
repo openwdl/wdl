@@ -4594,8 +4594,7 @@ Example input:
 
 ```json
 {
-  "num_files": 3,
-  "glob.outfiles": ["file_1.txt", "file_2.txt", "file_3.txt"]
+  "num_files": 3
 }
 ```
 
