@@ -3831,8 +3831,7 @@ Example output:
 
 ```json
 {
-  "glob.last_file_contents": 3,
-  "glob.outfiles": ["file_1.txt", "file_2.txt", "file_3.txt"]
+  "glob.last_file_contents": 3
 }
 ```
 
