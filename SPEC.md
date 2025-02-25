@@ -3730,7 +3730,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "csvs"
+  "exclude_output": "outputs.csvs"
 }
 ```
 </p>
@@ -3839,7 +3839,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "outfiles"
+  "exclude_output": "glob.outfiles"
 }
 ```
 </p>
@@ -3890,7 +3890,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "bashrc"
+  "exclude_output": "relative_and_absolute.bashrc"
 }
 ```
 </p>
@@ -4003,7 +4003,7 @@ Example input:
 
 ```json
 {
-  "runtime_container.ubuntu_version": "focal"
+  "ubuntu_version": "focal"
 }
 ```
 
@@ -4520,7 +4520,7 @@ Example: all_return_codes_task.wdl
 ```wdl
 version 1.1
 
-task multi_return_code_task {
+task all_return_codes_task {
   command <<<
   exit 42
   >>>
@@ -6592,7 +6592,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["data_file"]
+  "exclude_output": ["change_extension.data_file"]
 }
 ```
 </p>
@@ -6728,7 +6728,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["files"]
+  "exclude_output": ["gen_files.files"]
 }
 ```
 </p>
