@@ -3943,6 +3943,15 @@ Example output:
   "optional_output.file_array": ["example1.txt", null]
 }
 ```
+
+Test config:
+
+```json
+{
+  "exclude_output": "optional_output.file_array"
+}
+```
+
 </p>
 </details>
 
