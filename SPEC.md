@@ -6178,7 +6178,7 @@ When a [call statement](#call-statement) needs to refer to a task or workflow in
 
 <details>
 <summary>
-Example: call_imported_task.wdl
+Example: call_imported.wdl
 
 ```wdl
 version 1.2
