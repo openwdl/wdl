@@ -4721,7 +4721,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["example1", "file_array"]
+  "exclude_output": ["optional_output.example1", "optional_output.file_array"]
 }
 ```
 </p>
