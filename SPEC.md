@@ -3713,7 +3713,7 @@ Example input:
 
 ```json
 {
-  "outputs.t": 5
+  "t": 5
 }
 ```
 
@@ -4897,9 +4897,9 @@ task hisat2 {
   command <<<
     mkdir "~{index_id}"
     tar -C "~{index_id}" --strip-components 1 -xzf "~{index_tar_gz}"
-    for i in "${index_id}/genome.*.ht2"; do
+    for i in "~{index_id}/genome.*.ht2"; do
       num=$(echo $i | sed 's/.*\.\([0-9]\+\)\.ht2/\1/')  # Extract the number from the filename
-      mv "$i" "${index_id}/${index_id}.${num}.ht2"  # Rename each file
+      mv "$i" "~{index_id}/~{index_id}.${num}.ht2"  # Rename each file
     done 
     hisat2 \
       -p ~{threads} \
@@ -5001,6 +5001,7 @@ task gatk_haplotype_caller {
     ln -s ~{reference.fasta} ref/~{reference.id}.fasta
     ln -s ~{reference.index} ref/~{reference.id}.fasta.fai
     ln -s ~{reference.dict} ref/~{reference.id}.dict
+    samtools index ~{bam}
     gatk --java-options "-Xmx~{memory_gb}g" HaplotypeCaller \
       ~{if defined(interval) then "-L ~{select_first([interval])}" else ""} \
       -R ref/~{reference.id}.fasta \
