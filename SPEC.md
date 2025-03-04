@@ -5871,7 +5871,9 @@ version 1.2
 task hisat2 {
   input {
     File index_tar_gz
-    String sra_acc
+    File fastq1
+    File fastq2
+    String sample_name
     Int? max_reads
     Int threads = 8
     Float memory_gb = 16
@@ -5882,19 +5884,24 @@ task hisat2 {
 
   command <<<
     mkdir "~{index_id}"
-    tar -C "~{index_id}" --strip-components 2 -xzf "~{index_tar_gz}"
+    tar -C "~{index_id}" --strip-components 1 -xzf "~{index_tar_gz}"
+    for i in "${index_id}/genome.*.ht2"; do
+      num=$(echo $i | sed 's/.*\.\([0-9]\+\)\.ht2/\1/')  # Extract the number from the filename
+      mv "$i" "${index_id}/${index_id}.${num}.ht2"  # Rename each file
+    done 
     hisat2 \
       -p ~{threads} \
       ~{if defined(max_reads) then "-u ~{select_first([max_reads])}" else ""} \
-      -x "~{index_id}" \
-      --sra-acc ~{sra_acc} > ~{sra_acc}.sam
+      -1 ~{fastq1} -2 ~{fastq2} \
+      -x "~{index_id}"/"~{index_id}" \
+       > ~{sample_name}.sam
   >>>
   
   output {
-    File sam = "output.sam"
+    File sam = "~{sample_name}.sam"
   }
   
-  requirements {
+  runtime {
     container: "quay.io/biocontainers/hisat2:2.2.1--h1b792b2_3"
     cpu: threads
     memory: "~{memory_gb} GB"
@@ -5907,7 +5914,9 @@ task hisat2 {
 
   parameter_meta {
     index_tar_gz: "Gzipped tar file with HISAT2 index files"
-    sra_acc: "SRA accession number or reads to align"
+    fastq1: "The first-end FastQ file."
+    fastq2: "The second-end FastQ file."
+    sample_name: "Name of the sample"
   }
 }
 ```
@@ -5918,7 +5927,9 @@ Example input:
 ```json
 {
   "index_tar_gz": "https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz",
-  "sra_acc": "SRR3440404",
+  "fastq1": "https://storage.googleapis.com/genomics-public-data/gatk-examples/example1/NA20274/ERR250968_1.filt.fastq.gz",
+  "fastq2":"https://storage.googleapis.com/genomics-public-data/gatk-examples/example1/NA20274/ERR250968_2.filt.fastq.gz",
+  "sample_name": "NA20274",
   "max_reads": 10
 }
 ```
@@ -5927,7 +5938,7 @@ Example output:
 
 ```json
 {
-  "hisat2.sam": "SRR3440404.sam"
+  "hisat2.sam": "NA20274.sam"
 }
 ```
 
