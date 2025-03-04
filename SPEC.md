@@ -4897,15 +4897,11 @@ task hisat2 {
   command <<<
     mkdir "~{index_id}"
     tar -C "~{index_id}" --strip-components 1 -xzf "~{index_tar_gz}"
-    for i in "~{index_id}/genome.*.ht2"; do
-      num=$(echo $i | sed 's/.*\.\([0-9]\+\)\.ht2/\1/')  # Extract the number from the filename
-      mv "$i" "~{index_id}/~{index_id}.${num}.ht2"  # Rename each file
-    done 
     hisat2 \
       -p ~{threads} \
       ~{if defined(max_reads) then "-u ~{select_first([max_reads])}" else ""} \
       -1 ~{fastq1} -2 ~{fastq2} \
-      -x "~{index_id}"/"~{index_id}" \
+      -x "~{index_id}"/genome \
        > ~{sample_name}.sam
   >>>
   
