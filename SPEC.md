@@ -4529,7 +4529,7 @@ Example: all_return_codes_task.wdl
 ```wdl
 version 1.1
 
-task all_return_codes_task {
+task all_return_codes {
   command <<<
   exit 42
   >>>
