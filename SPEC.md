@@ -4452,7 +4452,7 @@ task single_return_code {
   >>>
 
   runtime {
-    return_codes: 1
+    returnCodes: 1
   }
 }
 ```
@@ -4474,7 +4474,7 @@ Test config:
 
 ```json
 {
-  "return_code": 1
+  "returnCodes": 1
 }
 ```
 </p>
@@ -4493,7 +4493,7 @@ task multi_return_code {
   >>>
 
   runtime {
-    return_codes: [1, 2, 5, 10]
+    returnCodes: [1, 2, 5, 10]
   }
 }
 ```
@@ -4516,7 +4516,7 @@ Test config:
 ```json
 {
   "fail": true,
-  "return_code": 42
+  "returnCodes": 42
 }
 ```
 </p>
@@ -4535,7 +4535,7 @@ task all_return_codes_task {
   >>>
 
   runtime {
-    return_codes: "*"
+    returnCodes: "*"
   }
 }
 ```
@@ -4557,7 +4557,7 @@ Test config:
 
 ```json
 {
-  "return_code": 42
+  "returnCodes": 42
 }
 ```
 </p>
