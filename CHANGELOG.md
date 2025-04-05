@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.0
 ---------------------------
 
++ Added clarification on the naming convention for `return_codes` (snake_case) vs. `returnCodes` (camelCase).
+  [PR #XXX](https://github.com/openwdl/wdl/pull/XXX) by @Gyan-max
+
 + Introduced the concept of "scoped types" to support the use of object-like values within the `hints` section while still keeping the `Object` type as deprecated.
 
 + Added new task `requirements` and `hints` sections (#540 and #541), and deprecated the `runtime` section
