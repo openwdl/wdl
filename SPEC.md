@@ -1482,9 +1482,9 @@ Example output:
     "c": 12
   },
   "map_to_struct.map_coercion": {
-    "beware": 10,
-    "key": 11,
-    "lookup": 12
+    "a": 10,
+    "b": 11,
+    "c": 12
   }
 }
 ```
