@@ -1094,6 +1094,7 @@ Example output:
   "test_object.i": 10
 }
 ```
+
 </p>
 </details>
 
@@ -1161,12 +1162,22 @@ Example output:
       "account_number": "123456",
       "routing_number": 300211325,
       "balance": 3.5,
-      "pin_digits": [1, 2, 3, 4]
+      "pin_digits": [1, 2, 3, 4],
+      "username": null
     }
   },
   "test_struct.has_account": true
 }
 ```
+
+Test config:
+
+```json
+{
+  "optional_output": "username"
+}
+```
+
 </p>
 </details>
 
