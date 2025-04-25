@@ -7,7 +7,7 @@ This is version 1.2.0 of the Workflow Description Language (WDL) specification. 
 Revisions to this specification are made periodically in order to correct errors, clarify language, or add additional examples. Revisions are released as "patches" to the specification, i.e., the third number in the specification version is incremented. No functionality is added or removed after the initial revision of the specification is ratified.
 
 * [1.2.0](https://github.com/openwdl/wdl/tree/release-1.2.0/SPEC.md): 2024-05-24
- 
+
 ## Table of Contents
 
 - [Workflow Description Language (WDL)](#workflow-description-language-wdl)
@@ -255,7 +255,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
 <details>
   <summary>
   Example: hello.wdl
-      
+
   ```wdl
   version 1.2
 
@@ -303,14 +303,14 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
     "hello.pattern": "hello.*"
   }
   ```
-   
+
   Example output:
 
   ```json
   {
     "hello.matches": ["hello world", "hello nurse"]
   }
-  ``` 
+  ```
   </p>
 </details>
 
@@ -347,10 +347,10 @@ WDL also provides features for implementing more complex workflows. For example,
 <details>
   <summary>
   Example: hello_parallel.wdl
-  
+
   ```wdl
   version 1.2
-  
+
   import "hello.wdl"
 
   workflow hello_parallel {
@@ -358,7 +358,7 @@ WDL also provides features for implementing more complex workflows. For example,
       Array[File] files
       String pattern
     }
-    
+
     scatter (path in files) {
       call hello.hello_task {
         infile = path,
@@ -367,8 +367,8 @@ WDL also provides features for implementing more complex workflows. For example,
     }
 
     output {
-      # WDL implicitly implements the 'gather' step, so the output of 
-      # a scatter is always an array with the elements in the same 
+      # WDL implicitly implements the 'gather' step, so the output of
+      # a scatter is always an array with the elements in the same
       # order as the input array. Since hello_task.matches is an array,
       # all the results will be gathered into an array-of-arrays.
       Array[Array[String]] all_matches = hello_task.matches
@@ -378,16 +378,16 @@ WDL also provides features for implementing more complex workflows. For example,
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {
     "hello_parallel.pattern": "^[a-z_]+$",
     "hello_parallel.files": ["greetings.txt", "hello.txt"]
   }
   ```
-  
+
   Example output:
-  
+
   ```json
   {
     "hello.all_matches": [["hi_world"], ["hi_pal"]]
@@ -424,7 +424,7 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
 <details>
   <summary>
   Example: workflow_with_comments.wdl
-  
+
   ```wdl
   # Comments are allowed before version
   version 1.2
@@ -448,7 +448,7 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
     output {
       Int result = read_int(stdout())
     }
-      
+
     requirements {
       container: "ubuntu:latest"
     }
@@ -461,7 +461,7 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
 
     # You can have comments anywhere in the workflow
     call task_with_comments { number }
-    
+
     output { # You can also put comments after braces
       Int result = task_with_comments.result
     }
@@ -470,15 +470,15 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {
     "workflow_with_comments.number": 1
   }
   ```
-  
+
   Example output:
-  
+
   ```json
   {
     "workflow_with_comments.result": 2
@@ -513,7 +513,7 @@ hints
 if
 in
 import
-input 
+input
 left
 meta
 object
@@ -521,7 +521,7 @@ output
 parameter_meta
 right
 requirements
-runtime 
+runtime
 scatter
 struct
 task
@@ -555,7 +555,7 @@ The following primitive types exist in WDL:
 <details>
   <summary>
   Example: primitive_literals.wdl
-  
+
   ```wdl
   version 1.2
 
@@ -575,25 +575,25 @@ The following primitive types exist in WDL:
     call write_file_task
 
     output {
-      Boolean b = true 
+      Boolean b = true
       Int i = 0
       Float f = 27.3
       String s = "hello, world"
       File x = write_file_task.x
       Directory d = write_file_task.d
-    }  
+    }
   }
   ```
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {}
   ```
-  
+
   Example output:
-  
+
   ```json
   {
     "primitive_literals.b": true,
@@ -624,7 +624,7 @@ A string literal may contain any unicode characters between single or double-quo
 Strings can also contain the following types of escape sequences:
 
 * An octal escape code starts with `\`, followed by 3 digits of value 0 through 7 inclusive.
-* A hexadecimal escape code starts with `\x`, followed by 2 hexadecimal digits `0-9a-fA-F`. 
+* A hexadecimal escape code starts with `\x`, followed by 2 hexadecimal digits `0-9a-fA-F`.
 * A unicode code point starts with `\u` followed by 4 hexadecimal characters or `\U` followed by 8 hexadecimal characters `0-9a-fA-F`.
 
 ###### Multi-line Strings
@@ -634,7 +634,7 @@ Strings that begin with `<<<` and end with `>>>` may span multiple lines.
 <details>
   <summary>
   Example: multiline_strings1.wdl
-  
+
   ```wdl
   version 1.2
 
@@ -650,13 +650,13 @@ Strings that begin with `<<<` and end with `>>>` may span multiple lines.
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {}
   ```
-  
+
   Example output:
-  
+
   ```json
   {
     "multiline_strings1.s": "This is a\nmulti-line string!"
@@ -682,7 +682,7 @@ In multi-line strings, leading *whitespace* is removed according to the followin
 <details>
   <summary>
   Example: multiline_strings2.wdl
-  
+
   ```wdl
   version 1.2
 
@@ -692,24 +692,24 @@ In multi-line strings, leading *whitespace* is removed according to the followin
       String hw0 = "hello  world"
       String hw1 = <<<hello  world>>>
       String hw2 = <<<   hello  world   >>>
-      String hw3 = <<<   
+      String hw3 = <<<
           hello world>>>
-      String hw4 = <<<   
+      String hw4 = <<<
           hello  world
           >>>
-      String hw5 = <<<   
+      String hw5 = <<<
           hello  world
       >>>
-      # The line continuation causes the newline and all whitespace preceding 'world' to be 
-      # removed - to put two spaces between 'hello' and world' we need to put them before 
+      # The line continuation causes the newline and all whitespace preceding 'world' to be
+      # removed - to put two spaces between 'hello' and world' we need to put them before
       # the line continuation.
       String hw6 = <<<
           hello  \
               world
       >>>
 
-      # This string is not equivalent - the first line ends in two backslashes, which is an 
-      # escaped backslash, not a line continuation. So this string evaluates to 
+      # This string is not equivalent - the first line ends in two backslashes, which is an
+      # escaped backslash, not a line continuation. So this string evaluates to
       # "hello \\\n  world".
       String not_equivalent = <<<
       hello \\
@@ -721,13 +721,13 @@ In multi-line strings, leading *whitespace* is removed according to the followin
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {}
   ```
-  
+
   Example output:
-  
+
   ```json
   {
     "multiline_strings2.hw0": "hello  world"
@@ -748,40 +748,40 @@ Common leading whitespace is also removed from blank lines that contain whitespa
 <details>
   <summary>
   Example: multiline_strings3.wdl
-  
+
   ```wdl
   version 1.2
 
   workflow multiline_strings3 {
     output {
-      # These strings are all equivalent. In strings B, C, and D, the middle lines are blank and 
+      # These strings are all equivalent. In strings B, C, and D, the middle lines are blank and
       # so do not count towards the common leading whitespace determination.
 
       String multi_line_A = "\nthis is a\n\n  multi-line string\n"
-      
+
       # This string's common leading whitespace is 0.
       String multi_line_B = <<<
 
       this is a
-      
+
         multi-line string
-      
+
       >>>
 
       # This string's common leading whitespace is 2. The middle blank line contains two spaces
       # that are also removed.
       String multi_line_C = <<<
-      
+
         this is a
-        
+
           multi-line string
       >>>
-      
+
       # This string's common leading whitespace is 8.
       String multi_line_D = <<<
 
               this is a
-      
+
                 multi-line string
       >>>
     }
@@ -790,13 +790,13 @@ Common leading whitespace is also removed from blank lines that contain whitespa
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {}
   ```
-  
+
   Example output:
-  
+
   ```json
   {
     "multiline_strings3.multi_line_A": "\nthis is a\n\n  multi-line string\n"
@@ -813,7 +813,7 @@ Single- and double-quotes do not need to be escaped within a multi-line string.
 <details>
   <summary>
   Example: multiline_strings4.wdl
-  
+
   ```wdl
   version 1.2
 
@@ -829,13 +829,13 @@ Single- and double-quotes do not need to be escaped within a multi-line string.
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {}
   ```
-  
+
   Example output:
-  
+
   ```json
   {
     "multiline_strings4.multi_line_with_quotes": "multi-line string with 'single' and \"double\" quotes"
@@ -877,7 +877,7 @@ An optional declaration has a default initialization of `None`, which indicates 
 <details>
   <summary>
   Example: optionals.wdl
-  
+
   ```wdl
   version 1.2
 
@@ -903,13 +903,13 @@ An optional declaration has a default initialization of `None`, which indicates 
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {}
   ```
-  
+
   Example output:
-  
+
   ```json
   {
     "optionals.test_defined": false,
@@ -936,7 +936,7 @@ An array value can be initialized with an array literal - a comma-separated list
 <details>
   <summary>
   Example: array_access.wdl
-  
+
   ```wdl
   version 1.2
 
@@ -954,16 +954,16 @@ An array value can be initialized with an array literal - a comma-separated list
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {
     "array_access.strings": ["hello", "world"],
     "array_access.index": 0
   }
   ```
-  
+
   Example output:
-  
+
   ```json
   {
     "array_access.s": "hello"
@@ -975,13 +975,13 @@ An array value can be initialized with an array literal - a comma-separated list
 <details>
   <summary>
   Example: empty_array_fail.wdl
-  
+
   ```wdl
   version 1.2
-  
+
   workflow empty_array_fail {
     Array[Int] empty = []
-    
+
     output {
       # this causes an error - trying to access a non-existent array element
       Int i = empty[0]
@@ -991,13 +991,13 @@ An array value can be initialized with an array literal - a comma-separated list
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {}
   ```
-  
+
   Example output:
-  
+
   ```json
   {}
   ```
@@ -1025,11 +1025,11 @@ task sum {
   input {
     Array[String]+ ints
   }
-  
+
   command <<<
   printf ~{sep(" ", ints)} | awk '{tot=0; for(i=1;i<=NF;i++) tot+=$i; print tot}'
   >>>
-  
+
   output {
     Int total = read_int(stdout())
   }
@@ -1057,7 +1057,7 @@ Example output:
 
 Recall that a type may have an optional postfix quantifier (`?`), which means that its value may be undefined. The `+` and `?` postfix quantifiers can be combined to declare an `Array` that is either undefined or non-empty, i.e. it can have any value *except* the empty array.
 
-Attempting to assign an empty array literal to a non-empty `Array` declaration results in an error. Otherwise, the non-empty assertion is only checked at runtime: binding an empty array to an `Array[T]+` input or function argument is a runtime error. 
+Attempting to assign an empty array literal to a non-empty `Array` declaration results in an error. Otherwise, the non-empty assertion is only checked at runtime: binding an empty array to an `Array[T]+` input or function argument is a runtime error.
 
 <details>
 <summary>
@@ -1109,7 +1109,7 @@ version 1.2
 workflow non_empty_optional_fail {
   # these both cause an error - can't assign empty array value to non-empty Array type
   Array[Boolean]+ nonempty3 = []
-  Array[Int]+? nonempty6 = [] 
+  Array[Int]+? nonempty6 = []
 }
 ```
 </summary>
@@ -1519,7 +1519,7 @@ File file = path
 String new_path = "~{path}_2"  # can still use `path` here
 ```
 
-##### Primitive Conversion to String 
+##### Primitive Conversion to String
 
 Primitive types can always be converted to `String` using [string interpolation](#expression-placeholders-and-string-interpolation). See [Expression Placeholder Coercion](#expression-placeholder-coercion) for details.
 
@@ -1615,7 +1615,7 @@ version 1.2
 workflow coercion_fail {
   Array[String] strings = ["/foo/bar"]
   Boolean is_true1 = contains(strings, "/foo/bar")
-  
+
   File foobar = "/foo/bar"
   # returns `true` - string interpolation creates a string from `foobar`
   Boolean is_true2 = contains(strings, "~{foobar}")
@@ -1702,16 +1702,16 @@ Examples:
 # Evaluates to `"3.0"`: `1` is coerced to Float (`1.0`), then numeric addition
 # is performed, and the result is converted to a string
 String s1 = "~{1 + 2.0}"
-# Evaluates to `"3.01"`: `1` is coerced to String, then concatenated with the 
+# Evaluates to `"3.01"`: `1` is coerced to String, then concatenated with the
 # value of `s1`
 String s2 = "~{s1 + 1}"
-# Evaluates to `true`: `1` is coerced to Float (`1.0`), then numeric comparison 
+# Evaluates to `true`: `1` is coerced to Float (`1.0`), then numeric comparison
 # is performed
 Boolean b1 = 1 == 1.0
-# Evaluates to `true`: `true` is coerced to String, then string comparison is 
+# Evaluates to `true`: `true` is coerced to String, then string comparison is
 # performed
 Boolean b2 = true == "true"
-# Evaluates to `false`: `1` and `true` are both coerced to String, then string 
+# Evaluates to `false`: `1` and `true` are both coerced to String, then string
 # comparison is performed
 Boolean b3 = 1 == true
 ```
@@ -1836,7 +1836,7 @@ workflow struct_to_struct {
   # have members with the same names and compatible types. Type `A` can
   # be coerced to type `C` because they also have members with the same
   # names and compatible types.
-  
+
   output {
     D my_d = my_b
   }
@@ -1855,7 +1855,7 @@ Example output:
 ```json
 {
   "struct_to_struct.my_d": {
-    "a_struct": { 
+    "a_struct": {
       "s": "hello"
     },
     "i": 10
@@ -1898,7 +1898,7 @@ workflow declarations {
     File? x  # optional - defaults to None
     Map[String, String] m  # required
     # this is a "bound" declaration
-    String y = "abc"  
+    String y = "abc"
   }
 
   Int i = 1 + 2  # Private declarations must be bound
@@ -1941,7 +1941,7 @@ task greet {
   input {
     String name
   }
-  
+
   command <<<
     printf "Hello ~{name}"
   >>>
@@ -1959,7 +1959,7 @@ task count_lines {
   command <<<
     wc -l ~{write_lines(array)}
   >>>
-  
+
   output {
     Int line_count = read_int(stdout())
   }
@@ -1969,7 +1969,7 @@ workflow task_outputs {
   call greet as x {
     name="John"
   }
-  
+
   call greet as y {
     name="Sarah"
   }
@@ -2458,7 +2458,7 @@ workflow nested_access {
   }
 
   Experiment first_experiment = my_experiments[0]
-  
+
   output {
     # these are equivalent
     String first_var = first_experiment.variables[0]
@@ -2527,11 +2527,11 @@ workflow illegal_access {
   }
 
   Int i = my.x  # error: field 'x' does not exist in MyStruct
-  
+
   call foo
 
   output {
-    String baz = foo.baz  # error: 'baz' is not an output field of task 'foo'    
+    String baz = foo.baz  # error: 'baz' is not an output field of task 'foo'
   }
 }
 ```
@@ -2647,7 +2647,6 @@ workflow placeholders {
 
   output {
     String s = "~{1 + i}"
-    String cmd = "grep '~{start}...~{end}' ~{instr}"
   }
 }
 ```
@@ -2729,7 +2728,7 @@ Placeholders are evaluated in multi-line strings exactly the same as in regular 
 <details>
   <summary>
   Example: multiline_string_placeholders.wdl
-  
+
   ```wdl
   version 1.2
 
@@ -2739,7 +2738,7 @@ Placeholders are evaluated in multi-line strings exactly the same as in regular 
       String name = "Henry"
       String company = "Acme"
       # This string evaluates to: "  Hello Henry,\n  Welcome to Acme!"
-      # The string still has spaces because the placeholders are evaluated after removing the 
+      # The string still has spaces because the placeholders are evaluated after removing the
       # common leading whitespace.
       String multi_line = <<<
         ~{spaces}Hello ~{name},
@@ -2751,13 +2750,13 @@ Placeholders are evaluated in multi-line strings exactly the same as in regular 
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {}
   ```
-  
+
   Example output:
-  
+
   ```json
   {
     "multiline_string_placeholders.multi_line": "  Hello Henry,\n  Welcome to Acme!"
@@ -2829,15 +2828,15 @@ Example output:
 <details>
   <summary>
   Example: placeholder_none.wdl
-  
+
   ```wdl
   version 1.2
 
   workflow placeholder_none {
     output {
       String? foo = None
-      # The expression in this string results in an error (calling `select_first` on an array 
-      # containing no non-`None` values) and so the placeholder evaluates to the empty string and 
+      # The expression in this string results in an error (calling `select_first` on an array
+      # containing no non-`None` values) and so the placeholder evaluates to the empty string and
       # `s` evalutes to: "Foo is "
       String s = "Foo is ~{select_first([foo])}"
     }
@@ -2846,13 +2845,13 @@ Example output:
   </summary>
   <p>
   Example input:
-  
+
   ```json
   {}
   ```
-  
+
   Example output:
-  
+
   ```json
   {
     "placeholder_none.s": "Foo is "
@@ -2909,7 +2908,7 @@ Example output:
 </p>
 </details>
 
-Among other uses, concatenation of optionals can be used to facilitate the formulation of command-line flags. 
+Among other uses, concatenation of optionals can be used to facilitate the formulation of command-line flags.
 
 <details>
 <summary>
@@ -3001,7 +3000,7 @@ workflow sep_option_to_function {
     Array[String] str_array
     Array[Int] int_array
   }
-  
+
   output {
     Boolean is_true1 = "~{sep(' ', str_array)}" == "~{sep=' ' str_array}"
     Boolean is_true2 = "~{sep(',', quote(int_array))}" == "~{sep=',' quote(int_array)}"
@@ -3040,7 +3039,7 @@ Test config:
 
 ##### `true` and `false`
 
-`true` and `false` convert an expression that evaluates to a `Boolean` into a string literal when the result is `true` or `false`, respectively. 
+`true` and `false` convert an expression that evaluates to a `Boolean` into a string literal when the result is `true` or `false`, respectively.
 
 For example, `"~{true='--enable-foo' false='--disable-foo' allow_foo}"` evaluates the expression `allow_foo` as an identifier and, depending on its value, replaces the entire expression placeholder with either `--enable-foo` or `--disable-foo`.
 
@@ -3135,7 +3134,7 @@ task default_option {
     printf ~{if defined(s) then "~{select_first([s])}" else "foobar"} > result2
     printf ~{select_first([s, "foobar"])} > result3
   >>>
-  
+
   output {
     Boolean is_true1 = read_string("result1") == read_string("result2")
     Boolean is_true2 = read_string("result1") == read_string("result3")
@@ -3262,7 +3261,7 @@ struct Person {
   Int age
   Income? income
   Map[String, File] assay_data
-  
+
   meta {
     description: "Encapsulates data about a person"
   }
@@ -3371,7 +3370,7 @@ workflow wf {
   call stdlib.file_size {
     file=bam_file
   }
-  
+
   call analysis.my_analysis_task {
     size=file_size.bytes, file=bam_file
   }
@@ -3448,7 +3447,7 @@ task calculate_bill {
       period: "annually"
     }
   }
-  
+
   PatientIncome income = select_first([patient.income, average_income])
   String currency = select_first([income.currency, "USD"])
   Float hourly_income = if income.period == "hourly" then income.amount else income.amount / 2000
@@ -3457,7 +3456,7 @@ task calculate_bill {
   command <<<
   printf "The patient makes $~{hourly_income_usd} per hour\n"
   >>>
-  
+
   output {
     Float amount = hourly_income_usd * 5
   }
@@ -3567,7 +3566,7 @@ task name {
   }
 
   # other "private" declarations can be made here
- 
+
   command <<<
     # the command template - this section is required
   >>>
@@ -3658,7 +3657,7 @@ task call_variants_safe {
     File bam
     File bai
   }
-  
+
   String prefix = basename(bam, ".bam")
 
   command <<<
@@ -3734,10 +3733,10 @@ task input_type_quantifiers {
   command <<<
     cat ~{write_lines(a)} >> result
     cat ~{write_lines(b)} >> result
-    ~{if defined(c) then 
+    ~{if defined(c) then
     "cat ~{write_lines(select_first([c]))} >> result"
     else ""}
-    ~{if defined(e) then 
+    ~{if defined(e) then
     "cat ~{write_lines(select_first([e]))} >> result"
     else ""}
   >>>
@@ -3745,7 +3744,7 @@ task input_type_quantifiers {
   output {
     Array[String] lines = read_lines("result")
   }
-  
+
   requirements {
     container: "ubuntu:latest"
   }
@@ -3849,17 +3848,17 @@ workflow optional_with_default {
     String name
     Boolean use_salutation
   }
-  
+
   if (use_salutation) {
-    call say_hello as hello1 { 
-      name = name 
+    call say_hello as hello1 {
+      name = name
     }
   }
 
   if (!use_salutation) {
     call say_hello as hello2 {
       name = name,
-      salutation = None 
+      salutation = None
     }
   }
 
@@ -4010,7 +4009,7 @@ annotated with `env` either through the shell semantics (`${FOO}`) or through no
 
 When an input is annotated with `env` it is the engine's responsibility to serialize the value appropriately into a string (see section on [Serialization of WDL values](#appendix-a-wdl-value-serialization-and-deserialization))
 that will then be set as an environment variable. Engines may impose limits on the total length a single environment variable is allowed to occupy as well as the number of environment variables that are allowed to be passed into a single task.
-If such limitations exist, it is the engine's responsibility to provide clear documentation outlining what they are for the user. 
+If such limitations exist, it is the engine's responsibility to provide clear documentation outlining what they are for the user.
 
 The environment variable should be evaluated by the engine prior to injecting it into the execution environment. if the task is run in a container the env var is "injected" into the container and not applied to the shell on the host that runs the container.
 
@@ -4035,13 +4034,13 @@ task test  {
 
 workflow environment_variable_should_echo {
   input {
-    String greeting 
+    String greeting
   }
-  
+
   call test {
     input: greeting = greeting
   }
-  
+
   output {
     String out = test.out
   }
@@ -4091,10 +4090,10 @@ task some_task {
   input {
     String thing_to_do
   }
-  
+
   command <<<
    echo ${thing_to_do}
-  >>> 
+  >>>
 ```
 
 You could then construct an input that downloads a file, and attempts to gain access to anything that the said node has access to.
@@ -4234,7 +4233,7 @@ task test_placeholders {
     # (" ") delimiter. The resulting string is then printed to stdout.
     printf ~{sep(" ", read_lines(infile))}
   >>>
-  
+
   output {
     # The `stdout` function returns a file with the contents of stdout.
     # The `read_string` function reads the entire file into a String.
@@ -4277,7 +4276,7 @@ task bash_variables {
   input {
     String str
   }
-  
+
   command {
     # store value of WDL declaration "str" to Bash variable "s"
     s=${str}
@@ -4430,7 +4429,7 @@ task outputs {
   printf ~{t} > threshold.txt
   touch a.csv b.csv
   >>>
-  
+
   output {
     Int threshold = read_int("threshold.txt")
     Array[File]+ csvs = glob("*.csv")
@@ -4650,7 +4649,7 @@ task optional_output {
       printf "2" > example2.txt
     fi
   >>>
-  
+
   output {
     File example1 = "example1.txt"
     File? example2 = "example2.txt"
@@ -4730,7 +4729,7 @@ task output_subset {
   ln -s file2 outdir
   ln -s file3 outdir/subdir
   >>>
-  
+
   output {
     Directory outdir = "outdir"
   }
@@ -4749,7 +4748,7 @@ Declarations in the output section may reference any input and private declarati
 
 The `requirements` section defines a set of key/value pairs that represent the minimum requirements needed to run a task and the conditions under which a task should be interpreted as a failure or success. The `requirements` section is limited to the attributes defined in this specification. Arbitrary key/value pairs are not allowed in the `requirements` section, and must instead be placed in the [`hints`](#-hints-section) section.
 
-During execution of a task, all resource requirements within the `requirements` section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task immediately fails. 
+During execution of a task, all resource requirements within the `requirements` section must be enforced by the engine. If the engine is not able to provision the requested resources, then the task immediately fails.
 
 All attributes of the `requirements` section have well-defined meanings and default values. Default values for the optional attributes are directly defined by the WDL specification to encourage portability of workflows and tasks; execution engines should not provide additional mechanisms to set default values for when no requirements are defined.
 
@@ -4770,7 +4769,7 @@ task dynamic_container {
   command <<<
     cat /etc/*-release | grep DISTRIB_CODENAME | cut -f 2 -d '='
   >>>
-  
+
   output {
     String is_true = ubuntu_version == read_string(stdout())
   }
@@ -5037,7 +5036,7 @@ task test_gpu {
   output {
     Boolean at_least_one_gpu = read_int(stdout()) >= 1
   }
-  
+
   requirements {
     gpu: true
   }
@@ -5098,7 +5097,7 @@ task one_mount_point {
   command <<<
     findmnt -bno size /mnt/outputs
   >>>
-  
+
   output {
     Boolean at_least_ten_gb = read_int(stdout()) >= (10 * 1024 * 1024 * 1024)
   }
@@ -5147,7 +5146,7 @@ task multi_mount_points {
   command <<<
     findmnt -bno size /
   >>>
-  
+
   output {
     Boolean at_least_two_gb = read_int(stdout()) >= (2 * 1024 * 1024 * 1024)
   }
@@ -5214,7 +5213,7 @@ task max_retries_test {
 * Default value: `0`
 * Alias: `returnCodes`
 
-The `return_codes` attribute specifies the return code, or set of return codes, that indicates a successful execution of a task. If the task exits with one of the specified return codes, it must be considered successful if possible (i.e., assuming all output expressions are evaluated successfully). 
+The `return_codes` attribute specifies the return code, or set of return codes, that indicates a successful execution of a task. If the task exits with one of the specified return codes, it must be considered successful if possible (i.e., assuming all output expressions are evaluated successfully).
 
 <details>
 <summary>
@@ -5386,7 +5385,7 @@ task test_hints {
     short_task: true
     localization_optional: false
     inputs: input {
-      foo: hints { 
+      foo: hints {
         localization_optional: true
       }
     }
@@ -5496,7 +5495,7 @@ task input_hint {
     grep "WDL" ~{person.cv}
   fi
   >>>
-  
+
   output {
     Array[String] experience = read_lines(stdout())
   }
@@ -5586,7 +5585,7 @@ Please observe the following guidelines when using hints:
 * A hint must never be required for successful task execution.
 * Before adding a new hint, ask yourself "do I really need another hint, or is there a better way to specify the behavior I require?".
 * Avoid unnecessary complexity. By allowing any arbitrary keys and compound values, it is possible for the `hints` section to become quite complex. Use the simplest value possible to achieve the desired outcome.
-* Sharing is caring. Users tend to look for similar behavior between different execution engines. It is strongly encouraged that implementers of execution engines agree on common names and accepted values for hints that describe common usage patterns. [Compute environments](#compute-environments) are a good example of hints that have conventions attached to them. 
+* Sharing is caring. Users tend to look for similar behavior between different execution engines. It is strongly encouraged that implementers of execution engines agree on common names and accepted values for hints that describe common usage patterns. [Compute environments](#compute-environments) are a good example of hints that have conventions attached to them.
 
 ### 🗑 Runtime Section
 
@@ -5680,7 +5679,7 @@ task ex_paramter_meta {
     infile: {
       help: "Count the number of words/lines in this file"
     }
-    lines_only: { 
+    lines_only: {
       help: "Count only lines"
     }
     region: {
@@ -5738,7 +5737,7 @@ This information is provided by the `task` variable, which is implicitly defined
     * The task name
     * The task alias, if it differs from the task name
     * The index of the task instance, if it is within a scatter statement
-* `container`: The URI `String` of the container in which the task is executing, or `None` if the task is being executed in the host environment. 
+* `container`: The URI `String` of the container in which the task is executing, or `None` if the task is being executed in the host environment.
 * `cpu`: The allocated number of cpus as a `Float`. Must be greater than `0`.
 * `memory`: The allocated memory in bytes as an `Int`. Must be greater than `0`.
 * `gpu`: An `Array[String]` with one specification per allocated GPU. The specification is execution engine-specific. If no GPUs were allocated, then the value must be an empty array.
@@ -5773,12 +5772,12 @@ task test_runtime_info_task {
   echo "Available memory: ~{task.memory / (1024 * 1024 * 1024)} GiB"
   exit 1
   >>>
-  
+
   output {
     Boolean at_least_two_gb = task.memory >= (2 * 1024 * 1024 * 1024)
     Int return_code = task.return_code
   }
-  
+
   requirements {
     container: ["ubuntu:latest", "quay.io/ubuntu:focal"]
     memory: "2 GiB"
@@ -5847,11 +5846,11 @@ task hisat2 {
       -x index/~{index_id} \
       --sra-acc ~{sra_acc} > ~{sra_acc}.sam
   >>>
-  
+
   output {
     File sam = "output.sam"
   }
-  
+
   requirements {
     container: "quay.io/biocontainers/hisat2:2.2.1--h1b792b2_3"
     cpu: threads
@@ -5924,7 +5923,7 @@ task gatk_haplotype_caller {
     Float? disks_gb
     String? sample_id
   }
-  
+
   String prefix = select_first([sample_id, basename(bam, ".bam")])
   Float disk_size_gb = select_first([
     disks_gb, 10 + size([bam, reference.fasta], "GB")
@@ -5959,7 +5958,7 @@ task gatk_haplotype_caller {
     author: "Joe Somebody"
     email: "joe@company.org"
   }
-  
+
   requirements {
     container: "broadinstitute/gatk"
     memory: "~{memory_gb + 1} GB"
@@ -6015,8 +6014,8 @@ workflow name {
   }
 
   # other "private" declarations can be made here
- 
-  # there may be any number of (potentially nested) 
+
+  # there may be any number of (potentially nested)
   # calls, scatters, or conditionals
   call target { ... }
   scatter (i in collection) { ... }
@@ -6194,15 +6193,15 @@ task echo {
   input {
     String msg = "hello"
   }
-  
+
   command <<<
   printf ~{msg}
   >>>
-  
+
   output {
     File results = stdout()
   }
-  
+
   requirements {
     container: "ubuntu:latest"
   }
@@ -6216,7 +6215,7 @@ workflow main {
   call other_wf.foobar { infile = echo2.results }
   call other_wf.other { b = true, f = echo2.results }
   call other_wf.other as other2 { b = false }
-  
+
   scatter(x in arr) {
     call echo as scattered_echo {
       msg = x
@@ -6385,7 +6384,7 @@ The following hints are reserved. An implementation is not required to support t
 
 When running a workflow, the user typically is only allowed to specify values for the inputs defined in the top-level workflow's `input` section. However, setting the `allow_nested_inputs` hint to `true` specifies that the execution engine is allowed to let the user set the value of some call inputs at runtime.
 
-A call input value is eligible to be set at runtime if it corresponds to a subworkflow or task input that has a default value *and* its value is not set explicitly in the call's `input` section. The default value is used for an eligible call input when `allow_nested_inputs` is set to `false`, when the user does not specify a value for the input at runtime, or when the execution engine does not suppport `allow_nested_inputs`. 
+A call input value is eligible to be set at runtime if it corresponds to a subworkflow or task input that has a default value *and* its value is not set explicitly in the call's `input` section. The default value is used for an eligible call input when `allow_nested_inputs` is set to `false`, when the user does not specify a value for the input at runtime, or when the execution engine does not suppport `allow_nested_inputs`.
 
 The execution engine may refuse to execute a workflow when `allow_nested_inputs` is set to `false` and the user attempts to specify a value for a nested input, but if it does execute the workflow and ignore the user-specified value then it should show a warning.
 
@@ -6466,7 +6465,7 @@ version 1.2
 
 import "test_allow_nested_inputs.wdl"
 
-workflow multi_nested_inputs { 
+workflow multi_nested_inputs {
   call test_allow_nested_inputs
 
   hints {
@@ -6530,7 +6529,7 @@ task repeat {
     Int i = 0  # this will cause the task to fail if not overriden by the caller
     String? opt_string
   }
-  
+
   command <<<
   if [ "~{i}" -lt "1" ]; then
     echo "i must be >= 1"
@@ -6563,7 +6562,7 @@ workflow call_example {
     opt_string = s
   }
 
-  # Calls repeat with one required input using the abbreviated 
+  # Calls repeat with one required input using the abbreviated
   # syntax for `i`.
   call repeat as repeat3 { i, opt_string = s }
 
@@ -6577,7 +6576,7 @@ workflow call_example {
     Array[String] lines2 = repeat2.lines
     Array[String] lines3 = repeat3.lines
     Int? results1 = other.results
-    Int? results2 = other_workflow2.results  
+    Int? results2 = other_workflow2.results
   }
 }
 ```
@@ -6668,7 +6667,7 @@ Example output:
 </p>
 </details>
 
-The execution engine may execute a `call` as soon as all its inputs are available. If `call x`'s inputs are based on `call y`'s outputs (i.e., `x` depends on `y`), `x` can be run as soon as - but not before - `y` has completed. 
+The execution engine may execute a `call` as soon as all its inputs are available. If `call x`'s inputs are based on `call y`'s outputs (i.e., `x` depends on `y`), `x` can be run as soon as - but not before - `y` has completed.
 
 An `after` clause can be used to create an explicit dependency between `x` and `y` (i.e., one that isn't based on the availability of `y`'s outputs). For example, `call x after y after z`. An explicit dependency is only required if `x` must not execute until after `y` and `x` doesn't already depend on output from `y`.
 
@@ -6692,8 +6691,8 @@ workflow test_after {
     opt_string = sep(" ", repeat.lines)
   }
 
-  # Call `repeat` again. This call does not depend on the output 
-  # from an earlier call, but we specify explicitly that this 
+  # Call `repeat` again. This call does not depend on the output
+  # from an earlier call, but we specify explicitly that this
   # task must wait until `repeat` is complete before executing.
   call lib.repeat as repeat3 after repeat { i = 3 }
 
@@ -6753,7 +6752,7 @@ workflow copy_input {
   }
 
   call greet { greeting = "Hello ~{name}" }
-  
+
   output {
     String greeting = greet.greeting_out
     String msg = greet.msg
@@ -6783,7 +6782,7 @@ Example output:
 
 #### Computing Call Inputs
 
-Any required workflow inputs (i.e., those that are not initialized with a default expression) must have their values provided when invoking the workflow. Inputs may be specified for a workflow invocation using any mechanism supported by the execution engine, including the [standard JSON format](#json-input-format). 
+Any required workflow inputs (i.e., those that are not initialized with a default expression) must have their values provided when invoking the workflow. Inputs may be specified for a workflow invocation using any mechanism supported by the execution engine, including the [standard JSON format](#json-input-format).
 
 A call to a subworkflow or task must, at a minimum, provide a value for each required input. The call may also specify values for any optional inputs. Any optional inputs that are not specified in the call may be set by the user at runtime if the execution engine supports the `allow_nested_inputs` hint and it is set to `true` in the workflow's `hints` section.
 
@@ -6822,7 +6821,7 @@ task inc {
   output {
     Int incr = read_int(stdout())
   }
-  
+
   requirements {
     container: "ubuntu:latest"
   }
@@ -6969,8 +6968,8 @@ workflow test_scatter {
     Array[String] name_array = ["Joe", "Bob", "Fred"]
     String salutation = "Hello"
   }
-  
-  # `name_array` is an identifier expression that evaluates to an Array 
+
+  # `name_array` is an identifier expression that evaluates to an Array
   # of Strings.
   # `name` is a `String` declaration that is assigned a different value
   # - one of the elements of `name_array` - during each iteration.
@@ -7010,7 +7009,7 @@ Example output:
 In this example, the scatter body is evaluated three times - once for each value in `name_array`. On a multi-core computer, these evaluations might happen in parallel, with each evaluation running in a separate thread or subprocess; on a cloud platform, each of these evaluations might take place in a different virtual machine.
 
 The scatter body is a nested scope in which the scatter variable is accessible, along with all of the declarations and call outputs that are accessible in the enclosing scope. The scatter variable is *not* accessible outside the scatter body. In the preceding example, it would be an error to reference `name` in the workflow's output section. However, if the `scatter` contained a nested `scatter`, `name` would be accessible in that nested `scatter`'s body. Similarly, calls within the scatter body are able to depend on each other and reference each others' outputs.
- 
+
 If scatters are nested to multiple levels, the output types are also nested to the same number of levels.
 
 <details>
@@ -7057,7 +7056,7 @@ workflow nested_scatter {
     # Use a different honorific for even and odd items in the array
     # `honorifics` is accessible here
     String honorific = honorifics[name_and_index.right % 2]
-    
+
     call make_name {
       first = names.left,
       last = names.right
@@ -7095,7 +7094,7 @@ workflow nested_scatter {
     Array[Array[Array[String]]] out_messages = messages
 
     # This would be an error - 'names' is not accessible here
-    # String scatter_names = names  
+    # String scatter_names = names
   }
 }
 ```
@@ -7170,7 +7169,7 @@ workflow test_conditional {
 
     scatter (i in scatter_range) {
       call gt_three { i = i + j }
-      
+
       if (gt_three.valid) {
         Int result = i * j
       }
@@ -7179,7 +7178,7 @@ workflow test_conditional {
       Int result2 = if defined(result) then select_first([result]) else 0
     }
   }
-  
+
   # Here there is an implicit `Array[Int?]? result` declaration, since
   # `result` is inside a conditional inside a scatter inside a conditional.
   # We can "unwrap" the other optional using select_first.
@@ -7244,7 +7243,7 @@ workflow if_else {
   input {
     Boolean is_morning = false
   }
-  
+
   # the body *is not* evaluated since 'b' is false
   if (is_morning) {
     call greet as morning { time = "morning" }
@@ -7382,7 +7381,7 @@ workflow test_floor {
   Int i2 = i1 - 1
   Float f1 = i1
   Float f2 = i1 - 0.1
-  
+
   output {
     Array[Boolean] all_true = [floor(f1) == i1, floor(f2) == i2]
   }
@@ -7437,7 +7436,7 @@ workflow test_ceil {
   Int i2 = i1 + 1
   Float f1 = i1
   Float f2 = i1 + 0.1
-  
+
   output {
     Array[Boolean] all_true = [ceil(f1) == i1, ceil(f2) == i2]
   }
@@ -7492,7 +7491,7 @@ workflow test_round {
   Int i2 = i1 + 1
   Float f1 = i1 + 0.49
   Float f2 = i1 + 0.50
-  
+
   output {
     Array[Boolean] all_true = [round(f1) == i1, round(f2) == i2]
   }
@@ -7680,7 +7679,7 @@ workflow find_string {
   output {
     String? match1 = find(in, pattern1)  # "ello"
     String? match2 = find(in, pattern2)  # None
-  }  
+  }
 }
 ```
 </summary>
@@ -7904,7 +7903,7 @@ String basename(File, [String])
 String basename(Directory, [String])
 ```
 
-Returns the "basename" of a file or directory - the name after the last directory separator in the path. 
+Returns the "basename" of a file or directory - the name after the last directory separator in the path.
 
 The optional second parameter specifies a literal suffix to remove from the file name. If the file name does not end with the specified suffix then it is ignored.
 
@@ -7926,7 +7925,7 @@ workflow test_basename {
   output {
     Boolean is_true1 = basename("/path/to/file.txt") == "file.txt"
     Boolean is_true2 = basename("/path/to/file.txt", ".txt") == "file"
-    Boolean is_true3 = basename("/path/to/dir") == "dir" 
+    Boolean is_true3 = basename("/path/to/dir") == "dir"
   }
 }
 ```
@@ -7997,11 +7996,11 @@ task resolve_paths_task {
   File bin1 = join_paths(abs_file, [rel_str_dir, rel_file])
   File bin2 = join_paths(abs_str, [rel_str_dir, rel_file])
   File bin3 = join_paths([abs_str, rel_str_dir, rel_file])
-  
-  # the default behavior is that this resolves to 
+
+  # the default behavior is that this resolves to
   # '<working dir>/mydir/mydata.txt'
   File data = join_paths(rel_dir_file, rel_str)
-  
+
   # this resolves to '<working dir>/bin/echo', which is non-existent
   File doesnt_exist = join_paths([rel_dir_str, rel_file])
   command <<<
@@ -8014,7 +8013,7 @@ task resolve_paths_task {
     String result = read_string(data)
     File? missing_file = doesnt_exist
   }
-  
+
   runtime {
     container: "ubuntu:latest"
   }
@@ -8035,7 +8034,7 @@ Example output:
   "join_paths_task.bins_equal": true,
   "join_paths_task.result": "hello"
 }
-``` 
+```
 </p>
 </details>
 
@@ -8049,7 +8048,7 @@ Returns the Bash expansion of the [glob string](https://en.wikipedia.org/wiki/Gl
 
 `glob` finds all of the files (but not the directories) in the same order as would be matched by running `echo <glob>` in Bash from the task's execution directory.
 
-At least in standard Bash, glob expressions are not evaluated recursively, i.e., files in nested directories are not included. 
+At least in standard Bash, glob expressions are not evaluated recursively, i.e., files in nested directories are not included.
 
 **Parameters**:
 
@@ -8077,7 +8076,7 @@ task gen_files {
     touch a_dir/a_inner.txt
   >>>
 
-  output {  
+  output {
     Array[File] files = glob("a_*")
     Int glob_len = length(files)
   }
@@ -8174,7 +8173,7 @@ task file_sizes {
     }
     Float nested_bytes = size(nested)
   }
-  
+
   requirements {
     container: "ubuntu:latest"
   }
@@ -8317,11 +8316,11 @@ version 1.2
 task read_string {
   # this file will contain "this\nfile\nhas\nfive\nlines\n"
   File f = write_lines(["this", "file", "has", "five", "lines"])
-  
+
   command <<<
   cat ~{f}
   >>>
-  
+
   output {
     # s will contain "this\nfile\nhas\nfive\nlines"
     String s = read_string(stdout())
@@ -8537,7 +8536,7 @@ task grep {
   output {
     Array[String] matches = read_lines(stdout())
   }
-  
+
   requirements {
     container: "ubuntu:latest"
   }
@@ -8600,7 +8599,7 @@ task write_lines {
   output {
     String s = read_string(stdout())
   }
-  
+
   requirements {
     container: "ubuntu:latest"
   }
@@ -8737,7 +8736,7 @@ Example output:
       "header1": "row3",
       "header2": "value3"
     }
-  ],  
+  ],
   "read_tsv.output_objs3": [
     {
       "name": "row1",
@@ -8774,7 +8773,7 @@ There are three variants of this function:
 
 3. `File write_tsv(Array[Struct], [Boolean, [Array[String]]])`: Each element is a struct whose field values are concatenated in the order the fields are defined. The optional second argument specifies whether to write a header row. If it is `true`, then the header is created from the struct field names. If the second argument is `true`, then the optional third argument may be used to specify column names to use instead of the struct field names.
 
-Each line is terminated by the newline (`\n`) character. 
+Each line is terminated by the newline (`\n`) character.
 
 The generated file should be given a random name and written in a temporary directory, so as not to conflict with any other task output files.
 
@@ -8832,7 +8831,7 @@ task write_tsv {
     Array[String] structs_user_header = read_lines("structs_user_header.txt")
 
   }
-  
+
   requirements {
     container: "ubuntu:latest"
   }
@@ -8852,10 +8851,10 @@ Example output:
 {
   "write_tsv.array_no_header": ["one", "un"],
   "write_tsv.array_header": ["first", "one", "un"],
-  "write_tsv.structs_default": ["first", "one", "un"], 
-  "write_tsv.structs_no_header": ["two", "deux"], 
-  "write_tsv.structs_header": ["second", "two", "deux"], 
-  "write_tsv.structs_user_header": ["no3", "three", "trois"], 
+  "write_tsv.structs_default": ["first", "one", "un"],
+  "write_tsv.structs_no_header": ["two", "deux"],
+  "write_tsv.structs_header": ["second", "two", "deux"],
+  "write_tsv.structs_user_header": ["no3", "three", "trois"],
 
 }
 ```
@@ -8905,7 +8904,7 @@ task read_map {
     printf "key1\tvalue1\n" >> map_file
     printf "key2\tvalue2\n" >> map_file
   >>>
-  
+
   output {
     Map[String, String] mapping = read_map(stdout())
   }
@@ -8963,7 +8962,7 @@ task write_map {
   command <<<
     cut -f 1 ~{write_map(map)}
   >>>
-  
+
   output {
     Array[String] keys = read_lines(stdout())
   }
@@ -9170,7 +9169,7 @@ task write_json {
   output {
     Array[String] keys = read_json(stdout())
   }
-  
+
   requirements {
     container: "python:latest"
   }
@@ -9207,7 +9206,7 @@ CODE
 
 And `/local/fs/tmp/map.json` would contain:
 
-Each line is terminated by the newline (`\n`) character. 
+Each line is terminated by the newline (`\n`) character.
 ```json
 {
   "key1": "value1",
@@ -9423,7 +9422,7 @@ task write_object {
   command <<<
     cut -f 1 ~{write_object(obj)}
   >>>
-  
+
   output {
     Array[String] results = read_lines(stdout())
   }
@@ -9507,7 +9506,7 @@ task write_objects {
   command <<<
     cut -f 1 ~{write_objects(obj_array)}
   >>>
-  
+
   output {
     Array[String] results = read_lines(stdout())
   }
@@ -9835,7 +9834,7 @@ version 1.2
 workflow test_squote {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
   Array[Int] env2 = [1, 2, 3]
-  
+
   output {
     Array[String] env1_quoted =  squote(env1)
     Array[String] env2_quoted = squote(env2)
@@ -9871,7 +9870,7 @@ Concatenates the elements of an array together into a string with the given sepa
 
 **Parameters**
 
-1. `String`: Separator string. 
+1. `String`: Separator string.
 2. `Array[P]`: Array of strings to concatenate.
 
 **Returns**: A `String` with the concatenated elements of the array delimited by the separator string.
@@ -10015,7 +10014,7 @@ workflow test_transpose {
   Array[Array[Int]] input_array = [[0, 1, 2], [3, 4, 5]]
   # output array is 3 rows * 2 columns
   Array[Array[Int]] expected_output_array = [[0, 3], [1, 4], [2, 5]]
-  
+
   output {
     Boolean is_true = transpose(input_array) == expected_output_array
   }
@@ -10069,7 +10068,7 @@ workflow test_cross {
   Array[Pair[Int, String]] expected = [
     (1, "a"), (1, "b"), (2, "a"), (2, "b"), (3, "a"), (3, "b")
   ]
-  
+
   output {
     Boolean is_true = cross(xs, ys) == expected
   }
@@ -10119,7 +10118,7 @@ workflow test_zip {
   Array[Int] xs = [1, 2, 3]
   Array[String] ys = ["a", "b", "c"]
   Array[Pair[Int, String]] expected = [(1, "a"), (2, "b"), (3, "c")]
-  
+
   output {
     Boolean is_true = zip(xs, ys) == expected
   }
@@ -10207,7 +10206,7 @@ workflow test_unzip {
   Map[String, Int] m = {"a": 0, "b": 1, "c": 2}
   Pair[Array[String], Array[Int]] keys_and_values = unzip(as_pairs(m))
   Pair[Array[Int], Array[String]] expected1 = ([0, 42], ["hello", "goodbye"])
-  
+
   output {
     Boolean is_true1 = unzip(int_str_arr) == expected1
     Boolean is_true2 = keys_and_values.left == ["a", "b", "c"]
@@ -10286,7 +10285,7 @@ workflow test_contains {
   if (has_null) {
     call null_sample
   }
-  
+
   Boolean has_missing = !contains(samples, name)
   if (has_missing) {
     call missing_sample { input: name }
@@ -10344,7 +10343,7 @@ workflow chunk_array {
   Array[String] s2 = ["a", "b", "c", "d", "e"]
   Array[String] s3 = ["a", "b"]
   Array[String] s4 = []
-  
+
   scatter (a in chunk(s1, 3)) {
     String concat = sep("", a)
   }
@@ -10378,7 +10377,7 @@ Example output:
   "chunk_array.o4": [[]],
   "chunk_array.concats": ["abc", "def"]
 }
-``` 
+```
 </p>
 </details>
 
@@ -10666,7 +10665,7 @@ workflow test_as_pairs {
     Pair[File, File] files = item.right
     Pair[File, String] bams = (files.left, s)
   }
-  
+
   Map[File, String] bam_to_name = as_map(bams)
 
   output {
@@ -10821,7 +10820,7 @@ workflow test_keys {
   input {
     Map[String, Int] x = {"a": 1, "b": 2, "c": 3}
     Map[String, Pair[File, File]] str_to_files = {
-      "a": ("a.bam", "a.bai"), 
+      "a": ("a.bam", "a.bai"),
       "b": ("b.bam", "b.bai")
     }
     Name name = Name {
@@ -10895,7 +10894,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
 <details>
   <summary>
   Example: test_contains_key.wdl
-  
+
   ```wdl
   version 1.2
 
@@ -10941,7 +10940,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
     }
   }
   ```
-   
+
   Example output:
 
   ```json
@@ -10951,7 +10950,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
     "test_contains_key.phone1": "123-456-7890",
     "test_contains_key.phone2": null,
   }
-  ``` 
+  ```
   </p>
 </details>
 
@@ -11002,11 +11001,11 @@ workflow test_values {
       "b": (3, 4)
     }
   }
-  
+
   scatter (files in values(str_to_files)) {
     call add { x=ints.left, y=ints.right }
   }
-  
+
   output {
     Array[Int] sums = add.sum
   }
@@ -11057,13 +11056,13 @@ workflow test_collect_by_key {
   input {
     Array[Pair[String, Int]] x = [("a", 1), ("b", 2), ("a", 3)]
     Array[Pair[String, Pair[File, File]]] y = [
-      ("a", ("a_1.bam", "a_1.bai")), 
-      ("b", ("b.bam", "b.bai")), 
+      ("a", ("a_1.bam", "a_1.bai")),
+      ("b", ("b.bam", "b.bai")),
       ("a", ("a_2.bam", "a_2.bai"))
     ]
     Map[String, Array[Int]] expected1 = {"a": [1, 3], "b": [2]}
     Map[String, Array[Pair[File, File]]] expected2 = {
-      "a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], 
+      "a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")],
       "b": [("b.bam", "b.bai")]
     }
   }
@@ -11606,7 +11605,7 @@ workflow map_to_struct2 {
 
   # We can convert back to Map
   Map[Int, String] m2 = as_map(zip(s.keys, s.values))
-  
+
   output {
     IntStringMap sout = s
     Boolean is_equal = m == m2
@@ -11722,7 +11721,7 @@ task read_write_primitives {
     # This would cause an error since "hello" cannot be converted to an Int:
     #Int sint = read_int("str_file")
   }
-  
+
   requirements {
     container: "ubuntu:latest"
   }
@@ -11796,7 +11795,7 @@ task serialize_array_delim {
     head $arg ~{infile}
   done
   >>>
-  
+
   output {
     Array[String] heads = read_lines(stdout())
   }
@@ -11932,7 +11931,7 @@ task serde_array_json {
   output {
     Array[String] keys = read_json(stdout())
   }
-  
+
   requirements {
     container: "python:latest"
   }
@@ -12016,7 +12015,7 @@ workflow serde_pair {
     call tail {
       to_tail = item
     }
-    Pair[String, String]? two_lines = 
+    Pair[String, String]? two_lines =
       if item.right >= 2 then (tail.lines[0], tail.lines[1]) else None
   }
 
@@ -12141,7 +12140,7 @@ task grep1 {
   command <<<
   grep ~{sep(" ", args)} ~{pattern} ~{infile}
   >>>
-  
+
   output {
     Array[String] results = read_lines(stdout())
   }
@@ -12424,7 +12423,7 @@ All members of a namespace must be unique within that namespace. For example:
 * Two documents cannot be imported while they have the same namespace identifier - at least one of them would need to be aliased.
 * A workflow and a namespace both named `foo` cannot exist inside a common namespace.
 * There cannot be a call `foo` in a workflow also named `foo`.
- 
+
 However, two sub-namespaces imported into the same parent namespace are allowed to contain the same names. For example, two documents with different namespace identifiers `foo` and `bar` can both have a task named `baz`, because the [fully-qualified names](#fully-qualified-names--namespaced-identifiers) of the two tasks would be different: `foo.baz` and `bar.baz`.
 
 ## Scopes
@@ -12489,7 +12488,7 @@ A workflow scope consists of:
 * Private declarations in the body of the workflow.
 * Calls in the workflow.
 * Declarations and call outputs that are exported from nested scopes within the workflow (i.e., scatters and conditionals).
- 
+
 Just like in the task scope, all declarations in the workflow scope can reference each other, and the `output` section is a nested scope that has access to - but cannot be accessed from - the workflow scope.
 
 For example, in this workflow (which calls the `my_task` task from the previous example):
@@ -12560,17 +12559,17 @@ For example, the following workflow is invalid:
 ```wdl
 workflow invalid {
   Boolean b = true
-  
+
   scatter {
     String x = "hello"
   }
-  
-  # The scatter exports x to the top-level scope - there is an implicit 
-  # declaration `Array[String] x` here that is reserved to hold the 
+
+  # The scatter exports x to the top-level scope - there is an implicit
+  # declaration `Array[String] x` here that is reserved to hold the
   # exported value and cannot be used by any other declaration in this scope.
-  
+
   if (b) {
-    # error! `x` is already reserved in the top-level scope to hold the exported 
+    # error! `x` is already reserved in the top-level scope to hold the exported
     # value of `x` from the scatter, so we cannot reserve it here
     Float x = 1.0
   }
@@ -12593,7 +12592,7 @@ task mytask {
   }
 
   command <<< >>>
-  
+
   output {
     Int out = inp * 2
   }
@@ -12689,7 +12688,7 @@ workflow my_workflow {
     Array[Int] x_b = x_a
     Int x_b = b
   }
-  
+
   scatter (a2 in as) {
     Array[Int] y_a = y_b
   }
