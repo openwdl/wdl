@@ -673,12 +673,12 @@ In multi-line strings, leading *whitespace* is removed according to the followin
 1. Remove all line continuations and subsequent white space.
    * A line continuation is a backslash (`\`) immediately preceding the newline. A line continuation indicates that two consecutive lines are actually the same line (e.g. when breaking a long line for better readability).
    * If a line ends in multiple `\` then standard character escaping applies. Each pair of consecutive backslashes (`\\`) is an escaped backslash. So a line is continued only if it ends in an odd number of backslashes.
-   * Removing a line continuation means removing the last `\` character, the immediately following newline, and all the whitespace preceeding the next non-whitespace character or end of line (whichever comes first).
+   * Removing a line continuation means removing the last `\` character, the immediately following newline, and all the whitespace preceding the next non-whitespace character or end of line (whichever comes first).
 2. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
-3. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
+3. Remove all whitespace preceding the closing `>>>`, up to and including a newline (if any).
 4. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
    * A blank line contains zero or more whitespace characters followed by a newline.
-   * Common leading whitespace is the minimum number of whitespace characters occuring before the first non-whitespace character in a non-blank line.
+   * Common leading whitespace is the minimum number of whitespace characters occurring before the first non-whitespace character in a non-blank line.
    * Each whitespace character is counted once regardless of whether it is a space or tab (so care should be taken when mixing whitespace characters).
 5. Remove common leading whitespace from each line.
 
@@ -849,11 +849,15 @@ Single- and double-quotes do not need to be escaped within a multi-line string.
 
 ##### Files and Directories
 
-A `File` or `Directory` declaration may have have a string value indicating a relative or absolute path on the local file system.
+A `File` or `Directory` declaration may have a string value indicating a relative or absolute path on the local file system.
+
+Within a WDL file, literal values for files may only be (relative or absolute) paths that are local to the execution environment. If the specified path does not exist, it is an error unless the declaration is optional.
 
 ```wdl
 task literals_paths {
   input {
+    # If the user does not override the value of `f1`, and /foo/bar.txt
+    # does not exist, it is an error.
     File f1 = "/foo/bar.txt"
     File? f2
   }
@@ -1754,7 +1758,7 @@ There are two exceptions where coercion from `T?` to `T` is allowed:
 
 ###### Struct/Object Coercion from Map
 
-`Struct`s and `Object`s can be coerced from map literals, but beware the difference between `Map` keys (expressions) and `Struct`/`Object` member names.
+`Struct`s and `Object`s can be coerced from map literals, but beware of the difference between `Map` keys (expressions) and `Struct`/`Object` member names.
 
 <details>
 <summary>
@@ -2228,7 +2232,7 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 
 Boolean operator evaluation is minimal (or "short-circuiting"), meaning that:
 
-1. For `A && B`, if `A` evalutes to `false` then `B` is not evaluated
+1. For `A && B`, if `A` evaluates to `false` then `B` is not evaluated
 2. For `A || B`, if `A` evaluates to `true` then `B` is not evaluated.
 
 WDL `String`s are compared by the unicode values of their corresponding characters. Character `a` is less than character `b` if it has a lower unicode value.
@@ -2871,7 +2875,7 @@ Example output:
       String? foo = None
       # The expression in this string results in an error (calling `select_first` on an array 
       # containing no non-`None` values) and so the placeholder evaluates to the empty string and 
-      # `s` evalutes to: "Foo is "
+      # `s` evaluates to: "Foo is "
       String s = "Foo is ~{select_first([foo])}"
     }
   }
@@ -3270,7 +3274,7 @@ A `Struct` type is a user-defined data type. Structs enable the creation of comp
 
 A struct is defined using the `struct` keyword, followed by a name that is unique within the WDL document, and a body containing the member declarations. A struct member may be of any type, including compound types and even other `Struct` types. A struct member may be optional. Declarations in a struct body differ from those in a task or workflow in that struct members cannot have default initializers.
 
-A `struct` definition may include a `meta` section with metadata about the struct, and a `parameter_meta` section with metadata about any of the struct's members. These sections have identical sematics to task and workflow [`meta` and `parameter_meta` sections](#metadata-sections). Any key in the `parameter_meta` section *must* correspond to a member of the `struct`.
+A `struct` definition may include a `meta` section with metadata about the struct, and a `parameter_meta` section with metadata about any of the struct's members. These sections have identical semantics to task and workflow [`meta` and `parameter_meta` sections](#metadata-sections). Any key in the `parameter_meta` section *must* correspond to a member of the `struct`.
 
 <details>
 <summary>
@@ -3383,7 +3387,7 @@ struct Invalid {
 
 ## Import Statements
 
-Although a WDL workflow and the task(s) it calls may be defined completely within a single WDL document, splitting it into multiple documents can be beneficial in terms of modularity and code resuse. Furthermore, complex workflows that consist of multiple subworkflows must be defined in multiple documents because each document is only allowed to contain at most one workflow.
+Although a WDL workflow and the task(s) it calls may be defined completely within a single WDL document, splitting it into multiple documents can be beneficial in terms of modularity and code reuse. Furthermore, complex workflows that consist of multiple subworkflows must be defined in multiple documents because each document is only allowed to contain at most one workflow.
 
 The `import` statement is the basis for modularity in WDL. A WDL document may have any number of `import` statements, each of which references another WDL document and allows access to that document's top-level members (`task`s, `workflow`s, and `struct`s).
 
@@ -3413,7 +3417,7 @@ workflow wf {
 
 ### Import URIs
 
-A document is imported using it's [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier), which uniquely describes its local or network-accessible location. The execution engine must at least support the following protocols for import URIs:
+A document is imported using its [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier), which uniquely describes its local or network-accessible location. The execution engine must at least support the following protocols for import URIs:
 
 * `http://`
 * `https://`
@@ -4167,7 +4171,7 @@ command { ... }
 The command template is evaluated *after* all of the inputs are staged and before the outputs are evaluated. The command template is evaluated similarly to [multi-line strings](#multi-line-strings):
 
 1. Remove all whitespace following the opening `<<<`, up to and including a newline (if any).
-2. Remove all whitespace preceeding the closing `>>>`, up to and including a newline (if any).
+2. Remove all whitespace preceding the closing `>>>`, up to and including a newline (if any).
 3. Use all remaining non-*blank* lines to determine the *common leading whitespace*.
 4. Remove common leading whitespace from each line.
 5. Evaluate placeholder expressions.
@@ -6425,7 +6429,7 @@ The following hints are reserved. An implementation is not required to support t
 
 When running a workflow, the user typically is only allowed to specify values for the inputs defined in the top-level workflow's `input` section. However, setting the `allow_nested_inputs` hint to `true` specifies that the execution engine is allowed to let the user set the value of some call inputs at runtime.
 
-A call input value is eligible to be set at runtime if it corresponds to a subworkflow or task input that has a default value *and* its value is not set explicitly in the call's `input` section. The default value is used for an eligible call input when `allow_nested_inputs` is set to `false`, when the user does not specify a value for the input at runtime, or when the execution engine does not suppport `allow_nested_inputs`. 
+A call input value is eligible to be set at runtime if it corresponds to a subworkflow or task input that has a default value *and* its value is not set explicitly in the call's `input` section. The default value is used for an eligible call input when `allow_nested_inputs` is set to `false`, when the user does not specify a value for the input at runtime, or when the execution engine does not support `allow_nested_inputs`. 
 
 The execution engine may refuse to execute a workflow when `allow_nested_inputs` is set to `false` and the user attempts to specify a value for a nested input, but if it does execute the workflow and ignore the user-specified value then it should show a warning.
 
