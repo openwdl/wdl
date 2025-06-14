@@ -20,17 +20,17 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
-* Clarify that `disks` mount points ephemeral and should not already exist
++ Clarify that `disks` mount points ephemeral and should not already exist
 
-* Deprecate the use of relative path literals in input and private variable declarations.
++ Deprecate the use of relative path literals in input and private variable declarations.
 
-* Include fixes to examples introduced in v1.1.3
++ Include fixes to examples introduced in v1.1.3
+
++ Added clarification on the naming convention for `return_codes` (snake_case) vs. `returnCodes` (camelCase).
 
 version 1.2.0
 ---------------------------
 
-+ Added clarification on the naming convention for `return_codes` (snake_case) vs. `returnCodes` (camelCase).
-  [PR #XXX](https://github.com/openwdl/wdl/pull/XXX) by @Gyan-max
 
 + Introduced the concept of "scoped types" to support the use of object-like values within the `hints` section while still keeping the `Object` type as deprecated.
 
@@ -255,4 +255,3 @@ draft-2
 ---------------------------
 
 + Added ANTLR4 grammar
-
