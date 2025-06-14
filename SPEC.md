@@ -1,11 +1,12 @@
 # Workflow Description Language (WDL)
 
-This is version 1.2.0 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.2`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.1.*](https://github.com/openwdl/wdl/blob/wdl-1.1/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 and 1.1 specifications that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol).
+This is version 1.2.1 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.2`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.1.*](https://github.com/openwdl/wdl/blob/wdl-1.1/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 and 1.1 specifications that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol).
 
 ## Revisions
 
 Revisions to this specification are made periodically in order to correct errors, clarify language, or add additional examples. Revisions are released as "patches" to the specification, i.e., the third number in the specification version is incremented. No functionality is added or removed after the initial revision of the specification is ratified.
 
+* [1.2.1]():
 * [1.2.0](https://github.com/openwdl/wdl/tree/release-1.2.0/SPEC.md): 2024-05-24
  
 ## Table of Contents
@@ -196,9 +197,11 @@ Revisions to this specification are made periodically in order to correct errors
     - [`length`](#length)
 - [Input and Output Formats](#input-and-output-formats)
   - [JSON Input Format](#json-input-format)
+    - [File/Directory Inputs](#filedirectory-inputs)
     - [Optional Inputs](#optional-inputs)
     - [Specifying / Overriding Requirements and Hints](#specifying--overriding-requirements-and-hints)
   - [JSON Output Format](#json-output-format)
+    - [File/Directory Outputs](#filedirectory-outputs)
   - [Extended File/Directory Input/Output Format](#extended-filedirectory-inputoutput-format)
   - [JSON Serialization of WDL Types](#json-serialization-of-wdl-types)
     - [Primitive Types](#primitive-types-1)
@@ -390,7 +393,7 @@ WDL also provides features for implementing more complex workflows. For example,
   
   ```json
   {
-    "hello.all_matches": [["hi_world"], ["hi_pal"]]
+    "hello_parallel.all_matches": [["hi_world"], ["hi_pal"]]
   }
   ```
   </p>
@@ -442,7 +445,7 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
     # This comment will not be included within the command
     command <<<
       # This comment WILL be included within the command after it has been parsed
-      cat ~{number * 2}
+      echo ~{number * 2}
     >>>
 
     output {
@@ -848,23 +851,39 @@ Single- and double-quotes do not need to be escaped within a multi-line string.
 
 A `File` or `Directory` declaration may have have a string value indicating a relative or absolute path on the local file system.
 
-Within a WDL file, literal values for files may only be (relative or absolute) paths that are local to the execution environment. If the specified path does not exist, it is an error unless the declaration is optional.
-
 ```wdl
 task literals_paths {
   input {
-    # If the user does not overide the value of `f1`, and /foo/bar.txt
-    # does not exist, it is an error.
     File f1 = "/foo/bar.txt"
-
-    # If the user does not override the value of `f2` and /foo/bar.txt
-    # does not exist, then `f2` is set to `None`.
-    File? f2 = "/foo/bar.txt"
+    File? f2
   }
+
+  command <<<
+    # If the user does not overide the value of `f1`, and /foo/bar.txt
+    # does not exist, an error will occur when the file is accessed here.
+    cat "~{f1}"
+
+    # If the user does not specify the value of `f2` it's value is `None`,
+    # which results in the empty-string when interpolated. `-f ""` is
+    # always false.
+    if [ -f "~{f2}" ]; then
+      echo "~{f2}"
+    fi
+  >>>
 }
 ```
 
-An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path.
+Within a WDL file, the execution engine is only required to support literal values for files and directories that are paths local to the execution environment.
+
+A path is only required to be valid if and when it is accessed. A path assigned to an input or private declaration is only accessed if it is referred to in the `command` or `output` sections. A path assigned to an output declaration must be valid unless the declaration is optional.
+
+* To read from a path, the file/directory must exist and be accessible for reading (i.e., be assigned the appropriate permissions).
+* To write to a file, the path's parent directory must be accessible for writing.
+* To write to a directory, it must exist and be accessible for writing.
+
+Path literals should be absolute paths, since the execution engine is free to set the working directory of a task execution, and thus relative paths may not exist at runtime. 🗑 Use of relative path literals when defining input and private declarations is currently allowed but is deprecated and will be disallowed in WDL 2.0. 
+
+An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path. Remote files must be treated as read-only. A remote file is only required to be vaild at the time that the execution engine needs to localize it.
 
 #### Optional Types and None
 
@@ -915,7 +934,8 @@ An optional declaration has a default initialization of `None`, which indicates 
     "optionals.test_defined": false,
     "optionals.test_defined2": true,
     "optionals.test_is_none": true,
-    "optionals.test_not_none": false
+    "optionals.test_not_none": false,
+    "optionals.test_non_equal": true
   }
   ```
   </p>
@@ -1027,7 +1047,7 @@ task sum {
   }
   
   command <<<
-  printf ~{sep(" ", ints)} | awk '{tot=0; for(i=1;i<=NF;i++) tot+=$i; print tot}'
+  printf "~{sep(" ", ints)}" | awk '{tot=0; for(i=1;i<=NF;i++) tot+=$i; print tot}'
   >>>
   
   output {
@@ -1092,8 +1112,8 @@ Example output:
 {
   "non_empty_optional.nonempty1": [0.0],
   "non_empty_optional.nonempty2": [null, 1],
-  "non_empty_optional.nonempty3": [],
-  "non_empty_optional.nonempty4": [0.0]
+  "non_empty_optional.nonempty3": null,
+  "non_empty_optional.nonempty4": [0]
 }
 ```
 </p>
@@ -1407,7 +1427,7 @@ Example output:
 
 ```json
 {
-  "test_struct.person": {
+  "test_struct.john": {
     "name": "John",
     "account": {
       "account_number": "123456",
@@ -1574,14 +1594,17 @@ Example: string_to_file.wdl
 version 1.2
 
 workflow string_to_file {
-  String path1 = "/path/to/file"
-  File path2 = "/path/to/file"
+  input {
+    File infile
+  }
+
+  String path1 = "~{infile}"
 
   # valid - String coerces unambiguously to File
-  File path3 = path1
+  File path2 = path1
 
   output {
-    Boolean paths_equal = path2 == path3
+    Boolean paths_equal = path1 == path2
   }
 }
 ```
@@ -1590,7 +1613,9 @@ workflow string_to_file {
 Example input:
 
 ```json
-{}
+{
+  "string_to_file.infile": "hello.txt"
+}
 ```
 
 Example output:
@@ -1749,18 +1774,20 @@ workflow map_to_struct {
   String b = "key"
   String c = "lookup"
 
-  # What are the keys to this Struct?
-  Words literal_syntax = Words {
-    a: 10,
-    b: 11,
-    c: 12
-  }
+  output {
+    # What are the keys to this Struct?
+    Words literal_syntax = Words {
+      a: 10,
+      b: 11,
+      c: 12
+    }
 
-  # What are the keys to this Struct?
-  Words map_coercion = {
-    a: 10,
-    b: 11,
-    c: 12
+    # What are the keys to this Struct?
+    Words map_coercion = {
+      a: 10,
+      b: 11,
+      c: 12
+    }
   }
 }
 ```
@@ -1957,7 +1984,7 @@ task count_lines {
   }
 
   command <<<
-    wc -l ~{write_lines(array)}
+    wc -l < ~{write_lines(array)}
   >>>
   
   output {
@@ -2264,8 +2291,8 @@ Example output:
 {
   "array_map_equality.is_true1": true,
   "array_map_equality.is_true2": true,
-  "array_map_equality.is_false1": true,
-  "array_map_equality.is_false2": true
+  "array_map_equality.is_false1": false,
+  "array_map_equality.is_false2": false
 }
 ```
 </p>
@@ -2449,7 +2476,7 @@ version 1.2
 struct Experiment {
   String id
   Array[String] variables
-  Map[String, Float] data
+  Map[String, String] data
 }
 
 workflow nested_access {
@@ -2482,7 +2509,7 @@ Example input:
       "variables": ["name", "height"],
       "data": {
         "name": "Pinky",
-        "height": 7
+        "height": "7"
       }
     },
     {
@@ -2490,7 +2517,7 @@ Example input:
       "variables": ["name", "weight"],
       "data": {
         "name": "Porky",
-        "weight": 1000
+        "weight": "1000"
       }
     }
   ]
@@ -2659,7 +2686,7 @@ Example input:
 {
   "placeholders.start": "h",
   "placeholders.end": "o",
-  "placeholders.input": "hello"
+  "placeholders.instr": "hello"
 }
 ```
 
@@ -2667,7 +2694,8 @@ Example output:
 
 ```json
 {
-  "placeholders.cmd": "grep 'h...o' hello"
+  "placeholders.cmd": "grep 'h...o' hello",
+  "placehoders.s": "4"
 }
 ```
 </p>
@@ -2788,12 +2816,15 @@ Example: placeholder_coercion.wdl
 version 1.2
 
 workflow placeholder_coercion {
-  File x = "/hij"
+  input {
+    File x
+  }
+  String x_as_str = x
   Int? i = None
 
   output {
     Boolean is_true1 = "~{"abc"}" == "abc"
-    Boolean is_true2 = "~{x}" == "/hij"
+    Boolean is_true2 = "~{x}" == x_as_str
     Boolean is_true3 = "~{5}" == "5"
     Boolean is_true4 = "~{3.141}" == "3.141000"
     Boolean is_true5 = "~{3.141 * 1E-10}" == "0.000000"
@@ -2807,7 +2838,9 @@ workflow placeholder_coercion {
 Example input:
 
 ```json
-{}
+{
+  "placeholder_coercion.x": "hello.txt"
+}
 ```
 
 Example output:
@@ -2956,7 +2989,7 @@ Example output:
 
 ```json
 {
-  "flags.num_matches": 2
+  "flags.num_matches": "2"
 }
 ```
 </p>
@@ -3267,7 +3300,7 @@ struct Person {
     description: "Encapsulates data about a person"
   }
 
-  paramter_meta {
+  parameter_meta {
     name: "The person's name"
     age: "The person's age"
     income: "How much the person makes (optional)"
@@ -3304,7 +3337,7 @@ Example input:
 
 ```json
 {
-  "person_struct.person": {
+  "greet_person.person": {
     "name": {
       "first": "Richard",
       "last": "Rich"
@@ -3325,7 +3358,7 @@ Example output:
 
 ```json
 {
-  "person_struct.message": "Hello Richard! You have 1 test result(s) available.\nPlease transfer USD 500 to continue"
+  "greet_person.message": "Hello Richard! You have 1 test result(s) available.\nPlease transfer USD 500 to continue"
 }
 ```
 
@@ -3386,7 +3419,7 @@ A document is imported using it's [URI](https://en.wikipedia.org/wiki/Uniform_Re
 * `https://`
 * 🗑 `file://` - Using the `file://` protocol for local imports can be problematic. Its use is deprecated and will be removed in WDL 2.0.
 
-In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. In the primary WDL document, a protocol-less import is relative to the host file system. If a protocol-less import starts with `/` it is interpreted as relative to the root of the host in the resolved URI.
+In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. In the primary WDL document, a protocol-less import is relative to the folder that contains the primary WDL file. If a protocol-less import starts with `/` it is interpreted as relative to the root of the file system that contains the primary WDL file.
 
 Some examples of correct import resolution:
 
@@ -3465,6 +3498,7 @@ task calculate_bill {
 
 workflow import_structs {
   input {
+    File infile
     Person doctor = Person {
       age: 10,
       name: Name {
@@ -3489,12 +3523,12 @@ workflow import_structs {
         period: "hourly"
       },
       assay_data: {
-        "glucose": "hello.txt"
+        "glucose": infile
       }
     }
   }
 
-  call person_struct.greet_person {
+  call person_struct_task.greet_person {
     person = patient
   }
 
@@ -3512,14 +3546,16 @@ workflow import_structs {
 Example input:
 
 ```json
-{}
+{
+  "import_structs.infile": "hello.txt"
+}
 ```
 
 Example output:
 
 ```json
 {
-  "import_structs.bill": 175000
+  "import_structs.bill": 175000.0
 }
 ```
 </p>
@@ -4232,7 +4268,7 @@ task test_placeholders {
     # The `read_lines` function reads the lines from a file into an
     # array. The `sep` function concatenates the lines with a space
     # (" ") delimiter. The resulting string is then printed to stdout.
-    printf ~{sep(" ", read_lines(infile))}
+    printf "~{sep(" ", read_lines(infile))}"
   >>>
   
   output {
@@ -4360,12 +4396,12 @@ task python_strip {
   }
 
   command<<<
-  python <<CODE
+    python <<CODE
     with open("~{infile}") as fp:
       for line in fp:
         if not line.startswith('#'):
           print(line.strip())
-  CODE
+    CODE
   >>>
 
   output {
@@ -4391,7 +4427,7 @@ Example output:
 
 ```json
 {
-  "python_strip": ["A", "B", "C"]
+  "python_strip.lines": ["A", "B", "C"]
 }
 ```
 </p>
@@ -4401,10 +4437,10 @@ Given an `infile` value of `/path/to/file`, the execution engine will produce th
 
 ```sh
 python <<CODE
-  with open("/path/to/file") as fp:
-    for line in fp:
-      if not line.startswith('#'):
-        print(line.strip())
+with open("/path/to/file") as fp:
+  for line in fp:
+    if not line.startswith('#'):
+      print(line.strip())
 CODE
 ```
 
@@ -4444,8 +4480,7 @@ Example input:
 
 ```json
 {
-  "outputs.t": 5,
-  "outputs.write_outstr": false
+  "outputs.t": 5
 }
 ```
 
@@ -4540,7 +4575,7 @@ task glob {
   }
 
   command <<<
-  for i in 1..~{num_files}; do
+  for i in {1..~{num_files}}; do
     printf ${i} > file_${i}.txt
   done
   >>>
@@ -4595,7 +4630,7 @@ task relative_and_absolute {
   >>>
 
   output {
-    File something = read_string("my/path/to/something.txt")
+    String something = read_string("my/path/to/something.txt")
     File bashrc = "/root/.bashrc"
   }
 
@@ -4646,7 +4681,7 @@ task optional_output {
 
   command <<<
     printf "1" > example1.txt
-    if ~{make_example2}; do
+    if ~{make_example2}; then
       printf "2" > example2.txt
     fi
   >>>
@@ -4674,6 +4709,8 @@ Example output:
 ```json
 {
   "optional_output.example2": null,
+  "optional_output.example1": "example1.txt",
+  "optional_output.file_array": ["example1.txt", null],
   "optional_output.file_array_len": 1
 }
 ```
@@ -4772,7 +4809,7 @@ task dynamic_container {
   >>>
   
   output {
-    String is_true = ubuntu_version == read_string(stdout())
+    Boolean is_true = ubuntu_version == read_string(stdout())
   }
 
   requirements {
@@ -5039,6 +5076,7 @@ task test_gpu {
   }
   
   requirements {
+    container: "archlinux:latest"
     gpu: true
   }
 }
@@ -5081,9 +5119,11 @@ Test config:
     * `Array[String]` - An array of disk specifications.
 * Default value: `1 GiB`
 
-The `disks` attribute provides a way to request one or more persistent volumes, each of which has a minimum size and is mounted at a specific location. When the `disks` attribute is provided, the execution engine must guarantee the requested resources are available or immediately fail the task prior to instantiating the command.
+The `disks` attribute provides a way to request one or more persistent volumes, each of which has a minimum size and is mounted at a specific location with both read and write permissions. When the `disks` attribute is provided, the execution engine must guarantee the requested resources are available or immediately fail the task prior to instantiating the command.
 
-If a mount point is specified, then it must be an absolute path to a location in the host environment. If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
+If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
+
+If a mount point is specified, then it must be an absolute path to a location in the execution environment (i.e., within the container). The specified path either must not already exist in the execution environment, or it must be empty and have at least the requested amount of space available. The mount point should be assumed to be ephemeral, i.e., it will be deleted after the task completes.
 
 The execution engine is free to provision any class(es) of persistent volume it has available (e.g., SSD or HDD). The [`disks` hint](#-disks) hint can be used to request specific attributes for the provisioned disks.
 
@@ -5369,7 +5409,7 @@ task test_hints {
   }
 
   command <<<
-  wc -l ~{foo}
+  wc -l < ~{foo}
   >>>
 
   output {
@@ -5690,11 +5730,11 @@ task ex_paramter_meta {
   }
 
   command <<<
-    wc ~{if lines_only then '-l' else ''} ~{infile}
+    wc ~{if lines_only then '-l' else ''} < ~{infile}
   >>>
 
   output {
-     String result = stdout()
+     Int result = read_int(stdout())
   }
 
   requirements {
@@ -5717,7 +5757,7 @@ Example output:
 
 ```json
 {
-  "ex_paramter_meta.result": "3"
+  "ex_paramter_meta.result": 2
 }
 ```
 </p>
@@ -5828,7 +5868,7 @@ version 1.2
 
 task hisat2 {
   input {
-    File index
+    File index_tar_gz
     String sra_acc
     Int? max_reads
     Int threads = 8
@@ -5836,15 +5876,15 @@ task hisat2 {
     Float disk_size_gb = 100
   }
 
-  String index_id = basename(index, ".tar.gz")
+  String index_id = basename(index_tar_gz, ".tar.gz")
 
   command <<<
-    mkdir index
-    tar -C index -xzf ~{index}
+    mkdir "~{index_id}"
+    tar -C "~{index_id}" --strip-components 2 -xzf "~{index_tar_gz}"
     hisat2 \
       -p ~{threads} \
       ~{if defined(max_reads) then "-u ~{select_first([max_reads])}" else ""} \
-      -x index/~{index_id} \
+      -x "~{index_id}" \
       --sra-acc ~{sra_acc} > ~{sra_acc}.sam
   >>>
   
@@ -5864,7 +5904,7 @@ task hisat2 {
   }
 
   parameter_meta {
-    index: "Gzipped tar file with HISAT2 index files"
+    index_tar_gz: "Gzipped tar file with HISAT2 index files"
     sra_acc: "SRA accession number or reads to align"
   }
 }
@@ -6196,7 +6236,7 @@ task echo {
   }
   
   command <<<
-  printf ~{msg}
+  printf '~{msg}\n'
   >>>
   
   output {
@@ -6264,7 +6304,7 @@ task foobar {
   }
 
   command <<<
-  wc -l ~{infile}
+  wc -l < ~{infile}
   >>>
 
   output {
@@ -6306,7 +6346,7 @@ Example output:
 
 ```json
 {
-  "other.results": 3
+  "other.results": 2
 }
 ```
 </p>
@@ -6536,8 +6576,8 @@ task repeat {
     echo "i must be >= 1"
     exit 1
   fi
-  for i in 1..~{i}; do
-    printf ~{select_first([opt_string, "default"])}
+  for i in {1..~{i}}; do
+    printf '~{select_first([opt_string, "default"])}\n'
   done
   >>>
 
@@ -6832,7 +6872,6 @@ workflow allow_nested {
   input {
     Int int_val
     String msg1
-    String msg2
     Array[Int] my_ints
     File ref_file
   }
@@ -6847,8 +6886,7 @@ workflow allow_nested {
   }
 
   call lib.repeat as repeat2 {
-    # Note: the default value of `0` for the `i` input causes the task to fail
-    opt_string = msg2
+    i = 2
   }
 
   scatter (i in my_ints) {
@@ -6872,10 +6910,9 @@ Example input:
 {
   "allow_nested.int_val": 3,
   "allow_nested.msg1": "hello",
-  "allow_nested.msg2": "goodbye",
   "allow_nested.my_ints": [1, 2, 3],
   "allow_nested.ref_file": "hello.txt",
-  "allow_nested.repeat2.i": 2
+  "allow_nested.repeat2.opt_string": "goodbye"
 }
 ```
 
@@ -7044,7 +7081,7 @@ workflow nested_scatter {
     Array[String] salutations = ["Hello", "Goodbye"]
   }
 
-  Array[String] honorifics = ["Wizard", "Mr."]
+  Array[String] honorifics = ["Mr.", "Wizard"]
 
   # the zip() function creates an array of pairs
   Array[Pair[String, String]] name_pairs = zip(first_names, last_names)
@@ -7124,7 +7161,8 @@ Example output:
       ["Hello Mr. Merry, how are you?", "Hello Mr. Merry Brandybuck, how are you?"],
       ["Goodbye Mr. Merry, how are you?", "Goodbye Mr. Merry Brandybuck, how are you?"]
     ]
-  ]
+  ],
+  "nested_scatter.used_honorifics": ["Mr.;", "Wizard", "Mr."]
 }
 ```
 </p>
@@ -7211,7 +7249,8 @@ Example output:
 ```json
 {
   "test_conditional.result_array": [4, 6, 8, 10],
-  "test_conditional.maybe_result2": [0, 4, 6, 8, 10]
+  "test_conditional.maybe_result2": [0, 4, 6, 8, 10],
+  "test_conditional.j_out": 2
 }
 ```
 </p>
@@ -7247,12 +7286,12 @@ workflow if_else {
   
   # the body *is not* evaluated since 'b' is false
   if (is_morning) {
-    call greet as morning { time = "morning" }
+    call greet as morning { input: time = "morning" }
   }
 
   # the body *is* evaluated since !b is true
   if (!is_morning) {
-    call greet as afternoon { time = "afternoon" }
+    call greet as afternoon { input: time = "afternoon" }
   }
 
   output {
@@ -7297,7 +7336,7 @@ workflow nested_if {
 
   if (morning) {
     if (friendly) {
-      call if_else.greet { time = "morning" }
+      call if_else.greet { input: time = "morning" }
     }
   }
 
@@ -7402,7 +7441,7 @@ Example output:
 
 ```json
 {
-  "test_floor.all_true": true
+  "test_floor.all_true": [true, true]
 }
 ```
 </p>
@@ -7457,7 +7496,7 @@ Example output:
 
 ```json
 {
-  "test_ceil.all_true": true
+  "test_ceil.all_true": [true, true]
 }
 ```
 </p>
@@ -7512,7 +7551,7 @@ Example output:
 
 ```json
 {
-  "test_round.all_true": true
+  "test_round.all_true": [true, true]
 }
 ```
 </p>
@@ -7615,8 +7654,8 @@ workflow test_max {
 
   output {
     # these two expressions are equivalent
-    Float min1 = if value1 > value2 then value1 else value2
-    Float min2 = max(value1, value2)
+    Float max1 = if value1 > value2 then value1 else value2
+    Float max2 = max(value1, value2)
   }
 }
 ```
@@ -7635,8 +7674,8 @@ Example output:
 
 ```json
 {
-  "test_max.min1": 1.0,
-  "test_max.min2": 1.0
+  "test_max.max1": 2.0,
+  "test_max.max2": 2.0
 }
 ```
 </p>
@@ -7796,7 +7835,7 @@ workflow test_sub {
     String chocoearly = sub(chocolike, "late", "early") # I like chocoearly when\nit's early
     String chocolate = sub(chocolike, "late$", "early") # I like chocolate when\nit's early
     String chocoearlylate = sub(chocolike, "[^ ]late", "early") # I like chocearly when\nit's late
-    String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate 4444\nit's late
+    String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate when\nit's late
     String no_newline = sub(chocolike, "\\n", " ") # "I like chocolate when it's late"
   }
 }
@@ -7957,7 +7996,7 @@ File join_paths(File, Array[String]+)
 File join_paths(Array[String]+)
 ```
 
-Joins together two or more paths into an absolute path in the host filesystem.
+Joins together two or more paths into an absolute path in the execution environment's filesystem.
 
 There are three variants of this function:
 
@@ -8070,7 +8109,7 @@ task gen_files {
   }
 
   command <<<
-    for i in 1..~{num_files}; do
+    for i in {1..~{num_files}}; do
       printf ${i} > a_file_${i}.txt
     done
     mkdir a_dir
@@ -8224,7 +8263,7 @@ task echo_stdout {
   command <<< printf "hello world" >>>
 
   output {
-    File message = read_string(stdout())
+    String message = read_string(stdout())
   }
 }
 ```
@@ -8269,7 +8308,7 @@ task echo_stderr {
   command <<< >&2 printf "hello world" >>>
 
   output {
-    File message = read_string(stderr())
+    String message = read_string(stderr())
   }
 }
 ```
@@ -8902,8 +8941,8 @@ version 1.2
 
 task read_map {
   command <<<
-    printf "key1\tvalue1\n" >> map_file
-    printf "key2\tvalue2\n" >> map_file
+    printf "key1\tvalue1\n"
+    printf "key2\tvalue2\n"
   >>>
   
   output {
@@ -9161,9 +9200,10 @@ task write_json {
   command <<<
     python <<CODE
     import json
+    import sys
     with open("~{write_json(map)}") as js:
       d = json.load(js)
-      print(list(d.keys()))
+    json.dump(list(d.keys()), sys.stdout)
     CODE
   >>>
 
@@ -9612,7 +9652,7 @@ workflow test_prefix {
   Array[Int] env2 = [1, 2, 3]
 
   output {
-    Array[String] env_prefixed = prefix("-e ", env1)
+    Array[String] env1_prefixed = prefix("-e ", env1)
     Array[String] env2_prefixed = prefix("-f ", env2)
   }
 }
@@ -9700,7 +9740,7 @@ workflow test_suffix {
   Array[Int] env2 = [1, 2, 3]
 
   output {
-    Array[String] env1_suffix = suffix(".txt ", env1)
+    Array[String] env1_suffix = suffix(".txt", env1)
     Array[String] env2_suffix = suffix(".0", env2)
   }
 }
@@ -9950,7 +9990,7 @@ task double {
   command <<< >>>
 
   output {
-    Int d = n * n
+    Int d = 2 * n
   }
 }
 
@@ -9975,7 +10015,7 @@ Example input:
 
 ```json
 {
-  "test_range.n": 5
+  "test_range.i": 5
 }
 ```
 
@@ -10017,7 +10057,9 @@ workflow test_transpose {
   Array[Array[Int]] expected_output_array = [[0, 3], [1, 4], [2, 5]]
   
   output {
-    Boolean is_true = transpose(input_array) == expected_output_array
+    Array[Array[Int]] out = transpose(input_array) 
+    Array[Array[Int]] expected = expected_output_array
+    Boolean is_true = out == expected
   }
 }
 ```
@@ -10033,6 +10075,8 @@ Example output:
 
 ```json
 {
+  "test_transpose.out": [[0, 3], [1, 4], [2, 5]],
+  "test_transpose.expected": [[0, 3], [1, 4], [2, 5]],
   "test_transpose.is_true": true
 }
 ```
@@ -11257,6 +11301,12 @@ Here is an example JSON input file for a workflow `wf`:
 
 WDL implementations are only required to support workflow execution, and not necessarily task execution, so a JSON input format for tasks is not specified. However, it is strongly suggested that if an implementation does support task execution, that it also supports this JSON input format for tasks. It is left to the discretion of the WDL implementation whether it is required to prefix the task input with the task name, i.e., `mytask.infile` vs. `infile`.
 
+### File/Directory Inputs
+
+It is up to the execution engine to resolve input files and directories and stage them into the execution environment. The execution engine is free to specify the values that are allowed for `File` and `Directory` parameters, but at a minimum it is required to support POSIX absolute file paths (e.g., `/path/to/file`).
+
+It is strongly recommended that input files and directories be specified as absolute paths to local files or as URLs. If relative paths are allowed, then it is suggested that they be resolved relative to the directory that contains the input JSON file (if a file is provided) or to the working directory in which the workflow is initially launched.
+
 ### Optional Inputs
 
 If a workflow has an optional input, its value may or may not be specified in the JSON input. It is also valid to explicitly set the value of an optional input to be undefined using JSON `null`.
@@ -11357,6 +11407,12 @@ The output JSON will look like:
 ```
 
 It is recommended (but not required) that JSON outputs be "pretty printed" to be more human-readable.
+
+### File/Directory Outputs
+
+It is up to the execution engine to provide workflow `File` and `Directory` outputs to the user that persist following a successful execution of the workflow. The execution engine is free to specify the values that are allowed for `File` and `Directory` parameters, but at a minimum it is required to support POSIX absolute file paths (e.g., `/path/to/file`).
+
+It is strongly recommended that output files and directories be specified as absolute paths to local files or as URLs. If relative paths are allowed, then it is suggested that they be resolved relative to the directory that contains the output JSON file (if a file is written) or to a single common directory containing all the workflow outputs.
 
 ## Extended File/Directory Input/Output Format
 
@@ -11821,7 +11877,7 @@ Example output:
 
 ```json
 {
-  "serialize_array_delim.strings": [
+  "serialize_array_delim.heads": [
     "hello world",
     "hello world",
     "hi_world"
@@ -12161,7 +12217,7 @@ task grep2 {
   opts=( ~{sep(" ", quote(opts_and_values.left))} )
   values=( ~{sep(" ", quote(opts_and_values.right))} )
   command="grep"
-  for i in 1..~{n}; do
+  for i in {0..~{n-1}}; do
     command="$command ${opts[i]}"="${values[i]}"
   done
   $command ~{pattern} ~{infile}
@@ -12244,7 +12300,7 @@ task serde_map_tsv {
   >>>
 
   output {
-    Map[String, String] new_items = read_map("lines")
+    Map[String, String] new_items = read_map(stdout())
   }
 }
 ```
@@ -12315,7 +12371,7 @@ version 1.2
 
 task serde_map_json {
   input {
-    Map[String, Float] read_quality_scores
+    Map[String, Int] read_quality_scores
   }
 
   command <<<
@@ -12331,7 +12387,7 @@ task serde_map_json {
   >>>
 
   output {
-    Map[String, Float] ascii_values = read_json(stdout())
+    Map[String, Int] ascii_values = read_json(stdout())
   }
 
   requirements {

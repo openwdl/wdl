@@ -17,6 +17,15 @@ Keep the changelog pleasant to read in the text editor:
 + Properly indent blocks.
 -->
 
+version 1.2.1
+---------------------------
+
+* Clarify that `disks` mount points ephemeral and should not already exist
+
+* Deprecate the use of relative path literals in input and private variable declarations.
+
+* Include fixes to examples introduced in v1.1.3
+
 version 1.2.0
 ---------------------------
 
@@ -38,7 +47,7 @@ version 1.2.0
 + Added `disks` and `gpu` reserved hints for requesting specific resources.
 
 + Added `contains_key` function to standard library. [PR 603](https://github.com/openwdl/wdl/pull/603)
-
+****
 + Added exponentiation operator (`**`).
 
 + Added `find`, and `matches` functions.
@@ -86,6 +95,11 @@ version 1.2.0
 + Clarified the meaning of a remote parent folder for the purposes of localization.
 
 + Clarified that accessing a non-existent member of an object, struct, or call is an error.
+
+version 1.1.3
+---------------------------
+
+* Fix issues with examples (#653, #654, #661, #662, #663, #664, #666, #667, #668). Thanks to @stxue1!
 
 version 1.1.2
 ---------------------------
