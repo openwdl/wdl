@@ -47,6 +47,7 @@ version 1.1.3
 
 * Fix issues with examples (#653, #654, #661, #662, #663, #664, #665, #666, #668, #671). Thanks to @stxue1!
 * Clarify that a file is not required to exist or be accessible until and unless it is accessed.
+* Fix unit test for `round()` to properly test for round-half-up behavior as described.
 
 version 1.1.2
 ---------------------------
