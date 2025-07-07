@@ -789,7 +789,7 @@ Example input:
 
 ```json
 {
-  "ints": ["0", "1", "2"]
+  "sum.ints": ["0", "1", "2"]
 }
 ```
 
@@ -1094,7 +1094,6 @@ Example output:
   "test_object.i": 10
 }
 ```
-
 </p>
 </details>
 
@@ -1177,6 +1176,7 @@ Test config:
   "optional_output": "username"
 }
 ```
+
 
 </p>
 </details>
@@ -1457,9 +1457,9 @@ workflow map_to_struct {
   
     # What are the keys to this Struct?
     Words map_coercion = {
-      a: 10,
-      b: 11,
-      c: 12
+      "a": 10,
+      "b": 11,
+      "c": 12
     }
   }
 }
@@ -1714,7 +1714,7 @@ Example input:
 
 ```json
 {
-  "x": 5
+  "expressions.x": 5
 }
 ```
 
@@ -2451,8 +2451,8 @@ Example input:
 
 ```json
 {
-  "infile": "greetings.txt",
-  "pattern": "world"
+  "flags.infile": "greetings.txt",
+  "flags.pattern": "world"
 }
 ```
 
@@ -2588,8 +2588,8 @@ Example input:
 
 ```json
 {
-  "message": "hello world",
-  "newline": false
+  "true_false_ternary.message": "hello world",
+  "true_false_ternary.newline": false
 }
 ```
 
@@ -2795,7 +2795,7 @@ Example input:
 
 ```json
 {
-  "person": {
+  "greet_person.person": {
     "name": {
       "first": "Richard",
       "last": "Rich"
@@ -3116,7 +3116,7 @@ Example input:
 
 ```json
 {
-  "i": 1
+  "task_inputs.i": 1
 }
 ```
 
@@ -3224,9 +3224,9 @@ Example input:
 
 ```json
 {
-  "a": [],
-  "b": ["A", "B"],
-  "e": ["C"]
+  "input_type_quantifiers.a": [],
+  "input_type_quantifiers.b": ["A", "B"],
+  "input_type_quantifiers.e": ["C"]
 }
 ```
 
@@ -3385,7 +3385,7 @@ Example input:
 
 ```json
 {
-  "lines": ["A", "B", "C", "D"]
+  "private_declaration.lines": ["A", "B", "C", "D"]
 }
 ```
 
@@ -3528,7 +3528,7 @@ Example input:
 
 ```json
 {
-  "infile": "greetings.txt"
+  "test_placeholders.infile": "greetings.txt"
 }
 ```
 
@@ -3574,7 +3574,7 @@ Example input:
 
 ```json
 {
-  "str": "hello"
+  "bash_variables.str": "hello"
 }
 ```
 
@@ -3663,7 +3663,7 @@ Example input:
 
 ```json
 {
-  "infile": "comment.txt"
+  "python_strip.infile": "comment.txt"
 }
 ```
 
@@ -3724,7 +3724,7 @@ Example input:
 
 ```json
 {
-  "t": 5
+  "outputs.t": 5
 }
 ```
 
@@ -3788,7 +3788,7 @@ Example input:
 
 ```json
 {
-  "prefix": "foo"
+  "file_output.prefix": "foo"
 }
 ```
 
@@ -3834,7 +3834,7 @@ Example input:
 
 ```json
 {
-  "num_files": 3
+  "glob.num_files": 3
 }
 ```
 
@@ -3940,7 +3940,7 @@ Example input:
 
 ```json
 {
-  "make_example2": false
+  "optional_output.make_example2": false
 }
 ```
 
@@ -4023,7 +4023,7 @@ Example input:
 
 ```json
 {
-  "ubuntu_version": "focal"
+  "runtime_container.ubuntu_version": "focal"
 }
 ```
 
@@ -4485,7 +4485,7 @@ Test config:
 
 ```json
 {
-  "returnCodes": 1
+  "returnCodes": 0
 }
 ```
 </p>
@@ -4568,7 +4568,7 @@ Test config:
 
 ```json
 {
-  "returnCodes": 42
+  "returnCodes": 0
 }
 ```
 </p>
@@ -4620,7 +4620,7 @@ Example input:
 
 ```json
 {
-  "foo": "greetings.txt"
+  "test_hints.foo": "greetings.txt"
 }
 ```
 
@@ -4704,7 +4704,7 @@ Example input:
 
 ```json
 {
-  "person": {
+  "input_hint.person": {
     "name": "Joe"
   }
 }
@@ -4865,8 +4865,8 @@ Example input:
 
 ```json
 {
-  "infile": "greetings.txt",
-  "lines_only": true
+  "ex_paramter_meta.infile": "greetings.txt",
+  "ex_paramter_meta.lines_only": true
 }
 ```
 
@@ -5047,13 +5047,13 @@ Example input:
 ```json
 {
   "bam": "https://storage.googleapis.com/genomics-public-data/1000-genomes/bam/HG00107.mapped.ILLUMINA.bwa.GBR.low_coverage.20130415.bam",
-    "reference": {
+  "reference": {
     "id":"Homo_sapiens_assembly19_1000genomes_decoy",
     "fasta": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.fasta",
     "index": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.fasta.fai",
     "dict": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.dict"
-  },
-  "interval": "1:12505000-12506000"
+    },
+   "interval": "1:12505000-12506000"
 }
 ```
 
@@ -6368,7 +6368,7 @@ Example output:
 
 ```json
 {
-  "test_round.all_true": [true, false]
+  "test_round.all_true": [true, true]
 }
 ```
 </p>
@@ -6603,7 +6603,7 @@ Example input:
 
 ```json
 {
-  "prefix": "foo"
+  "change_extension.prefix": "foo"
 }
 ```
 
@@ -6740,7 +6740,7 @@ Example input:
 
 ```json
 {
-  "num_files": 2
+  "gen_files.num_files": 2
 }
 ```
 
@@ -7188,8 +7188,8 @@ Example input:
 
 ```json
 {
-  "pattern": "world",
-  "file": "greetings.txt"
+  "grep.pattern": "world",
+  "grep.file": "greetings.txt"
 }
 ```
 
@@ -7964,7 +7964,7 @@ Example input:
 
 ```json
 {
-  "obj": {
+  "write_object.obj": {
     "key_1": "value_1",
     "key_2": "value_2",
     "key_3": "value_3"
@@ -8048,7 +8048,7 @@ Example input:
 
 ```json
 {
-  "obj_array": [
+  "write_objects.obj_array": [
     {
       "key_1": "value_1",
       "key_2": "value_2",
@@ -9832,8 +9832,8 @@ Example input:
 
 ```json
 {
-  "s": "hello",
-  "i": 42
+  "read_write_primitives.s": "hello",
+  "read_write_primitives.i": 42
 }
 ```
 
@@ -9910,8 +9910,8 @@ Example input:
 
 ```json
 {
-  "infile": "greetings.txt",
-  "counts": [1, 2]
+  "serialize_array_delim.infile": "greetings.txt",
+  "serialize_array_delim.counts": [1, 2]
 }
 ```
 
@@ -9971,8 +9971,8 @@ Example input:
 
 ```json
 {
-  "infile": "greetings.txt",
-  "patterns": ["hello", "world"]
+  "serde_array_lines.infile": "greetings.txt",
+  "serde_array_lines.patterns": ["hello", "world"]
 }
 ```
 
@@ -10042,7 +10042,7 @@ Example input:
 
 ```json
 {
-  "string_to_int": {
+  "serde_array_json.string_to_int": {
     "a": 1,
     "b": 2
   }
@@ -10352,7 +10352,7 @@ Example input:
 
 ```json
 {
-  "items": {
+  "serde_map_tsv.items": {
     "a": "b",
     "c": "d",
     "e": "f"
@@ -10443,7 +10443,7 @@ Example input:
 
 ```json
 {
-  "read_quality_scores": {
+  "serde_map_json.read_quality_scores": {
     "read1": 32,
     "read2": 41,
     "read3": 55
