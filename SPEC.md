@@ -1061,7 +1061,7 @@ Example input:
 
 ```json
 {
-  "ints": ["0", "1", "2"]
+  "sum.ints": ["0", "1", "2"]
 }
 ```
 
@@ -1794,9 +1794,9 @@ workflow map_to_struct {
 
     # What are the keys to this Struct?
     Words map_coercion = {
-      a: 10,
-      b: 11,
-      c: 12
+      "a": 10,
+      "b": 11,
+      "c": 12
     }
   }
 }
@@ -2122,7 +2122,7 @@ Example input:
 
 ```json
 {
-  "x": 5
+  "expressions.x": 5
 }
 ```
 
@@ -2990,8 +2990,8 @@ Example input:
 
 ```json
 {
-  "infile": "greetings.txt",
-  "pattern": "world"
+  "flags.infile": "greetings.txt",
+  "flags.pattern": "world"
 }
 ```
 
@@ -3127,8 +3127,8 @@ Example input:
 
 ```json
 {
-  "message": "hello world",
-  "newline": false
+  "true_false_ternary.message": "hello world",
+  "true_false_ternary.newline": false
 }
 ```
 
@@ -5281,7 +5281,7 @@ task single_return_code {
   >>>
 
   requirements {
-    return_codes: 1
+    returnCodes: 1
   }
 }
 ```
@@ -5303,7 +5303,7 @@ Test config:
 
 ```json
 {
-  "return_code": 1
+  "returnCodes": 1
 }
 ```
 </p>
@@ -5322,7 +5322,7 @@ task multi_return_code {
   >>>
 
   requirements {
-    return_codes: [1, 2, 5, 10]
+    returnCodes: [1, 2, 5, 10]
   }
 }
 ```
@@ -5345,7 +5345,7 @@ Test config:
 ```json
 {
   "fail": true,
-  "return_code": 42
+  "returnCodes": 42
 }
 ```
 </p>
@@ -5386,7 +5386,7 @@ Test config:
 
 ```json
 {
-  "return_code": 42
+  "returnCodes": 0
 }
 ```
 </p>
@@ -8164,7 +8164,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["files"]
+  "exclude_output": ["gen_files.files"]
 }
 ```
 </p>
