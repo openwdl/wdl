@@ -1343,7 +1343,7 @@ workflow test_object {
       a: 10,
       b: "hello"
     }
-    Int i = f.a
+    Int i = obj.a
   }
 }
 ```
@@ -2980,7 +2980,7 @@ task flags {
   >>>
 
   output {
-    String num_matches = read_int(stdout())
+    Int num_matches = read_string(stdout())
   }
 }
 ```
@@ -8219,13 +8219,14 @@ task file_sizes {
     printf "this file is 22 bytes\n" > created_file
   >>>
 
+  File created_file
   File? missing_file = None
 
   output {
     File created_file = "created_file"
     Float missing_file_bytes = size(missing_file)
     Float created_file_bytes = size(created_file, "B")
-    Float multi_file_kb = size([created_file, missing_file], "K")
+    Float multi_file_kb = size(select_all([created_file, missing_file]), "K")
 
     Map[String, Pair[Int, File]] nested = {
       "a": (10, created_file),
@@ -8274,7 +8275,7 @@ Returns the value of the executed command's standard output (stdout) as a `File`
 
 <details>
 <summary>
-Example: echo_stdout.wdl
+Example: echo_stdout_task.wdl
 
 ```wdl
 version 1.2
@@ -8319,7 +8320,7 @@ Returns the value of the executed command's standard error (stderr) as a `File`.
 
 <details>
 <summary>
-Example: echo_stderr.wdl
+Example: echo_stderr_task.wdl
 
 ```wdl
 version 1.2
@@ -9393,6 +9394,10 @@ task read_objects {
   output {
     Array[Object] my_obj = read_objects(stdout())
   }
+
+  requirements {
+    container: "python:latest"
+  }
 }
 ```
 </summary>
@@ -10271,11 +10276,13 @@ workflow test_unzip {
   Map[String, Int] m = {"a": 0, "b": 1, "c": 2}
   Pair[Array[String], Array[Int]] keys_and_values = unzip(as_pairs(m))
   Pair[Array[Int], Array[String]] expected1 = ([0, 42], ["hello", "goodbye"])
+  Array[String] expected_keys = ["a", "b", "c"]
+  Array[Int] expected_values = [0, 1, 2]
   
   output {
     Boolean is_true1 = unzip(int_str_arr) == expected1
-    Boolean is_true2 = keys_and_values.left == ["a", "b", "c"]
-    Boolean is_true3 = keys_and_values.right == [0, 1, 2]
+    Boolean is_true2 = keys_and_values.left == expected_keys
+    Boolean is_true3 = keys_and_values.right == expected_values
   }
 }
 ```
@@ -10474,15 +10481,19 @@ workflow test_flatten {
     Array[Array[Pair[Float, String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
     Map[Float, String] f2s = as_map(flatten(aap2D))
     Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+    Array[Int] expected1D = [1, 2, 3, 1, 21, 22]
     Array[File] expected2D = ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
     Array[Array[Int]] expected3D = [[1, 2], [3, 4], [5, 6], [7, 8]]
+    Array[Pair[Float, String]] expectedArray = [(0.1, "mouse"), (3.0, "cat"), (15.0, "dog")]
+    Map[Float, String] expectedMap = {0.1: "mouse", 3.0: "cat", 15.0: "dog"}
   }
 
   output {
-    Boolean is_true1 = flatten(ai2D) == [1, 2, 3, 1, 21, 22]
+    Boolean is_true1 = flatten(ai2D) == expected1D
     Boolean is_true2 = flatten(af2D) == expected2D
-    Boolean is_true3 = flatten(aap2D) == [(0.1, "mouse"), (3, "cat"), (15, "dog")]
+    Boolean is_true3 = flatten(aap2D) == expectedArray
     Boolean is_true4 = flatten(ai3D) == expected3D
+    Boolean is_true5 = f2s == expectedMap
   }
 }
 ```
@@ -10659,6 +10670,7 @@ Example: test_select_all.wdl
 ```wdl
 version 1.2
 
+
 workflow test_select_all {
   input {
     Int? maybe_five = 5
@@ -10667,9 +10679,10 @@ workflow test_select_all {
   }
 
   Array[Int] fivethree = select_all([maybe_five, maybe_four_but_is_not, maybe_three])
+  Array[Int] expected = [5, 3]
 
   output {
-    Boolean is_true = fivethree == [5, 3]
+    Boolean is_true = length(fivethree) == 2 && fivethree == expected
   }
 }
 ```
@@ -10899,11 +10912,13 @@ workflow test_keys {
   }
 
   Array[String] str_to_files_keys = key
+  Array[String] expected = ["a", "b", "c"]
+  Array[String] expectedKeys = ["first", "last"]
 
   output {
-    Boolean is_true1 = keys(x) == ["a", "b", "c"]
+    Boolean is_true1 = length(keys(x)) == 3 && keys(x) == ["a", "b", "c"]
     Boolean is_true2 = str_to_files_keys == keys(str_to_files)
-    Boolean is_true3 = keys(name) == ["first", "last"]
+    Boolean is_true3 = length(keys(name)) && keys(name) == expectedKeys
   }
 }
 ```
@@ -11939,7 +11954,7 @@ task serde_array_lines {
   >>>
 
   output {
-    Array[Int] matches = read_lines(stdout())
+    Array[String] matches = read_lines(stdout())
   }
 }
 ```
@@ -12149,7 +12164,7 @@ task serde_int_strings {
   >>>
 
   output {
-    Array[Int] ints = read_lines(stdout())
+    Array[String] ints = read_lines(stdout())
   }
 }
 
@@ -12163,7 +12178,7 @@ workflow serde_homogeneous_pair {
   }
 
   output {
-    Array[Int] ints = flatten(serde_int_strings.ints)
+    Array[String] ints = flatten(serde_int_strings.ints)
   }
 }
 ```
