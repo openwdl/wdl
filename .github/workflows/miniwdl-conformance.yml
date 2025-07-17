@@ -28,67 +28,16 @@ jobs:
 
       - name: Install MiniWDL and dependencies
         run: |
-          pip install miniwdl junit-xml
+          pip install miniwdl junit-xml subby
 
-      - name: Clone WDL tests (wdl-1.1)
+      - name: Clone WDL tests
         run: |
-          git clone --branch wdl-1.1 https://github.com/openwdl/wdl-tests.git
+          git clone https://github.com/openwdl/wdl-tests.git
 
-      - name: Run MiniWDL conformance tests for custom-types-structs
+      - name: Extract tests
         run: |
-          mkdir -p test-results/miniwdl
-          echo "[]" > test-results/miniwdl/results.json
-
-          python3 <<EOF
-import json, subprocess, glob
-from junit_xml import TestSuite, TestCase
-import os
-
-test_cases = []
-results = []
-
-for wdl in glob.glob("wdl-tests/conformance/custom-types-structs/**/*.wdl", recursive=True):
-    name = os.path.basename(wdl)
-    inputs_json = wdl.replace(".wdl", ".inputs.json")
-    cmd = ["miniwdl", "run", wdl]
-    if os.path.exists(inputs_json):
-        cmd += ["--input", inputs_json]
-
-    try:
-        subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        test_cases.append(TestCase(name, "MiniWDL", 0))
-        results.append({"test": name, "status": "passed"})
-    except subprocess.CalledProcessError as e:
-        test_cases.append(TestCase(name, "MiniWDL", 1, stdout=e.stdout.decode(), stderr=e.stderr.decode()))
-        results.append({"test": name, "status": "failed", "stderr": e.stderr.decode()})
-
-with open("test-results/miniwdl/junit.xml", "w") as f:
-    TestSuite.to_file(f, [TestSuite("MiniWDL Custom Structs", test_cases)], prettyprint=True)
-
-with open("test-results/miniwdl/results.json", "w") as f:
-    json.dump(results, f, indent=2)
-EOF
-
-      - name: Upload test results artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: miniwdl-test-results
-          path: test-results/miniwdl/
-
-      - name: Generate badge JSON
+          python wdl-tests/scripts/extract_tests.py -i SPEC.md -d tests/data -O tests -v 1.1
+      
+      - name: Run tests
         run: |
-          passed=$(jq '[.[] | select(.status == "passed")] | length' test-results/miniwdl/results.json)
-          total=$(jq 'length' test-results/miniwdl/results.json)
-          badge_color="brightgreen"
-          [[ "$passed" -lt "$total" ]] && badge_color="orange"
-          echo "{\"schemaVersion\":1,\"label\":\"MiniWDL WDL 1.1\",\"message\":\"$passed of $total passed\",\"color\":\"$badge_color\"}" > badge.json
-
-      - name: Deploy badge to gh-pages
-        if: github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          destination_dir: badges
-          publish_branch: gh-pages
-          keep_files: true
+          python wdl-tests/scripts/run_tests_miniwdl.py -T ./tests -c ./tests/test_config.json -D tests/data -O miniwdl_tests       
