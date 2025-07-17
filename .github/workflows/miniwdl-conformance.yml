@@ -35,8 +35,8 @@ jobs:
 
       - name: Extract tests
         run: |
-          python wdl-tests/scripts/extract_tests.py -i ./SPEC.md -d ./tests/data/ -O tests -v 1.1
+          python wdl-tests/scripts/extract_tests.py -i ./SPEC.md -d ./tests/data/ -O wdl_tests -v 1.1
       
       - name: Run tests
         run: |
-          python wdl-tests/scripts/run_tests_miniwdl.py -T ./tests -c ./tests/test_config.json -D tests/data -O miniwdl_tests       
+          python wdl-tests/scripts/run_tests_miniwdl.py -T ./wdl_tests -c ./tests/test_config.json -D tests/data -O miniwdl_tests       
