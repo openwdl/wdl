@@ -2460,7 +2460,7 @@ Example output:
 
 ```json
 {
-  "flags.num_matches": "2"
+  "flags.num_matches": 2
 }
 ```
 </p>
@@ -4874,7 +4874,7 @@ Example output:
 
 ```json
 {
-  "ex_paramter_meta.result": "2"
+  "ex_paramter_meta.result": 2
 }
 ```
 </p>
@@ -6804,13 +6804,13 @@ version 1.1
 
 task file_sizes {
   command <<<
-    printf "this file is 22 bytes\n" > created_file
+    printf "this file is 22 bytes\n" > out.txt
   >>>
 
   File? missing_file = None
 
   output {
-    File created_file = "created_file"
+    File created_file = "out.txt"
     Float missing_file_bytes = size(missing_file) # 0.0
     Float created_file_bytes = size("created_file", "B") # 22.0
     Float multi_file_kb = size(select_all([created_file, missing_file]), "K") # 0.022
@@ -8886,7 +8886,8 @@ Example output:
   "test_flatten.is_true1": true,
   "test_flatten.is_true2": true,
   "test_flatten.is_true3": true,
-  "test_flatten.is_true4": true
+  "test_flatten.is_true4": true,
+  "test_flatten.is_true5": true
 }
 ```
 </p>
