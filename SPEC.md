@@ -4965,7 +4965,8 @@ Test config:
 
 ```json
 {
-  "dependencies": ["cpu", "memory", "disks"]
+  "dependencies": ["cpu", "memory", "disks"],
+  "prioirty": "ignore"
 }
 ```
 </p>
@@ -5069,7 +5070,8 @@ Test config:
 
 ```json
 {
-  "dependencies": ["memory", "disks"]
+  "dependencies": ["memory", "disks"],
+  "prioirty": "ignore"
 }
 ```
 </p>
