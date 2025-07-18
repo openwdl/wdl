@@ -39,4 +39,47 @@ jobs:
       
       - name: Run tests
         run: |
-          python wdl-tests/scripts/run_tests_miniwdl.py -T ${{ github.workspace }}/miniwdl_test -c ${{ github.workspace }}/miniwdl_test/test_config.json -D ${{ github.workspace }}/miniwdl_test/data -O miniwdl_results -n 1
+          python wdl-tests/scripts/run_tests_miniwdl.py -T ${{ github.workspace }}/miniwdl_test -c ${{ github.workspace }}/miniwdl_test/test_config.json -D ${{ github.workspace }}/miniwdl_test/data -O miniwdl_results | tee miniwdl_tests/artifacts/result.log
+
+          echo "📊 Parsing test summary..."
+
+          total=$(grep "Total tests:" miniwdl_tests/artifacts/result.log | awk '{print $3}')
+          passed=$(grep "Passed:" miniwdl_tests/artifacts/result.log | awk '{print $2}')
+          warnings=$(grep "Warnings:" miniwdl_tests/artifacts/result.log | awk '{print $2}')
+          failed=$(grep "Failures:" miniwdl_tests/artifacts/result.log | awk '{print $2}')
+          invalid=$(grep "Invalid outputs:" miniwdl_tests/artifacts/result.log | awk '{print $3}')
+          ignored=$(grep "Ignored:" miniwdl_tests/artifacts/result.log | awk '{print $2}')
+
+          # Write summary JSON
+          cat <<EOF > miniwdl_tests/artifacts/results.json
+            {
+              "total": $total,
+              "passed": $passed,
+              "warnings": $warnings,
+              "failures": $failed,
+              "invalid_outputs": $invalid,
+              "ignored": $ignored
+            }
+            EOF
+
+          # Write JUnit XML for GitHub UI annotations
+          cat <<EOF > miniwdl_tests/artifacts/results.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <testsuite name="MiniWDLConformance" tests="$total" failures="$failed" skipped="$ignored">
+            <testcase classname="MiniWDL" name="wdl-1.1-conformance">
+              $(if [ "$failed" -gt 0 ]; then echo "<failure message=\"Failures=$failed, Invalid=$invalid\"/>"; fi)
+            </testcase>
+          </testsuite>
+          EOF
+
+          # Fail the workflow if any failures or invalid outputs occurred
+          if [ "$failed" -gt 0 ] || [ "$invalid" -gt 0 ]; then
+            echo "❌ One or more conformance tests failed or had invalid outputs."
+            exit 1
+          fi
+
+        - name: Upload test artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: miniwdl-test-results
+            path: miniwdl_tests/artifacts/
