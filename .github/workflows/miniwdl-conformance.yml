@@ -39,4 +39,4 @@ jobs:
       
       - name: Run tests
         run: |
-          python wdl-tests/scripts/run_tests_miniwdl.py -T ./wdl_tests -c ./wdl_tests/test_config.json -D tests/data -O miniwdl_tests       
+          python wdl-tests/scripts/run_tests_miniwdl.py -T ./wdl_tests -c ./wdl_tests/test_config.json -D ./wdl_tests/data -O miniwdl_tests       
