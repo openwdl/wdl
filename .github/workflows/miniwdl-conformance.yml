@@ -40,7 +40,7 @@ jobs:
       - name: Run tests and capture results
         run: |
           mkdir -p miniwdl_tests/artifacts
-          python wdl-tests/scripts/run_tests_miniwdl.py -T ${{ github.workspace }}/miniwdl_test -c ${{ github.workspace }}/miniwdl_test/test_config.json -D ${{ github.workspace }}/miniwdl_test/data -O miniwdl_results | tee miniwdl_tests/artifacts/result.log
+          python wdl-tests/scripts/run_tests_miniwdl.py -T ${{ github.workspace }}/miniwdl_test -c ${{ github.workspace }}/miniwdl_test/test_config.json -D ${{ github.workspace }}/miniwdl_test/data -O miniwdl_results -n 2 | tee miniwdl_tests/artifacts/result.log
 
           echo "📊 Parsing test summary..."
 
