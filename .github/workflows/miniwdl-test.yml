@@ -40,7 +40,7 @@ jobs:
       - name: Run tests and capture results
         run: |
           mkdir -p miniwdl_tests/artifacts
-          python wdl-tests/scripts/run_tests_miniwdl.py -T ${{ github.workspace }}/miniwdl_test -c ${{ github.workspace }}/miniwdl_test/test_config.json -D ${{ github.workspace }}/miniwdl_test/data -O miniwdl_results -n 2 | tee miniwdl_tests/artifacts/result.log
+          python wdl-tests/scripts/run_tests_miniwdl.py -T ${{ github.workspace }}/miniwdl_test -c ${{ github.workspace }}/miniwdl_test/test_config.json -D ${{ github.workspace }}/miniwdl_test/data -O miniwdl_results | tee miniwdl_tests/artifacts/result.log
 
           echo "📊 Parsing test summary..."
 
@@ -72,6 +72,9 @@ jobs:
             </testcase>
           </testsuite>
           EOF
+
+          # Copy list of failures to artifacts
+          cp miniwdl_results/failed_tests.txt artifacts/failed_tests.txt
 
           # Fail the workflow if any failures or invalid outputs occurred
           if [ "$failed" -gt 0 ] || [ "$invalid" -gt 0 ]; then
