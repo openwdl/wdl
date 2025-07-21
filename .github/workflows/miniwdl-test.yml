@@ -6,9 +6,9 @@ on:
 
 jobs:
   conformance:
-    runs-on: ubuntu-latest-16-cores
-    name: Run WDL 1.1 Conformance Tests 
-    
+    runs-on: ubuntu-latest
+    name: Run WDL 1.1 Conformance Testsgh
+
     steps:
       - name: Checkout WDL spec repo (wdl-1.1)
         uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
       - name: Run tests and capture results
         run: |
           mkdir -p miniwdl_tests/artifacts
-          python wdl-tests/scripts/run_tests_miniwdl.py -T ${{ github.workspace }}/miniwdl_test -c ${{ github.workspace }}/miniwdl_test/test_config.json -D ${{ github.workspace }}/miniwdl_test/data -O miniwdl_results -n 2 | tee miniwdl_tests/artifacts/result.log
+          python wdl-tests/scripts/run_tests_miniwdl.py -T ${{ github.workspace }}/miniwdl_test -c ${{ github.workspace }}/miniwdl_test/test_config.json -D ${{ github.workspace }}/miniwdl_test/data -O miniwdl_results | tee miniwdl_tests/artifacts/result.log
 
           echo "📊 Parsing test summary..."
 
@@ -84,3 +84,4 @@ jobs:
         with:
           name: miniwdl-test-results
           path: miniwdl_tests/artifacts/
+
