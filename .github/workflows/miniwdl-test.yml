@@ -74,7 +74,7 @@ jobs:
           EOF
 
           # Copy list of failures to artifacts
-          cp miniwdl_results/failed_tests.txt artifacts/failed_tests.txt
+          cp miniwdl_test/failed_tests.txt artifacts/failed_tests.txt
 
           # Fail the workflow if any failures or invalid outputs occurred
           if [ "$failed" -gt 0 ] || [ "$invalid" -gt 0 ]; then
