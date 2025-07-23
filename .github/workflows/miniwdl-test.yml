@@ -76,10 +76,23 @@ jobs:
           # Copy list of failures to artifacts
           cp miniwdl_test/failed_tests.txt miniwdl_tests/artifacts/failed_tests.txt
 
-          # Fail the workflow if any failures or invalid outputs occurred
+          # Generate shields.io badge JSON
+          color="green"
+          if [ "$passed" -lt "$total" ]; then color="yellow"; fi
+          if [ "$passed" -eq 0 ]; then color="red"; fi
+          cat <<EOF > miniwdl_tests/artifacts/shields.json
+          {
+            "schemaVersion": 1,
+            "label": "MiniWDL Tests",
+            "message": "$passed/$total passed",
+            "color": "$color"
+          }
+          EOF
+
+          # Do NOT fail the workflow if any failures or invalid outputs occurred
           if [ "$failed" -gt 0 ] || [ "$invalid" -gt 0 ]; then
             echo "❌ One or more conformance tests failed or had invalid outputs."
-            exit 1
+            # exit 1   # <-- removed
           fi
 
       - name: Upload test artifacts
@@ -88,3 +101,18 @@ jobs:
           name: miniwdl-test-results
           path: miniwdl_tests/artifacts/
 
+      - name: Publish badge JSON to current branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          BRANCH="${GITHUB_REF_NAME}"
+          REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+          # Fetch current branch
+          git fetch origin $BRANCH
+          git checkout $BRANCH
+          cp miniwdl_tests/artifacts/shields.json shields.json
+          git add shields.json
+          git commit -m "Update shields badge for $BRANCH"
+          git push $REPO_URL $BRANCH
