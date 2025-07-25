@@ -114,7 +114,7 @@ jobs:
           git checkout $BRANCH
           mkdir -p shields
           cp miniwdl_tests/artifacts/shields.json shields/miniwdl_shields.json
-          git add shields.json
+          git add shields/miniwdl_shields.json
           # update readme shield to be for current branch. 
           sed -i "s|https://raw.githubusercontent.com/openwdl/wdl/.*/shields/miniwdl_shields.json|https://raw.githubusercontent.com/openwdl/wdl/$branch/shields/miniwdl_shields.json|" README.md
           git add README.md
