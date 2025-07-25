@@ -112,7 +112,11 @@ jobs:
           # Fetch current branch
           git fetch origin $BRANCH
           git checkout $BRANCH
-          cp miniwdl_tests/artifacts/shields.json shields.json
+          mkdir -p shields
+          cp miniwdl_tests/artifacts/shields.json shields/miniwdl_shields.json
           git add shields.json
-          git commit -m "Update shields badge for $BRANCH"
+          # update readme shield to be for current branch. 
+          sed -i "s|https://raw.githubusercontent.com/openwdl/wdl/.*/shields/miniwdl_shields.json|https://raw.githubusercontent.com/openwdl/wdl/$branch/shields/miniwdl_shields.json|" README.md
+          git add README.md
+          git commit -m "Update miniwdl shields badge for $BRANCH"
           git push $REPO_URL $BRANCH
