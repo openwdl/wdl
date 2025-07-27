@@ -70,7 +70,7 @@ jobs:
           EOF
 
           #Copy list of failures to artifacts
-          cp sprocket_test/failed_tests.txt speocket_tests/artifacts/failed_tests.txt
+          cp sprocket_test/failed_tests.txt sprocket_tests/artifacts/failed_tests.txt
 
           # Write JUnit XML
           cat <<EOF > sprocket_tests/artifacts/results.xml
