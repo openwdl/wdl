@@ -101,7 +101,7 @@ jobs:
           name: miniwdl-test-results
           path: miniwdl_tests/artifacts/
 
-       - name: Publish badge JSON to current branch
+      - name: Publish badge JSON to current branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
