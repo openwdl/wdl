@@ -7,7 +7,7 @@ on:
 jobs:
   conformance:
     runs-on: ubuntu-latest
-    name: Run WDL 1.1 Spec Conformance Tests
+    name: Run MiniWDL 1.1 Spec Conformance Tests
 
     steps:
       - name: Checkout WDL spec repo (wdl-1.1)
@@ -101,7 +101,7 @@ jobs:
           name: miniwdl-test-results
           path: miniwdl_tests/artifacts/
 
-       - name: Publish badge JSON to current branch
+      - name: Publish badge JSON to current branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -127,7 +127,7 @@ jobs:
 
           # Only commit if there are staged changes
           if ! git diff --cached --quiet; then
-            git commit -m "Update miniwdl shields badge for $BRANCH"
+            git commit -m "Update MiniWDL shields badge for $BRANCH"
             git push $REPO_URL $BRANCH
           else
             echo "🟢 No changes to commit"
