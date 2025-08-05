@@ -7,7 +7,7 @@ on:
 jobs:
   conformance:
     runs-on: ubuntu-latest
-    name: Run MiniWDL 1.1 Spec Conformance Tests
+    name: Run WDL 1.1 Spec Conformance Tests
 
     steps:
       - name: Checkout WDL spec repo (wdl-1.1)
@@ -35,12 +35,12 @@ jobs:
 
       - name: Extract tests
         run: |
-          python wdl-tests/scripts/extract_tests.py -i wdl-spec/SPEC.md -d wdl-spec/tests/data/ -O miniwdl_test -v 1.1
+          python wdl-tests/scripts/extract_tests.py -i ${{ github.workspace }}/SPEC.md -d ${{ github.workspace }}/tests/data/ -O miniwdl_test -v 1.1
 
       - name: Run tests and capture results
         run: |
           mkdir -p miniwdl_tests/artifacts
-          python wdl-tests/scripts/run_tests_miniwdl.py -T wdl-spec/miniwdl_test -c wdl-spec/miniwdl_test/test_config.json -D wdl-spec/miniwdl_test/data -O miniwdl_results | tee miniwdl_tests/artifacts/result.log
+          python wdl-tests/scripts/run_tests_miniwdl.py -T ${{ github.workspace }}/miniwdl_test -c ${{ github.workspace }}/miniwdl_test/test_config.json -D ${{ github.workspace }}/miniwdl_test/data -O miniwdl_results | tee miniwdl_tests/artifacts/result.log
 
           echo "📊 Parsing test summary..."
 
@@ -101,7 +101,7 @@ jobs:
           name: miniwdl-test-results
           path: miniwdl_tests/artifacts/
 
-      - name: Publish badge JSON to current branch
+       - name: Publish badge JSON to current branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -121,14 +121,13 @@ jobs:
           sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/miniwdl_shields.json"
           new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/miniwdl_shields.json"
           if grep -qE "$sed_pattern" README.md; then
-            git pull
             sed -i "s|$sed_pattern|$new_url|" README.md
             git add README.md
           fi
 
           # Only commit if there are staged changes
           if ! git diff --cached --quiet; then
-            git commit -m "Update MiniWDL shields badge for $BRANCH"
+            git commit -m "Update miniwdl shields badge for $BRANCH"
             git push $REPO_URL $BRANCH
           else
             echo "🟢 No changes to commit"

@@ -41,12 +41,12 @@ jobs:
 
       - name: Extract tests
         run: |
-          python wdl-tests/scripts/extract_tests.py -i wdl-spec/SPEC.md -d wdl-spec/tests/data/ -O sprocket_test -v 1.1
+          python wdl-tests/scripts/extract_tests.py -i ${{ github.workspace }}/SPEC.md -d ${{ github.workspace }}/tests/data/ -O sprocket_test -v 1.1
 
       - name: Run tests and capture results
         run: |
           mkdir -p sprocket_tests/artifacts
-          python wdl-tests/scripts/run_tests_sprocket.py -T wdl-spec/sprocket_test -c wdl-spec/sprocket_test/test_config.json -D wdl-spec/sprocket_test/data -O sprocket_results | tee sprocket_tests/artifacts/result.log
+          python wdl-tests/scripts/run_tests_sprocket.py -T ${{ github.workspace }}/sprocket_test -c ${{ github.workspace }}/sprocket_test/test_config.json -D ${{ github.workspace }}/sprocket_test/data -O sprocket_results | tee sprocket_tests/artifacts/result.log
 
           echo "📊 Parsing test summary..."
 
