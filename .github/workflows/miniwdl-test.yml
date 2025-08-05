@@ -101,7 +101,7 @@ jobs:
           name: miniwdl-test-results
           path: miniwdl_tests/artifacts/
 
-      - name: Publish badge JSON to current branch
+       - name: Publish badge JSON to current branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -109,14 +109,26 @@ jobs:
           git config --global user.name "github-actions[bot]"
           BRANCH="${GITHUB_REF_NAME}"
           REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
-          # Fetch current branch
+
           git fetch origin $BRANCH
           git checkout $BRANCH
+
           mkdir -p shields
           cp miniwdl_tests/artifacts/shields.json shields/miniwdl_shields.json
           git add shields/miniwdl_shields.json
-          # update readme shield to be for current branch. 
-          sed -i "s|https://raw.githubusercontent.com/openwdl/wdl/.*/shields/miniwdl_shields.json|https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/miniwdl_shields.json|" README.md
-          git add README.md
-          git commit -m "Update miniwdl shields badge for $BRANCH"
-          git push $REPO_URL $BRANCH
+
+          # Update README only if needed
+          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/miniwdl_shields.json"
+          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/miniwdl_shields.json"
+          if grep -qE "$sed_pattern" README.md; then
+            sed -i "s|$sed_pattern|$new_url|" README.md
+            git add README.md
+          fi
+
+          # Only commit if there are staged changes
+          if ! git diff --cached --quiet; then
+            git commit -m "Update miniwdl shields badge for $BRANCH"
+            git push $REPO_URL $BRANCH
+          else
+            echo "🟢 No changes to commit"
+          fi
