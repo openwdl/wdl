@@ -5230,7 +5230,7 @@ version 1.1
 
 import "input_ref_call.wdl" as ns1
 
-workflow call_imported_task {
+workflow call_imported {
   input {
     Int x
     Int y = d1.out
@@ -5250,7 +5250,7 @@ Example input:
 
 ```json
 {
-  "call_imported_task.x": 5
+  "call_imported.x": 5
 }
 ```
 
@@ -5258,7 +5258,7 @@ Example output:
 
 ```json
 {
-  "call_imported_task.result": 20
+  "call_imported.result": 20
 }
 ```
 </p>

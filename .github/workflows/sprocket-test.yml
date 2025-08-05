@@ -116,8 +116,8 @@ jobs:
           git add shields/sprocket_shields.json
 
           # Update README only if needed          
-          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/miniwdl_shields.json"          
-          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/miniwdl_shields.json"          
+          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/sprocket_shields.json"          
+          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/sprocket_shields.json"          
           if grep -qE "$sed_pattern" README.md; then  
             git pull          
             sed -i "s|$sed_pattern|$new_url|" README.md            
@@ -125,7 +125,7 @@ jobs:
           fi          
           # Only commit if there are staged changes          
           if ! git diff --cached --quiet; then            
-            git commit -m "Update miniwdl shields badge for $BRANCH"            
+            git commit -m "Update Sprocket shields badge for $BRANCH"            
             git push $REPO_URL $BRANCH          
           else            
             echo "🟢 No changes to commit"          
