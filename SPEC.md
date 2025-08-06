@@ -3675,7 +3675,7 @@ Example input:
 
 ```json
 {
-  "i": 1
+  "task_inputs.i": 1
 }
 ```
 </p>
@@ -4296,7 +4296,7 @@ Example input:
 
 ```json
 {
-  "test_placeholders_task.infile": "greetings.txt"
+  "test_placeholders.infile": "greetings.txt"
 }
 ```
 
@@ -4431,7 +4431,7 @@ Example input:
 
 ```json
 {
-  "python_strip_task.infile": "comment.txt"
+  "python_strip.infile": "comment.txt"
 }
 ```
 
@@ -4492,7 +4492,7 @@ Example input:
 
 ```json
 {
-  "outputs_task.t": 5
+  "outputs.t": 5
 }
 ```
 
@@ -4556,7 +4556,7 @@ Example input:
 
 ```json
 {
-  "file_output_task.prefix": "foo"
+  "file_output.prefix": "foo"
 }
 ```
 
@@ -4604,7 +4604,7 @@ Example input:
 
 ```json
 {
-  "glob_task.num_files": 3
+  "glob.num_files": 3
 }
 ```
 
@@ -4712,7 +4712,7 @@ Example input:
 
 ```json
 {
-  "optional_output_task.make_example2": false
+  "optional_output.make_example2": false
 }
 ```
 
@@ -4835,7 +4835,7 @@ Example input:
 
 ```json
 {
-  "dynamic_container_task.ubuntu_version": "focal"
+  "dynamic_container.ubuntu_version": "focal"
 }
 ```
 
@@ -5451,7 +5451,7 @@ Example input:
 
 ```json
 {
-  "test_hints_task.foo": "greetings.txt"
+  "test_hints.foo": "greetings.txt"
 }
 ```
 
@@ -5576,7 +5576,7 @@ Example input:
 
 ```json
 {
-  "input_hint_task.person": {
+  "input_hint.person": {
     "name": "Joe"
   }
 }
@@ -5760,8 +5760,8 @@ Example input:
 
 ```json
 {
-  "ex_paramter_meta_task.infile": "greetings.txt",
-  "ex_paramter_meta_task.lines_only": true
+  "ex_paramter_meta.infile": "greetings.txt",
+  "ex_paramter_meta.lines_only": true
 }
 ```
 
@@ -6469,7 +6469,7 @@ task nested {
   >>>
 
   output {
-    String greeting = read_string(stdout())
+    String greeting_out = read_string(stdout())
   }
 }
 
@@ -6479,7 +6479,7 @@ workflow test_allow_nested_inputs {
   }
 
   output {
-    String nested_greeting = nested.greeting
+    String nested_greeting = nested.greeting_out
   }
 
   hints {
@@ -6536,7 +6536,7 @@ workflow multi_nested_inputs {
   }
 
   output {
-    String nested_greeting = test_allow_nested_inputs.greeting
+    String nested_greeting = test_allow_nested_inputs.nested_greeting
   }
 }
 ```
@@ -7816,8 +7816,8 @@ Example output:
 
 ```json
 {
-  "test_matches.is_compressed": false,
-  "test_matches.is_read1": true
+  "contains_string.is_compressed": false,
+  "contains_string.is_read1": true
 }
 ```
 </p>
