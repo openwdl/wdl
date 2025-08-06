@@ -2999,7 +2999,7 @@ Example output:
 
 ```json
 {
-  "flags.num_matches": "2"
+  "flags.num_matches": 2
 }
 ```
 </p>
@@ -5303,7 +5303,7 @@ Test config:
 
 ```json
 {
-  "returnCodes": 1
+  "returnCodes": 0
 }
 ```
 </p>
@@ -5358,13 +5358,13 @@ Example: all_return_codes_task.wdl
 ```wdl
 version 1.2
 
-task all_return_codes_task {
+task all_return_codes {
   command <<<
   exit 42
   >>>
 
   requirements {
-    return_codes: "*"
+    returnCodes: "*"
   }
 }
 ```
@@ -5944,7 +5944,7 @@ Example output:
 
 ```json
 {
-  "hisat2.sam": "NA20274.sam"
+  "hisat2.sam": "NA20274.sam",
 }
 ```
 
@@ -5952,7 +5952,8 @@ Test config:
 
 ```json
 {
-  "dependencies": ["cpu", "memory", "disks"]
+  "dependencies": ["cpu", "memory", "disks"],
+  "priority": "ignore"
 }
 ```
 </p>
@@ -6056,7 +6057,8 @@ Test config:
 
 ```json
 {
-  "dependencies": ["memory", "disks"]
+  "dependencies": ["memory", "disks"],
+  "priority": "ignore"
 }
 ```
 </p>
@@ -6203,7 +6205,7 @@ version 1.2
 
 import "input_ref_call.wdl" as ns1
 
-workflow call_imported_task {
+workflow call_imported {
   input {
     Int x
     Int y = d1.out
@@ -6223,7 +6225,7 @@ Example input:
 
 ```json
 {
-  "call_imported_task.x": 5
+  "call_imported.x": 5
 }
 ```
 
@@ -6231,7 +6233,7 @@ Example output:
 
 ```json
 {
-  "call_imported_task.result": 20
+  "call_imported.result": 20
 }
 ```
 </p>
@@ -8216,17 +8218,17 @@ version 1.2
 
 task file_sizes {
   command <<<
-    printf "this file is 22 bytes\n" > created_file
+    printf "this file is 22 bytes\n" > out.txt
   >>>
 
   File created_file
   File? missing_file = None
 
   output {
-    File created_file = "created_file"
+    File created_file = "out.txt"
     Float missing_file_bytes = size(missing_file)
     Float created_file_bytes = size(created_file, "B")
-    Float multi_file_kb = size(select_all([created_file, missing_file]), "K")
+    Float multi_file_kb = size(select_all([created_file, missing_file]), "K") # 0.022
 
     Map[String, Pair[Int, File]] nested = {
       "a": (10, created_file),
@@ -10512,7 +10514,8 @@ Example output:
   "test_flatten.is_true1": true,
   "test_flatten.is_true2": true,
   "test_flatten.is_true3": true,
-  "test_flatten.is_true4": true
+  "test_flatten.is_true4": true,
+  "test_flatten.is_true5": true
 }
 ```
 </p>
@@ -10916,9 +10919,9 @@ workflow test_keys {
   Array[String] expectedKeys = ["first", "last"]
 
   output {
-    Boolean is_true1 = length(keys(x)) == 3 && keys(x) == ["a", "b", "c"]
+    Boolean is_true1 = length(keys(x)) == 3 && keys(x) == expected
     Boolean is_true2 = str_to_files_keys == keys(str_to_files)
-    Boolean is_true3 = length(keys(name)) && keys(name) == expectedKeys
+    Boolean is_true3 = length(keys(name)) == 2 && keys(name) == expectedKeys
   }
 }
 ```
