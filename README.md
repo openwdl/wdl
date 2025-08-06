@@ -4,9 +4,9 @@
 
 <br />
 
-![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl//shields/miniwdl_shields.json)
+![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test/shields/miniwdl_shields.json)
 
-![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl//shields/sprocket_shields.json)
+![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test/shields/sprocket_shields.json)
 
 The **Workflow Description Language (WDL)** (pronounced as _/hwɪdl/_ or "whittle" with a 'd') is an open standard for describing data processing workflows using a human-readable/writeable syntax.
 It introduces a domain-specific language that aims to provide simple but powerful facilities for (a) defining atomic units of computation (a `task`), (b) for connecting those atomic units together into a larger computation graph (a `workflow`), and (c) for effortlessly scaling the execution of these graphs in multiple environments.
