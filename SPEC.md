@@ -5944,7 +5944,7 @@ Example output:
 
 ```json
 {
-  "hisat2.sam": "NA20274.sam",
+  "hisat2.sam": "NA20274.sam"
 }
 ```
 
