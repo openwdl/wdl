@@ -7792,7 +7792,7 @@ Example: test_matches_task.wdl
 
 ```wdl
 version 1.2
-workflow contains_string {
+workflow test_matches {
   input {
     File fastq
   }
@@ -7808,7 +7808,7 @@ Example input:
 
 ```json
 {
-  "contains_string.fastq": "sample1234_R1.fastq"
+  "test_matches.fastq": "sample1234_R1.fastq"
 }
 ```
 
@@ -7816,8 +7816,8 @@ Example output:
 
 ```json
 {
-  "contains_string.is_compressed": false,
-  "contains_string.is_read1": true
+  "test_matches.is_compressed": false,
+  "test_matches.is_read1": true
 }
 ```
 </p>
