@@ -4,7 +4,7 @@
 
 <br />
 
-![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl//shields/miniwdl_shields.json)
+![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test/shields/miniwdl_shields.json)
 
 ![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl//shields/sprocket_shields.json)
 
