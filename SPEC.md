@@ -1850,7 +1850,7 @@ struct A {
   String s
 }
 
-Struct B {
+struct B {
   A a_struct
   Int i
 }
@@ -2771,7 +2771,7 @@ Placeholders are evaluated in multi-line strings exactly the same as in regular 
   ```wdl
   version 1.2
 
-  workflow multiline_strings {
+  workflow multiline_string_placeholders {
     output {
       String spaces = "  "
       String name = "Henry"
@@ -2980,7 +2980,7 @@ task flags {
   >>>
 
   output {
-    Int num_matches = read_string(stdout())
+    Int num_matches = read_int(stdout())
   }
 }
 ```
@@ -3347,7 +3347,7 @@ Example input:
 
 ```json
 {
-  "person": {
+  "greet_person.person": {
     "name": {
       "first": "Richard",
       "last": "Rich"
@@ -3803,9 +3803,9 @@ Example input:
 
 ```json
 {
-  "a": [],
-  "b": ["A", "B"],
-  "e": ["C"]
+  "input_type_quantifiers.a": [],
+  "input_type_quantifiers.b": ["A", "B"],
+  "input_type_quantifiers.e": ["C"]
 }
 ```
 
@@ -3971,7 +3971,7 @@ Example input:
 
 ```json
 {
-  "lines": ["A", "B", "C", "D"]
+  "private_declaration.lines": ["A", "B", "C", "D"]
 }
 ```
 
@@ -4296,7 +4296,7 @@ Example input:
 
 ```json
 {
-  "infile": "greetings.txt"
+  "test_placeholders_task.infile": "greetings.txt"
 }
 ```
 
@@ -4431,7 +4431,7 @@ Example input:
 
 ```json
 {
-  "infile": "comment.txt"
+  "python_strip_task.infile": "comment.txt"
 }
 ```
 
@@ -4492,7 +4492,7 @@ Example input:
 
 ```json
 {
-  "t": 5
+  "outputs_task.t": 5
 }
 ```
 
@@ -4556,7 +4556,7 @@ Example input:
 
 ```json
 {
-  "prefix": "foo"
+  "file_output_task.prefix": "foo"
 }
 ```
 
@@ -4604,7 +4604,7 @@ Example input:
 
 ```json
 {
-  "num_files": 3
+  "glob_task.num_files": 3
 }
 ```
 
@@ -4712,7 +4712,7 @@ Example input:
 
 ```json
 {
-  "make_example2": false
+  "optional_output_task.make_example2": false
 }
 ```
 
@@ -4835,7 +4835,7 @@ Example input:
 
 ```json
 {
-  "ubuntu_version": "focal"
+  "dynamic_container_task.ubuntu_version": "focal"
 }
 ```
 
@@ -5451,7 +5451,7 @@ Example input:
 
 ```json
 {
-  "foo": "greetings.txt"
+  "test_hints_task.foo": "greetings.txt"
 }
 ```
 
@@ -5576,7 +5576,7 @@ Example input:
 
 ```json
 {
-  "person": {
+  "input_hint_task.person": {
     "name": "Joe"
   }
 }
@@ -5760,8 +5760,8 @@ Example input:
 
 ```json
 {
-  "infile": "greetings.txt",
-  "lines_only": true
+  "ex_paramter_meta_task.infile": "greetings.txt",
+  "ex_paramter_meta_task.lines_only": true
 }
 ```
 
@@ -6479,7 +6479,7 @@ workflow test_allow_nested_inputs {
   }
 
   output {
-    String greeting = nested.greeting
+    String nested_greeting = nested.greeting
   }
 
   hints {
@@ -6502,7 +6502,7 @@ Example output:
 
 ```json
 {
-  "test_allow_nested_inputs.greeting": "Hello John"
+  "test_allow_nested_inputs.nested_greeting": "Hello John"
 }
 
 ```
@@ -6536,7 +6536,7 @@ workflow multi_nested_inputs {
   }
 
   output {
-    String greeting = test_allow_nested_inputs.greeting
+    String nested_greeting = test_allow_nested_inputs.greeting
   }
 }
 ```
@@ -6554,7 +6554,7 @@ Example output:
 
 ```json
 {
-  "multi_nested_inputs.greeting": "Hello Joe"
+  "multi_nested_inputs.nested_greeting": "Hello Joe"
 }
 ```
 
@@ -7732,7 +7732,7 @@ Example: test_find_task.wdl
 
 ```wdl
 version 1.2
-workflow find_string {
+workflow test_find {
   input {
     String in = "hello world"
     String pattern1 = "e..o"
@@ -7808,7 +7808,7 @@ Example input:
 
 ```json
 {
-  "fastq": "sample1234_R1.fastq"
+  "contains_string.fastq": "sample1234_R1.fastq"
 }
 ```
 
@@ -7921,7 +7921,7 @@ Example input:
 
 ```json
 {
-  "prefix": "foo"
+  "change_extension.prefix": "foo"
 }
 ```
 
@@ -8044,11 +8044,11 @@ Example: join_paths_task.wdl
 ```wdl
 version 1.2
 
-task resolve_paths_task {
+task join_paths {
   input {
     File abs_file = "/usr"
     String abs_str = "/usr"
-    String rel_dir_str = "bin"
+    String rel_str_dir = "bin"
     File rel_file = "echo"
     File rel_dir_file = "mydir"
     String rel_str = "mydata.txt"
@@ -8064,7 +8064,7 @@ task resolve_paths_task {
   File data = join_paths(rel_dir_file, rel_str)
   
   # this resolves to '<working dir>/bin/echo', which is non-existent
-  File doesnt_exist = join_paths([rel_dir_str, rel_file])
+  File doesnt_exist = join_paths([rel_str_dir, rel_file])
   command <<<
     mkdir ~{rel_dir_file}
     ~{bin1} -n "hello" > ~{data}
@@ -8093,8 +8093,8 @@ Example output:
 
 ```json
 {
-  "join_paths_task.bins_equal": true,
-  "join_paths_task.result": "hello"
+  "join_paths.bins_equal": true,
+  "join_paths.result": "hello"
 }
 ``` 
 </p>
@@ -8150,7 +8150,7 @@ Example input:
 
 ```json
 {
-  "num_files": 2
+  "gen_files.num_files": 2
 }
 ```
 
@@ -8611,8 +8611,8 @@ Example input:
 
 ```json
 {
-  "pattern": "world",
-  "file": "greetings.txt"
+  "grep.pattern": "world",
+  "grep.file": "greetings.txt"
 }
 ```
 
@@ -8740,7 +8740,7 @@ task read_tsv {
     } >> data.no_headers.tsv
 
     {
-      printf "header1\header2\n"
+      printf "header1\theader2\n"
       printf "row1\tvalue1\n"
       printf "row2\tvalue2\n"
       printf "row3\tvalue3\n"
@@ -8858,6 +8858,12 @@ Example: write_tsv_task.wdl
 
 ```wdl
 version 1.2
+
+struct Numbers {
+  String first
+  String second
+  String third
+}
 
 task write_tsv {
   input {
@@ -9502,7 +9508,7 @@ Example input:
 
 ```json
 {
-  "obj": {
+  "write_object.obj": {
     "key_1": "value_1",
     "key_2": "value_2",
     "key_3": "value_3"
@@ -9586,7 +9592,7 @@ Example input:
 
 ```json
 {
-  "obj_array": [
+  "write_objects.obj_array": [
     {
       "key_1": "value_1",
       "key_2": "value_2",
@@ -11828,8 +11834,8 @@ Example input:
 
 ```json
 {
-  "s": "hello",
-  "i": 42
+  "read_write_primitives.s": "hello",
+  "read_write_primitives.i": 42
 }
 ```
 
@@ -11906,8 +11912,8 @@ Example input:
 
 ```json
 {
-  "infile": "greetings.txt",
-  "counts": [1, 2]
+  "serialize_array_delim.infile": "greetings.txt",
+  "serialize_array_delim.counts": [1, 2]
 }
 ```
 
@@ -11967,8 +11973,8 @@ Example input:
 
 ```json
 {
-  "infile": "greetings.txt",
-  "patterns": ["hello", "world"]
+  "serde_array_lines.infile": "greetings.txt",
+  "serde_array_lines.patterns": ["hello", "world"]
 }
 ```
 
@@ -12038,7 +12044,7 @@ Example input:
 
 ```json
 {
-  "string_to_int": {
+  "serde_array_json.string_to_int": {
     "a": 1,
     "b": 2
   }
@@ -12348,7 +12354,7 @@ Example input:
 
 ```json
 {
-  "items": {
+  "serde_map_tsv.items": {
     "a": "b",
     "c": "d",
     "e": "f"
@@ -12439,7 +12445,7 @@ Example input:
 
 ```json
 {
-  "read_quality_scores": {
+  "serde_map_json.read_quality_scores": {
     "read1": 32,
     "read2": 41,
     "read3": 55
