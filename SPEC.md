@@ -11982,7 +11982,7 @@ Example output:
 
 ```json
 {
-  "serde_array_lines.matches": [2, 2]
+  "serde_array_lines.matches": ["2", "2"]
 }
 ```
 </p>
@@ -12208,7 +12208,7 @@ Example output:
 
 ```json
 {
-  "serde_homogeneous_pair.ints": [1, 2, 3, 4]
+  "serde_homogeneous_pair.ints": ["1", "2", "3", "4"]
 }
 ```
 </p>
