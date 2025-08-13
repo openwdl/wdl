@@ -6814,7 +6814,7 @@ task file_sizes {
   output {
     File created_file = "out.txt"
     Float missing_file_bytes = if defined(missing_file) then size(missing_file, "B") else 0.0 # 0.0
-    Float created_file_bytes = size("created_file", "B") # 22.0
+    Float created_file_bytes = size(created_file, "B") # 22.0
     Float multi_file_kb = size(select_all([created_file, missing_file]), "K") # 0.022
   }
   
