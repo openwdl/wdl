@@ -11280,7 +11280,7 @@ workflow test_length {
   Array[Int] xs = [1, 2, 3]
   Array[String] ys = ["a", "b", "c"]
   Array[String] zs = []
-  Map[String, Int] m = {"a": 1, "b", 2}
+  Map[String, Int] m = {"a": 1, "b": 2}
   String s = "ABCDE"
 
   output {
