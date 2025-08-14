@@ -5812,7 +5812,7 @@ Example: test_runtime_info_task.wdl
 ```wdl
 version 1.2
 
-task test_runtime_info_task {
+task test_runtime_info {
   meta {
     description: "Task that shows how to use the implicit 'task' declaration"
   }
@@ -5828,13 +5828,13 @@ task test_runtime_info_task {
   
   output {
     Boolean at_least_two_gb = task.memory >= (2 * 1024 * 1024 * 1024)
-    Int return_code = task.return_code
+    Int return_code = select_first([task.return_code, 0])
   }
   
   requirements {
     container: ["ubuntu:latest", "quay.io/ubuntu:focal"]
     memory: "2 GiB"
-    return_codes: [0, 1]
+    returnCodes: [0, 1]
   }
 }
 ```
