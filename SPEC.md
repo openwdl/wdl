@@ -393,7 +393,7 @@ WDL also provides features for implementing more complex workflows. For example,
   
   ```json
   {
-    "hello_parallel.all_matches": [["hi_world"], ["hi_pal"]]
+    "hello_parallel.all_matches": [["hi_world"], ["hello"]]
   }
   ```
   </p>
