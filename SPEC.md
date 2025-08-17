@@ -778,6 +778,7 @@ Common leading whitespace is also removed from blank lines that contain whitespa
         this is a
         
           multi-line string
+
       >>>
       
       # This string's common leading whitespace is 8.
@@ -786,6 +787,7 @@ Common leading whitespace is also removed from blank lines that contain whitespa
               this is a
       
                 multi-line string
+                
       >>>
     }
   }
