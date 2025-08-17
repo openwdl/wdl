@@ -696,7 +696,7 @@ In multi-line strings, leading *whitespace* is removed according to the followin
       String hw1 = <<<hello  world>>>
       String hw2 = <<<   hello  world   >>>
       String hw3 = <<<   
-          hello world>>>
+          hello  world>>>
       String hw4 = <<<   
           hello  world
           >>>
