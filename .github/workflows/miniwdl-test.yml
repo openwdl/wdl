@@ -2,10 +2,6 @@ name: MiniWDL Spec Conformance - WDL 1.2
 
 on:
   push:
-    branches:
-      - '**'      # any branch
-  pull_request:
-    types: []    # disables running on PR events
 
 jobs:
   conformance:
