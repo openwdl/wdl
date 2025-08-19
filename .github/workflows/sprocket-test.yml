@@ -75,7 +75,7 @@ jobs:
           # Write JUnit XML
           cat <<EOF > sprocket_tests/artifacts/results.xml
           <?xml version="1.0" encoding="UTF-8"?>
-          <testsuite name="SprocketConformance" tests="$total" failures="$failed" skipped="$ignored">
+          <testsuite name="Sprocket WDL 1.1 Conformance" tests="$total" failures="$failed" skipped="$ignored">
             <testcase classname="Sprocket" name="wdl-1.1-conformance">
               $(if [ "$failed" -gt 0 ]; then echo "<failure message=\"Failures=$failed, Invalid=$invalid\"/>"; fi)
             </testcase>
@@ -89,7 +89,7 @@ jobs:
           cat <<EOF > sprocket_tests/artifacts/shields.json
           {
             "schemaVersion": 1,
-            "label": "Sprocket Tests",
+            "label": "Sprocket WDL 1.1",
             "message": "$passed/$total passed",
             "color": "$color"
           }
