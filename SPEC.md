@@ -4078,7 +4078,7 @@ task test  {
     echo $foo
   >>>
   output {
-    String out= read_string(stdout())
+    String out = read_string(stdout())
   }
 }
 
