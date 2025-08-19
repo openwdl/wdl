@@ -2774,10 +2774,12 @@ Placeholders are evaluated in multi-line strings exactly the same as in regular 
   version 1.2
 
   workflow multiline_string_placeholders {
-    output {
       String spaces = "  "
       String name = "Henry"
       String company = "Acme"
+
+    output {
+
       # This string evaluates to: "  Hello Henry,\n  Welcome to Acme!"
       # The string still has spaces because the placeholders are evaluated after removing the 
       # common leading whitespace.
