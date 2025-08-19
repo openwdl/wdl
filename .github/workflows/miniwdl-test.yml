@@ -66,7 +66,7 @@ jobs:
           # Write JUnit XML for GitHub UI annotations
           cat <<EOF > miniwdl_tests/artifacts/results.xml
           <?xml version="1.0" encoding="UTF-8"?>
-          <testsuite name="MiniWDLConformance" tests="$total" failures="$failed" skipped="$ignored">
+          <testsuite name="MiniWDL WDL 1.1 Conformance" tests="$total" failures="$failed" skipped="$ignored">
             <testcase classname="MiniWDL" name="wdl-1.1-conformance">
               $(if [ "$failed" -gt 0 ]; then echo "<failure message=\"Failures=$failed, Invalid=$invalid\"/>"; fi)
             </testcase>
@@ -83,7 +83,7 @@ jobs:
           cat <<EOF > miniwdl_tests/artifacts/shields.json
           {
             "schemaVersion": 1,
-            "label": "MiniWDL Tests",
+            "label": "MiniWDL 1.1 Tests",
             "message": "$passed/$total passed",
             "color": "$color"
           }
