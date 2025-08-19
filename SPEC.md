@@ -787,7 +787,7 @@ Common leading whitespace is also removed from blank lines that contain whitespa
               this is a
       
                 multi-line string
-                
+
       >>>
     }
   }
@@ -3815,7 +3815,7 @@ Example output:
 
 ```json
 {
-  "lines": ["A", "B", "C"]
+  "input_type_quantifiers.lines": ["A", "B", "C"]
 }
 ```
 </p>
