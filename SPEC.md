@@ -11006,10 +11006,12 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
     }
 
     output {
-      Int? i1 = m[key1] if contains_key(m, key1) else None
-      Int? i2 = m[key2] if contains_key(m, key2) else None
-      String? phone1 = p1.details["phone"] if contains_key(p1, ["details", "phone"]) else None
-      String? phone2 = p2.details["phone"] if contains_key(p2, ["details", "phone"]) else None
+      Int? i1 = if contains_key(m, key1) then m[key1] else None
+      Int? i2 = if contains_key(m, key2) then m[key2] else None
+
+      String? phone1 = if contains_key(p1.details, "phone") then p1.details["phone"] else None
+      String? phone2 = if contains_key(p2.details, "phone") then p2.details["phone"] else None
+
     }
   }
   ```
