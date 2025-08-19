@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install MiniWDL and dependencies
+      - name: Install MiniWDL (main branch) and dependencies
         run: |
           pip install git+https://github.com/chanzuckerberg/miniwdl.git@main
           pip install junit-xml subby
@@ -67,8 +67,8 @@ jobs:
           # Write JUnit XML for GitHub UI annotations
           cat <<EOF > miniwdl_tests/artifacts/results.xml
           <?xml version="1.0" encoding="UTF-8"?>
-          <testsuite name="MiniWDLConformance" tests="$total" failures="$failed" skipped="$ignored">
-            <testcase classname="MiniWDL" name="wdl-1.1-conformance">
+          <testsuite name="MiniWDL WDL 1.2 Conformance" tests="$total" failures="$failed" skipped="$ignored">
+            <testcase classname="MiniWDL" name="wdl-1.2-conformance">
               $(if [ "$failed" -gt 0 ]; then echo "<failure message=\"Failures=$failed, Invalid=$invalid\"/>"; fi)
             </testcase>
           </testsuite>
@@ -84,7 +84,7 @@ jobs:
           cat <<EOF > miniwdl_tests/artifacts/shields.json
           {
             "schemaVersion": 1,
-            "label": "MiniWDL Tests",
+            "label": "MiniWDL WDL 1.2",
             "message": "$passed/$total passed",
             "color": "$color"
           }
