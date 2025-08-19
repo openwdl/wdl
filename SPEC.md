@@ -7188,7 +7188,7 @@ Example output:
       ["Goodbye Mr. Merry, how are you?", "Goodbye Mr. Merry Brandybuck, how are you?"]
     ]
   ],
-  "nested_scatter.used_honorifics": ["Mr.;", "Wizard", "Mr."]
+  "nested_scatter.used_honorifics": ["Mr.", "Wizard", "Mr."]
 }
 ```
 </p>
