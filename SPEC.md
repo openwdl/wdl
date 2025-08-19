@@ -2707,7 +2707,7 @@ Example output:
 ```json
 {
   "placeholders.cmd": "grep 'h...o' hello",
-  "placehoders.s": "4"
+  "placeholders.s": "4"
 }
 ```
 </p>
