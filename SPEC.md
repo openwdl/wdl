@@ -7882,7 +7882,7 @@ Example output:
   "test_sub.chocoearly": "I like chocoearly when\nit's early",
   "test_sub.chocolate": "I like chocolate when\nit's early",
   "test_sub.chocoearlylate": "I like chocearly when\nit's late",
-  "test_sub.choco4": "I 4444 chocolate 4444\nit's late",
+  "test_sub.choco4": "I 4444 chocolate when\nit's late",
   "test_sub.no_newline": "I like chocolate when it's late"
 }
 ```
