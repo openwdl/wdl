@@ -604,7 +604,7 @@ The following primitive types exist in WDL:
     "primitive_literals.f": 27.3,
     "primitive_literals.s": "hello, world",
     "primitive_literals.x": "hello.txt",
-    "primitive_literals.d": "testdir/hello.txt"
+    "primitive_literals.d": "testdir"
   }
   ```
   </p>
