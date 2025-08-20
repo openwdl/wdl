@@ -8008,7 +8008,8 @@ Example output:
 ```json
 {
   "test_basename.is_true1": true,
-  "test_basename.is_true2": true
+  "test_basename.is_true2": true,
+  "test_basename.is_true3": true
 }
 ```
 </p>
