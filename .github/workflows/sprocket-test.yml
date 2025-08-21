@@ -2,7 +2,6 @@ name: Sprocket Spec Conformance - WDL 1.1
 
 on:
   push:
-  pull_request:
 
 jobs:
   sprocket-conformance:

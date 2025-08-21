@@ -1,4 +1,4 @@
-name: MiniWDL Spec Conformance - WDL 1.1
+name: Toil WDL Spec Conformance - WDL 1.2
 
 on:
   push:
@@ -6,27 +6,30 @@ on:
 jobs:
   conformance:
     runs-on: ubuntu-latest
-    name: Run WDL 1.1 Spec Conformance Tests
+    name: Run WDL 1.2 Spec Conformance Tests
 
     steps:
-      - name: Checkout WDL spec repo (wdl-1.1)
+      - name: Checkout WDL spec repo (wdl-1.2)
         uses: actions/checkout@v4
         with:
           repository: openwdl/wdl
-          ref: wdl-1.1
+          ref: wdl-1.2
           path: wdl-spec
 
       - name: Checkout current repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install MiniWDL and dependencies
+      - name: Install Toil WDL and dependencies
         run: |
-          pip install miniwdl junit-xml subby
+          pip install toil[wdl] junit-xml subby
 
       - name: Clone WDL tests
         run: |
@@ -34,24 +37,24 @@ jobs:
 
       - name: Extract tests
         run: |
-          python wdl-tests/scripts/extract_tests.py -i ${{ github.workspace }}/SPEC.md -d ${{ github.workspace }}/tests/data/ -O miniwdl_test -v 1.1
+          python wdl-tests/scripts/extract_tests.py -i ${{ github.workspace }}/SPEC.md -d ${{ github.workspace }}/tests/data/ -O toil_test -v 1.2
 
       - name: Run tests and capture results
         run: |
-          mkdir -p miniwdl_tests/artifacts
-          python wdl-tests/scripts/run_tests_miniwdl.py -T ${{ github.workspace }}/miniwdl_test -c ${{ github.workspace }}/miniwdl_test/test_config.json -D ${{ github.workspace }}/miniwdl_test/data -O miniwdl_results | tee miniwdl_tests/artifacts/result.log
+          mkdir -p toil_tests/artifacts
+          python wdl-tests/scripts/run_tests_toil.py -T ${{ github.workspace }}/toil_test -c ${{ github.workspace }}/toil_test/test_config.json -D ${{ github.workspace }}/toil_test/data -O toil_results | tee toil_tests/artifacts/result.log
 
           echo "📊 Parsing test summary..."
 
-          total=$(grep "Total tests:" miniwdl_tests/artifacts/result.log | awk '{print $3}')
-          passed=$(grep "Passed:" miniwdl_tests/artifacts/result.log | awk '{print $2}')
-          warnings=$(grep "Warnings:" miniwdl_tests/artifacts/result.log | awk '{print $2}')
-          failed=$(grep "Failures:" miniwdl_tests/artifacts/result.log | awk '{print $2}')
-          invalid=$(grep "Invalid outputs:" miniwdl_tests/artifacts/result.log | awk '{print $3}')
-          ignored=$(grep "Ignored:" miniwdl_tests/artifacts/result.log | awk '{print $2}')
+          total=$(grep "Total tests:" toil_tests/artifacts/result.log | awk '{print $3}')
+          passed=$(grep "Passed:" toil_tests/artifacts/result.log | awk '{print $2}')
+          warnings=$(grep "Warnings:" toil_tests/artifacts/result.log | awk '{print $2}')
+          failed=$(grep "Failures:" toil_tests/artifacts/result.log | awk '{print $2}')
+          invalid=$(grep "Invalid outputs:" toil_tests/artifacts/result.log | awk '{print $3}')
+          ignored=$(grep "Ignored:" toil_tests/artifacts/result.log | awk '{print $2}')
 
           # Write summary JSON
-          cat <<EOF > miniwdl_tests/artifacts/results.json
+          cat <<EOF > toil_tests/artifacts/results.json
           {
             "total": $total,
             "passed": $passed,
@@ -63,42 +66,40 @@ jobs:
           EOF
 
           # Write JUnit XML for GitHub UI annotations
-          cat <<EOF > miniwdl_tests/artifacts/results.xml
+          cat <<EOF > toil_tests/artifacts/results.xml
           <?xml version="1.0" encoding="UTF-8"?>
-          <testsuite name="MiniWDL WDL 1.1 Conformance" tests="$total" failures="$failed" skipped="$ignored">
-            <testcase classname="MiniWDL" name="wdl-1.1-conformance">
+          <testsuite name="Toil WDL 1.2 Conformance" tests="$total" failures="$failed" skipped="$ignored">
+            <testcase classname="ToilWDL" name="wdl-1.2-conformance">
               $(if [ "$failed" -gt 0 ]; then echo "<failure message=\"Failures=$failed, Invalid=$invalid\"/>"; fi)
             </testcase>
           </testsuite>
           EOF
 
           # Copy list of failures to artifacts
-          cp miniwdl_test/failed_tests.txt miniwdl_tests/artifacts/failed_tests.txt
+          cp toil_test/failed_tests.txt toil_tests/artifacts/failed_tests.txt || true
 
           # Generate shields.io badge JSON
           color="green"
           if [ "$passed" -lt "$total" ]; then color="yellow"; fi
           if [ "$passed" -eq 0 ]; then color="red"; fi
-          cat <<EOF > miniwdl_tests/artifacts/shields.json
+          cat <<EOF > toil_tests/artifacts/shields.json
           {
             "schemaVersion": 1,
-            "label": "MiniWDL 1.1 Tests",
+            "label": "Toil WDL 1.2",
             "message": "$passed/$total passed",
             "color": "$color"
           }
           EOF
 
-          # Do NOT fail the workflow if any failures or invalid outputs occurred
           if [ "$failed" -gt 0 ] || [ "$invalid" -gt 0 ]; then
             echo "❌ One or more conformance tests failed or had invalid outputs."
-            # exit 1   # <-- removed
           fi
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: miniwdl-test-results
-          path: miniwdl_tests/artifacts/
+          name: toil-test-results
+          path: toil_tests/artifacts/
 
       - name: Publish badge JSON to current branch
         env:
@@ -113,20 +114,18 @@ jobs:
           git checkout $BRANCH
 
           mkdir -p shields
-          cp miniwdl_tests/artifacts/shields.json shields/miniwdl_shields.json
-          git add shields/miniwdl_shields.json
+          cp toil_tests/artifacts/shields.json shields/toil_shields.json
+          git add shields/toil_shields.json
 
-          # Update README only if needed
-          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/miniwdl_shields.json"
-          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/miniwdl_shields.json"
+          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/toil_shields.json"
+          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/toil_shields.json"
           if grep -qE "$sed_pattern" README.md; then
             sed -i "s|$sed_pattern|$new_url|" README.md
             git add README.md
           fi
 
-          # Only commit if there are staged changes
           if ! git diff --cached --quiet; then
-            git commit -m "Update miniwdl shields badge for $BRANCH"
+            git commit -m "Update Toil WDL shields badge for $BRANCH"
             git push $REPO_URL $BRANCH
           else
             echo "🟢 No changes to commit"
