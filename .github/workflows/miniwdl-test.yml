@@ -82,7 +82,7 @@ jobs:
           cat <<EOF > miniwdl_tests/artifacts/shields.json
           {
             "schemaVersion": 1,
-            "label": "MiniWDL 1.1 Tests",
+            "label": "MiniWDL WDL 1.1",
             "message": "$passed/$total passed",
             "color": "$color"
           }
