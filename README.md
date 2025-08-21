@@ -4,7 +4,7 @@
 
 ![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test_1.1/shields/sprocket_shields.json)
 
-![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl//shields/toil_shields.json)
+![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test_1.1/shields/toil_shields.json)
 
 The **Workflow Description Language (WDL)** is an open standard for describing data processing workflows with a human-readable and writeable syntax.
 WDL makes it straightforward to define analysis tasks, connect them together in workflows, and parallelize their execution.
