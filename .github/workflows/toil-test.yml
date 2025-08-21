@@ -1,4 +1,4 @@
-name: Toil WDL Spec Conformance - WDL 1.2
+name: Toil WDL Spec Conformance - WDL 1.1
 
 on:
   push:
@@ -6,14 +6,14 @@ on:
 jobs:
   conformance:
     runs-on: ubuntu-latest
-    name: Run WDL 1.2 Spec Conformance Tests
+    name: Run WDL 1.1 Spec Conformance Tests
 
     steps:
-      - name: Checkout WDL spec repo (wdl-1.2)
+      - name: Checkout WDL spec repo (wdl-1.1)
         uses: actions/checkout@v4
         with:
           repository: openwdl/wdl
-          ref: wdl-1.2
+          ref: wdl-1.1
           path: wdl-spec
 
       - name: Checkout current repo
@@ -37,7 +37,7 @@ jobs:
 
       - name: Extract tests
         run: |
-          python wdl-tests/scripts/extract_tests.py -i ${{ github.workspace }}/SPEC.md -d ${{ github.workspace }}/tests/data/ -O toil_test -v 1.2
+          python wdl-tests/scripts/extract_tests.py -i ${{ github.workspace }}/SPEC.md -d ${{ github.workspace }}/tests/data/ -O toil_test -v 1.1
 
       - name: Run tests and capture results
         run: |
@@ -68,8 +68,8 @@ jobs:
           # Write JUnit XML for GitHub UI annotations
           cat <<EOF > toil_tests/artifacts/results.xml
           <?xml version="1.0" encoding="UTF-8"?>
-          <testsuite name="Toil WDL 1.2 Conformance" tests="$total" failures="$failed" skipped="$ignored">
-            <testcase classname="ToilWDL" name="wdl-1.2-conformance">
+          <testsuite name="Toil WDL 1.1 Conformance" tests="$total" failures="$failed" skipped="$ignored">
+            <testcase classname="ToilWDL" name="wdl-1.1-conformance">
               $(if [ "$failed" -gt 0 ]; then echo "<failure message=\"Failures=$failed, Invalid=$invalid\"/>"; fi)
             </testcase>
           </testsuite>
@@ -85,7 +85,7 @@ jobs:
           cat <<EOF > toil_tests/artifacts/shields.json
           {
             "schemaVersion": 1,
-            "label": "Toil WDL 1.2",
+            "label": "Toil WDL 1.1",
             "message": "$passed/$total passed",
             "color": "$color"
           }
