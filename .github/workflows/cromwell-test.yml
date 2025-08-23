@@ -22,7 +22,7 @@ jobs:
       - name: Install Java (for Cromwell)
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-11-jre curl subby
+          sudo apt-get install -y openjdk-11-jre curl
 
       - name: Download latest Cromwell
         run: |
@@ -32,6 +32,17 @@ jobs:
             | cut -d '"' -f 4)
           echo "Downloading $CROMWELL_URL"
           curl -L $CROMWELL_URL -o cromwell.jar
+
+v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install junit-xml subby
 
       - name: Clone WDL tests
         run: |
