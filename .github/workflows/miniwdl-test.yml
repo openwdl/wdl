@@ -120,6 +120,7 @@ jobs:
           sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/miniwdl_shields.json"
           new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/miniwdl_shields.json"
           if grep -qE "$sed_pattern" README.md; then
+            git pull
             sed -i "s|$sed_pattern|$new_url|" README.md
             git add README.md
           fi
