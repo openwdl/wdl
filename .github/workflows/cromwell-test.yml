@@ -43,7 +43,7 @@ jobs:
             -i ${{ github.workspace }}/SPEC.md \
             -d ${{ github.workspace }}/tests/data/ \
             -O cromwell_test -v 1.1
-          find cromwell_tests/ -name "*.wdl" -type f -exec sed -i 's/^version 1.1/version development/' {} +
+          find cromwell_test/ -name "*.wdl" -type f -exec sed -i 's/^version 1.1/version development/' {} +
 
 
       - name: Run tests and capture results
