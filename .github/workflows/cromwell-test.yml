@@ -22,7 +22,7 @@ jobs:
       - name: Install Java (for Cromwell)
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-11-jre curl
+          sudo apt-get install -y openjdk-11-jre curl subby
 
       - name: Download latest Cromwell
         run: |
