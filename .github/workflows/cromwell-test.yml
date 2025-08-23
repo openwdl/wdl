@@ -33,8 +33,6 @@ jobs:
           echo "Downloading $CROMWELL_URL"
           curl -L $CROMWELL_URL -o cromwell.jar
 
-v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -55,7 +53,6 @@ v4
             -d ${{ github.workspace }}/tests/data/ \
             -O cromwell_test -v 1.1
           find cromwell_test/ -name "*.wdl" -type f -exec sed -i 's/^version 1.1/version development/' {} +
-
 
       - name: Run tests and capture results
         run: |
