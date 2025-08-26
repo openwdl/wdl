@@ -121,7 +121,7 @@ jobs:
           git add shields/toil_shields.json
 
           # Update README only if needed
-          badge_pattern="\\[!\\[Toil Tests\\]\\([^)]*\\)\\]\\([^)]*\\)"
+          badge_pattern='\[!\[Toil Tests\]\(https://img\.shields\.io/endpoint\?url=https://raw\.githubusercontent\.com/openwdl/wdl/[^)]*/shields/toil_shields\.json\)\]\(https://github\.com/openwdl/wdl/actions/runs/[0-9]+\)'
           badge_replacement="[![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/toil_shields.json)]($RUN_URL)"
           if grep -qE "$badge_pattern" README.md; then
             git pull

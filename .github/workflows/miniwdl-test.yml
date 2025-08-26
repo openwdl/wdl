@@ -120,11 +120,13 @@ jobs:
           git add shields/miniwdl_shields.json
 
           # Update README only if needed
-          badge_pattern="\\[!\\[MiniWDL Tests\\]\\([^)]*\\)\\]\\([^)]*\\)"
+          badge_pattern='\[!\[MiniWDL Tests\]\(https://img\.shields\.io/endpoint\?url=https://raw\.githubusercontent\.com/openwdl/wdl/[^)]*/shields/miniwdl_shields\.json\)\]\(https://github\.com/openwdl/wdl/actions/runs/[0-9]+\)'
           badge_replacement="[![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/miniwdl_shields.json)]($RUN_URL)"
           if grep -qE "$badge_pattern" README.md; then
             git pull
-            sed -i "s|$badge_pattern|$badge_replacement|" README.md
+            sed -i -E "s|$badge_pattern|$badge_replacement|" README.md
+            
+            sed -i -E "s|$badge_pattern|$badge_replacement|" README.md
             git add README.md
           fi
 
