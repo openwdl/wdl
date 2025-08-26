@@ -130,6 +130,9 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           BRANCH="${GITHUB_REF_NAME}"
+          RUN_ID="${{ github.run_id }}"
+          REPO="${{ github.repository }}"
+          RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
           REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
 
           git fetch origin $BRANCH
@@ -140,11 +143,11 @@ jobs:
           git add shields/cromwell_shields.json
 
           # Update README only if needed
-          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/cromwell_shields.json"
-          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/cromwell_shields.json"
-          if grep -qE "$sed_pattern" README.md; then
+          badge_pattern="\\[!\\[Cromwell Tests\\]\\([^)]*\\)\\]\\([^)]*\\)"
+          badge_replacement="[![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/cromwell_shields.json)]($RUN_URL)"
+          if grep -qE "$badge_pattern" README.md; then
             git pull
-            sed -i "s|$sed_pattern|$new_url|" README.md
+            sed -i "s|$badge_pattern|$badge_replacement|" README.md
             git add README.md
           fi
 

@@ -107,21 +107,27 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           BRANCH="${GITHUB_REF_NAME}"
+          RUN_ID="${{ github.run_id }}"
+          REPO="${{ github.repository }}"
+          RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
           REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+
           git fetch origin $BRANCH
           git checkout $BRANCH
+          
           mkdir -p shields
           cp sprocket_tests/artifacts/shields.json shields/sprocket_shields.json
           git add shields/sprocket_shields.json
 
-          # Update README only if needed          
-          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/sprocket_shields.json"          
-          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/sprocket_shields.json"          
-          if grep -qE "$sed_pattern" README.md; then  
-            git pull          
-            sed -i "s|$sed_pattern|$new_url|" README.md            
-            git add README.md          
-          fi          
+          # Update README only if needed
+          badge_pattern="\\[!\\[Sprocket Tests\\]\\([^)]*\\)\\]\\([^)]*\\)"
+          badge_replacement="[![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/sprocket_shields.json)]($RUN_URL)"
+          if grep -qE "$badge_pattern" README.md; then
+            git pull
+            sed -i "s|$badge_pattern|$badge_replacement|" README.md
+            git add README.md
+          fi     
+               
           # Only commit if there are staged changes          
           if ! git diff --cached --quiet; then            
             git commit -m "Update Sprocket shields badge for $BRANCH"            
