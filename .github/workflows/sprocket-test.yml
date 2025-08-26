@@ -120,13 +120,16 @@ jobs:
           git add shields/sprocket_shields.json
 
           # Update README only if needed
-          badge_pattern='\[!\[Sprocket Tests\]\(https://img\.shields\.io/endpoint\?url=https://raw\.githubusercontent\.com/openwdl/wdl/[^)]*/shields/sprocket_shields\.json\)\]\(https://github\.com/openwdl/wdl/actions/runs/[0-9]+\)'
-          badge_replacement="[![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/sprocket_shields.json)]($RUN_URL)"
+          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/sprocket_shields.json"
+          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/sprocket_shields.json"
+          run_pattern="https://github.com/$REPO/actions/runs/[0-9]+"
+          new_run="https://github.com/$REPO/actions/runs/$RUN_ID"
           if grep -qE "$badge_pattern" README.md; then
             git pull
-            sed -i "s|$badge_pattern|$badge_replacement|" README.md
+            sed -i "s|$sed_pattern|$new_url|" README.md
+            sed -i "s|$run_pattern|$new_run|" README.md
             git add README.md
-          fi     
+          fi 
 
           # Only commit if there are staged changes          
           if ! git diff --cached --quiet; then            
