@@ -126,16 +126,11 @@ jobs:
           new_run="https://github.com/$REPO/actions/runs/$RUN_ID"
           if grep -qE "$badge_pattern" README.md; then
             git pull
-            sed -i "s|$sed_pattern|$new_url|" README.md
-            sed -i "s|$run_pattern|$new_run|" README.md
+            sed -E -i "/miniwdl_shields\.json/s|$sed_pattern|$new_url|g" README.md
+            sed -E -i "/miniwdl_shields\.json/s|$run_pattern|$new_run|g" README.md
             git add README.md
           fi
 
-          if grep -qE "$sed_pattern" README.md; then
-            git pull
-            sed -i "s|$sed_pattern|$new_url|" README.md
-            git add README.md
-          fi
 
           # Only commit if there are staged changes
           if ! git diff --cached --quiet; then
