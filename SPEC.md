@@ -4300,8 +4300,8 @@ Test config:
 
 ```json
 {
-  "dependencies": "gpu"
-  "priority": "ignore",
+  "dependencies": "gpu",
+  "priority": "ignore"
 }
 ```
 </p>
