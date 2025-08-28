@@ -5092,7 +5092,7 @@ task test_gpu {
   }
   
   requirements {
-    container: "archlinux:latest"
+    container: "ubuntu:latest"
     gpu: true
   }
 }
@@ -5117,7 +5117,8 @@ Test config:
 
 ```json
 {
-  "dependencies": "gpu"
+  "dependencies": "gpu",
+  "priority": "ignore"
 }
 ```
 </p>
@@ -5466,6 +5467,15 @@ Example output:
   "test_hints.num_lines": 3
 }
 ```
+
+Test config:
+
+```json
+{
+  "priority": "ignore"
+}
+```
+
 </p>
 </details>
 
