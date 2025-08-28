@@ -128,9 +128,6 @@ jobs:
           if grep -qE "$badge_pattern" README.md; then
             git pull
             sed -i "s|$sed_pattern|$new_url|" README.md
-            sed -i "s|WDL 1.1|WDL 1.2|g" README.md
-            sed -i "s|wdl-1.1-conformance|wdl-1.2-conformance|g" README.md
-            sed -i "s|Toil WDL 1.1|Toil WDL 1.2|g" README.md
             sed -i "s|$run_pattern|$new_run|" README.md
             git add README.md
           fi 

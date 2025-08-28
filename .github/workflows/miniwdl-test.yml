@@ -124,25 +124,14 @@ jobs:
           # Update README only if needed
           sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/miniwdl_shields.json"
           new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/miniwdl_shields.json"
-<<<<<<< Updated upstream
-=======
           run_pattern="https://github.com/$REPO/actions/runs/[0-9]+"
           new_run="https://github.com/$REPO/actions/runs/$RUN_ID"
           if grep -qE "$badge_pattern" README.md; then
             git pull
             sed -i "s|$sed_pattern|$new_url|" README.md
-            sed -i "s|WDL 1.1|WDL 1.2|g" README.md
-            sed -i "s|wdl-1.1-conformance|wdl-1.2-conformance|g" README.md
-            sed -i "s|MiniWDL WDL 1.1|MiniWDL WDL 1.2|g" README.md
             sed -i "s|$run_pattern|$new_run|" README.md
             git add README.md
           fi 
-
->>>>>>> Stashed changes
-          if grep -qE "$sed_pattern" README.md; then
-            sed -i "s|$sed_pattern|$new_url|" README.md
-            git add README.md
-          fi
 
           # Only commit if there are staged changes
           if ! git diff --cached --quiet; then
