@@ -116,8 +116,10 @@ jobs:
           git config --global user.name "github-actions[bot]"
           BRANCH="${GITHUB_REF_NAME}"
           REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+          
           git fetch origin $BRANCH
           git checkout $BRANCH
+          
           mkdir -p shields
           cp sprocket_tests/artifacts/shields.json shields/sprocket_shields.json
           git add shields/sprocket_shields.json
@@ -127,8 +129,8 @@ jobs:
           new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/sprocket_shields.json"
           if grep -qE "$sed_pattern" README.md; then
             git pull
-            sed -i "s|$sed_pattern|$new_url|" README.md
-            sed -i "s|$run_pattern|$new_run|" README.md
+            sed -E -i "s|$sed_pattern|$new_url|g" README.md
+            sed -E -i "/sprocket_shields\.json/s|$run_pattern|$new_run|g" README.md
             git add README.md
           fi
 
