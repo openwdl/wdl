@@ -3901,7 +3901,8 @@ Test config:
 
 ```json
 {
-  "exclude_output": "relative_and_absolute.bashrc"
+  "exclude_output": "relative_and_absolute.bashrc",
+  "priority": "ignore"
 }
 ```
 </p>
@@ -4274,7 +4275,7 @@ task test_gpu {
   }
   
   runtime {
-    container: "archlinux:latest"
+    container: "ubuntu:latest"
     gpu: true
   }
 }
@@ -4300,6 +4301,7 @@ Test config:
 ```json
 {
   "dependencies": "gpu"
+  "priority": "ignore",
 }
 ```
 </p>
@@ -4631,6 +4633,15 @@ Example output:
   "test_hints.num_lines": 2
 }
 ```
+
+Test config:
+
+```json
+{
+  "priority": "ignore"
+}
+```
+
 </p>
 </details>
 
