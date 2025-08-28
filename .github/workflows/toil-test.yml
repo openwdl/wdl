@@ -6,7 +6,7 @@ on:
 jobs:
   conformance:
     runs-on: ubuntu-latest
-    name: Run WDL 1.1 Spec Conformance Tests
+    name: Run WDL 1.2 Spec Conformance Tests
 
     steps:
       - name: Checkout WDL spec repo (wdl-1.2)
