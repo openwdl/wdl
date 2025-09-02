@@ -51,7 +51,7 @@ version 1.1.3
 
 + Fix unit test for `round()` to properly test for round-half-up behavior as described.
 
-+ Fix issues with examples (#707, #708, #701).
++ Fix issues with examples (#707, #708, #701). [PR 706](https://github.com/openwdl/wdl/pull/706) by @vsmalladi
 
 + Add in CI/CD for Miniwdl, Sprocket, Toil and Cromwell for spec compliance
 
