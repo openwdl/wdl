@@ -802,9 +802,9 @@ Common leading whitespace is also removed from blank lines that contain whitespa
   
   ```json
   {
-    "multiline_strings3.multi_line_A": "\nthis is a\n\n  multi-line string\n"
-    "multiline_strings3.multi_line_B": "\nthis is a\n\n  multi-line string\n"
-    "multiline_strings3.multi_line_C": "\nthis is a\n\n  multi-line string\n"
+    "multiline_strings3.multi_line_A": "\nthis is a\n\n  multi-line string\n",
+    "multiline_strings3.multi_line_B": "\nthis is a\n\n  multi-line string\n",
+    "multiline_strings3.multi_line_C": "\nthis is a\n\n  multi-line string\n",
     "multiline_strings3.multi_line_D": "\nthis is a\n\n  multi-line string\n"
   }
   ```
