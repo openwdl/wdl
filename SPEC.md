@@ -4052,63 +4052,65 @@ The environment variable should be evaluated by the engine prior to injecting it
 
 
 <details>
-<summary>
-
-```wdl
-version 1.2
-
-task test  {
-  input {
-    env String greeting
-  }
-  command <<<
-    echo $foo
-  >>>
-  output {
-    String out= read_string(stdout())
-  }
-}
-
-workflow environment_variable_should_echo {
-  input {
-    String greeting 
-  }
+  <summary>
+  Example: environment_variables.wdl
   
-  call test {
-    input: greeting = greeting
+  ```wdl
+  version 1.2
+
+  task test  {
+    input {
+      env String greeting
+    }
+    command <<<
+      echo $foo
+    >>>
+    output {
+      String out= read_string(stdout())
+    }
   }
-  
-  output {
-    String out = test.out
+
+  workflow environment_variable_should_echo {
+    input {
+      String greeting 
+    }
+    
+    call test {
+      input: greeting = greeting
+    }
+    
+    output {
+      String out = test.out
+    }
   }
-```
-</summary>
-<p>
-Example input:
+  ```
+  </summary>
+  <p>
+  Example input:
 
-```json
-{
-  "environment_variable_should_echo.greeting": "hello"
-}
-```
+  ```json
+  {
+    "environment_variable_should_echo.greeting": "hello"
+  }
+  ```
 
-Example output:
+  Example output:
 
-```json
-{
-  "environment_variable_should_echo.out": "hello"
-}
-```
+  ```json
+  {
+    "environment_variable_should_echo.out": "hello"
+  }
+  ```
 
-Test config:
+  Test config:
 
-```json
-{
-  "fail": false
-}
-```
+  ```json
+  {
+    "fail": false
+  }
+  ```
 
-</p>
+  </p>
 </details>
 
 #### String Escaping and Injection Prevention
