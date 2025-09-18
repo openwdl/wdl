@@ -733,13 +733,13 @@ In multi-line strings, leading *whitespace* is removed according to the followin
   
   ```json
   {
-    "multiline_strings2.hw0": "hello  world"
-    "multiline_strings2.hw1": "hello  world"
-    "multiline_strings2.hw2": "hello  world"
-    "multiline_strings2.hw3": "hello  world"
-    "multiline_strings2.hw4": "hello  world"
-    "multiline_strings2.hw5": "hello  world"
-    "multiline_strings2.hw6": "hello  world"
+    "multiline_strings2.hw0": "hello  world",
+    "multiline_strings2.hw1": "hello  world",
+    "multiline_strings2.hw2": "hello  world",
+    "multiline_strings2.hw3": "hello  world",
+    "multiline_strings2.hw4": "hello  world",
+    "multiline_strings2.hw5": "hello  world",
+    "multiline_strings2.hw6": "hello  world",
     "multiline_strings2.not_equivalent": "hello \\\n  world"
   }
   ```
