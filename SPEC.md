@@ -4081,19 +4081,19 @@ task test  {
   output {
     String out = read_string(stdout())
   }
-}
 
-workflow environment_variable_should_echo {
-  input {
-    String greeting 
-  }
-  
-  call test {
-    input: greeting = greeting
-  }
-  
-  output {
-    String out = test.out
+  workflow environment_variable_should_echo {
+    input {
+      String greeting 
+    }
+    
+    call test {
+      input: greeting = greeting
+    }
+    
+    output {
+      String out = test.out
+    }
   }
 }
 ```
@@ -4101,29 +4101,30 @@ workflow environment_variable_should_echo {
 <p>
 Example input:
 
-```json
-{
-  "environment_variable_should_echo.greeting": "hello"
-}
-```
 
-Example output:
+  ```json
+  {
+    "environment_variable_should_echo.greeting": "hello"
+  }
+  ```
 
-```json
-{
-  "environment_variable_should_echo.out": "hello"
-}
-```
+  Example output:
 
-Test config:
+  ```json
+  {
+    "environment_variable_should_echo.out": "hello"
+  }
+  ```
 
-```json
-{
-  "fail": false
-}
-```
+  Test config:
 
-</p>
+  ```json
+  {
+    "fail": false
+  }
+  ```
+
+  </p>
 </details>
 
 #### String Escaping and Injection Prevention
