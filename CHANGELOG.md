@@ -26,11 +26,9 @@ version 1.2.1
 
 * Include fixes to examples introduced in v1.1.3
 
-* Include fixes to examples that don't comile in `wdl-tests`
+* Include fixes to examples that don't compile in `wdl-tests`
 
-* Fix issues with examples (#707, #708, #701).
-
-* Add in CI/CD for Miniwdl, Sprocket, Toil and Cromwell for spec compliance
+* Add in CI/CD for Miniwdl, Sprocket, Toil and Cromwell for spec compliance.
 
 version 1.2.0
 ---------------------------

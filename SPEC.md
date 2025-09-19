@@ -2779,7 +2779,6 @@ Placeholders are evaluated in multi-line strings exactly the same as in regular 
       String company = "Acme"
 
     output {
-
       # This string evaluates to: "  Hello Henry,\n  Welcome to Acme!"
       # The string still has spaces because the placeholders are evaluated after removing the 
       # common leading whitespace.
@@ -4346,7 +4345,7 @@ Example input:
 
 ```json
 {
-  "str": "hello"
+  "bash_variables.str": "hello"
 }
 ```
 
@@ -5842,7 +5841,7 @@ task test_runtime_info {
   
   output {
     Boolean at_least_two_gb = task.memory >= (2 * 1024 * 1024 * 1024)
-    Int return_code = select_first([task.return_code, 0])
+    Int? return_code = task.return_code
   }
   
   requirements {
@@ -5934,8 +5933,8 @@ task hisat2 {
 
   parameter_meta {
     index_tar_gz: "Gzipped tar file with HISAT2 index files"
-    fastq1: "The first-end FastQ file."
-    fastq2: "The second-end FastQ file."
+    fastq1: "The FASTQ file containing all read ones."
+    fastq2: "The FASTQ file containing all read twos."
     sample_name: "Name of the sample"
   }
 }
@@ -8241,9 +8240,9 @@ task file_sizes {
 
   output {
     File created_file = "out.txt"
-    Float missing_file_bytes = if defined(missing_file) then size(missing_file, "B") else 0.0
+    Float missing_file_bytes = size(missing_file, "B") 
     Float created_file_bytes = size(created_file, "B")
-    Float multi_file_kb = size(select_all([created_file, missing_file]), "K") # 0.022
+    Float multi_file_kb = size([created_file, missing_file], "K") # 0.022
 
     Map[String, Pair[Int, File]] nested = {
       "a": (10, created_file),
