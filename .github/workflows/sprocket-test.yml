@@ -19,7 +19,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install junit-xml subby
+          pip install subby
 
       - name: Install Sprocket dependencies
         run: |

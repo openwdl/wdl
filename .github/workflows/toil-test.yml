@@ -19,7 +19,7 @@ jobs:
 
       - name: Install Toil WDL and dependencies
         run: |
-          pip install toil[wdl] junit-xml subby
+          pip install toil[wdl] subby
 
       - name: Clone WDL tests
         run: |

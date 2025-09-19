@@ -20,7 +20,7 @@ jobs:
       - name: Install MiniWDL (main branch) and dependencies
         run: |
           pip install git+https://github.com/chanzuckerberg/miniwdl.git@main
-          pip install junit-xml subby
+          pip install subby
 
       - name: Clone WDL tests
         run: |

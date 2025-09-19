@@ -34,7 +34,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install junit-xml subby
+          pip install subby
 
       - name: Clone WDL tests
         run: |
