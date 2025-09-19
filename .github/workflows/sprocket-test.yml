@@ -13,15 +13,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: openwdl/wdl
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: wdl-1.2
           path: wdl-spec
-
-      - name: Checkout current repo
-        uses: actions/checkout@v4
-        with:
-            fetch-depth: 0        # fetch all commits and refs
-            # For pull_request events, make sure the PR SHA is checked out
-            ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
