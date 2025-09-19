@@ -9,12 +9,8 @@ jobs:
     name: Run WDL 1.2 Spec Conformance Tests
 
     steps:
-      - name: Checkout WDL spec repo (wdl-1.2)
+      - name: Checkout WDL spec repo
         uses: actions/checkout@v4
-        with:
-          repository: openwdl/wdl
-          ref: wdl-1.2
-          path: wdl-spec
 
       - name: Set up Python
         uses: actions/setup-python@v5
