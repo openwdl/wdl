@@ -13,15 +13,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: openwdl/wdl
-          ref: wdl-1.2
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           path: wdl-spec
-
-      - name: Checkout current repo
-        uses: actions/checkout@v4
-        with:
-            fetch-depth: 0        # fetch all commits and refs
-            # For pull_request events, make sure the PR SHA is checked out
-            ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -44,6 +37,8 @@ jobs:
       - name: Run tests and capture results
         run: |
           mkdir -p miniwdl_tests/artifacts
+
+          echo "📊 Running tests..."
           python wdl-tests/scripts/run_tests_miniwdl.py -T ${{ github.workspace }}/miniwdl_test -c ${{ github.workspace }}/miniwdl_test/test_config.json -D ${{ github.workspace }}/miniwdl_test/data -O miniwdl_results | tee miniwdl_tests/artifacts/result.log
 
           echo "📊 Parsing test summary..."
@@ -67,16 +62,6 @@ jobs:
           }
           EOF
 
-          # Write JUnit XML for GitHub UI annotations
-          cat <<EOF > miniwdl_tests/artifacts/results.xml
-          <?xml version="1.0" encoding="UTF-8"?>
-          <testsuite name="MiniWDL WDL 1.2 Conformance" tests="$total" failures="$failed" skipped="$ignored">
-            <testcase classname="MiniWDL" name="wdl-1.2-conformance">
-              $(if [ "$failed" -gt 0 ]; then echo "<failure message=\"Failures=$failed, Invalid=$invalid\"/>"; fi)
-            </testcase>
-          </testsuite>
-          EOF
-
           # Copy list of failures to artifacts
           cp miniwdl_test/failed_tests.txt miniwdl_tests/artifacts/failed_tests.txt
 
@@ -92,12 +77,6 @@ jobs:
             "color": "$color"
           }
           EOF
-
-          # Do NOT fail the workflow if any failures or invalid outputs occurred
-          if [ "$failed" -gt 0 ] || [ "$invalid" -gt 0 ]; then
-            echo "❌ One or more conformance tests failed or had invalid outputs."
-            # exit 1   # <-- removed
-          fi
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@v4
@@ -138,7 +117,7 @@ jobs:
 
           # Only commit if there are staged changes
           if ! git diff --cached --quiet; then
-            git commit -m "Update miniwdl shields badge for $BRANCH"
+            git commit -m "chore: updates miniwdl shields badge for \`$BRANCH\`"
             git push $REPO_URL $BRANCH
           else
             echo "🟢 No changes to commit"
