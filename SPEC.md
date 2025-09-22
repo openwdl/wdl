@@ -1443,14 +1443,6 @@ Example output:
 }
 ```
 
-Test config:
-
-```json
-{
-  "optional_output": "username"
-}
-```
-
 </p>
 </details>
 
