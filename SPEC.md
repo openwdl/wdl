@@ -5939,8 +5939,8 @@ Example input:
 ```json
 {
   "index_tar_gz": "https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz",
-  "fastq1": "https://storage.googleapis.com/genomics-public-data/gatk-examples/example1/NA20274/ERR250968_1.filt.fastq.gz",
-  "fastq2":"https://storage.googleapis.com/genomics-public-data/gatk-examples/example1/NA20274/ERR250968_2.filt.fastq.gz",
+  "fastq1": "NA20274/ERR250968_1.filt.100.fastq.gz",
+  "fastq2":"NA20274/ERR250968_2.filt.100.fastq.gz",
   "sample_name": "NA20274",
   "max_reads": 10
 }
@@ -5959,7 +5959,6 @@ Test config:
 ```json
 {
   "dependencies": ["cpu", "memory", "disks"],
-  "priority": "ignore"
 }
 ```
 </p>
