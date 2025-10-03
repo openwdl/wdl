@@ -5958,7 +5958,7 @@ Test config:
 
 ```json
 {
-  "dependencies": ["cpu", "memory", "disks"],
+  "dependencies": ["cpu", "memory", "disks"]
 }
 ```
 </p>
