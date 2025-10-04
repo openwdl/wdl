@@ -6062,8 +6062,7 @@ Test config:
 
 ```json
 {
-  "dependencies": ["memory", "disks"],
-  "priority": "ignore"
+  "dependencies": ["memory", "disks"]
 }
 ```
 </p>
