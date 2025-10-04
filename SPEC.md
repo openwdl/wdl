@@ -1169,15 +1169,6 @@ Example output:
 }
 ```
 
-Test config:
-
-```json
-{
-  "optional_output": "username"
-}
-```
-
-
 </p>
 </details>
 
@@ -4957,8 +4948,8 @@ Example input:
 ```json
 {
   "index_tar_gz": "https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz",
-  "fastq1": "https://storage.googleapis.com/genomics-public-data/gatk-examples/example1/NA20274/ERR250968_1.filt.fastq.gz",
-  "fastq2":"https://storage.googleapis.com/genomics-public-data/gatk-examples/example1/NA20274/ERR250968_2.filt.fastq.gz",
+  "fastq1": "ERR250968_1.filt.100.fastq.gz",
+  "fastq2":"ERR250968_2.filt.100.fastq.gz",
   "sample_name": "NA20274",
   "max_reads": 10
 }
@@ -4976,8 +4967,7 @@ Test config:
 
 ```json
 {
-  "dependencies": ["cpu", "memory", "disks"],
-  "priority": "ignore"
+  "dependencies": ["cpu", "memory", "disks"]
 }
 ```
 </p>
@@ -5058,22 +5048,21 @@ Example input:
 
 ```json
 {
-  "bam": "https://storage.googleapis.com/genomics-public-data/1000-genomes/bam/HG00107.mapped.ILLUMINA.bwa.GBR.low_coverage.20130415.bam",
+  "bam": "NA12878.chr20.sample.bam ",
   "reference": {
     "id":"Homo_sapiens_assembly19_1000genomes_decoy",
     "fasta": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.fasta",
     "index": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.fasta.fai",
     "dict": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.dict"
-    },
-   "interval": "1:12505000-12506000"
-}
+    }
+  }
 ```
 
 Example output:
 
 ```json
 {
-  "gatk_haplotype_caller.vcf": "HG00107.mapped.ILLUMINA.bwa.GBR.low_coverage.20130415.vcf"
+  "gatk_haplotype_caller.vcf": "NA12878.chr20.sample.vcf"
 }
 ```
 
@@ -5081,8 +5070,7 @@ Test config:
 
 ```json
 {
-  "dependencies": ["memory", "disks"],
-  "priority": "ignore"
+  "dependencies": ["memory", "disks"]
 }
 ```
 </p>
