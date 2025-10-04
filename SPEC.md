@@ -5048,7 +5048,7 @@ Example input:
 
 ```json
 {
-  "bam": "NA12878.chr20.sample.bam ",
+  "bam": "NA12878.chr20.sample.bam",
   "reference": {
     "id":"Homo_sapiens_assembly19_1000genomes_decoy",
     "fasta": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.fasta",
