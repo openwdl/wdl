@@ -3358,7 +3358,7 @@ Although a WDL workflow and the task(s) it calls may be defined completely withi
 
 The `import` statement is the basis for modularity in WDL. A WDL document may have any number of `import` statements, each of which references another WDL document and allows access to that document's top-level members (`task`s, `workflow`s, and `struct`s).
 
-The `import` statement specifies a WDL document source as a string literal, which is interpreted as a URI. The execution engine is responsible for resolving each import URI and retrieving the contents of the WDL document. The contents of the document in each URI must be WDL source code **of the same version as the importing document**.
+The `import` statement specifies a WDL document source as a string literal, which is interpreted as a URI. The execution engine is responsible for resolving each import URI and retrieving the contents of the WDL document. The contents of the document in each URI must be a WDL document **with the same major version and a minor version less than or equal to the minor version of the importing document**.
 
 Each imported WDL document must be assigned a unique namespace that is used to refer to its members. By default, the namespace of an imported WDL document is the filename of the imported WDL, minus the `.wdl` extension. A namespace can be assigned explicitly using the `as <identifier>` syntax. The tasks and workflows imported from a WDL file are only accessible through the assigned [namespace](#namespaces) - see [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details.
 
