@@ -7146,7 +7146,7 @@ Example output:
 
 ### Conditional Statement
 
-A conditional statement consists of one or more conditional clauses, each with an associated body. The types of conditional statement clauses are:
+A conditional statement consists of one or more conditional clauses, each having an associated body. The types of conditional statement clauses are:
 
 * A required `if` clause with an associated expression that evaluates to a
   `Boolean`. The `if` clause must be first in the conditional expression.
@@ -7156,18 +7156,18 @@ A conditional statement consists of one or more conditional clauses, each with a
 * At most, one `else` clause with no associated expression. The `else` clause
   must be last in the conditional expression.
 
-When a conditional statement is evaluated, each conditional clause is evaluated sequentially; for each `if` and `else if` clause, the expression is evaluated—if the result of the evaluation is `true`, the body of that clause is evaluated and the entire conditional statement suspends further evaluation. If none of the `if` or `else if` clauses execute and we reach the final `else` clause, then the `else` clause is executed and the conditional suspends further evaluation.
+When a conditional statement is evaluated, each conditional clause is evaluated sequentially; for each `if` and `else if` clause, the expression is evaluated—if the result of the evaluation is `true`, the body of that clause is evaluated and the entire conditional statement suspends further evaluation. If none of the `if` or `else if` clauses execute and we reach the final `else` clause, the `else` clause is executed and the conditional suspends further evaluation.
 
 The declarations promoted to the parent scope depend on a union of the scopes for each conditional statement clause using the following algorithm:
 
-* Traverse all clauses in the conditional statement, gathering the declarations in the scope into a mapping of declaration names to types. For each clause,
+* Traverse all clauses in the conditional statement, gathering the declarations in the scope into a mapping of declaration names to types. For each clause:
   * Reconcile the declaration names and their associated types in the map.
     * If the name _isn't_ already in the map, insert the name into the map and assign the type seen.
     * If the name _is_ already in the map, update the mapped type to a common type between the current declaration's type and the type stored in the map. If there is no common type, emit an error.
   * For each name in the map that was _not_ seen in the current scope, mark the type in the map as optional.
 * If there is no `else` clause, mark every type in the map as optional.
 
-The result is a set of declaration available in the parent scope that concretely represent the union of all scopes of the conditional statement. Any declaration that does not execute but is available in the union of the conditional statement clause scopes should be set to `None`. Further, when finding common types across scopes, the type declared in the earliest conditional statement clause is used as the base type. If a declaration that _would_ be promoted to a parent scope conflicts with an existing name in the parent scope, an error should be returned.
+The result is a set of declarations available in the parent scope that concretely represent the union of all scopes of the conditional statement. Any declaration that does not execute but is available in the union of the conditional statement clause scopes should be set to `None`. Further, when finding common types across scopes, the type declared in the earliest conditional statement clause is used as the base type. If a declaration that _would_ be promoted to a parent scope conflicts with an existing name in the parent scope, an error should be returned.
 
 For example,
 
@@ -7178,13 +7178,13 @@ if (...) {
   String always_available = "foo"
   String bad = "foo"
 } else if (...) {
-  # If this clause executes, the both `a` and `b` will be `None`.
+  # If this clause executes, both `a` and `b` will be `None`.
   String? b = None
   String always_available = "bar"
   Int bad = 1
 } else {
   String a = "baz"
-  String b = "baz
+  String b = "baz"
   String always_available = "baz"
   String bad = "baz"
 }
