@@ -7160,14 +7160,14 @@ When a conditional statement is evaluated, each conditional clause is evaluated 
 
 The declarations promoted to the parent scope depend on a union of the scopes for each conditional statement clause using the following algorithm:
 
-* Traverse all clauses in the conditional statement, gathering the declarations in the scope into a mapping of declaration names to types. For each clause:
+1. Create a new map of declaration names to types. Traverse all clauses in the conditional statement, gathering the declarations in the scope into a mapping of declaration names to types. For each clause:
   * Reconcile the declaration names and their associated types in the map.
     * If the name _isn't_ already in the map, insert the name into the map and assign the type seen.
     * If the name _is_ already in the map, update the mapped type to a common type between the current declaration's type and the type stored in the map. If there is no common type, emit an error.
-  * For each name in the map that was _not_ seen in the current scope, mark the type in the map as optional.
-* If there is no `else` clause, mark every type in the map as optional.
+2. Perform a second pass through each clause in the conditional statement. For each name in the map created in step 1, if that name is _not_ seen in the current clause's scope, mark that type as optional.
+3. If there is no `else` clause, mark every type in the map as optional.
 
-The result is a set of declarations available in the parent scope that concretely represent the union of all scopes of the conditional statement. Any declaration that does not execute but is available in the union of the conditional statement clause scopes should be set to `None`. Further, when finding common types across scopes, the type declared in the earliest conditional statement clause is used as the base type. If a declaration that _would_ be promoted to a parent scope conflicts with an existing name in the parent scope, an error should be returned.
+The result is a set of declarations available in the parent scope that concretely represent the union of all scopes of the conditional statement. Any declaration in the union map that does not evaluate in a conditional statement clause's body is set to `None`. Further, when finding common types across scopes, the type declared in the earliest conditional statement clause is used as the base type. If a declaration that _would_ be promoted to a parent scope conflicts with an existing name in the parent scope, an error should be returned.
 
 For example,
 
@@ -7180,16 +7180,19 @@ if (...) {
 } else if (...) {
   # If this clause executes, both `a` and `b` will be `None`.
   String? b = None
+  String c = "bar"
   String always_available = "bar"
   Int bad = 1
 } else {
   String a = "baz"
   String b = "baz"
+  String c = "baz"
   String always_available = "baz"
   String bad = "baz"
 }
 
 # Both `a` and `b` can be `None` or unevaluated, so they both promote as a `String?`.
+# `c` is missing from the first scope, so it must also be marked as `String?`.
 # `always_available` is always available, so it will be promoted as a `String`.
 # `bad` will return an error, as there is no common type between a `String` and an `Int`.
 ```
