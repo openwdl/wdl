@@ -7146,9 +7146,53 @@ Example output:
 
 ### Conditional Statement
 
-A conditional statement consists of one or more conditional clauses. Each conditional clause is comprised of an expression that evaluates to a `Boolean` and an associated clause body. When a conditional statement is executed, each of the conditional clauses is evaluated sequentially: (a) the expression for that clause is evaluated and, if the returned value is `true`, the body of that clause is executed and the entire conditional statement suspends further execution. The simplest conditional statement contains a single "if" clause, which is the `if` keyword, followed by the clause's boolean expression, and, finally, the clause body of (potentially nested) statements wrapped in curly brackets.
+A conditional statement consists of one or more conditional clauses, each with an associated body. The types of conditional statement clauses are:
 
-After evaluation of the conditional has completed, each declaration or call output in the conditional body is exposed in the enclosing context as an optional declaration. In other words, for a declaration or call output `T <name>` within a conditional body, a declaration `T? <name>` is implicitly available outside of the conditional body. If the expression evaluated to `true`, and thus the body of the conditional was evaluated, then the value of each exposed declaration is the same as its original value inside the conditional body. If the expression evaluated to `false` and thus the body of the conditional was not evaluated, then the value of each exposed declaration is `None`.
+* A required `if` clause with an associated expression that evaluates to a
+  `Boolean`. The `if` clause must be first in the conditional expression.
+* Zero or more `else if` clauses, each with an associated expression that
+  evaluates to a `Boolean`. If present, `else if` clauses must follow the `if`
+  clause and be before the optional `else` clause.
+* At most, one `else` clause with no associated expression. The `else` clause
+  must be last in the conditional expression.
+
+When a conditional statement is evaluated, each conditional clause is evaluated sequentially; for each `if` and `else if` clause, the expression is evaluated—if the result of the evaluation is `true`, the body of that clause is evaluated and the entire conditional statement suspends further evaluation. If none of the `if` or `else if` clauses execute and we reach the final `else` clause, then the `else` clause is executed and the conditional suspends further evaluation.
+
+The declarations promoted to the parent scope depend on a union of the scopes for each conditional statement clause using the following algorithm:
+
+* Traverse all clauses in the conditional statement, gathering the declarations in the scope into a mapping of declaration names to types. For each clause,
+  * Reconcile the declaration names and their associated types in the map.
+    * If the name _isn't_ already in the map, insert the name into the map and assign the type seen.
+    * If the name _is_ already in the map, update the mapped type to a common type between the current declaration's type and the type stored in the map. If there is no common type, emit an error.
+  * For each name in the map that was _not_ seen in the current scope, mark the type in the map as optional.
+* If there is no `else` clause, mark every type in the map as optional.
+
+The result is a set of declaration available in the parent scope that concretely represent the union of all scopes of the conditional statement. Any declaration that does not execute but is available in the union of the conditional statement clause scopes should be set to `None`. Further, when finding common types across scopes, the type declared in the earliest conditional statement clause is used as the base type. If a declaration that _would_ be promoted to a parent scope conflicts with an existing name in the parent scope, an error should be returned.
+
+For example,
+
+```wdl
+if (...) {
+  String a = "foo"
+  String b = "foo"
+  String always_available = "foo"
+  String bad = "foo"
+} else if (...) {
+  # If this clause executes, the both `a` and `b` will be `None`.
+  String? b = None
+  String always_available = "bar"
+  Int bad = 1
+} else {
+  String a = "baz"
+  String b = "baz
+  String always_available = "baz"
+  String bad = "baz"
+}
+
+# Both `a` and `b` can be `None` or unevaluated, so they both promote as a `String?`.
+# `always_available` is always available, so it will be promoted as a `String`.
+# `bad` will return an error, as there is no common type between a `String` and an `Int`.
+```
 
 The scoping rules for conditionals are similar to those for scatters—declarations or call outputs inside a conditional body are accessible within that conditional and any nested statements.
 
