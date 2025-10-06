@@ -6,7 +6,7 @@
 
 | Engine    | Conformance Tests |
 |-----------|------------------|
-| MiniWDL   | [![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test/shields/miniwdl_shields.json)](https://github.com/openwdl/wdl/actions/runs/18248741723) |
+| MiniWDL   | [![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test/shields/miniwdl_shields.json)](https://github.com/openwdl/wdl/actions/runs/18284025263) |
 | Sprocket  | [![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test/shields/)](https://github.com/openwdl/wdl/actions/runs/17181043703) |
 | Toil      | [![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test/shields/toil_shields.json)](https://github.com/openwdl/wdl/actions/runs/18284025246) |
 | Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test/shields/cromwell_shields.json)](https://github.com/openwdl/wdl/actions/runs/18248741713) |
