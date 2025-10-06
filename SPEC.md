@@ -4948,8 +4948,8 @@ Example input:
 ```json
 {
   "index_tar_gz": "https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz",
-  "fastq1": "ERR250968_1.filt.100.fastq.gz",
-  "fastq2":"ERR250968_2.filt.100.fastq.gz",
+  "fastq1": " https://storage.googleapis.com/genomics-public-data/gatk-examples/example1/NA20274/ERR250968_1.filt.fastq.gz",
+  "fastq2":" https://storage.googleapis.com/genomics-public-data/gatk-examples/example1/NA20274/ERR250968_2.filt.fastq.gz",
   "sample_name": "NA20274",
   "max_reads": 10
 }
@@ -5048,7 +5048,7 @@ Example input:
 
 ```json
 {
-  "bam": "NA12878.chr20.sample.bam",
+  "bam": "https://storage.googleapis.com/genomics-public-data/NA12878.chr20.sample.bam",
   "reference": {
     "id":"Homo_sapiens_assembly19_1000genomes_decoy",
     "fasta": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.fasta",
