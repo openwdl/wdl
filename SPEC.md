@@ -7158,7 +7158,14 @@ A conditional statement consists of one or more conditional clauses, each having
 
 When a conditional statement is evaluated, each conditional clause is evaluated sequentially; for each `if` and `else if` clause, the expression is evaluated—if the result of the evaluation is `true`, the body of that clause is evaluated and the entire conditional statement suspends further evaluation. If none of the `if` or `else if` clauses execute and we reach the final `else` clause, the `else` clause is executed and the conditional suspends further evaluation.
 
-The declarations promoted to the parent scope depend on a union of the scopes for each conditional statement clause using the following algorithm:
+The declarations and call outputs promoted to the parent scope depend on a union of the scopes for each conditional statement clause:
+
+- Declarations and call outputs that are made available under every condition, including the exhaustive `else` clause, are promoted to the parent scope as their declared type.
+- Declarations and call outputs that are missing from one or more clauses, are declared as optional is one more clauses, or are missing from the exhaustive `else` clause are promoted to the parent scope as optional versions of their declared type.
+
+Simply put, types that are guaranteed to be evaluated in all cases are promoted as themselves whereas types that may not be evaluated (or are declared as optional in one of the clauses) are promoted as the optional equivalent of themselves. The result is a set of declarations and call outputs available in the parent scope that concretely represent the union of all scopes of the conditional statement. Any declaration in the union map that does not evaluate in a conditional statement clause's body is set to `None`. Further, when finding common types across scopes, the type declared in the earliest conditional statement clause is used as the base type. If a declaration that _would_ be promoted to a parent scope conflicts with an existing name in the parent scope, an error should be returned.
+
+The following algorithm is _one_ correct way to implement the functionality described above. It is provided to illustrate the concept, but implementations that achieve the correct result using a different algorithm are still correct.
 
 1. Create a new map of declaration names to types. Traverse all clauses in the conditional statement, gathering the declarations in the scope into a mapping of declaration names to types. For each clause:
   * Reconcile the declaration names and their associated types in the map.
@@ -7167,9 +7174,7 @@ The declarations promoted to the parent scope depend on a union of the scopes fo
 2. Perform a second pass through each clause in the conditional statement. For each name in the map created in step 1, if that name is _not_ seen in the current clause's scope, mark that type as optional.
 3. If there is no `else` clause, mark every type in the map as optional.
 
-The result is a set of declarations available in the parent scope that concretely represent the union of all scopes of the conditional statement. Any declaration in the union map that does not evaluate in a conditional statement clause's body is set to `None`. Further, when finding common types across scopes, the type declared in the earliest conditional statement clause is used as the base type. If a declaration that _would_ be promoted to a parent scope conflicts with an existing name in the parent scope, an error should be returned.
-
-For example,
+Consider this illustrative example.
 
 ```wdl
 if (...) {
@@ -7177,25 +7182,31 @@ if (...) {
   String b = "foo"
   String always_available = "foo"
   String bad = "foo"
+  call sayHello {}
 } else if (...) {
   # If this clause executes, both `a` and `b` will be `None`.
   String? b = None
   String c = "bar"
   String always_available = "bar"
   Int bad = 1
+  call sayHello {}
 } else {
   String a = "baz"
   String b = "baz"
   String c = "baz"
   String always_available = "baz"
   String bad = "baz"
+  call sayHello {}
 }
 
 # Both `a` and `b` can be `None` or unevaluated, so they both promote as a `String?`.
 # `c` is missing from the first scope, so it must also be marked as `String?`.
 # `always_available` is always available, so it will be promoted as a `String`.
 # `bad` will return an error, as there is no common type between a `String` and an `Int`.
+# `sayHello` is run in every clause, so its outputs will be available in the parent scope as non-optionals.
 ```
+
+#### Scoping Rules
 
 The scoping rules for conditionals are similar to those for scatters—declarations or call outputs inside a conditional body are accessible within that conditional and any nested statements.
 
@@ -7271,16 +7282,13 @@ Example output:
 
 ```json
 {
+  "test_conditional.j_out": 2,
   "test_conditional.result_array": [4, 6, 8, 10],
   "test_conditional.maybe_result2": [0, 4, 6, 8, 10]
 }
 ```
 </p>
 </details>
-
-After the initial `if` clause, conditional statements may have any number of `else if` clauses and a single, final `else` clause. As described in the paragraph above, `else if` clauses are only evaluated if all prior clauses in the statement have evaluated to `false`. If present, the final `else` clause executes only if all prior clauses evaluated to `false`.
-
-When gathering results from conditionals, a common idiom is to use `select_first` to select the defined value from the `if`, `else if`, or `else` body that was evaluated.
 
 <details>
 <summary>
@@ -7310,14 +7318,14 @@ workflow if_else {
   
   if (is_morning) {
     # The body *is not* evaluated since `is_morning` is `false`.
-    call greet as morning { time = "morning" }
+    call greet { time = "morning" }
   } else {
     # The body *is* evaluated since the clause above did not trigger.
-    call greet as afternoon { time = "afternoon" }
+    call greet { time = "afternoon" }
   }
 
   output {
-    String greeting = select_first([morning.greeting, afternoon.greeting])
+    String greeting = greet.greeting
   }
 }
 ```
