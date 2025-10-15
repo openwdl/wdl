@@ -147,6 +147,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [`find`](#-find)
     - [`matches`](#-matches)
     - [`sub`](#sub)
+    - [✨ `split`](#-split)
   - [File Functions](#file-functions)
     - [`basename`](#basename)
     - [`join_paths`](#-join_paths)
