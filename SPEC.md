@@ -7798,7 +7798,7 @@ Regular expressions are written using regular WDL strings, so backslash characte
 Array[String] split(String, String)
 ```
 
-Given the two `String` parameters `input` and `delimeter`, this function splits the input string on the provided delimiter and stores the results in a `Array[String]`. `delimiter` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
+Given the two `String` parameters `input` and `delimiter`, this function splits the input string on the provided delimiter and stores the results in a `Array[String]`. `delimiter` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped (e.g., `"\\t"`).
 
 **Parameters**:
@@ -7819,9 +7819,9 @@ workflow test_split {
   String in = "Here's an example\nthat takes up multiple lines"
 
   output {
-    String split_by_word = sub(in, " ")
-    String split_by_newline = sub(in, "\\n")
-    String split_by_both = sub(in, "\s")
+    Array[String] split_by_word = split(in, " ")
+    Array[String] split_by_newline = split(in, "\\n")
+    Array[String] split_by_both = split(in, "\s")
   }
 }
 ```
