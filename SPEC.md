@@ -7791,31 +7791,36 @@ Regular expressions are written using regular WDL strings, so backslash characte
 
 🗑 The option for execution engines to allow other regular expression grammars besides POSIX ERE is deprecated.
 
+### ✨ `split`
+
+```
+Array[String] split(String, String)
+```
+
+Given the two `String` parameters `input` and `delimeter`, this function splits the input string on the provided delimiter and stores the results in a `Array[String]`. `delimiter` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
+Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped (e.g., `"\\t"`).
+
 **Parameters**:
 
 1. `String`: the input string.
-2. `String`: the pattern to search for.
-3. `String`: the replacement string.
+2. `String`: the delimiter to split on as a regular expression.
 
-**Returns**: the input string, with all occurrences of the pattern replaced by the replacement string.
+**Returns**: the parts of the input string split by the delimiter. If the input delimiter does not match anything in the input string, an array containing a single entry of the input string is returned.
 
 <details>
 <summary>
-Example: test_sub.wdl
+Example: test_split.wdl
 
 ```wdl
 version 1.3
 
-workflow test_sub {
-  String chocolike = "I like chocolate when\nit's late"
+workflow test_split {
+  String in = "Here's an example\nthat takes up multiple lines"
 
   output {
-    String chocolove = sub(chocolike, "like", "love") # I love chocolate when\nit's late
-    String chocoearly = sub(chocolike, "late", "early") # I like chocoearly when\nit's early
-    String chocolate = sub(chocolike, "late$", "early") # I like chocolate when\nit's early
-    String chocoearlylate = sub(chocolike, "[^ ]late", "early") # I like chocearly when\nit's late
-    String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate 4444\nit's late
-    String no_newline = sub(chocolike, "\\n", " ") # "I like chocolate when it's late"
+    String split_by_word = sub(in, " ")
+    String split_by_newline = sub(in, "\\n")
+    String split_by_both = sub(in, "\s")
   }
 }
 ```
@@ -7831,71 +7836,29 @@ Example output:
 
 ```json
 {
-  "test_sub.chocolove": "I love chocolate when\nit's late",
-  "test_sub.chocoearly": "I like chocoearly when\nit's early",
-  "test_sub.chocolate": "I like chocolate when\nit's early",
-  "test_sub.chocoearlylate": "I like chocearly when\nit's late",
-  "test_sub.choco4": "I 4444 chocolate 4444\nit's late",
-  "test_sub.no_newline": "I like chocolate when it's late"
-}
-```
-</p>
-</details>
-
-Any arguments are allowed so long as they can be coerced to `String`s. For example, this can be useful to swap the extension of a filename:
-
-<details>
-<summary>
-Example: change_extension_task.wdl
-
-```wdl
-version 1.3
-
-task change_extension {
-  input {
-    String prefix
-  }
-
-  command <<<
-    printf "data" > ~{prefix}.data
-    printf "index" > ~{prefix}.index
-  >>>
-
-  output {
-    File data_file = "~{prefix}.data"
-    String data = read_string(data_file)
-    String index = read_string(sub(data_file, "\\.data$", ".index"))
-  }
-
-  requirements {
-    container: "ubuntu:latest"
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{
-  "change_extension.prefix": "foo"
-}
-```
-
-Example output:
-
-```json
-{
-  "change_extension.data": "data",
-  "change_extension.index": "index"
-}
-```
-
-Test config:
-
-```json
-{
-  "exclude_output": ["data_file"]
+  "test_split.split_by_word": [
+    "Here's",
+    "an",
+    "example\nthat",
+    "takes",
+    "up",
+    "multiple",
+    "lines"
+  ],
+  "test_split.split_by_newline": [
+    "Here's an example",
+    "that takes up multiple lines"
+  ],
+  "test_split.split_by_both": [
+    "Here's",
+    "an",
+    "example",
+    "that",
+    "takes",
+    "up",
+    "multiple",
+    "lines"
+  ],
 }
 ```
 </p>
