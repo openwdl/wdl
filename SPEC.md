@@ -5567,9 +5567,9 @@ Provides output-specific hints. Each key must refer to a parameter defined in th
 * Accepted types: `Int`
 * Default value: `0`
 
-A hint to the execution engine that the task _may_ try the task using a preemptible instance the specified number of times. Engines that are not configured to use or do not support preemptible instances may ignore this parameter completely.
+A hint to the execution engine that a task _may_ be tried using a preemptible instance the specified number of times. Engines that are not configured to use or do not support preemptible instances may ignore this parameter and the implied number of retries completely.
 
-Engines should only count failed tasks against the `preemptible` count if the reason for the failure was preemption. Other failures, such as unexpected non-zero exit codes, should be counted against the [`max_retries`](#max_retries) requirement.
+Engines should only count failed tasks against the `preemptible` count if the reason for the failure was preemption. Other failures, such as unexpected non-zero exit codes, should be counted against the [`max_retries`](#max_retries) requirement instead.
 
 A value of `0` means the task should not be tried with a preemptible instance.
 
