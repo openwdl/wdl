@@ -112,6 +112,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [`localization_optional`](#localization_optional)
         - [`inputs`](#inputs)
         - [`outputs`](#outputs)
+        - [`preemptible`](#-preemptible)
       - [Compute Environments](#compute-environments)
       - [Conventions and Best Practices](#conventions-and-best-practices)
     - [🗑 Runtime Section](#-runtime-section)
@@ -5562,7 +5563,7 @@ Reserved input-specific attributes:
 
 Provides output-specific hints. Each key must refer to a parameter defined in the task's [`output`](#task-outputs) section. A key may also use dotted notation to refer to a specific member of a struct output.
 
-##### `preemptible`
+##### ✨ `preemptible`
 
 * Accepted types: `Int`
 * Default value: `0`
