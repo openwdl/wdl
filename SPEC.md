@@ -5562,6 +5562,25 @@ Reserved input-specific attributes:
 
 Provides output-specific hints. Each key must refer to a parameter defined in the task's [`output`](#task-outputs) section. A key may also use dotted notation to refer to a specific member of a struct output.
 
+##### `preemptible`
+
+* Accepted types: `Int`
+* Default value: `0`
+
+A hint to the execution engine that the task _may_ try the task using a preemptible instance the specified number of times. Engines that are not configured to use or do not support preemptible instances may ignore this parameter completely.
+
+Engines should only count failed tasks against the `preemptible` count if the reason for the failure was preemption. Other failures, such as unexpected non-zero exit codes, should be counted against the [`max_retries`](#max_retries) requirement.
+
+A value of `0` means the task should not be tried with a preemptible instance.
+
+```wdl
+task preemptible_example {
+  hints {
+    preemptible: 3
+  }
+}
+```
+
 #### Compute Environments
 
 The `hints` section should be used to provide hints that are specific to different compute environments such as HPC systems or cloud platforms. Attributes for a compute environment should be specified in a `hints` value, in which any of the [reserved hints](#reserved-task-hints) are allowed to override the values specified at the task level (if any), and other attributes are platform-specific.
