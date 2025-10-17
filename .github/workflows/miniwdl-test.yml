@@ -58,7 +58,7 @@ jobs:
           EOF
 
           # Copy list of failures to artifacts
-          cp miniwdl_test/failed_tests.txt miniwdl_tests/artifacts/failed_tests.txt
+          cp miniwdl_test/failed_tests.txt miniwdl_tests/artifacts/failed_tests.txt || touch miniwdl_tests/artifacts/failed_tests.txt
 
           # Generate shields.io badge JSON
           color="green"
