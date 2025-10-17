@@ -7802,11 +7802,11 @@ Example: test_matches_task.wdl
 version 1.2
 workflow test_matches {
   input {
-    File fastq
+    File json
   }
   output {
-    Boolean is_compressed = matches(basename(fastq), "\\.(gz|zip|zstd)")
-    Boolean is_read1 = matches(basename(fastq), "_R1")
+    Boolean is_compressed = matches(basename(json), "\\.(gz|zip|zstd)")
+    Boolean is_json = matches(basename(json), "_R1")
   }
 }
 ```
@@ -7816,7 +7816,7 @@ Example input:
 
 ```json
 {
-  "test_matches.fastq": "sample1234_R1.fastq"
+  "test_matches.json": "person.json"
 }
 ```
 
@@ -7825,7 +7825,7 @@ Example output:
 ```json
 {
   "test_matches.is_compressed": false,
-  "test_matches.is_read1": true
+  "test_matches.is_read1": false
 }
 ```
 </p>
