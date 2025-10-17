@@ -5278,7 +5278,7 @@ task single_return_code {
   >>>
 
   requirements {
-    returnCodes: 1
+    return_codes: 1
   }
 }
 ```
@@ -5300,7 +5300,7 @@ Test config:
 
 ```json
 {
-  "returnCodes": 0
+  "return_codes": 0
 }
 ```
 </p>
@@ -5319,7 +5319,7 @@ task multi_return_code {
   >>>
 
   requirements {
-    returnCodes: [1, 2, 5, 10]
+    return_codes: [1, 2, 5, 10]
   }
 }
 ```
@@ -5342,7 +5342,7 @@ Test config:
 ```json
 {
   "fail": true,
-  "returnCodes": 42
+  "return_codes": 42
 }
 ```
 </p>
@@ -5361,7 +5361,7 @@ task all_return_codes {
   >>>
 
   requirements {
-    returnCodes: "*"
+    return_codes: "*"
   }
 }
 ```
@@ -5383,7 +5383,7 @@ Test config:
 
 ```json
 {
-  "returnCodes": 0
+  "return_codes": 0
 }
 ```
 </p>
@@ -5840,7 +5840,7 @@ task test_runtime_info {
   requirements {
     container: ["ubuntu:latest", "quay.io/ubuntu:focal"]
     memory: "2 GiB"
-    returnCodes: [0, 1]
+    return_codes: [0, 1]
   }
 }
 ```
