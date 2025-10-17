@@ -81,7 +81,7 @@ jobs:
           EOF
 
           # Copy list of failures to artifacts
-          cp cromwell_results/failed_tests.txt cromwell_tests/artifacts/failed_tests.txt
+          cp cromwell_results/failed_tests.txt cromwell_tests/artifacts/failed_tests.txt || touch cromwell_tests/artifacts/failed_tests.txt
 
           # Generate shields.io badge JSON
           color="green"

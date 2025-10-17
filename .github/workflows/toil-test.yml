@@ -58,7 +58,7 @@ jobs:
           EOF
 
           # Copy list of failures to artifacts
-          cp toil_test/failed_tests.txt toil_tests/artifacts/failed_tests.txt || true
+          cp toil_test/failed_tests.txt toil_tests/artifacts/failed_tests.txt || touch toil_tests/artifacts/failed_tests.txt
 
           # Generate shields.io badge JSON
           color="green"
