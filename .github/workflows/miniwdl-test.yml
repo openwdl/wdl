@@ -62,13 +62,14 @@ jobs:
 
           # Generate shields.io badge JSON
           color="green"
-          if [ "$passed" -lt "$total" ]; then color="yellow"; fi
+          total_run=$((total - ignored))
+          if [ "$passed" -lt "$total_run" ]; then color="yellow"; fi
           if [ "$passed" -eq 0 ]; then color="red"; fi
           cat <<EOF > miniwdl_tests/artifacts/shields.json
           {
             "schemaVersion": 1,
             "label": "MiniWDL WDL 1.1",
-            "message": "$passed/$total passed",
+            "message": "$passed/$total_run passed",
             "color": "$color"
           }
           EOF

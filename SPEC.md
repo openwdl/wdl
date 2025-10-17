@@ -4968,7 +4968,7 @@ Test config:
 ```json
 {
   "dependencies": ["cpu", "memory", "disks"],
-  "priority": "optional"
+  "priority": "ignore"
 }
 ```
 </p>
@@ -5049,13 +5049,14 @@ Example input:
 
 ```json
 {
-  "bam": "https://storage.googleapis.com/genomics-public-data/NA12878.chr20.sample.bam",
+  "bam": "https://storage.googleapis.com/genomics-public-data/1000-genomes/bam/HG00107.mapped.ILLUMINA.bwa.GBR.low_coverage.20130415.bam",
   "reference": {
     "id":"Homo_sapiens_assembly19_1000genomes_decoy",
     "fasta": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.fasta",
     "index": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.fasta.fai",
     "dict": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.dict"
-    }
+    },
+    "interval": "1:12505000-12506000"
   }
 ```
 
@@ -5063,7 +5064,7 @@ Example output:
 
 ```json
 {
-  "gatk_haplotype_caller.vcf": "NA12878.chr20.sample.vcf"
+  "gatk_haplotype_caller.vcf": "HG00107.mapped.ILLUMINA.bwa.GBR.low_coverage.20130415.vcf"
 }
 ```
 
@@ -5072,7 +5073,7 @@ Test config:
 ```json
 {
   "dependencies": ["memory", "disks"],
-  "priority": "optional"
+  "priority": "ignore"
 }
 ```
 </p>
