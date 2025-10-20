@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.3.0
 ---------------------------
 
++ Added `max_retries` to the `task` variable ([#733](https://github.com/openwdl/wdl/pull/733)).
+
 + Documents may now load any document with the same major version and a minor version that is less than or equal to that document's version ([#698](https://github.com/openwdl/wdl/pull/698)).
 
 version 1.2.0
