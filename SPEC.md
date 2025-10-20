@@ -5747,18 +5747,19 @@ The `requirements` and `hints` sections comprise resource requests to the execut
 
 This information is provided by the `task` variable, which is implicitly defined by the execution engine. The type of `task` is a [scoped type](#hidden-and-scoped-types) with the following members:
 
-* `name`: The task name.
+* `name`: A `String` with the task name.
 * `id`: A `String` with the unique ID of the task. The execution engine may choose the format for this ID, but it is suggested to include at least the following information:
     * The task name
     * The task alias, if it differs from the task name
     * The index of the task instance, if it is within a scatter statement
-* `container`: The URI `String` of the container in which the task is executing, or `None` if the task is being executed in the host environment. 
-* `cpu`: The allocated number of cpus as a `Float`. Must be greater than `0`.
-* `memory`: The allocated memory in bytes as an `Int`. Must be greater than `0`.
+* `container`: A `String?` with the URI of the container in which the task is executing as a `String`, or `None` if the task is being executed in the host environment.
+* `cpu`: A `Float` with the allocated number of cpus. Must be greater than `0`.
+* `memory`: An `Int` with the allocated memory in bytes. Must be greater than `0`.
 * `gpu`: An `Array[String]` with one specification per allocated GPU. The specification is execution engine-specific. If no GPUs were allocated, then the value must be an empty array.
 * `fpga`: An `Array[String]` with one specification per allocated FPGA. The specification is execution engine-specific. If no FPGAs were allocated, then the value must be an empty array.
 * `disks`: A `Map[String, Int]` with one entry for each disk mount point. The key is the mount point and the value is the initial amount of disk space allocated, in bytes. The execution engine must, at a minimum, provide one entry for each disk mount point requested, but may provide more. The amount of disk space available for a given mount point may increase during the lifetime of the task (e.g., autoscaling volumes provided by some cloud services).
-* `attempt`: The current task attempt. The value must be `0` the first time the task is executed, and incremented by `1` each time the task is retried (if any).
+* `max_retries` ✨: An `Int` with the maximum number of retry attempts. This is the value from the `requirements.max_retries` attribute.
+* `attempt`: An `Int` with the current task attempt. The value must be `0` the first time the task is executed, and incremented by `1` each time the task is retried (if any).
 * `end_time`: An `Int?` whose value is the time by which the task must be completed, as a [Unix time stamp](https://en.wikipedia.org/wiki/Unix_time). A value of `0` means that the execution engine does not impose a time limit. A value of `None` means that the execution engine cannot determine whether the runtime of the task is limited. A positive value is a guarantee that the task will be preempted at the specified time, but is *not* a guarantee that the task won't be preempted earlier.
 * `return_code`: An `Int?` whose value is initially `None` and is set to the value of the `command`'s return code. The value is only guaranteed to be defined in the `output` section.
 * `meta`: An `Object` containing a copy of the task's `meta` section, or the empty `Object` if there is no `meta` section or if it is empty.
