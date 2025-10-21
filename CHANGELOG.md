@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version 1.3.0
 ---------------------------
 
++ Clarified that relative paths in `File` and `Directory` declarations are resolved relative to the WDL document's parent directory outside the `output` section, and relative to the task's execution directory inside the `output` section. Also clarified that optional files evaluate to `None` in both contexts if the path does not exist.
+  ([#735](https://github.com/openwdl/wdl/pull/735))
+
 + Documents may now load any document with the same major version and a minor version that is less than or equal to that document's version ([#698](https://github.com/openwdl/wdl/pull/698)).
 
 version 1.2.0
