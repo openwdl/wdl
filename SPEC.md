@@ -931,13 +931,13 @@ Test config:
 }
 ```
 
-In this example,
+</p>
+</details>
 
+In this example,
 - The `input_file` input uses a relative path that refers to a file co-located with the WDL document on the host filesystem.
 - The `result` output uses a relative path that refers to a file created by the command in the execution directory.
 
-</p>
-</details>
 
 An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path.
 
