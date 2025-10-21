@@ -865,6 +865,12 @@ task literals_paths {
     # does not exist, then `f2` is set to `None`.
     File? f2 = "/foo/bar.txt"
   }
+
+  # If baz.txt does not exist, this is an error.
+  File f3 = "baz.txt"
+
+  # If qux.txt does not exist, this is set to `None`.
+  File? f4 = "qux.txt"
 }
 ```
 
@@ -872,6 +878,8 @@ The interpretation of relative paths (paths that do not start with `/`) depends 
 
 * *Outside the `output` section (e.g., in `input` or private declarations)*, relative paths are interpreted relative to the parent directory of the WDL document itself, similar to how [import](#import-statements) paths are resolved. This allows a WDL document to reference data files that are co-located with it on the host filesystem.
 * *Inside the `output` section*, relative paths are interpreted relative to the task's execution directory. This is where task commands create their output files. See [Task Outputs](#task-outputs) for details.
+
+In both contexts, if an optional `File?` or `Directory?` declaration refers to a path that does not exist, the value is set to `None`.
 
 Absolute paths (paths starting with `/`) refer to specific locations on the host filesystem when used outside the `output` section. Within the `output` section, absolute paths may be interpreted in a container-dependent way—see [Task Outputs](#task-outputs) for details.
 
