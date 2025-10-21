@@ -876,7 +876,7 @@ task literals_paths {
 
 The interpretation of relative paths (paths that do not start with `/`) depends on the context in which they appear:
 
-* *Outside the `output` section (e.g., in `input` or private declarations)*, relative paths are interpreted relative to the parent directory of the WDL document itself, similar to how [import](#import-statements) paths are resolved. This allows a WDL document to reference data files that are co-located with it on the host filesystem.
+* *Outside the `output` section (e.g., in `input` or private declarations)*, relative paths are interpreted relative to the parent directory of the WDL document itself on the host filesystem, similar to how [import](#import-statements) paths are resolved.
 * *Inside the `output` section*, relative paths are interpreted relative to the task's execution directory. This is where task commands create their output files. See [Task Outputs](#task-outputs) for details.
 
 In both contexts, if an optional `File?` or `Directory?` declaration refers to a path that does not exist, the value is set to `None`.
