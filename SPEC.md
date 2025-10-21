@@ -4654,7 +4654,7 @@ Test config:
 </p>
 </details>
 
-Relative paths are interpreted relative to the execution directory, whereas absolute paths are interpreted in a container-dependent way. Absolute paths that reference locations outside the task's execution directory (e.g., system files like `/etc/hosts`) may not be supported by all execution engines, particularly in containerized or cloud environments where access to the host filesystem is restricted.
+Relative paths are interpreted relative to the execution directory, whereas absolute paths are interpreted in a container-dependent way. Absolute paths that reference locations outside the task's execution directory may not be supported by all execution engines, particularly in containerized or cloud environments where access to the host filesystem is restricted.
 
 <details>
 <summary>
