@@ -43,6 +43,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [`Union` (Hidden Type)](#union-hidden-type)
         - [`hints`, `input`, and `output` (Scoped Types)](#hints-input-and-output-scoped-types)
         - [`task` (Hidden Scoped Type)](#task-hidden-scoped-type)
+        - ✨ [`task.previous` (Hidden Scoped Type)](#taskprevious-hidden-scoped-type)
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
@@ -1509,7 +1510,7 @@ The [`hints`](#-hints-section) section has [three scoped types](#hints-scoped-ty
 
 The [`task` type](#runtime-access-to-requirements-hints-and-metadata) is a hidden type that is available in both pre-evaluation contexts (`requirements`, `hints`, and the deprecated `runtime` sections) with a limited set of members, and in post-evaluation contexts (`command` and `output` sections) with the full set of members.
 
-##### `task.previous` (Hidden Scoped Type)
+##### ✨ `task.previous` (Hidden Scoped Type)
 
 The [`task.previous` type](#runtime-access-to-requirements-hints-and-metadata) is a hidden type that contains the previously computed requirements from the last task attempt. It is scoped to within the `task` variable and contains the following optional members:
 
