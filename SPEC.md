@@ -5278,7 +5278,7 @@ task single_return_code {
   >>>
 
   requirements {
-    returnCodes: 1
+    return_codes: 1
   }
 }
 ```
@@ -5300,7 +5300,7 @@ Test config:
 
 ```json
 {
-  "returnCodes": 0
+  "return_codes": 0
 }
 ```
 </p>
@@ -5319,7 +5319,7 @@ task multi_return_code {
   >>>
 
   requirements {
-    returnCodes: [1, 2, 5, 10]
+    return_codes: [1, 2, 5, 10]
   }
 }
 ```
@@ -5342,7 +5342,7 @@ Test config:
 ```json
 {
   "fail": true,
-  "returnCodes": 42
+  "return_codes": 42
 }
 ```
 </p>
@@ -5361,7 +5361,7 @@ task all_return_codes {
   >>>
 
   requirements {
-    returnCodes: "*"
+    return_codes: "*"
   }
 }
 ```
@@ -5383,7 +5383,7 @@ Test config:
 
 ```json
 {
-  "returnCodes": 0
+  "return_codes": 0
 }
 ```
 </p>
@@ -5840,7 +5840,7 @@ task test_runtime_info {
   requirements {
     container: ["ubuntu:latest", "quay.io/ubuntu:focal"]
     memory: "2 GiB"
-    returnCodes: [0, 1]
+    return_codes: [0, 1]
   }
 }
 ```
@@ -5960,7 +5960,7 @@ Test config:
 ```json
 {
   "dependencies": ["cpu", "memory", "disks"],
-  "priority": "optional"
+  "priority": "ignore"
 
 }
 ```
@@ -6042,13 +6042,14 @@ Example input:
 
 ```json
 {
-  "bam": "https://storage.googleapis.com/genomics-public-data/NA12878.chr20.sample.bam",
+  "bam": "https://storage.googleapis.com/genomics-public-data/1000-genomes/bam/HG00107.mapped.ILLUMINA.bwa.GBR.low_coverage.20130415.bam",
     "reference": {
     "id":"Homo_sapiens_assembly19_1000genomes_decoy",
     "fasta": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.fasta",
     "index": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.fasta.fai",
     "dict": "https://storage.googleapis.com/genomics-public-data/references/Homo_sapiens_assembly19_1000genomes_decoy/Homo_sapiens_assembly19_1000genomes_decoy.dict"
-  }
+  },
+  "interval": "1:12505000-12506000"
 }
 ```
 
@@ -6056,7 +6057,7 @@ Example output:
 
 ```json
 {
-  "gatk_haplotype_caller.vcf": "NA12878.chr20.sample.vcf"
+  "gatk_haplotype_caller.vcf": "HG00107.mapped.ILLUMINA.bwa.GBR.low_coverage.20130415.vcf"
 }
 ```
 
@@ -6064,7 +6065,8 @@ Test config:
 
 ```json
 {
-  "dependencies": ["memory", "disks"]
+  "dependencies": ["memory", "disks"],
+  "priority": "ignore"
 }
 ```
 </p>
@@ -7800,11 +7802,11 @@ Example: test_matches_task.wdl
 version 1.2
 workflow test_matches {
   input {
-    File fastq
+    File json
   }
   output {
-    Boolean is_compressed = matches(basename(fastq), "\\.(gz|zip|zstd)")
-    Boolean is_read1 = matches(basename(fastq), "_R1")
+    Boolean is_compressed = matches(basename(json), "\\.(gz|zip|zstd)")
+    Boolean is_json = matches(basename(json), "_R1")
   }
 }
 ```
@@ -7814,7 +7816,7 @@ Example input:
 
 ```json
 {
-  "test_matches.fastq": "sample1234_R1.fastq"
+  "test_matches.json": "person.json"
 }
 ```
 
@@ -7823,7 +7825,7 @@ Example output:
 ```json
 {
   "test_matches.is_compressed": false,
-  "test_matches.is_read1": true
+  "test_matches.is_read1": false
 }
 ```
 </p>

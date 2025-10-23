@@ -59,17 +59,18 @@ jobs:
           EOF
 
           # Copy list of failures to artifacts
-          cp miniwdl_test/failed_tests.txt miniwdl_tests/artifacts/failed_tests.txt
+          cp miniwdl_test/failed_tests.txt miniwdl_tests/artifacts/failed_tests.txt || touch miniwdl_tests/artifacts/failed_tests.txt
 
           # Generate shields.io badge JSON
           color="green"
-          if [ "$passed" -lt "$total" ]; then color="yellow"; fi
+          total_run=$((total - ignored))
+          if [ "$passed" -lt "$total_run" ]; then color="yellow"; fi
           if [ "$passed" -eq 0 ]; then color="red"; fi
           cat <<EOF > miniwdl_tests/artifacts/shields.json
           {
             "schemaVersion": 1,
             "label": "MiniWDL WDL 1.2",
-            "message": "$passed/$total passed",
+            "message": "$passed/$total_run passed",
             "color": "$color"
           }
           EOF

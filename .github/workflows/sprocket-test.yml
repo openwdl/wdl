@@ -68,17 +68,18 @@ jobs:
           EOF
 
           # Copy list of failures to artifacts
-          cp sprocket_test/failed_tests.txt sprocket_tests/artifacts/failed_tests.txt
+          cp sprocket_test/failed_tests.txt sprocket_tests/artifacts/failed_tests.txt || touch sprocket_tests/artifacts/failed_tests.txt
 
           # Generate shields.io badge JSON
           color="green"
-          if [ "$passed" -lt "$total" ]; then color="yellow"; fi
+          total_run=$((total - ignored))
+          if [ "$passed" -lt "$total_run" ]; then color="yellow"; fi
           if [ "$passed" -eq 0 ]; then color="red"; fi
           cat <<EOF > sprocket_tests/artifacts/shields.json
           {
             "schemaVersion": 1,
             "label": "Sprocket WDL 1.2",
-            "message": "$passed/$total passed",
+            "message": "$passed/$total_run passed",
             "color": "$color"
           }
           EOF
