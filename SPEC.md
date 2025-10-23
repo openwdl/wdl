@@ -7762,8 +7762,8 @@ Example output:
 
 ```json
 {
-  "find_string.match1": "ello",
-  "find_string.match2": null
+  "test_find.match1": "ello",
+  "test_find.match2": null
 }
 ```
 </p>
