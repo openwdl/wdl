@@ -891,10 +891,8 @@ Example: relative_paths_context.wdl
 version 1.3
 
 task relative_paths_context {
-  input {
-    # This relative path is resolved relative to the WDL document's parent directory.
-    File input_file = "hello.txt"
-  }
+  # This relative path is resolved relative to the WDL document's parent directory.
+  File input_file = "hello.txt"
 
   command <<<
     cat ~{input_file} > output.txt
