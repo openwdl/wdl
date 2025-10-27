@@ -3515,13 +3515,16 @@ task compare_enum_types {
   input {
     Pet? pet
   }
+
   Pet my_pet = select_first([pet, Pet.Mouse])
   Array[String] all_pet_names = names(Pet)
+
   command <<<
-  echo "There are ~{length(all_pet_names)} kinds of pet: ~{sep(", ", all_pet_names)}"
-  echo "I have a pet ~{name(my_pet)}"
-  echo "My pet is a ~{my_pet}"
+    echo "There are ~{length(all_pet_names)} kinds of pet: ~{sep(", ", all_pet_names)}"
+    echo "I have a pet ~{name(my_pet)}"
+    echo "My pet is a ~{my_pet}"
   >>>
+
   output {
     Boolean different_types = Pet.Mouse != ComputerDevice.Mouse
   }
