@@ -3603,11 +3603,13 @@ task run_tool {
 ```
 
 When `verbosity` is `VerbosityFlag.Info`, the command becomes:
+
 ```
 my_tool -v input.txt
 ```
 
 To access the variant name in a command section, use the [`name()`](#name) function:
+
 
 ```wdl
 command <<<
@@ -3617,6 +3619,7 @@ echo "Flag value: ~{verbosity}"
 ```
 
 This would output:
+
 ```
 Using verbosity level: Info
 Flag value: -v
