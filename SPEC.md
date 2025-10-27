@@ -11602,9 +11602,9 @@ Example output:
 {
   "test_enum_variants.all_variants": ["Red", "Green", "Blue"],
   "test_enum_variants.all_results": [
-    "Processing color RED with hex value #FF0000",
-    "Processing color GREEN with hex value #00FF00",
-    "Processing color BLUE with hex value #0000FF"
+    "Processing color Red with hex value #FF0000",
+    "Processing color Green with hex value #00FF00",
+    "Processing color Blue with hex value #0000FF"
   ],
   "test_enum_variants.hex_values": ["#FF0000", "#00FF00", "#0000FF"],
   "test_enum_variants.is_red_first": true
