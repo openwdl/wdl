@@ -3516,11 +3516,7 @@ task compare_enum_types {
     Pet? pet
   }
   Pet my_pet = select_first([pet, Pet.Mouse])
-  Array[String] all_pet_names = [
-    name(Pet.Cat),
-    name(Pet.Mouse),
-    name(Pet.Bird)
-  ]
+  Array[String] all_pet_names = names(Pet)
   command <<<
   echo "There are ~{length(all_pet_names)} kinds of pet: ~{sep(", ", all_pet_names)}"
   echo "I have a pet ~{name(my_pet)}"
