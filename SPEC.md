@@ -76,6 +76,9 @@ Revisions to this specification are made periodically in order to correct errors
   - [Struct Definition](#struct-definition)
   - [Enum Definition](#enum-definition)
     - [Enum Usage](#enum-usage)
+    - [Enum Serialization and Deserialization](#enum-serialization-and-deserialization)
+      - [JSON Input and Output](#json-input-and-output)
+      - [Command Section Serialization](#command-section-serialization)
   - [Import Statements](#import-statements)
     - [Import URIs](#import-uris)
     - [Importing and Aliasing Structs](#importing-and-aliasing-structs)
@@ -199,6 +202,10 @@ Revisions to this specification are made periodically in order to correct errors
     - [`contains_key`](#-contains_key)
     - [`values`](#-values)
     - [`collect_by_key`](#collect_by_key)
+  - ✨ [Enum Functions](#enum-functions)
+    - ✨ [`name`](#name)
+    - ✨ [`names`](#names)
+    - ✨ [`variants`](#variants)
   - [Other Functions](#other-functions)
     - [`defined`](#defined)
     - [`length`](#length)
@@ -1530,10 +1537,12 @@ workflow process_files {
 
 As an example, consider a workflow that processes different types of NGS files and has a `file_kind` input parameter that is expected to be either "FASTQ" or "BAM". Using `String` as the type of `file_kind` is not ideal - if the user specifies an invalid value, the error will not be caught until runtime, perhaps after the workflow has already run for several hours. Alternatively, using an `enum` type for `file_kind` restricts the allowed values such that the execution engine can validate the input prior to executing the workflow.
 
-Enums are valued, meaning that each variant within an enum has an associated value. To assign a type to the values therein, enums can either be _explicitly_ or _implicitly_ typed.
+Enums are valued, meaning that each variant within an enum has an associated value. Enum values can be of any WDL type, including primitive types (`String`, `Int`, `Float`, `Boolean`), compound types (`Array`, `Map`, `Pair`), and user-defined types (`Struct`). To assign a type to the values therein, enums can either be _explicitly_ or _implicitly_ typed.
 
-* Explicitly typed enums take an explicit type assigment within square brackets after the enum's identifier that declares the type of the value. Where possible, explicitly typed enums should resolve ambiguities via coercion.
-* Implicitly typed enums are enums where the values can be unambiguously mapped to a single [primitive type](#primitive-types). Enums that are implicitly typed and for which no values are assigned are assumed to be `String` valued with values matching the variant names. All values within an enum must have the same type or an error is thrown.
+* Explicitly typed enums take an explicit type assignment within square brackets after the enum's identifier that declares the type of the value. Explicitly typed enums may include values that coerce to the declared type.
+* Implicitly typed enums are enums where the values can be unambiguously resolved to a single type following WDL's type coercion rules. If the values do not coerce to a single common type, an error is thrown. Enums that are implicitly typed and for which no values are assigned are assumed to be `String` valued with values matching the variant names.
+
+Enum values must be literal expressions only. This includes string literals (which may contain escape sequences like `"\t"`), numeric literals, collection literals (`Array`, `Map`, `Pair`), and struct literals. String interpolation, variable references, and computed expressions are not allowed in enum values, as enums are global declarations that must be evaluable at parse time.
 
 ```wdl
 # An explicitly typed enum that is `String`-valued.
@@ -1551,11 +1560,18 @@ enum FavoriteFloat[Float] {
   FourPointOh = 4.0
 }
 
-# ERROR: because the enum is implicitly typed, the type cannot be unambiguously
-# resolved, which results in an error.
+# An implicitly typed enum where the inner type is unambiguously resolved to
+# `Float`. Following WDL's type coercion rules, `Int` values coerce to `Float`.
 enum FavoriteNumber {
   ThreePointOh = 3,
   FourPointOh = 4.0
+}
+
+# ERROR: the inner type of this enum cannot be unambiguously resolved, as
+# `Int` and `String` do not coerce to a common type.
+enum InvalidEnum {
+  Number = 42,
+  Text = "hello"
 }
 
 # An implicitly typed enum that is `String`-valued.
@@ -1569,6 +1585,20 @@ enum Whitespace {
 enum FileKind {
   FASTQ,
   BAM
+}
+
+# An explicitly typed enum with `Array[String]` values. This allows for
+# defining sets of related string constants as enum variants.
+enum Contigs[Array[String]] {
+  Canonical = ["chr1", "chr2", "chr3", "chr4", "chr5"],
+  All = ["chr1", "chr2", "chr3", "chr4", "chr5", "chrM", "chrX", "chrY"]
+}
+
+# An implicitly typed enum with `Map[String, Int]` values.
+enum DefaultConfig {
+  Fast = { "threads": 4, "memory_gb": 8 },
+  Standard = { "threads": 8, "memory_gb": 16 },
+  HighMem = { "threads": 16, "memory_gb": 64 }
 }
 ```
 
@@ -3447,84 +3477,150 @@ An enum definition is a top-level WDL element, meaning it is defined at the same
 
 ```wdl
 enum Color {
-  RED,
-  BLUE,
-  GREEN
+  Red,
+  Blue,
+  Green
 }
 ```
 
-An enum can be thought of as two different constructs sharing the same name:
+An enum can be thought of as a closed type with a fixed set of instances. The `enum` keyword creates both a type (that can be used in declarations) and a global namespace containing the enum's variants. For example, `Color.Red` refers to a specific instance of the `Color` enum type.
 
-* A `Struct` with one `String`-type member, `name`, whose value is the "stringified" version of the variant's identifier. For example, the name of `Color.RED` is `"RED"`. Unlike structs, it is not possible to create new instances of an `enum` outside of the enum's definition.
-* A global variable of type `Object` whose members have names equal to the enum variant names, and whose values are instances of the `enum`.
-
-For example, the above definition of `Color` can be thought of as shorthand for:
-
-```wdl
-version 1.2
-struct Color {
-  String name
-}
-Object Color = object {
-  RED: Color { name: "RED" },
-  BLUE: Color { name: "BLUE" },
-  GREEN: Color { name: "GREEN" }
-}
-workflow test {
-  input {
-    # The first usage of `Color` on the left is a reference to the struct type.
-    # The second usage of `Color` on the right is a reference to the object declaration.
-    Color color = Color.RED
-  }
-  # Error! Creating additional instances of `Color` is not allowed.
-  Color pink = Color { name: "PINK" }
-}
-```
-
-Keep in mind that the above example is illustrative - it is not actually possible to have a top-level declaration, nor is it possible to create a struct that is not able to be instantiated. The example just shows the closest semantic equivalent of Enums using existing WDL syntax.
-
+Unlike structs, it is not possible to create new instances of an `enum` outside of the enum's definition. An enum value can only be one of the variants defined in the enum's declaration.
 
 ### Enum Usage
 
-An `enum`'s variants are [accessed](#member-access) using a `.` to separate the variant name from the `enum`'s identifier. Each variant has single member, `String name`, that can be accessed through a `.` separator.
+An `enum`'s variants are [accessed](#member-access) using a `.` to separate the variant name from the `enum`'s identifier.
 
 A declaration with an `enum` type can only be initialized by referencing a variant directly or by assigning it to the value of another declaration of the same `enum` type.
 
 Two enum values can be tested for equality (i.e., using `==` or `!=`). To be equal, two enum values must be the same variant of the same `enum` type. Enum variants are not ordered, so they cannot be compared (i.e., using `>`, `>=`, `<`, `<=`).
+
+When an enum value is serialized (for example, in a command section using string interpolation), it is serialized to its inner value. To access the stringified variant name, use the [`name()`](#name) standard library function.
 
 An `enum` cannot be coerced to or from any other type. However, an enum value can be [serialized to/deserialized from a `String`]() or to/from [JSON]().
 
 ```wdl
 version 1.2
 enum Pet {
-  CAT,
-  DOG,
-  RAT
+  Cat,
+  Mouse,
+  Bird
 }
-enum HotFood {
-  DOG,
-  POTATO,
-  TAMALE
+enum ComputerDevice {
+  Mouse,
+  Keyboard,
+  Monitor
 }
-task pet_pet {
+task compare_enum_types {
   input {
     Pet? pet
   }
-  Pet my_pet = select_first([pet, Pet.DOG])
+  Pet my_pet = select_first([pet, Pet.Mouse])
   Array[String] all_pet_names = [
-    Pet.CAT.name,
-    Pet.DOG.name,
-    Pet.RAT.name
+    name(Pet.Cat),
+    name(Pet.Mouse),
+    name(Pet.Bird)
   ]
   command <<<
   echo "There are ~{length(all_pet_names)} kinds of pet: ~{sep(", ", all_pet_names)}"
-  echo "I have a pet ~{my_pet.name}"
-  echo "I am petting my ~{my_pet}"
+  echo "I have a pet ~{name(my_pet)}"
+  echo "My pet is a ~{my_pet}"
   >>>
   output {
-    Boolean is_false = Pet.DOG == HotFood.DOG
+    Boolean different_types = Pet.Mouse != ComputerDevice.Mouse
   }
 }
+```
+
+### Enum Serialization and Deserialization
+
+Enum values are serialized and deserialized differently depending on the context.
+
+#### JSON Input and Output
+
+When an enum value appears in JSON input or output files, it is represented by its **variant name** (not its inner value). The variant name is specified as a string without the enum type prefix.
+
+For example, given this enum:
+
+```wdl
+enum Color {
+  Red = "#FF0000",
+  Green = "#00FF00",
+  Blue = "#0000FF"
+}
+
+workflow example {
+  input {
+    Color favorite_color
+  }
+
+  output {
+    Color result = favorite_color
+  }
+}
+```
+
+**Input JSON** uses the variant name:
+
+```json
+{
+  "example.favorite_color": "Red"
+}
+```
+
+**Output JSON** also uses the variant name:
+
+```json
+{
+  "example.result": "Red"
+}
+```
+
+The execution engine validates that the provided string matches one of the enum's variant names. If an invalid variant name is provided, the execution engine must raise an error during input validation.
+
+#### Command Section Serialization
+
+When an enum value is serialized in a command section using string interpolation, it is serialized to its **inner value** (not the variant name). This allows enum variants to have meaningful values for use in commands.
+
+For example:
+
+```wdl
+enum VerbosityFlag {
+  Quiet = "",
+  Info = "-v",
+  Debug = "-vv",
+  Trace = "-vvv"
+}
+
+task run_tool {
+  input {
+    VerbosityFlag verbosity = VerbosityFlag.Info
+  }
+
+  command <<<
+  my_tool ~{verbosity} input.txt
+  >>>
+}
+```
+
+When `verbosity` is `VerbosityFlag.Info`, the command becomes:
+```
+my_tool -v input.txt
+```
+
+To access the variant name in a command section, use the [`name()`](#name) function:
+
+```wdl
+command <<<
+echo "Using verbosity level: ~{name(verbosity)}"
+echo "Flag value: ~{verbosity}"
+>>>
+```
+
+This would output:
+```
+Using verbosity level: Info
+Flag value: -v
 ```
 
 ## Import Statements
@@ -11306,6 +11402,210 @@ Example output:
 {
   "test_collect_by_key.is_true1": true,
   "test_collect_by_key.is_true2": true
+}
+```
+</p>
+</details>
+
+## ✨ Enum Functions
+
+These functions operate on enum values.
+
+**Restrictions**: None
+
+### ✨ `name`
+
+```
+String name(Enum)
+```
+
+Returns the stringified name of an enum variant.
+
+**Parameters**
+
+1. `Enum`: an enum variant of any enum type.
+
+**Returns**: A `String` containing the variant name.
+
+<details>
+<summary>
+Example: test_enum_name.wdl
+
+```wdl
+version 1.3
+
+enum Color {
+  Red = "#FF0000",
+  Green = "#00FF00",
+  Blue = "#0000FF"
+}
+
+workflow test_enum_name {
+  input {
+    Color color = Color.Red
+  }
+
+  output {
+    String variant_name = name(color)        # "Red"
+    String hex_value = "~{color}"            # "#FF0000"
+    Boolean is_red = name(color) == "Red"    # true
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "test_enum_name.color": "Red"
+}
+```
+
+Example output:
+
+```json
+{
+  "test_enum_name.variant_name": "Red",
+  "test_enum_name.hex_value": "#FF0000",
+  "test_enum_name.is_red": true
+}
+```
+</p>
+</details>
+
+### ✨ `names`
+
+```
+Array[String] names(Enum)
+```
+
+Returns an array of all variant names for an enum type, in the order they were defined.
+
+**Parameters**
+
+1. `Enum`: an enum type (not an enum variant, but the type itself).
+
+**Returns**: An `Array[String]` containing all variant names in definition order.
+
+<details>
+<summary>
+Example: test_enum_names.wdl
+
+```wdl
+version 1.3
+
+enum Color {
+  Red = "#FF0000",
+  Green = "#00FF00",
+  Blue = "#0000FF"
+}
+
+workflow test_enum_names {
+  output {
+    Array[String] all_names = names(Color)  # ["Red", "Green", "Blue"]
+    Int count = length(names(Color))        # 3
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_enum_names.all_names": ["Red", "Green", "Blue"],
+  "test_enum_names.count": 3
+}
+```
+</p>
+</details>
+
+### ✨ `variants`
+
+```
+Array[Enum] variants(Enum)
+```
+
+Returns an array of all variants for an enum type, in the order they were defined.
+
+**Parameters**
+
+1. `Enum`: an enum type (not an enum variant, but the type itself).
+
+**Returns**: An `Array[Enum]` containing all variants in definition order.
+
+<details>
+<summary>
+Example: test_enum_variants.wdl
+
+```wdl
+version 1.3
+
+enum Color {
+  Red = "#FF0000",
+  Green = "#00FF00",
+  Blue = "#0000FF"
+}
+
+task process_color {
+  input {
+    Color color
+  }
+
+  command <<<
+  echo "Processing color ~{name(color)} with hex value ~{color}"
+  >>>
+
+  output {
+    String result = read_string(stdout())
+  }
+}
+
+workflow test_enum_variants {
+  # Iterate over all color variants using scatter
+  scatter (color in variants(Color)) {
+    call process_color { input: color = color }
+  }
+
+  output {
+    Array[Color] all_variants = variants(Color)
+    Array[String] all_results = process_color.result
+    Array[String] hex_values = [
+      "~{all_variants[0]}",  # "#FF0000"
+      "~{all_variants[1]}",  # "#00FF00"
+      "~{all_variants[2]}"   # "#0000FF"
+    ]
+    Boolean is_red_first = all_variants[0] == Color.Red  # true
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_enum_variants.all_variants": ["Red", "Green", "Blue"],
+  "test_enum_variants.all_results": [
+    "Processing color RED with hex value #FF0000",
+    "Processing color GREEN with hex value #00FF00",
+    "Processing color BLUE with hex value #0000FF"
+  ],
+  "test_enum_variants.hex_values": ["#FF0000", "#00FF00", "#0000FF"],
+  "test_enum_variants.is_red_first": true
 }
 ```
 </p>
