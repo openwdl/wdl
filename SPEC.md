@@ -7606,7 +7606,7 @@ workflow test_matches {
   }
   output {
     Boolean is_compressed = matches(basename(json), "\\.(gz|zip|zstd)")
-    Boolean is_json = matches(basename(json), "_R1")
+    Boolean is_read1 = matches(basename(json), "_R1")
   }
 }
 ```
