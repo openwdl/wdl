@@ -26,6 +26,8 @@ version 1.2.1
 
 * Include fixes to examples introduced in v1.1.3
 
+* Clarified the restriction on multi-level optionals in the "Optional Types" section. ([#743](https://github.com/openwdl/wdl/pull/743))
+
 version 1.2.0
 ---------------------------
 
