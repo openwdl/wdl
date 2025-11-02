@@ -20,11 +20,13 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
-* Clarify that `disks` mount points ephemeral and should not already exist
++ Clarify that `disks` mount points ephemeral and should not already exist
 
-* Deprecate the use of relative path literals in input and private variable declarations.
++ Deprecate the use of relative path literals in input and private variable declarations.
 
-* Include fixes to examples introduced in v1.1.3
++ Include fixes to examples introduced in v1.1.3
+
++ Clarified that `task.return_code` is only available in the `output` section, where it has type `Int` rather than `Int?` ([#742](https://github.com/openwdl/wdl/pull/742)).
 
 version 1.2.0
 ---------------------------
