@@ -26,6 +26,8 @@ version 1.2.1
 
 * Include fixes to examples introduced in v1.1.3
 
+* Clarified symlink handling behavior in the `glob` function ([#744](https://github.com/openwdl/wdl/pull/744)).
+
 version 1.2.0
 ---------------------------
 
