@@ -26,6 +26,8 @@ version 1.2.1
 
 * Include fixes to examples introduced in v1.1.3
 
+* Clarify `File` and `Directory` path canonicalization, validation, and equality semantics. Add `Directory` comparison operators to binary operators table ([#748](https://github.com/openwdl/wdl/issues/748)).
+
 version 1.2.0
 ---------------------------
 

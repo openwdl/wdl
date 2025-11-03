@@ -29,6 +29,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [Strings](#strings)
           - [Multi-line Strings](#multi-line-strings)
         - [Files and Directories](#files-and-directories)
+          - [Path Canonicalization and Validation](#path-canonicalization-and-validation)
       - [Optional Types and None](#optional-types-and-none)
       - [Compound Types](#compound-types)
         - [Array\[X\]](#arrayx)
@@ -851,6 +852,20 @@ Single- and double-quotes do not need to be escaped within a multi-line string.
 
 A `File` or `Directory` declaration may have have a string value indicating a relative or absolute path on the local file system.
 
+###### Path Canonicalization and Validation
+
+When a `File` or `Directory` value is created, the following operations are performed:
+
+- **Path Canonicalization.** Intermediate path components are normalized (resolving `.` for current directory and `..` for parent directory segments), symbolic links are resolved to their final targets, and relative paths are converted to their absolute path form. For `Directory` values, trailing directory separators are removed.
+- **Path Validation.** The path must exist at value creation time. If the path does not exist, an error occurs immediately. The file/directory must accessible for reading (i.e., assigned the appropriate permissions).
+
+Value creation occurs when the value is materialized as a `File`/`Directory` within the execution engine, including
+
+- When a `File` or `Directory` declaration is evaluated
+- When a `String` is coerced to a `File` or `Directory` type
+
+After canonicalization, two `File` or `Directory` values that refer to the same underlying resource are considered equal for all comparison operations, even if they were initialized from different string representations.
+
 ```wdl
 task literals_paths {
   input {
@@ -860,7 +875,7 @@ task literals_paths {
 
   command <<<
     # If the user does not overide the value of `f1`, and /foo/bar.txt
-    # does not exist, an error will occur when the file is accessed here.
+    # does not exist, an error will occur when the `File` value is created.
     cat "~{f1}"
 
     # If the user does not specify the value of `f2` it's value is `None`,
@@ -875,9 +890,8 @@ task literals_paths {
 
 Within a WDL file, the execution engine is only required to support literal values for files and directories that are paths local to the execution environment.
 
-A path is only required to be valid if and when it is accessed. A path assigned to an input or private declaration is only accessed if it is referred to in the `command` or `output` sections. A path assigned to an output declaration must be valid unless the declaration is optional.
+During task execution, the following additional constraints apply:
 
-* To read from a path, the file/directory must exist and be accessible for reading (i.e., be assigned the appropriate permissions).
 * To write to a file, the path's parent directory must be accessible for writing.
 * To write to a directory, it must exist and be accessible for writing.
 
@@ -2225,6 +2239,10 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | `File`      | `!=`     | `String`  | `Boolean` |                                                          |
 | 🗑 `File`    | `+`      | `File`    | `File`    | append file paths - error if second path is not relative |
 | 🗑 `File`    | `+`      | `String`  | `File`    | append file paths - error if second path is not relative |
+| `Directory` | `==`     | `Directory` | `Boolean` |                                                        |
+| `Directory` | `!=`     | `Directory` | `Boolean` |                                                        |
+| `Directory` | `==`     | `String`  | `Boolean` |                                                          |
+| `Directory` | `!=`     | `String`  | `Boolean` |                                                          |
 
 Boolean operator evaluation is minimal (or "short-circuiting"), meaning that:
 
@@ -2232,6 +2250,102 @@ Boolean operator evaluation is minimal (or "short-circuiting"), meaning that:
 2. For `A || B`, if `A` evaluates to `true` then `B` is not evaluated.
 
 WDL `String`s are compared by the unicode values of their corresponding characters. Character `a` is less than character `b` if it has a lower unicode value.
+
+`File` and `Directory` values are [canonicalized](#path-canonicalization-and-validation) when the value is created. Two `File` or `Directory` values that refer to the same underlying resource are considered equal, even if they were initialized from different string representations. For example, `/home/user/file.txt` and `/home/user/../user/file.txt` refer to the same file and compare as equal. Similarly, for `Directory` values, trailing slashes are ignored when determining equality (e.g., `/home/user/dir` and `/home/user/dir/` are equal). Equality relationships between `File` and `Directory` values are preserved throughout workflow execution, including before and after [task input localization](#task-input-localization).
+
+When comparing a `File` or `Directory` to a `String`, the `String` is first coerced to `File` or `Directory` (and thus canonicalized) before the comparison is performed.
+
+<details>
+<summary>
+Example: file_directory_equality.wdl
+
+```wdl
+version 1.2
+
+task check_equality {
+  input {
+    File file_a
+    File file_b
+    Directory dir_a
+    Directory dir_b
+  }
+
+  command <<<
+  # The execution engine localizes equal files once
+  # so file_a and file_b will have the same path
+  if [ "~{file_a}" = "~{file_b}" ]; then
+    echo "true" > files_equal.txt
+  else
+    echo "false" > files_equal.txt
+  fi
+
+  if [ "~{dir_a}" = "~{dir_b}" ]; then
+    echo "true" > dirs_equal.txt
+  else
+    echo "false" > dirs_equal.txt
+  fi
+  >>>
+
+  output {
+    Boolean task_files_equal = read_boolean("files_equal.txt")
+    Boolean task_dirs_equal = read_boolean("dirs_equal.txt")
+  }
+}
+
+workflow file_directory_equality {
+  input {
+    File file_a
+    File file_b
+    Directory dir_a
+    Directory dir_b
+  }
+
+  # After canonicalization, these compare as equal
+  Boolean workflow_files_equal = file_a == file_b
+  Boolean workflow_dirs_equal = dir_a == dir_b
+
+  call check_equality {
+    file_a = file_a,
+    file_b = file_b,
+    dir_a = dir_a,
+    dir_b = dir_b
+  }
+
+  output {
+    Boolean workflow_files_equal = workflow_files_equal
+    Boolean workflow_dirs_equal = workflow_dirs_equal
+    Boolean task_files_equal = check_equality.task_files_equal
+    Boolean task_dirs_equal = check_equality.task_dirs_equal
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "file_directory_equality.file_a": "tests/data/hello.txt",
+  "file_directory_equality.file_b": "tests/data/../data/hello.txt",
+  "file_directory_equality.dir_a": "tests/data/testdir/",
+  "file_directory_equality.dir_b": "tests/data/testdir"
+}
+```
+
+Example output:
+
+```json
+{
+  "file_directory_equality.workflow_files_equal": true,
+  "file_directory_equality.workflow_dirs_equal": true,
+  "file_directory_equality.task_files_equal": true,
+  "file_directory_equality.task_dirs_equal": true
+}
+```
+
+In this example, `file_a` and `file_b` use different string representations (`tests/data/hello.txt` vs `tests/data/../data/hello.txt`) but both canonicalize to the same path and compare as equal at workflow scope. When passed to the task, the execution engine localizes the file once, and both `file_a` and `file_b` in the task reference the same localized path. Similarly, `dir_a` includes a trailing slash while `dir_b` does not, but they canonicalize to the same directory and are localized once.
+</p>
+</details>
 
 Except for `String + File`, all concatenations between `String` and non-`String` types are deprecated and will be removed in WDL 2.0. The same effect can be achieved using [string interpolation](#expression-placeholders-and-string-interpolation).
 
@@ -3210,7 +3324,7 @@ task bad_sub {
 }
 ```
 
-On the other hand, in the following example all of the types are compatible, but if the `hello.txt` file does not exist at runtime (when the implementation instantiates the command and tries to evaluate the call to `read_lines`), then an error will be raised.
+On the other hand, in the following example all of the types are compatible, but if the `hello.txt` file does not exist when the `File` value is created (when evaluating the declaration `File f = "hello.txt"`), then an error will be raised.
 
 ```wdl
 task missing_file {
@@ -3676,9 +3790,10 @@ Example input:
 `File` and `Directory` inputs may require localization to the execution environment. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
 
 - `File`s and `Directory`s are localized into the execution environment prior to evaluating any expressions. This means that references to `File` or `Directory` declarations in input declaration expressions, private declaration expressions, and the command section are always replaced with the local paths to those files/directories.
+- When multiple input declarations refer to the same canonicalized `File` or `Directory` (i.e., they [compare as equal](#binary-operators-on-primitive-types)), the execution engine should localize the resource once, and all references to those declarations should resolve to the same localized path.
 - When localizing a `File` or `Directory`, the engine may choose to place the local resource wherever it likes so long as it adheres to these rules:
   - The original file/directory name (the "basename") must be preserved even if the path to it has changed.
-  - Two inputs with the same basename must be located separately, to avoid name collision.
+  - Two distinct input files with the same basename must be located separately, to avoid name collision. Note that this refers to two different files (that would not compare as equal), not to multiple input declarations that reference the same underlying file.
   - Two input files that originate from the same "parent" must be localized into the same directory for task execution.
     - For local paths, "parent" means the parent directory.
     - For remote paths specified as a URI, "parent" means the entire URI up to the last '/' of the path (i.e., excluding the final component and any parameters). For example, http://foo.com/bar/a.txt and http://foo.com/bar/b.txt have the same parent (http://foo.com/bar/), so they must be localized into the same directory.
@@ -4667,7 +4782,7 @@ Test config:
 </p>
 </details>
 
-All `File` and `Directory` outputs are required to exist, otherwise the task will fail. However, an output may be declared as optional (e.g. `File?`, `Directory?`, or `Array[File?]`), in which case the value will be undefined if the file does not exist.
+All `File` and `Directory` outputs are required to exist when the output section is evaluated (i.e., when the output values are created), otherwise the task will fail. However, an output may be declared as optional (e.g. `File?`, `Directory?`, or `Array[File?]`), in which case the value will be undefined if the file does not exist.
 
 <details>
 <summary>
