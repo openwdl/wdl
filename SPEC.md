@@ -4443,7 +4443,7 @@ task single_return_code {
   >>>
 
   runtime {
-    return_codes: 1
+    returnCodes: 1
   }
 }
 ```
@@ -4484,7 +4484,7 @@ task multi_return_code {
   >>>
 
   runtime {
-    return_codes: [1, 2, 5, 10]
+    returnCodes: [1, 2, 5, 10]
   }
 }
 ```
@@ -4526,7 +4526,7 @@ task multi_return_code_task {
   >>>
 
   runtime {
-    return_codes: "*"
+    returnCodes: "*"
   }
 }
 ```
