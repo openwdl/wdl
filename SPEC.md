@@ -8857,7 +8857,7 @@ workflow test_select_all {
   Array[Int] expected = [5, 3]
 
   output {
-    Boolean is_true = length(fivethree) == 2 && fivethree == expected
+    Boolean is_true = fivethree == expected
   }
 }
 ```
@@ -9076,7 +9076,7 @@ workflow test_keys {
   Array[String] expected = ["a", "b", "c"]
 
   output {
-    Boolean is_true1 = length(keys(x)) == 3 && keys(x) == expected
+    Boolean is_true1 = keys(x) == expected
     Boolean is_true2 = str_to_files_keys == keys(str_to_files)
   }
 }
