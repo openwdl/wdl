@@ -20,11 +20,13 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
-* Clarify that `disks` mount points ephemeral and should not already exist
++ Clarify that `disks` mount points ephemeral and should not already exist
 
-* Deprecate the use of relative path literals in input and private variable declarations.
++ Deprecate the use of relative path literals in input and private variable declarations.
 
-* Include fixes to examples introduced in v1.1.3
++ Include fixes to examples introduced in v1.1.3
+
++ Clarified that when a `Directory` is converted to a `String`, the resulting string does not have a trailing slash ([#745](https://github.com/openwdl/wdl/pull/745)).
 
 version 1.2.0
 ---------------------------
