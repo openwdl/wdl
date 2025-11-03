@@ -314,6 +314,65 @@ Running the `hello` workflow with these inputs would yield the following command
 grep -E 'hello.*' 'greetings.txt'
 ```
 
+
+### Advanced WDL Features
+
+WDL also provides features for implementing more complex workflows. For example, `hello_task` introduced in the previous example can be called in parallel across many different input files using the well-known [scatter-gather](https://en.wikipedia.org/wiki/Vectored_I/O#:~:text=In%20computing%2C%20vectored%20I%2FO,in%20a%20vector%20of%20buffers) pattern:
+
+<details>
+  <summary>
+  Example: hello_parallel.wdl
+  
+  ```wdl
+  version 1.1
+  
+  import "hello.wdl"
+
+  workflow hello_parallel {
+    input {
+      Array[File] files
+      String pattern
+    }
+    
+    scatter (path in files) {
+      call hello.hello_task {
+        input: 
+          infile = path,
+          pattern = pattern
+      }
+    }
+
+    output {
+      # WDL implicitly implements the 'gather' step, so the output of 
+      # a scatter is always an array with the elements in the same 
+      # order as the input array. Since hello_task.matches is an array,
+      # all the results will be gathered into an array-of-arrays.
+      Array[Array[String]] all_matches = hello_task.matches
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+  
+  ```json
+  {
+    "hello_parallel.pattern": "^[a-z_]+$",
+    "hello_parallel.files": ["greetings.txt", "hello.txt"]
+  }
+  ```
+  
+  Example output:
+  
+  ```json
+  {
+    "hello_parallel.all_matches": [["hi_world"], ["hello"]]
+  }
+  ```
+  </p>
+</details>
+
+
 # WDL Language Specification
 
 ## Global Grammar Rules
