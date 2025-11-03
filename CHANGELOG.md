@@ -26,6 +26,8 @@ version 1.2.1
 
 * Include fixes to examples introduced in v1.1.3
 
+* Fix `change_extension_task.wdl` example to use string interpolation when passing `File` to `sub()` function ([#747](https://github.com/openwdl/wdl/issues/747)).
+
 version 1.2.0
 ---------------------------
 

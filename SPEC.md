@@ -7887,7 +7887,7 @@ task change_extension {
   output {
     File data_file = "~{prefix}.data"
     String data = read_string(data_file)
-    String index = read_string(sub(data_file, "\\.data$", ".index"))
+    String index = read_string(sub("~{data_file}", "\\.data$", ".index"))
   }
 
   requirements {
