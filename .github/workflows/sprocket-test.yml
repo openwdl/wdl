@@ -1,4 +1,4 @@
-name: Sprocket Spec Conformance - WDL 1.1
+name: Sprocket Spec Conformance - WDL 1.2
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
 jobs:
   sprocket-conformance:
     runs-on: ubuntu-latest
-    name: Run Sprocket WDL 1.1 Spec Conformance Tests
+    name: Run Sprocket WDL 1.2 Spec Conformance Tests
 
     steps:
       - name: Checkout WDL spec repo
@@ -23,9 +23,9 @@ jobs:
 
       - name: Install Sprocket dependencies
         run: |
-         curl -y --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-         . "$HOME/.cargo/env" 
-         cargo install sprocket --locked
+          curl -y --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+          . "$HOME/.cargo/env"
+          cargo install sprocket --locked
 
       - name: Clone WDL tests
         run: |
@@ -33,14 +33,18 @@ jobs:
 
       - name: Extract tests
         run: |
-          python wdl-tests/scripts/extract_tests.py -i ${{ github.workspace }}/SPEC.md -d ${{ github.workspace }}/tests/data/ -O sprocket_test -v 1.1
+          python wdl-tests/scripts/extract_tests.py -i ${{ github.workspace }}/SPEC.md -d ${{ github.workspace }}/tests/data/ -O sprocket_test -v 1.2
 
       - name: Run tests and capture results
         run: |
           mkdir -p sprocket_tests/artifacts
 
           echo "📊 Running tests..."
-          python wdl-tests/scripts/run_tests_sprocket.py -T ${{ github.workspace }}/sprocket_test -c ${{ github.workspace }}/sprocket_test/test_config.json -D ${{ github.workspace }}/sprocket_test/data -O sprocket_results | tee sprocket_tests/artifacts/result.log
+          python wdl-tests/scripts/run_tests_sprocket.py \
+            -T ${{ github.workspace }}/sprocket_test \
+            -c ${{ github.workspace }}/sprocket_test/test_config.json \
+            -D ${{ github.workspace }}/sprocket_test/data \
+            -O sprocket_results | tee sprocket_tests/artifacts/result.log
 
           echo "📊 Parsing test summary..."
 
@@ -63,7 +67,7 @@ jobs:
           }
           EOF
 
-          #Copy list of failures to artifacts
+          # Copy list of failures to artifacts
           cp sprocket_test/failed_tests.txt sprocket_tests/artifacts/failed_tests.txt || touch sprocket_tests/artifacts/failed_tests.txt
 
           # Generate shields.io badge JSON
@@ -74,7 +78,7 @@ jobs:
           cat <<EOF > sprocket_tests/artifacts/shields.json
           {
             "schemaVersion": 1,
-            "label": "Sprocket WDL 1.1",
+            "label": "Sprocket WDL 1.2",
             "message": "$passed/$total_run passed",
             "color": "$color"
           }
@@ -98,6 +102,7 @@ jobs:
           RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
           REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
 
+          
           git fetch origin $BRANCH
           git checkout $BRANCH
           
@@ -110,14 +115,16 @@ jobs:
           new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/sprocket_shields.json"
           run_pattern="https://github.com/$REPO/actions/runs/[0-9]+"
           new_run="https://github.com/$REPO/actions/runs/$RUN_ID"
+          echo $new_run
+          echo $new_url
           if grep -qE "$sed_pattern" README.md; then
             git pull
-            sed -E -i "/sprocket_shields.json/s|$sed_pattern|$new_url|g" README.md
-            sed -E -i "/sprocket_shields.json/s|$run_pattern|$new_run|g" README.md
+            sed -E -i "/sprocket_shields\.json/s|$sed_pattern|$new_url|g" README.md
+            sed -E -i "/sprocket_shields\.json/s|$run_pattern|$new_run|g" README.md
             git add README.md
           fi 
 
-          # Only commit if there are staged changes
+          # Commit only if there are staged changes
           if ! git diff --cached --quiet; then
             git commit -m "chore: updates Sprocket shields badge for \`$BRANCH\`"
             git push $REPO_URL $BRANCH
