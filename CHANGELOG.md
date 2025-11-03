@@ -30,7 +30,7 @@ version 1.2.1
 
 * Add in CI/CD for Miniwdl, Sprocket, Toil and Cromwell for spec compliance.
 
-* Remove Advanced Task Examples to clearly distguish what is the testing is in scope.
+* Remove Advanced Task Examples to clearly distinguish what is the testing is in scope.
 
 version 1.2.0
 ---------------------------
