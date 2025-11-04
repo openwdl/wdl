@@ -26,7 +26,11 @@ version 1.2.1
 
 * Include fixes to examples introduced in v1.1.3
 
-* Clarify `File` and `Directory` path canonicalization, validation, and equality semantics. Add `Directory` comparison operators to binary operators table ([#748](https://github.com/openwdl/wdl/issues/748)).
+* Clarify `File` and `Directory` path canonicalization, validation, and equality semantics. Add `Directory` comparison operators to binary operators table ([#748](https://github.com/openwdl/wdl/pull/748)).
+
+* Clarify that `File` values cannot refer to directories and `Directory` values cannot refer to files; attempting to assign the wrong type of path is an error ([#748](https://github.com/openwdl/wdl/pull/748)).
+
+* Update `join_paths` function: change return type from `File` to `String` (since the result can be either a file or directory path), and change first argument from `File` to `Directory` for the first two overloads ([#748](https://github.com/openwdl/wdl/pull/748)).
 
 version 1.2.0
 ---------------------------

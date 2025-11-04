@@ -857,7 +857,7 @@ A `File` or `Directory` declaration may have have a string value indicating a re
 When a `File` or `Directory` value is created, the following operations are performed:
 
 - **Path Canonicalization.** Intermediate path components are normalized (resolving `.` for current directory and `..` for parent directory segments), symbolic links are resolved to their final targets, and relative paths are converted to their absolute path form. For `Directory` values, trailing directory separators are removed.
-- **Path Validation.** The path must exist at value creation time. If the path does not exist, an error occurs immediately. The file/directory must accessible for reading (i.e., assigned the appropriate permissions).
+- **Path Validation.** The path must exist at value creation time. If the path does not exist, an error occurs immediately. The file/directory must accessible for reading (i.e., assigned the appropriate permissions). Additionally, a `File` value cannot refer to a directory; if the path refers to a directory, an error occurs. Similarly, a `Directory` value cannot refer to a file; if the path refers to a file, an error occurs.
 
 Value creation occurs when the value is materialized as a `File`/`Directory` within the execution engine, including
 
@@ -8108,18 +8108,18 @@ Example output:
 ### ✨ `join_paths`
 
 ```
-File join_paths(File, String)
-File join_paths(File, Array[String]+)
-File join_paths(Array[String]+)
+String join_paths(Directory, String)
+String join_paths(Directory, Array[String]+)
+String join_paths(Array[String]+)
 ```
 
 Joins together two or more paths into an absolute path in the execution environment's filesystem.
 
 There are three variants of this function:
 
-1. `File join_paths(File, String)`: Joins together exactly two paths. The first path may be either absolute or relative and must specify a directory; the second path is relative to the first path and may specify a file or directory.
-2. `File join_paths(File, Array[String]+)`: Joins together any number of relative paths with a base path. The first argument may be either an absolute or a relative path and must specify a directory. The paths in the second array argument must all be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
-3. `File join_paths(Array[String]+)`: Joins together any number of paths. The array must not be empty. The *first* element of the array may be either absolute or relative; subsequent path(s) must be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
+1. `String join_paths(Directory, String)`: Joins together exactly two paths. The second path is relative to the first directory and may specify a file or directory.
+2. `String join_paths(Directory, Array[String]+)`: Joins together any number of relative paths with a base directory. The paths in the array argument must all be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
+3. `String join_paths(Array[String]+)`: Joins together any number of paths. The array must not be empty. The *first* element of the array may be either absolute or relative; subsequent path(s) must be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
 
 An absolute path starts with `/` and indicates that the path is relative to the root of the environment in which the task is executed. Only the first path may be absolute. If any subsequent paths are absolute, it is an error.
 
@@ -8127,10 +8127,10 @@ A relative path does not start with `/` and indicates the path is relative to it
 
 **Parameters**
 
-1. `File|Array[String]+`: Either a path or an array of paths.
-2. `String|Array[String]+`: A relative path or paths; only allowed if the first argument is a `File`.
+1. `Directory|Array[String]+`: Either a directory path or an array of paths.
+2. `String|Array[String]+`: A relative path or paths; only allowed if the first argument is a `Directory`.
 
-**Returns**: A `File` representing an absolute path that results from joining all the paths in order (left-to-right), and resolving the resulting path against the default parent directory if it is relative.
+**Returns**: A `String` representing an absolute path that results from joining all the paths in order (left-to-right), and resolving the resulting path against the default parent directory if it is relative.
 
 <details>
 <summary>
@@ -8141,34 +8141,34 @@ version 1.2
 
 task resolve_paths_task {
   input {
-    File abs_file = "/usr"
+    Directory abs_dir = "/usr"
     String abs_str = "/usr"
     String rel_dir_str = "bin"
-    File rel_file = "echo"
-    File rel_dir_file = "mydir"
+    String rel_file = "echo"
+    Directory rel_dir = "mydir"
     String rel_str = "mydata.txt"
   }
 
   # these are all equivalent to '/usr/bin/echo'
-  File bin1 = join_paths(abs_file, [rel_str_dir, rel_file])
-  File bin2 = join_paths(abs_str, [rel_str_dir, rel_file])
-  File bin3 = join_paths([abs_str, rel_str_dir, rel_file])
-  
-  # the default behavior is that this resolves to 
+  String bin1 = join_paths(abs_dir, [rel_dir_str, rel_file])
+  String bin2 = join_paths(abs_str, [rel_dir_str, rel_file])
+  String bin3 = join_paths([abs_str, rel_dir_str, rel_file])
+
+  # the default behavior is that this resolves to
   # '<working dir>/mydir/mydata.txt'
-  File data = join_paths(rel_dir_file, rel_str)
-  
+  String data = join_paths(rel_dir, rel_str)
+
   # this resolves to '<working dir>/bin/echo', which is non-existent
-  File doesnt_exist = join_paths([rel_dir_str, rel_file])
+  String doesnt_exist = join_paths([rel_dir_str, rel_file])
   command <<<
-    mkdir ~{rel_dir_file}
+    mkdir ~{rel_dir}
     ~{bin1} -n "hello" > ~{data}
   >>>
 
   output {
     Boolean bins_equal = (bin1 == bin2) && (bin1 == bin3)
     String result = read_string(data)
-    File? missing_file = doesnt_exist
+    String missing_path = doesnt_exist
   }
   
   runtime {
