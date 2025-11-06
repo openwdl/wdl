@@ -22,6 +22,12 @@ version 1.3.0
 
 + Documents may now load any document with the same major version and a minor version that is less than or equal to that document's version ([#698](https://github.com/openwdl/wdl/pull/698)).
 
++ Added enumeration types (`enum`) that define closed sets of named variants with associated values. Enums support explicit and implicit typing, and variant values can be of any WDL type including primitives, compound types, and user-defined types.
+([#695](https://github.com/openwdl/wdl/pull/695))
+
++ Added `value()` standard library function to extract the inner value from an enum variant.
+([#695](https://github.com/openwdl/wdl/pull/695))
+
 version 1.2.0
 ---------------------------
 
