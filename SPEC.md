@@ -5774,7 +5774,7 @@ Example output:
 
 ```json
 {
-  "ex_paramter_meta.result": 2
+  "ex_paramter_meta.result": 3
 }
 ```
 </p>
@@ -6178,7 +6178,7 @@ Example output:
 
 ```json
 {
-  "other.results": 2
+  "other.results": 3
 }
 ```
 </p>
