@@ -77,8 +77,8 @@ Revisions to this specification are made periodically in order to correct errors
   - [Enum Definition](#enum-definition)
     - [Enum Usage](#enum-usage)
     - [Enum Serialization and Deserialization](#enum-serialization-and-deserialization)
-      - [JSON Input and Output](#json-input-and-output)
-      - [Command Section Serialization](#command-section-serialization)
+      - [JSON Input and Output for Enums](#json-input-and-output-for-enums)
+      - [Command Section Serialization of Enums](#command-section-serialization-of-enums)
   - [Import Statements](#import-statements)
     - [Import URIs](#import-uris)
     - [Importing and Aliasing Structs](#importing-and-aliasing-structs)
@@ -3494,22 +3494,25 @@ A declaration with an `enum` type can only be initialized by referencing a varia
 
 Two enum values can be tested for equality (i.e., using `==` or `!=`). To be equal, two enum values must be the same variant of the same `enum` type. For example, `Color.Red == Color.Red` evaluates to `true`, while `Color.Red == Color.Blue` evaluates to `false`. Even if two different enum variants have the same inner value, they are not equal (though their inner values extracted via `value()` may be equal). Enum variants are not ordered, so they cannot be compared (i.e., using `>`, `>=`, `<`, `<=`).
 
-When an enum value is serialized using string interpolation, it is serialized to its variant name. To extract the inner value of an enum variant, use the [`value()`](#value) standard library function.
+When an enum value is serialized using string interpolation, it is serialized to its variant name. To extract the inner value of an enum variant, use the [`value()`](#-value) standard library function.
 
-An `enum` cannot be coerced to or from any other type. However, an enum value can be [serialized to/deserialized from JSON](#json-input-and-output) and can be used in [command sections](#command-section-serialization).
+An `enum` cannot be coerced to or from any other type. However, an enum value can be [serialized to/deserialized from JSON](#json-input-and-output-for-enums) and can be used in [command sections](#command-section-serialization-of-enums).
 
 ```wdl
-version 1.2
+version 1.3
+
 enum Pet {
   Cat,
   Mouse,
   Bird
 }
+
 enum ComputerDevice {
   Mouse,
   Keyboard,
   Monitor
 }
+
 task compare_enum_types {
   input {
     Pet? pet
@@ -3531,7 +3534,7 @@ task compare_enum_types {
 
 Enum values are serialized and deserialized differently depending on the context.
 
-#### JSON Input and Output
+#### JSON Input and Output for Enums
 
 When an enum value appears in JSON input or output files, it is represented by its **variant name** (not its inner value). The variant name is specified as a string without the enum type prefix.
 
@@ -3573,9 +3576,9 @@ workflow example {
 
 The execution engine validates that the provided string matches one of the enum's variant names. If an invalid variant name is provided, the execution engine must raise an error during input validation.
 
-#### Command Section Serialization
+#### Command Section Serialization of Enums
 
-When an enum value is used in a command section with string interpolation, it is serialized to its **variant name** (not the inner value). To access the inner value, use the [`value()`](#value) function.
+When an enum value is used in a command section with string interpolation, it is serialized to its **variant name** (not the inner value). To access the inner value, use the [`value()`](#-value) function.
 
 For example:
 
