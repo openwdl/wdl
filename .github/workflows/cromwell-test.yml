@@ -12,9 +12,6 @@ jobs:
       - name: Checkout WDL spec repo
         uses: actions/checkout@v4
 
-      - name: Checkout current repo
-        uses: actions/checkout@v4
-
       - name: Install Java (for Cromwell)
         run: |
           sudo apt-get update
