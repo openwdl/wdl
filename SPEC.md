@@ -3321,7 +3321,7 @@ task greet_person {
   printf "Hello ~{person.name.first}! You have ~{length(assay_array)} test result(s) available.\n"
 
   if ~{defined(person.income)}; then
-    if [ "~{select_first([person.income]).amount}" -gt 1000 ]; then
+    if [ "$(printf "%.0f" ~{select_first([person.income]).amount})" -gt 1000 ]; then
       currency="~{select_first([select_first([person.income]).currency, "USD"])}"
       printf "Please transfer $currency 500 to continue"
     fi
