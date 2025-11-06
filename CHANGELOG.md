@@ -99,10 +99,6 @@ version 1.2.0
 
 + Clarified that accessing a non-existent member of an object, struct, or call is an error.
 
-+ Fix issues with examples (#707, #708, #701).
-
-+ Add in CI/CD for Miniwdl/Sprocket for spec compliance
-
 version 1.1.3
 ---------------------------
 
