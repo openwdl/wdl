@@ -104,9 +104,6 @@ Revisions to this specification are made periodically in order to correct errors
     - [Metadata Sections](#metadata-sections)
       - [Task Metadata Section](#task-metadata-section)
       - [Parameter Metadata Section](#parameter-metadata-section)
-    - [Advanced Task Examples](#advanced-task-examples)
-      - [Example 1: HISAT2](#example-1-hisat2)
-      - [Example 2: GATK Haplotype Caller](#example-2-gatk-haplotype-caller)
   - [Workflow Definition](#workflow-definition)
     - [Workflow Elements](#workflow-elements)
     - [Workflow Inputs](#workflow-inputs)
@@ -317,6 +314,7 @@ Running the `hello` workflow with these inputs would yield the following command
 grep -E 'hello.*' 'greetings.txt'
 ```
 
+
 ### Advanced WDL Features
 
 WDL also provides features for implementing more complex workflows. For example, `hello_task` introduced in the previous example can be called in parallel across many different input files using the well-known [scatter-gather](https://en.wikipedia.org/wiki/Vectored_I/O#:~:text=In%20computing%2C%20vectored%20I%2FO,in%20a%20vector%20of%20buffers) pattern:
@@ -373,6 +371,7 @@ WDL also provides features for implementing more complex workflows. For example,
   ```
   </p>
 </details>
+
 
 # WDL Language Specification
 
@@ -1071,7 +1070,7 @@ workflow test_object {
       a: 10,
       b: "hello"
     }
-    Int i = f.a
+    Int i = obj.a
   }
 }
 ```
@@ -1161,12 +1160,14 @@ Example output:
       "account_number": "123456",
       "routing_number": 300211325,
       "balance": 3.5,
-      "pin_digits": [1, 2, 3, 4]
+      "pin_digits": [1, 2, 3, 4],
+      "username": null
     }
   },
   "test_struct.has_account": true
 }
 ```
+
 </p>
 </details>
 
@@ -1446,9 +1447,9 @@ workflow map_to_struct {
   
     # What are the keys to this Struct?
     Words map_coercion = {
-      a: 10,
-      b: 11,
-      c: 12
+      "a": 10,
+      "b": 11,
+      "c": 12
     }
   }
 }
@@ -1471,9 +1472,9 @@ Example output:
     "c": 12
   },
   "map_to_struct.map_coercion": {
-    "beware": 10,
-    "key": 11,
-    "lookup": 12
+    "a": 10,
+    "b": 11,
+    "c": 12
   }
 }
 ```
@@ -2430,7 +2431,7 @@ task flags {
   >>>
 
   output {
-    String num_matches = read_int(stdout())
+    Int num_matches = read_int(stdout())
   }
 }
 ```
@@ -2449,7 +2450,7 @@ Example output:
 
 ```json
 {
-  "flags.num_matches": "2"
+  "flags.num_matches": 2
 }
 ```
 </p>
@@ -3730,7 +3731,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "csvs"
+  "exclude_output": "outputs.csvs"
 }
 ```
 </p>
@@ -3839,7 +3840,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "outfiles"
+  "exclude_output": "glob.outfiles"
 }
 ```
 </p>
@@ -3890,7 +3891,8 @@ Test config:
 
 ```json
 {
-  "exclude_output": "bashrc"
+  "exclude_output": "relative_and_absolute.bashrc",
+  "priority": "ignore"
 }
 ```
 </p>
@@ -3943,6 +3945,15 @@ Example output:
   "optional_output.file_array": ["example1.txt", null]
 }
 ```
+
+Test config:
+
+```json
+{
+  "exclude_output": "optional_output.file_array"
+}
+```
+
 </p>
 </details>
 
@@ -4254,7 +4265,7 @@ task test_gpu {
   }
   
   runtime {
-    container: "archlinux:latest"
+    container: "ubuntu:latest"
     gpu: true
   }
 }
@@ -4279,7 +4290,8 @@ Test config:
 
 ```json
 {
-  "dependencies": "gpu"
+  "dependencies": "gpu",
+  "priority": "ignore"
 }
 ```
 </p>
@@ -4369,7 +4381,7 @@ task multi_mount_points {
   }
 
   runtime {
-  	# The first value will be mounted at the execution root
+    # The first value will be mounted at the execution root
     disks: ["2", "/mnt/outputs 4 GiB", "/mnt/tmp 1 GiB"]
   }
 }
@@ -4443,7 +4455,7 @@ task single_return_code {
   >>>
 
   runtime {
-    return_codes: 1
+    returnCodes: 1
   }
 }
 ```
@@ -4465,7 +4477,7 @@ Test config:
 
 ```json
 {
-  "return_code": 1
+  "returnCodes": 0
 }
 ```
 </p>
@@ -4484,7 +4496,7 @@ task multi_return_code {
   >>>
 
   runtime {
-    return_codes: [1, 2, 5, 10]
+    returnCodes: [1, 2, 5, 10]
   }
 }
 ```
@@ -4507,7 +4519,7 @@ Test config:
 ```json
 {
   "fail": true,
-  "return_code": 42
+  "returnCodes": 42
 }
 ```
 </p>
@@ -4520,13 +4532,13 @@ Example: all_return_codes_task.wdl
 ```wdl
 version 1.1
 
-task multi_return_code_task {
+task all_return_codes {
   command <<<
   exit 42
   >>>
 
   runtime {
-    return_codes: "*"
+    returnCodes: "*"
   }
 }
 ```
@@ -4548,7 +4560,7 @@ Test config:
 
 ```json
 {
-  "return_code": 42
+  "returnCodes": 0
 }
 ```
 </p>
@@ -4611,6 +4623,15 @@ Example output:
   "test_hints.num_lines": 2
 }
 ```
+
+Test config:
+
+```json
+{
+  "priority": "ignore"
+}
+```
+
 </p>
 </details>
 
@@ -4831,7 +4852,7 @@ task ex_paramter_meta {
   >>>
 
   output {
-     String result = read_int(stdout())
+     Int result = read_int(stdout())
   }
 
   runtime {
@@ -4854,198 +4875,12 @@ Example output:
 
 ```json
 {
-  "ex_paramter_meta.result": "2"
+  "ex_paramter_meta.result": 2
 }
 ```
 </p>
 </details>
 
-### Advanced Task Examples
-
-#### Example 1: HISAT2
-
-<details>
-<summary>
-Example: hisat2_task.wdl
-
-```wdl
-version 1.1
-
-task hisat2 {
-  input {
-    File index_tar_gz
-    String sra_acc
-    Int? max_reads
-    Int threads = 8
-    Float memory_gb = 16
-    Float disk_size_gb = 100
-  }
-
-  String index_id = basename(index_tar_gz, ".tar.gz")
-
-  command <<<
-    mkdir "~{index_id}"
-    tar -C "~{index_id}" --strip-components 2 -xzf "~{index_tar_gz}"
-    hisat2 \
-      -p ~{threads} \
-      ~{if defined(max_reads) then "-u ~{select_first([max_reads])}" else ""} \
-      -x "~{index_id}" \
-      --sra-acc ~{sra_acc} > ~{sra_acc}.sam
-  >>>
-  
-  output {
-    File sam = "output.sam"
-  }
-  
-  runtime {
-    container: "quay.io/biocontainers/hisat2:2.2.1--h1b792b2_3"
-    cpu: threads
-    memory: "~{memory_gb} GB"
-    disks: "~{disk_size_gb} GB"
-  }
-
-  meta {
-    description: "Align single-end reads with BWA MEM"
-  }
-
-  parameter_meta {
-    index_tar_gz: "Gzipped tar file with HISAT2 index files"
-    sra_acc: "SRA accession number or reads to align"
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{
-  "hisat2.index_tar_gz": "https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz",
-  "hisat2.sra_acc": "SRR3440404",
-  "hisat2.max_reads": 10
-}
-```
-
-Example output:
-
-```json
-{
-  "hisat2.sam": "SRR3440404.sam"
-}
-```
-
-Test config:
-
-```json
-{
-  "dependencies": ["cpu", "memory", "disks"]
-}
-```
-</p>
-</details>
-
-#### Example 2: GATK Haplotype Caller
-
-<details>
-<summary>
-Example: gatk_haplotype_caller_task.wdl
-
-```wdl
-version 1.1
-
-struct Reference {
-  String id
-  File fasta
-  File index
-  File dict
-}
-
-task gatk_haplotype_caller {
-  input {
-    File bam
-    Reference reference
-    String? interval
-    Int memory_gb = 4
-    Float? disks_gb
-    String? sample_id
-  }
-  
-  String prefix = select_first([sample_id, basename(bam, ".bam")])
-  Float disk_size_gb = select_first([
-    disks_gb, 10 + size([bam, reference.fasta], "GB")
-  ])
-
-  command <<<
-    # ensure all reference files are in the same directory
-    mkdir ref
-    ln -s ~{reference.fasta} ref/~{reference.id}.fasta
-    ln -s ~{reference.index} ref/~{reference.id}.fasta.fai
-    ln -s ~{reference.dict} ref/~{reference.id}.dict
-    gatk --java-options "-Xmx~{memory_gb}g" HaplotypeCaller \
-      ~{if defined(interval) then "-L ~{select_first([interval])}" else ""} \
-      -R ref/~{reference.id}.fasta \
-      -I ~{bam} \
-      -O ~{prefix}.vcf
-  >>>
-
-  output {
-    File vcf = "~{prefix}.vcf"
-  }
-
-  parameter_meta {
-    bam: "BAM file to call"
-    reference_fasta: "Reference genome in FASTA format"
-    memory_gb: "Amount of memory to allocate to the JVM in GB"
-    disks_gb: "Amount of disk space to reserve"
-    sample_id: "The ID of the sample to call"
-  }
-
-  meta {
-    author: "Joe Somebody"
-    email: "joe@company.org"
-  }
-  
-  runtime {
-    container: "broadinstitute/gatk"
-    memory: "~{memory_gb + 1} GB"
-    disks: "~{disk_size_gb} GB"
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{
-  "gatk_haplotype_caller.bam": "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/RMNISTHS_30xdownsample.bam",
-  "gatk_haplotype_caller.reference": {
-    "id":"Homo_sapiens_assembly38",
-    "fasta": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta",
-    "index": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta.fai",
-    "dict": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.dict"
-  },
-  "gatk_haplotype_caller.interval": "chr1:1000000-1010000"
-}
-```
-
-Example output:
-
-```json
-{
-  "gatk_haplotype_caller.vcf": "HG002.vcf"
-}
-```
-
-Test config:
-
-```json
-{
-  "dependencies": ["memory", "disks"]
-}
-```
-</p>
-</details>
 
 ## Workflow Definition
 
@@ -5193,14 +5028,14 @@ When a [call statement](#call-statement) needs to refer to a task or workflow in
 
 <details>
 <summary>
-Example: call_imported_task.wdl
+Example: call_imported.wdl
 
 ```wdl
 version 1.1
 
 import "input_ref_call.wdl" as ns1
 
-workflow call_imported_task {
+workflow call_imported {
   input {
     Int x
     Int y = d1.out
@@ -5220,7 +5055,7 @@ Example input:
 
 ```json
 {
-  "call_imported_task.x": 5
+  "call_imported.x": 5
 }
 ```
 
@@ -5228,7 +5063,7 @@ Example output:
 
 ```json
 {
-  "call_imported_task.result": 20
+  "call_imported.result": 20
 }
 ```
 </p>
@@ -6511,7 +6346,7 @@ workflow test_sub {
     String chocoearly = sub(chocolike, "late", "early") # I like chocoearly when\nit's early
     String chocolate = sub(chocolike, "late$", "early") # I like chocolate when\nit's early
     String chocoearlylate = sub(chocolike, "[^ ]late", "early") # I like chocearly when\nit's late
-    String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate when\nit's late
+    String choco4 = sub(chocolike, " [[:alpha:]]{4} ", " 4444 ") # I 4444 chocolate when\nit's late
     String no_newline = sub(chocolike, "\\n", " ") # "I like chocolate when it's late"
   }
 }
@@ -6592,7 +6427,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["data_file"]
+  "exclude_output": ["change_extension.data_file"]
 }
 ```
 </p>
@@ -6728,7 +6563,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["files"]
+  "exclude_output": ["gen_files.files"]
 }
 ```
 </p>
@@ -6776,15 +6611,16 @@ version 1.1
 
 task file_sizes {
   command <<<
-    printf "this file is 22 bytes\n" > created_file
+    printf "this file is 22 bytes\n" > out.txt
   >>>
 
   File? missing_file = None
+  File created_file = "out.txt"
 
   output {
-    Float missing_file_bytes = size(missing_file) # 0.0
-    Float created_file_bytes = size("created_file", "B") # 22.0
-    Float multi_file_kb = size(["created_file", missing_file], "K") # 0.022
+    Float missing_file_bytes = size(missing_file, "B") # 0.0
+    Float created_file_bytes = size(created_file, "B") # 22.0
+    Float multi_file_kb = size([created_file, missing_file], "K") # 0.022
   }
   
   runtime {
@@ -6826,7 +6662,7 @@ Returns the value of the executed command's standard output (stdout) as a `File`
 
 <details>
 <summary>
-Example: echo_stdout.wdl
+Example: echo_stdout_task.wdl
 
 ```wdl
 version 1.1
@@ -6871,7 +6707,7 @@ Returns the value of the executed command's standard error (stderr) as a `File`.
 
 <details>
 <summary>
-Example: echo_stderr.wdl
+Example: echo_stderr_task.wdl
 
 ```wdl
 version 1.1
@@ -7834,6 +7670,10 @@ task read_objects {
   output {
     Array[Object] my_obj = read_objects(stdout())
   }
+
+  runtime {
+    container: "python:latest"
+  }
 }
 ```
 </summary>
@@ -8764,11 +8604,13 @@ workflow test_unzip {
   Map[String, Int] m = {"a": 0, "b": 1, "c": 2}
   Pair[Array[String], Array[Int]] keys_and_values = unzip(as_pairs(m))
   Pair[Array[Int], Array[String]] expected1 = ([0, 42], ["hello", "goodbye"])
+  Array[String] expected_keys = ["a", "b", "c"]
+  Array[Int] expected_values = [0, 1, 2]
   
   output {
     Boolean is_true1 = unzip(int_str_arr) == expected1
-    Boolean is_true2 = keys_and_values.left == ["a", "b", "c"]
-    Boolean is_true3 = keys_and_values.right == [0, 1, 2]
+    Boolean is_true2 = keys_and_values.left == expected_keys
+    Boolean is_true3 = keys_and_values.right == expected_values
   }
 }
 ```
@@ -8820,15 +8662,19 @@ workflow test_flatten {
     Array[Array[Pair[Float, String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
     Map[Float, String] f2s = as_map(flatten(aap2D))
     Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+    Array[Int] expected1D = [1, 2, 3, 1, 21, 22]
     Array[File] expected2D = ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
     Array[Array[Int]] expected3D = [[1, 2], [3, 4], [5, 6], [7, 8]]
+    Array[Pair[Float, String]] expectedArray = [(0.1, "mouse"), (3.0, "cat"), (15.0, "dog")]
+    Map[Float, String] expectedMap = {0.1: "mouse", 3.0: "cat", 15.0: "dog"}
   }
 
   output {
-    Boolean is_true1 = flatten(ai2D) == [1, 2, 3, 1, 21, 22]
+    Boolean is_true1 = flatten(ai2D) == expected1D
     Boolean is_true2 = flatten(af2D) == expected2D
-    Boolean is_true3 = flatten(aap2D) == [(0.1, "mouse"), (3, "cat"), (15, "dog")]
+    Boolean is_true3 = flatten(aap2D) == expectedArray
     Boolean is_true4 = flatten(ai3D) == expected3D
+    Boolean is_true5 = f2s == expectedMap
   }
 }
 ```
@@ -8847,7 +8693,8 @@ Example output:
   "test_flatten.is_true1": true,
   "test_flatten.is_true2": true,
   "test_flatten.is_true3": true,
-  "test_flatten.is_true4": true
+  "test_flatten.is_true4": true,
+  "test_flatten.is_true5": true
 }
 ```
 </p>
@@ -9007,9 +8854,10 @@ workflow test_select_all {
   }
 
   Array[Int] fivethree = select_all([maybe_five, maybe_four_but_is_not, maybe_three])
+  Array[Int] expected = [5, 3]
 
   output {
-    Boolean is_true = fivethree == [5, 3]
+    Boolean is_true = fivethree == expected
   }
 }
 ```
@@ -9225,9 +9073,10 @@ workflow test_keys {
   }
 
   Array[String] str_to_files_keys = key
+  Array[String] expected = ["a", "b", "c"]
 
   output {
-    Boolean is_true1 = keys(x) == ["a", "b", "c"]
+    Boolean is_true1 = keys(x) == expected
     Boolean is_true2 = str_to_files_keys == keys(str_to_files)
   }
 }
@@ -9933,7 +9782,7 @@ task serde_array_lines {
   >>>
 
   output {
-    Array[Int] matches = read_lines(stdout())
+    Array[String] matches = read_lines(stdout())
   }
 }
 ```
@@ -9952,7 +9801,7 @@ Example output:
 
 ```json
 {
-  "serde_array_lines.matches": [2, 2]
+  "serde_array_lines.matches": ["2", "2"]
 }
 ```
 </p>
@@ -10113,7 +9962,7 @@ Example output:
 ```json
 {
   "serde_pair.tails_of_two": {
-    "Houston": "Chicago"
+    "Chicago": "Piscataway"
   }
 }
 ```
@@ -10143,7 +9992,7 @@ task serde_int_strings {
   >>>
 
   output {
-    Array[Int] ints = read_lines(stdout())
+    Array[String] ints = read_lines(stdout())
   }
 }
 
@@ -10157,7 +10006,7 @@ workflow serde_homogeneous_pair {
   }
 
   output {
-    Array[Int] ints = flatten(serde_int_strings.ints)
+    Array[String] ints = flatten(serde_int_strings.ints)
   }
 }
 ```
@@ -10178,7 +10027,7 @@ Example output:
 
 ```json
 {
-  "serde_homogeneous_pair.ints": [1, 2, 3, 4]
+  "serde_homogeneous_pair.ints": ["1", "2", "3", "4"]
 }
 ```
 </p>

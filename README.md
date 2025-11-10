@@ -1,5 +1,14 @@
 # Workflow Description Language (WDL)
 
+| Engine    | Conformance Tests |
+|-----------|------------------|
+| MiniWDL   | [![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test_1.1/shields/miniwdl_shields.json)](https://github.com/openwdl/wdl/actions/runs/19152302683) |
+| Sprocket  | [![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test_1.1/shields/sprocket_shields.json)](https://github.com/openwdl/wdl/actions/runs/19152302703) |
+| Toil      | [![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test_1.1/shields/toil_shields.json)](https://github.com/openwdl/wdl/actions/runs/19152302701) |
+| Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix-test_1.1/shields/cromwell_shields.json)](https://github.com/openwdl/wdl/actions/runs/19152302676) |
+
+
+
 The **Workflow Description Language (WDL)** is an open standard for describing data processing workflows with a human-readable and writeable syntax.
 WDL makes it straightforward to define analysis tasks, connect them together in workflows, and parallelize their execution.
 The language strives to be accessible and understandable to all manner of users, including programmers, analysts, and operators of a production system.

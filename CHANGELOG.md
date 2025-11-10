@@ -45,9 +45,18 @@ version development
 version 1.1.3
 ---------------------------
 
-* Fix issues with examples (#653, #654, #661, #662, #663, #664, #665, #666, #668, #671). Thanks to @stxue1!
-* Clarify that a file is not required to exist or be accessible until and unless it is accessed.
-* Fix unit test for `round()` to properly test for round-half-up behavior as described.
++ Fix issues with examples (#653, #654, #661, #662, #663, #664, #665, #666, #668, #671). Thanks to @stxue1!
+
++ Clarify that a file is not required to exist or be accessible until and unless it is accessed.
+
++ Fix unit test for `round()` to properly test for round-half-up behavior as described.
+
++ Fix issues with examples (#707, #708, #701). [PR 706](https://github.com/openwdl/wdl/pull/706) by @vsmalladi
+
++ Add in CI/CD for Miniwdl, Sprocket, Toil and Cromwell for spec compliance
+
++ Remove Advanced Task Examples to clearly distinguish what is the testing is in scope.
+
 
 version 1.1.2
 ---------------------------
