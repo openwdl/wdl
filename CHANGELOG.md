@@ -26,6 +26,12 @@ version 1.2.1
 
 * Include fixes to examples introduced in v1.1.3
 
+* Include fixes to examples that don't compile in `wdl-tests` (#707, #708,  #701, #738, #731, #740,  #739). Thanks to @adamnovak and @claymcleod!
+
+* Add in CI/CD for Miniwdl, Sprocket, Toil and Cromwell for spec compliance.
+
+* Remove Advanced Task Examples to clearly distinguish what is the testing is in scope. (#730)
+
 version 1.2.0
 ---------------------------
 
@@ -252,4 +258,3 @@ draft-2
 ---------------------------
 
 + Added ANTLR4 grammar
-
