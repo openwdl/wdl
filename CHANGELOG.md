@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
++ Formalize replacement string syntax for `sub()` function to specify backreference support (`\1` through `\9`).
+  ([#749](https://github.com/openwdl/wdl/pull/749)).
+
 * Clarify that `disks` mount points ephemeral and should not already exist
 
 * Deprecate the use of relative path literals in input and private variable declarations.
