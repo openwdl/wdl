@@ -3492,7 +3492,7 @@ An `enum`'s variants are [accessed](#member-access) using a `.` to separate the 
 
 A declaration with an `enum` type can only be initialized by referencing a variant directly or by assigning it to the value of another declaration of the same `enum` type.
 
-Two enum values can be tested for equality (i.e., using `==` or `!=`). To be equal, two enum values must be the same variant of the same `enum` type. For example, `Color.Red == Color.Red` evaluates to `true`, while `Color.Red == Color.Blue` evaluates to `false`. Even if two different enum variants have the same inner value, they are not equal (though their inner values extracted via `value()` may be equal). Enum variants are not ordered, so they cannot be compared (i.e., using `>`, `>=`, `<`, `<=`).
+Two enum values can be tested for equality (i.e., using `==` or `!=`). To be equal, two enum values must be the same variant of the same `enum` type. For example, `Color.Red == Color.Red` evaluates to `true`, while `Color.Red == Color.Blue` evaluates to `false`. A comparison of two enum values of different `enum` types is considered a type mismatch error. Enum values are not ordered, so they cannot be compared with ordinal operators (i.e., using `>`, `>=`, `<`, `<=`).
 
 When an enum value is serialized using string interpolation, it is serialized to its variant name. To extract the inner value of an enum variant, use the [`value()`](#-value) standard library function.
 
