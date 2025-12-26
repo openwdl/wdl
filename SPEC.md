@@ -40,6 +40,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [🗑 Object](#-object)
         - [Custom Types (Structs)](#custom-types-structs)
         - [Enumeration Types (Enums)](#enumeration-types-enums)
+      - [Type Name References](#type-name-references)
       - [Hidden and Scoped Types](#hidden-and-scoped-types)
         - [`Union` (Hidden Type)](#union-hidden-type)
         - [`hints`, `input`, and `output` (Scoped Types)](#hints-input-and-output-scoped-types)
@@ -1497,9 +1498,9 @@ Note that the ability to assign values to `Struct` declarations other than struc
 
 ##### Enumeration Types (Enums)
 
-An enumeration (or "enum") is a closed set of enumerated values (known as "variants") that are considered semantically valid in a specific context. An enum is defined at the top-level of the WDL document and can be used as a declaration type anywhere in the document.
+An enumeration (or "enum") is a closed set of enumerated values (known as "choices") that are considered semantically valid in a specific context. An enum is defined at the top-level of the WDL document and can be used as a declaration type anywhere in the document.
 
-An enum is defined using the `enum` keyword, followed by a globally unique name, followed by a comma-delimited list of identifiers—optionally tagged with values—in braces. When referring to a variant within an enum, for example, when assigning to an enum declaration, the `<name>.<variant>` syntax should be used.
+An enum is defined using the `enum` keyword, followed by a globally unique name, followed by a comma-delimited list of identifiers—optionally tagged with values—in braces. When referring to a choice within an enum, for example, when assigning to an enum declaration, the `<name>.<choice>` syntax should be used.
 
 ```wdl
 enum FileKind {
@@ -1536,10 +1537,12 @@ workflow process_files {
 
 As an example, consider a workflow that processes different types of NGS files and has a `file_kind` input parameter that is expected to be either "FASTQ" or "BAM". Using `String` as the type of `file_kind` is not ideal - if the user specifies an invalid value, the error will not be caught until runtime, perhaps after the workflow has already run for several hours. Alternatively, using an `enum` type for `file_kind` restricts the allowed values such that the execution engine can validate the input prior to executing the workflow.
 
-Enums are valued, meaning that each variant within an enum has an associated value. Enum values can be of any WDL type, including primitive types (`String`, `Int`, `Float`, `Boolean`), compound types (`Array`, `Map`, `Pair`, `Object`), and user-defined types (`Struct`). To assign a type to the values therein, enums can either be _explicitly_ or _implicitly_ typed.
+Enums are valued, meaning that each choice within an enum has an associated value. Enum values can be of any WDL type, including primitive types (`String`, `Int`, `Float`, `Boolean`), compound types (`Array`, `Map`, `Pair`, `Object`), and user-defined types (`Struct`). To assign a type to the values therein, enums can either be _explicitly_ or _implicitly_ typed.
 
 * Explicitly typed enums take an explicit type assignment within square brackets after the enum's identifier that declares the type of the value. Explicitly typed enums may include values that coerce to the declared type.
-* Implicitly typed enums are enums where the values can be unambiguously resolved to a single type following WDL's type coercion rules. If the values do not coerce to a single common type, an error is thrown. Enums that are implicitly typed and for which no values are assigned are assumed to be `String` valued with values matching the variant names.
+* Implicitly typed enums are enums where the values can be unambiguously resolved to a single type following WDL's type coercion rules. If the values do not coerce to a single common type, an error is thrown. Enums that are implicitly typed and for which no values are assigned are assumed to be `String` valued with values matching the choice names.
+
+If any non-`String` values are provided for an enum's choices, then all choices must have explicit values. In the case where all values are `String` (or the enum is implicitly typed as `String`), choices without explicit values are automatically assigned a value equal to the choice name.
 
 Enum values must be literal expressions only. This includes string literals (which may contain escape sequences like `"\t"`), numeric literals, boolean literals, collection literals (`Array`, `Map`, `Pair`), object literals, and struct literals. String interpolation, variable references, and computed expressions are not allowed in enum values, as enums are global declarations that must be evaluable at parse time.
 
@@ -1552,7 +1555,7 @@ enum FruitColors[String] {
 }
 
 # An explicitly typed enum that is `Float`-valued. Because the enum is
-# explicitly typed, the `ThreePointOh` variant can be coerced to a `Float`,
+# explicitly typed, the `ThreePointOh` choice can be coerced to a `Float`,
 # which is a valid enumeration definition.
 enum FavoriteFloat[Float] {
   ThreePointOh = 3,
@@ -1573,6 +1576,21 @@ enum InvalidEnum {
   Text = "hello"
 }
 
+# ERROR: cannot use computed expressions in enum values
+enum Bad1 {
+  Two = 1 + 1
+}
+
+# ERROR: cannot use string interpolation in enum values
+enum Bad2 {
+  Greeting = "Hello ~{world}"
+}
+
+# ERROR: cannot use function calls in enum values
+enum Bad3 {
+  Three = length([1, 2, 3])
+}
+
 # An implicitly typed enum that is `String`-valued.
 enum Whitespace {
   Tab = "\t",
@@ -1587,7 +1605,7 @@ enum FileKind {
 }
 
 # An explicitly typed enum with `Array[String]` values. This allows for
-# defining sets of related string constants as enum variants.
+# defining sets of related string constants as enum choices.
 enum Contigs[Array[String]] {
   Canonical = ["chr1", "chr2", "chr3", "chr4", "chr5"],
   All = ["chr1", "chr2", "chr3", "chr4", "chr5", "chrM", "chrX", "chrY"]
@@ -1598,6 +1616,27 @@ enum DefaultConfig {
   Fast = { "threads": 4, "memory_gb": 8 },
   Standard = { "threads": 8, "memory_gb": 16 },
   HighMem = { "threads": 16, "memory_gb": 64 }
+}
+```
+
+#### Type Name References
+
+A type name reference represents a reference to a custom type by name. When a custom type name appears in an expression context (rather than in a type declaration position), it evaluates to a type name reference. At the time of writing, type name references are only meaningful for enums.
+
+Type name references are evaluated as part of normal expression evaluation, so any expression that evaluates to a type name reference can be used wherever a type name reference is expected. Type name references are primarily used with enums to access enum choices using the [member access](#member-access) operator (`.`). For example, in the expression `Color.Red`, the identifier `Color` evaluates to a type name reference to the `Color` enum type, which can then be accessed to retrieve the `Red` choice. Since type name references participate in expression evaluation, expressions like `(Color).Red` are also valid.
+
+There is no postulated use case for struct type name references. Member access on a struct type name reference produces an error. Type name references cannot be coerced to any other type.
+
+```wdl
+enum Priority {
+  Low,
+  Medium,
+  High
+}
+
+workflow example {
+  Priority p1 = Priority.Low     # Priority is a type name reference
+  Priority p2 = (Priority).High  # Expression evaluates to type name reference
 }
 ```
 
@@ -1786,6 +1825,8 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | `Object`         | `Struct`         |                                                                                                                                                  |
 | `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types                                   |
 | `Struct`         | `Struct`         | The two `Struct` types must have members with identical names and compatible types (see [Struct-to-Struct Coercion](#struct-to-struct-coercion)) |
+| `Enum`           | `String`         | `String` value must exactly match one of the enum's choice names                                                                                |
+| `String`         | `Enum`           | The enum choice is serialized to its choice name                                                                                               |
 
 The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-serializationdeserialization-using-write_linesread_lines) for details and best practices.
 
@@ -2001,7 +2042,7 @@ Implementers may choose to allow limited exceptions to the above rules, with the
 
 ### Declarations
 
-A declaration reserves a name that can be referenced anywhere in the [scope](#appendix-b-wdl-namespaces-and-scopes) where it is declared. A declaration has a type, a name, and an optional initialization. Each declaration must be unique within its scope, and may not collide with a [reserved WDL keyword](#reserved-keywords) (e.g., `workflow`, or `input`).
+A declaration reserves a name that can be referenced anywhere in the [scope](#appendix-b-wdl-namespaces-and-scopes) where it is declared. A declaration has a type, a name, and an optional initialization. Each declaration must be unique within its scope, may not collide with a [reserved WDL keyword](#reserved-keywords) (e.g., `workflow`, or `input`), and may not have the same name as a visible struct or enum type.
 
 A [task](#task-definition) or [workflow](#workflow-definition) may declare input parameters within its `input` section and output parameters within its `output` section. If a non-optional input declaration does not have an initialization, it is considered a "required" parameter, and its value must be provided by the user before the workflow or task may be run. Declarations may also appear in the body of a task or workflow. All non-input declarations must be initialized.
 
@@ -2504,7 +2545,11 @@ Example output:
 
 #### Member Access
 
-The syntax `x.y` refers to member access. `x` must be a `Struct` or `Object` value, or a call in a workflow. A call can be thought of as a struct where the members are the outputs of the called task.
+The syntax `x.y` refers to member access. The left-hand side `x` is evaluated as an expression and must be one of the following:
+
+- A `Struct` or `Object` value, where `y` is a member name
+- A call in a workflow, where `y` is an output name (a call can be thought of as a struct where the members are the outputs of the called task)
+- A [type name reference](#type-name-references) to an enum, where `y` is a choice name
 
 <details>
 <summary>
@@ -3470,9 +3515,9 @@ struct Invalid {
 
 ## Enum Definition
 
-An `enum` is an enumerated type. Enums enable the creation of types that represent closed sets of alternatives (called "variants") that are semantically valid in a specific context. Once defined, an `enum` type can be used as the type of a declaration like any other type. However, new variants of an `enum` cannot be created. Instead, a declaration having an `enum` type must be assigned one of the variants created as part of the `enum`'s definition.
+An `enum` is an enumerated type. Enums enable the creation of types that represent closed sets of alternatives (called "choices") that are semantically valid in a specific context. Once defined, an `enum` type can be used as the type of a declaration like any other type. However, new choices of an `enum` cannot be created. Instead, a declaration having an `enum` type must be assigned one of the choices created as part of the `enum`'s definition.
 
-An enum definition is a top-level WDL element, meaning it is defined at the same level as tasks, workflows, and structs, and it cannot be defined within a task or workflow body. An enum is defined using the `enum` keyword, followed by a name that is unique within the WDL document, and a body containing a comma-delimited list of variants in braces (`{}`). Variant names within an enum must be unique, and enum names must not conflict with struct names or other enum names.
+An enum definition is a top-level WDL element, meaning it is defined at the same level as tasks, workflows, and structs, and it cannot be defined within a task or workflow body. An enum is defined using the `enum` keyword, followed by a name that is unique within the WDL document, and a body containing a comma-delimited list of choices in braces (`{}`). Choice names within an enum must be unique, and enum names must not conflict with struct names or other enum names.
 
 ```wdl
 enum Color {
@@ -3482,19 +3527,19 @@ enum Color {
 }
 ```
 
-An enum can be thought of as a closed type with a fixed set of instances. The `enum` keyword creates both a type (that can be used in declarations) and a global namespace containing the enum's variants. For example, `Color.Red` refers to a specific instance of the `Color` enum type.
+An enum can be thought of as a closed type with a fixed set of instances. The `enum` keyword creates both a type (that can be used in declarations) and a global namespace containing the enum's choices. For example, `Color.Red` refers to a specific instance of the `Color` enum type.
 
-Unlike structs, it is not possible to create new instances of an `enum` outside of the enum's definition. An enum value can only be one of the variants defined in the enum's declaration.
+Unlike structs, it is not possible to create new instances of an `enum` outside of the enum's definition. An enum value can only be one of the choices defined in the enum's declaration.
 
 ### Enum Usage
 
-An `enum`'s variants are [accessed](#member-access) using a `.` to separate the variant name from the `enum`'s identifier.
+An `enum`'s choices are [accessed](#member-access) using a `.` to separate the choice name from the `enum`'s identifier.
 
-A declaration with an `enum` type can only be initialized by referencing a variant directly or by assigning it to the value of another declaration of the same `enum` type.
+A declaration with an `enum` type can only be initialized by referencing a choice directly or by assigning it to the value of another declaration of the same `enum` type.
 
-Two enum values can be tested for equality (i.e., using `==` or `!=`). To be equal, two enum values must be the same variant of the same `enum` type. For example, `Color.Red == Color.Red` evaluates to `true`, while `Color.Red == Color.Blue` evaluates to `false`. A comparison of two enum values of different `enum` types is considered a type mismatch error. Enum values are not ordered, so they cannot be compared with ordinal operators (i.e., using `>`, `>=`, `<`, `<=`).
+Two enum values can be tested for equality (i.e., using `==` or `!=`). To be equal, two enum values must be the same choice of the same `enum` type. For example, `Color.Red == Color.Red` evaluates to `true`, while `Color.Red == Color.Blue` evaluates to `false`. A comparison of two enum values of different `enum` types is considered a type mismatch error. Enum values are not ordered, so they cannot be compared with ordinal operators (i.e., using `>`, `>=`, `<`, `<=`).
 
-When an enum value is serialized using string interpolation, it is serialized to its variant name. To extract the inner value of an enum variant, use the [`value()`](#-value) standard library function.
+When an enum value is serialized using string interpolation, it is serialized to its choice name. To extract the inner value of an enum choice, use the [`value()`](#-value) standard library function.
 
 An `enum` cannot be coerced to or from any other type. However, an enum value can be [serialized to/deserialized from JSON](#json-input-and-output-for-enums) and can be used in [command sections](#command-section-serialization-of-enums).
 
@@ -3536,7 +3581,7 @@ Enum values are serialized and deserialized differently depending on the context
 
 #### JSON Input and Output for Enums
 
-When an enum value appears in JSON input or output files, it is represented by its **variant name** (not its inner value). The variant name is specified as a string without the enum type prefix.
+When an enum value appears in JSON input or output files, it is represented by its **choice name** (not its inner value). The choice name is specified as a string without the enum type prefix.
 
 For example, given this enum:
 
@@ -3558,7 +3603,7 @@ workflow example {
 }
 ```
 
-**Input JSON** uses the variant name:
+**Input JSON** uses the choice name:
 
 ```json
 {
@@ -3566,7 +3611,7 @@ workflow example {
 }
 ```
 
-**Output JSON** also uses the variant name:
+**Output JSON** also uses the choice name:
 
 ```json
 {
@@ -3574,11 +3619,11 @@ workflow example {
 }
 ```
 
-The execution engine validates that the provided string matches one of the enum's variant names. If an invalid variant name is provided, the execution engine must raise an error during input validation.
+The execution engine validates that the provided string matches one of the enum's choice names. If an invalid choice name is provided, the execution engine must raise an error during input validation.
 
 #### Command Section Serialization of Enums
 
-When an enum value is used in a command section with string interpolation, it is serialized to its **variant name** (not the inner value). To access the inner value, use the [`value()`](#-value) function.
+When an enum value is used in a command section with string interpolation, it is serialized to its **choice name** (not the inner value). To access the inner value, use the [`value()`](#-value) function.
 
 For example:
 
@@ -3609,7 +3654,7 @@ Using verbosity level: Info
 my_tool -v input.txt
 ```
 
-This demonstrates that `~{verbosity}` produces the variant name "Info", while `~{value(verbosity)}` produces the inner value "-v".
+This demonstrates that `~{verbosity}` produces the choice name "Info", while `~{value(verbosity)}` produces the inner value "-v".
 
 ## Import Statements
 
@@ -3816,6 +3861,17 @@ workflow another_wf {
 }
 ```
 
+#### Enum Compatibility
+
+When the same enum name is imported from multiple sources, the imports must be structurally compatible to avoid conflicts. Two enum definitions are considered compatible if and only if they have the same type parameter (both explicit with matching types, or both inferred/implicit) and the choices exactly match, including the order.
+
+If incompatible enums with the same name are imported, an error is raised. Use the `alias` clause to resolve naming conflicts:
+
+```wdl
+import "lib_a.wdl" alias Status as StatusA
+import "lib_b.wdl" alias Status as StatusB
+```
+
 ## Task Definition
 
 A WDL task can be thought of as a template for running a set of commands - specifically, a Bash script - in a manner that is (ideally) independent of the execution engine and the runtime environment.
@@ -3928,10 +3984,10 @@ Example input:
   - See the [special case handling for Versioning Filesystems](#special-case-versioning-filesystem) below.
 - When a WDL author uses a `File` or `Directory` input in their [Command Section](#command-section), the absolute path to the localized file/directory is substituted when that declaration is referenced.
 
-The above rules do *not* guarantee that two files will be localized to the same directory *unless* they originate from the same parent location. If you are writing a task for a tool that assumes two files will be co-located, then it is safest to manually co-locate them prior to running the tool. For example, the following task runs a variant caller (`varcall`) on a BAM file and expects the BAM's index file (`.bai` extension) to be in the same directory as the BAM file.
+The above rules do *not* guarantee that two files will be localized to the same directory *unless* they originate from the same parent location. If you are writing a task for a tool that assumes two files will be co-located, then it is safest to manually co-locate them prior to running the tool. For example, the following task runs a choice caller (`varcall`) on a BAM file and expects the BAM's index file (`.bai` extension) to be in the same directory as the BAM file.
 
 ```wdl
-task call_variants_safe {
+task call_choices_safe {
   input {
     File bam
     File bai
@@ -7629,7 +7685,7 @@ A function is called using the following syntax: `R' val = func_name(arg1, arg2,
 
 A function may be generic, which means that one or more of its parameters and/or its return type are generic. These functions are defined using letters (e.g. `X`, `Y`) for the type parameters, and the bounds of each type parameter is specified in the function description.
 
-A function may be polymorphic, which means it is actually multiple functions ("variants") with the same name but different signatures. Such a function may be defined using `|` to denote the set of alternative valid types for one or more of its parameters, or it may have each variant defined separately.
+A function may be polymorphic, which means it is actually multiple functions ("choices") with the same name but different signatures. Such a function may be defined using `|` to denote the set of alternative valid types for one or more of its parameters, or it may have each choice defined separately.
 
 Functions are grouped by their argument types and restrictions. Some functions may be restricted as to where they may be used. An unrestricted function may be used in any expression.
 
@@ -7808,7 +7864,7 @@ Example output:
 
 ### `min`
 
-This function has four variants:
+This function has four choices:
 
 ```
 * Int min(Int, Int)
@@ -7870,7 +7926,7 @@ Example output:
 
 ### `max`
 
-This function has four variants:
+This function has four choices:
 
 ```
 * Int max(Int, Int)
@@ -8253,7 +8309,7 @@ File join_paths(Array[String]+)
 
 Joins together two or more paths into an absolute path in the host filesystem.
 
-There are three variants of this function:
+There are three choices of this function:
 
 1. `File join_paths(File, String)`: Joins together exactly two paths. The first path may be either absolute or relative and must specify a directory; the second path is relative to the first path and may specify a file or directory.
 2. `File join_paths(File, Array[String]+)`: Joins together any number of relative paths with a base path. The first argument may be either an absolute or a relative path and must specify a directory. The paths in the second array argument must all be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
@@ -8431,7 +8487,7 @@ Float size(X|X?, [String])
 
 Determines the size of a file, directory, or the sum total sizes of the files/directories contained within a compound value. The files may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage)
 
-In the second variant of the `size` function, the parameter type `X` represents any compound type that contains `File` or `File?` nested at any depth.
+In the second choice of the `size` function, the parameter type `X` represents any compound type that contains `File` or `File?` nested at any depth.
 
 If the size cannot be represented in the specified unit because the resulting value is too large to fit in a `Float`, an error is raised. It is recommended to use a unit that will always be large enough to handle any expected inputs without numerical overflow.
 
@@ -8938,7 +8994,7 @@ Array[Object] read_tsv(File, Boolean, Array[String])
 
 Reads a tab-separated value (TSV) file as an `Array[Array[String]]` representing a table of values. Trailing end-of-line characters (`\r` and `\n`) are removed from each line.
 
-This function has three variants:
+This function has three choices:
 
 1. `Array[Array[String]] read_tsv(File, [false])`: Returns each row of the table as an `Array[String]`. There is no requirement that the rows of the table are all the same length.
 2. `Array[Object] read_tsv(File, true)`: The second parameter must be `true` and specifies that the TSV file contains a header line. Each row is returned as an `Object` with its keys determined by the header (the first line in the file) and its values as `String`s. All rows in the file must be the same length and the field names in the header row must be valid `Object` field names, or an error is raised.
@@ -9060,7 +9116,7 @@ File write_tsv(Array[Struct], Boolean, Array[String])
 ```
 Given an `Array` of elements, writes a tab-separated value (TSV) file with one line for each element.
 
-There are three variants of this function:
+There are three choices of this function:
 
 1. `File write_tsv(Array[Array[String]])`: Each element is concatenated using a tab ('\t') delimiter and written as a row in the file. There is no header row.
 
@@ -11173,13 +11229,13 @@ Example output:
 
 Given a key-value type collection (`Map`, `Struct`, or `Object`) and a key, tests whether the collection contains an entry with the given key.
 
-This function has thre variants:
+This function has thre choices:
 
 1. `Boolean contains_key(Map[P, Y], P)`: Tests whether the `Map` has an entry with the given key. If `P` is an optional type (e.g., `String?`), then the second argument may be `None`.
 2. `Boolean contains_key(Object, String)`: Tests whether the `Object` has an entry with the given name.
 3. `Boolean contains_key(Map[String, Y]|Struct|Object, Array[String])`: Tests recursively for the presence of a compound key within a nested collection.
 
-For the third variant, the first argument is a collection that may be nested to any level, i.e., contain values that are collections, which themselves may contain collections, and so on. The second argument is an array of keys that are resolved recursively. If the value associated with any except the last key in the array is `None` or not a collection type, this function returns `false`.
+For the third choice, the first argument is a collection that may be nested to any level, i.e., contain values that are collections, which themselves may contain collections, and so on. The second argument is an array of keys that are resolved recursively. If the value associated with any except the last key in the array is `None` or not a collection type, this function returns `false`.
 
 For example, if the first argument is a `Map[String, Map[String, Int]]` and the second argument is `["foo", "bar"]`, then the outer `Map` is tested for the presence of key "foo", and if it is present, then its value is tested for the presence of key "bar". This only tests for the presence of the named element, *not* whether or not it is `defined`.
 
@@ -11407,13 +11463,13 @@ These functions operate on enum values.
 T value(Enum)
 ```
 
-Returns the underlying value associated with an enum variant.
+Returns the underlying value associated with an enum choice.
 
 **Parameters**
 
-1. `Enum`: an enum variant of any enum type.
+1. `Enum`: an enum choice of any enum type.
 
-**Returns**: The variant's associated value.
+**Returns**: The choice's associated value.
 
 <details>
 <summary>
@@ -11441,11 +11497,11 @@ workflow test_enum_value {
   }
 
   output {
-    String variant_name = "~{color}"   # "Red"
+    String choice_name = "~{color}"   # "Red"
     String hex_value = value(color)    # "#FF0000"
     Int priority_num = value(priority) # 10
     Boolean values_equal = value(Color.Red) == value(Color.Red) # true
-    Boolean variants_equal = Color.Red == Color.Red             # true
+    Boolean choices_equal = Color.Red == Color.Red             # true
   }
 }
 ```
@@ -11464,11 +11520,11 @@ Example output:
 
 ```json
 {
-  "test_enum_value.variant_name": "Red",
+  "test_enum_value.choice_name": "Red",
   "test_enum_value.hex_value": "#FF0000",
   "test_enum_value.priority_num": 10,
   "test_enum_value.values_equal": true,
-  "test_enum_value.variants_equal": true
+  "test_enum_value.choices_equal": true
 }
 ```
 </p>
@@ -11717,7 +11773,7 @@ workflow example {
     Int read_count = readcounter.result
     Float kessel_run_parsecs = trip_to_space.distance
     Boolean sample_swap_detected = array_concordance.concordant
-    Array[File] sample_variants = variant_calling.vcfs
+    Array[File] sample_choices = choice_calling.vcfs
     Map[String, Int] droids = escape_pod.cargo
   }
 }
@@ -11732,7 +11788,7 @@ The output JSON will look like:
   "example.read_count": 50157187,
   "example.kessel_run_parsecs": 11.98,
   "example.sample_swap_detected": false,
-  "example.sample_variants": ["/data/patient1.vcf", "/data/patient2.vcf"],
+  "example.sample_choices": ["/data/patient1.vcf", "/data/patient2.vcf"],
   "example.droids": {"C": 3, "D": 2, "P": 0, "R": 2}
 }
 ```
@@ -12788,7 +12844,7 @@ The following WDL namespaces exist:
 * [WDL document](#wdl-documents)
     * The namespace of an [imported](#import-statements) document equals that of the basename of the imported file by default, but may be aliased using the `as <identifier>` syntax.
     * A WDL document may contain a `workflow` and/or `task`s, which are names within the document's namespace.
-    * A WDL document may contain `struct`s, which are also names within the document's namespace and usable as types in any declarations. Structs from any imported documents are [copied into the document's namespace](#importing-and-aliasing-structs) and may be aliased using the `alias <source name> as <new name>` syntax.
+    * A WDL document may contain `struct`s and `enum`s, which are also names within the document's namespace and usable as types in any declarations. Structs and enums from any imported documents are [copied into the document's namespace](#importing-and-aliasing-structs) and may be aliased using the `alias <source name> as <new name>` syntax.
 * A [WDL `task`](#task-definition) is a namespace consisting of:
     * `input`, `output`, and private declarations
     * A [`requirements`](#-requirements-section) namespace that contains all the runtime requirements
@@ -12819,7 +12875,7 @@ A WDL document is the top-level (or "outermost") scope. All elements defined wit
 * A `workflow`
 * Any number of `task`s
 * Imported namespaces
-* All `struct`s defined in the document and in any imported documents
+* All `struct`s and `enum`s defined in the document and in any imported documents
 
 ### Task Scope
 
