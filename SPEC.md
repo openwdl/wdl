@@ -147,6 +147,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [`find`](#-find)
     - [`matches`](#-matches)
     - [`sub`](#sub)
+    - [✨ `split`](#-split)
   - [File Functions](#file-functions)
     - [`basename`](#basename)
     - [`join_paths`](#-join_paths)
@@ -7846,7 +7847,7 @@ Regular expressions are written using regular WDL strings, so backslash characte
 
 🗑 The option for execution engines to allow other regular expression grammars besides POSIX ERE is deprecated.
 
-**Parameters**:
+*Parameters**:
 
 1. `String`: the input string.
 2. `String`: the pattern to search for.
@@ -7951,6 +7952,79 @@ Test config:
 ```json
 {
   "exclude_output": ["data_file"]
+}
+```
+</p>
+</details>
+
+### ✨ `split`
+
+```
+Array[String] split(String, String)
+```
+
+Given the two `String` parameters `input` and `delimiter`, this function splits the input string on the provided delimiter and stores the results in a `Array[String]`. `delimiter` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
+Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped (e.g., `"\\t"`).
+
+**Parameters**:
+
+1. `String`: the input string.
+2. `String`: the delimiter to split on as a regular expression.
+
+**Returns**: the parts of the input string split by the delimiter. If the input delimiter does not match anything in the input string, an array containing a single entry of the input string is returned.
+
+<details>
+<summary>
+Example: test_split.wdl
+
+```wdl
+version 1.3
+
+workflow test_split {
+  String in = "Here's an example\nthat takes up multiple lines"
+
+  output {
+    Array[String] split_by_word = split(in, " ")
+    Array[String] split_by_newline = split(in, "\\n")
+    Array[String] split_by_both = split(in, "\s")
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_split.split_by_word": [
+    "Here's",
+    "an",
+    "example\nthat",
+    "takes",
+    "up",
+    "multiple",
+    "lines"
+  ],
+  "test_split.split_by_newline": [
+    "Here's an example",
+    "that takes up multiple lines"
+  ],
+  "test_split.split_by_both": [
+    "Here's",
+    "an",
+    "example",
+    "that",
+    "takes",
+    "up",
+    "multiple",
+    "lines"
+  ],
 }
 ```
 </p>
