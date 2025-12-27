@@ -2872,6 +2872,7 @@ The result of evaluating an expression in a placeholder must ultimately be conve
 
 - `String` is substituted directly.
 - `File` is substituted as if it were a `String`.
+- `Directory` is substituted as if it were a `String`. The resulting string does not have a trailing slash.
 - `Int` is formatted without leading zeros (unless the value is `0`), and with a leading `-` if the value is negative.
 - `Float` is printed in the style `[-]ddd.dddddd`, with 6 digits after the decimal point.
 - `Boolean` is converted to the "stringified" version of its literal value, i.e., `true` or `false`.
