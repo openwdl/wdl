@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.3.0
 ---------------------------
 
++ Added `previous` to the `task` variable, enabling runtime access to the previous attempt's computed requirements ([#734](https://github.com/openwdl/wdl/pull/734)).
+
 + Added `max_retries` to the `task` variable ([#733](https://github.com/openwdl/wdl/pull/733)).
 
 + Introduced the `split` standard library function ([#729](https://github.com/openwdl/wdl/pull/729)).
@@ -247,4 +249,3 @@ draft-2
 ---------------------------
 
 + Added ANTLR4 grammar
-

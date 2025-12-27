@@ -43,6 +43,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [`Union` (Hidden Type)](#union-hidden-type)
         - [`hints`, `input`, and `output` (Scoped Types)](#hints-input-and-output-scoped-types)
         - [`task` (Hidden Scoped Type)](#task-hidden-scoped-type)
+        - ✨ [`task.previous` (Hidden Scoped Type)](#taskprevious-hidden-scoped-type)
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
@@ -1508,7 +1509,21 @@ The [`hints`](#-hints-section) section has [three scoped types](#hints-scoped-ty
 
 ##### `task` (Hidden Scoped Type)
 
-The [`task` type](#runtime-access-to-requirements-hints-and-metadata) is a hidden type that is scoped to the `command` and `output` sections.
+The [`task` type](#runtime-access-to-requirements-hints-and-metadata) is a hidden type that is available in both pre-evaluation contexts (`requirements`, `hints`, and the deprecated `runtime` sections) with a limited set of members, and in post-evaluation contexts (`command` and `output` sections) with the full set of members.
+
+##### ✨ `task.previous` (Hidden Scoped Type)
+
+The [`task.previous` type](#runtime-access-to-requirements-hints-and-metadata) is a hidden type that contains the previously computed requirements from the last task attempt. It is scoped to within the `task` variable and contains the following optional members:
+
+* `memory`: An `Int?` with the allocated memory in bytes from the previous attempt.
+* `cpu`: A `Float?` with the allocated number of CPUs from the previous attempt.
+* `container`: A `String?` with the URI of the container used in the previous attempt.
+* `gpu`: An `Array[String]?` with the GPU specifications from the previous attempt.
+* `fpga`: An `Array[String]?` with the FPGA specifications from the previous attempt.
+* `disks`: A `Map[String, Int]?` with the disk mount points and allocated space from the previous attempt.
+* `max_retries`: An `Int?` with the maximum number of retry attempts from the previous attempt.
+
+All fields are `None` on the first try.
 
 #### Type Conversion
 
@@ -5761,6 +5776,7 @@ This information is provided by the `task` variable, which is implicitly defined
 * `disks`: A `Map[String, Int]` with one entry for each disk mount point. The key is the mount point and the value is the initial amount of disk space allocated, in bytes. The execution engine must, at a minimum, provide one entry for each disk mount point requested, but may provide more. The amount of disk space available for a given mount point may increase during the lifetime of the task (e.g., autoscaling volumes provided by some cloud services).
 * `max_retries` ✨: An `Int` with the maximum number of retry attempts.
 * `attempt`: An `Int` with the current task attempt. The value must be `0` the first time the task is executed, and incremented by `1` each time the task is retried (if any).
+* `previous` ✨: A [hidden type](#taskprevious-hidden-scoped-type) containing the computed requirements from the previous task attempt. All fields are `None` on the first try.
 * `end_time`: An `Int?` whose value is the time by which the task must be completed, as a [Unix time stamp](https://en.wikipedia.org/wiki/Unix_time). A value of `0` means that the execution engine does not impose a time limit. A value of `None` means that the execution engine cannot determine whether the runtime of the task is limited. A positive value is a guarantee that the task will be preempted at the specified time, but is *not* a guarantee that the task won't be preempted earlier.
 * `return_code`: An `Int?` whose value is initially `None` and is set to the value of the `command`'s return code. The value is only guaranteed to be defined in the `output` section.
 * `meta`: An `Object` containing a copy of the task's `meta` section, or the empty `Object` if there is no `meta` section or if it is empty.
@@ -5824,6 +5840,69 @@ Test config:
 ```json
 {
   "dependencies": ["cpu", "memory"]
+}
+```
+</p>
+</details>
+
+Only a limited subset of the `task` variable members (`name`, `id`, `attempt`, `previous`, `meta`, `parameter_meta`, and `ext`) are available in pre-evaluation contexts (`requirements`, `hints`, and the deprecated `runtime` sections). The full set of members, including all computed requirements, are available in post-evaluation contexts (`command` and `output` sections).
+
+<details>
+<summary>
+Example: test_task_previous.wdl
+
+```wdl
+version 1.3
+
+task test_task_previous {
+  requirements {
+    # Only name, id, attempt, previous, meta, parameter_meta, and ext are available in pre-evaluation
+    cpu: task.attempt + 1
+    memory: "~{256 * (2 ** task.attempt)} MB"
+    container: "ubuntu:latest"
+    max_retries: 1
+  }
+
+  command <<<
+  echo "Attempt: ~{task.attempt}"
+  echo "CPU: ~{task.cpu}"
+  echo "Memory: ~{task.memory}"
+  echo "Previous CPU: ~{select_first([task.previous.cpu, 0])}"
+  echo "Previous Memory: ~{select_first([task.previous.memory, 0])}"
+
+  # Fail on first attempt
+  if [ ~{task.attempt} -eq 0 ]; then
+    exit 1
+  fi
+  >>>
+
+  output {
+    # All task fields are available in output
+    Int attempt = task.attempt
+    Float cpu = task.cpu
+    Int memory = task.memory
+    Float? previous_cpu = task.previous.cpu
+    Int? previous_memory = task.previous.memory
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_task_previous.attempt": 1,
+  "test_task_previous.cpu": 2.0,
+  "test_task_previous.memory": 512000000,
+  "test_task_previous.previous_cpu": 1.0,
+  "test_task_previous.previous_memory": 256000000
 }
 ```
 </p>
