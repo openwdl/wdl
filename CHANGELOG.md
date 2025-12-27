@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
++ Formalize replacement string syntax for `sub()` function to specify backreference support (`\1` through `\9`).
+  ([#749](https://github.com/openwdl/wdl/pull/749)).
+
 + Clarify `File` and `Directory` path canonicalization, validation, and equality semantics. Clarify when `File`s and `Directories` must exist (at declaration evaluation time, not access time). Add `Directory` comparison operators to binary operators table ([#748](https://github.com/openwdl/wdl/pull/748)).
 
 + Clarify that `File` values cannot refer to directories and `Directory` values cannot refer to files; attempting to assign the wrong type of path is an error ([#748](https://github.com/openwdl/wdl/pull/748)).
