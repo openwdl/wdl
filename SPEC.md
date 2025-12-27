@@ -30,6 +30,7 @@ Revisions to this specification are made periodically in order to correct errors
           - [Multi-line Strings](#multi-line-strings)
         - [Files and Directories](#files-and-directories)
           - [Path Canonicalization and Validation](#path-canonicalization-and-validation)
+          - [Relative and Absolute Paths](#relative-and-absolute-paths)
       - [Optional Types and None](#optional-types-and-none)
       - [Compound Types](#compound-types)
         - [Array\[X\]](#arrayx)
