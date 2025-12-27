@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
++ Clarified that `task.return_code` is only available in the `output` section, where it has type `Int` rather than `Int?` ([#742](https://github.com/openwdl/wdl/pull/742)).
+
 + Clarified that relative paths in `File` and `Directory` declarations are resolved relative to the WDL document's parent directory outside the `output` section, and relative to the task's execution directory inside the `output` section. Also clarified that optional files evaluate to `None` in both contexts if the path does not exist.
   ([#735](https://github.com/openwdl/wdl/pull/735))
 
@@ -28,8 +30,6 @@ version 1.2.1
 + Deprecate the use of relative path literals in input and private variable declarations.
 
 + Include fixes to examples introduced in v1.1.3
-
-+ Clarified that `task.return_code` is only available in the `output` section, where it has type `Int` rather than `Int?` ([#742](https://github.com/openwdl/wdl/pull/742)).
 
 * Include fixes to examples that don't compile in `wdl-tests` (#707, #708,  #701, #738, #731, #740,  #739). Thanks to @adamnovak and @claymcleod!
 
