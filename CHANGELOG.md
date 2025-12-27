@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version 1.3.0
 ---------------------------
 
++ Clarified that relative paths in `File` and `Directory` declarations are resolved relative to the WDL document's parent directory outside the `output` section, and relative to the task's execution directory inside the `output` section. Also clarified that optional files evaluate to `None` in both contexts if the path does not exist.
+  ([#735](https://github.com/openwdl/wdl/pull/735))
+
 + Added `previous` to the `task` variable, enabling runtime access to the previous attempt's computed requirements ([#734](https://github.com/openwdl/wdl/pull/734)).
 
 + Added `max_retries` to the `task` variable ([#733](https://github.com/openwdl/wdl/pull/733)).

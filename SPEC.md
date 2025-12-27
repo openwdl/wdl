@@ -867,8 +867,77 @@ task literals_paths {
     # does not exist, then `f2` is set to `None`.
     File? f2 = "/foo/bar.txt"
   }
+
+  # If baz.txt does not exist, this is an error.
+  File f3 = "baz.txt"
+
+  # If qux.txt does not exist, this is set to `None`.
+  File? f4 = "qux.txt"
 }
 ```
+
+The interpretation of relative paths (paths that do not start with `/`) depends on the context in which they appear:
+
+* *Outside the `output` section (e.g., in `input` or private declarations)*, relative paths are interpreted relative to the parent directory of the WDL document itself on the host filesystem, similar to how [import](#import-statements) paths are resolved.
+* *Inside the `output` section*, relative paths are interpreted relative to the task's execution directory. This is where task commands create their output files. See [Task Outputs](#task-outputs) for details.
+
+In both contexts, if an optional `File?` or `Directory?` declaration refers to a path that does not exist, the value is set to `None`.
+
+Absolute paths (paths starting with `/`) refer to specific locations on the host filesystem when used outside the `output` section. Within the `output` section, absolute paths may be interpreted in a container-dependent way—see [Task Outputs](#task-outputs) for details.
+
+<details>
+<summary>
+Example: relative_paths_context.wdl
+
+```wdl
+version 1.3
+
+task relative_paths_context {
+  # This relative path is resolved relative to the WDL document's parent directory.
+  File input_file = "hello.txt"
+
+  command <<<
+    cat ~{input_file} > output.txt
+  >>>
+
+  output {
+    # This relative path is resolved relative to the execution directory.
+    File result = "output.txt"
+    String content = read_string(result)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "relative_paths_context.content": "hello"
+}
+```
+
+Test config:
+
+```json
+{
+  "exclude_output": "result"
+}
+```
+
+</p>
+</details>
+
+In this example,
+
+- The `input_file` input uses a relative path that refers to a file co-located with the WDL document on the host filesystem.
+- The `result` output uses a relative path that refers to a file created by the command in the execution directory.
 
 An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path.
 
@@ -4599,7 +4668,7 @@ Test config:
 </p>
 </details>
 
-Relative paths are interpreted relative to the execution directory, whereas absolute paths are interpreted in a container-dependent way.
+Relative paths are interpreted relative to the execution directory, whereas absolute paths are interpreted in a container-dependent way. Absolute paths that reference locations outside the task's execution directory may not be supported by all execution engines, particularly in environments where access to the container's filesystem is restricted.
 
 <details>
 <summary>
