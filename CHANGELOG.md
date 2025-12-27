@@ -20,6 +20,12 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
++ Clarify `File` and `Directory` path canonicalization, validation, and equality semantics. Clarify when `File`s and `Directories` must exist (at declaration evaluation time, not access time). Add `Directory` comparison operators to binary operators table ([#748](https://github.com/openwdl/wdl/pull/748)).
+
++ Clarify that `File` values cannot refer to directories and `Directory` values cannot refer to files; attempting to assign the wrong type of path is an error ([#748](https://github.com/openwdl/wdl/pull/748)).
+
++ Update `join_paths` function: change return type from `File` to `String` (since the result can be either a file or directory path), and change first argument from `File` to `Directory` for the first two overloads ([#748](https://github.com/openwdl/wdl/pull/748)).
+
 + Fix `change_extension_task.wdl` example to use string interpolation when passing `File` to `sub()` function ([#747](https://github.com/openwdl/wdl/issues/747)).
 
 + Clarified that when a `Directory` is converted to a `String`, the resulting string does not have a trailing slash ([#745](https://github.com/openwdl/wdl/pull/745)).
