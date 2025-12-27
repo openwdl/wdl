@@ -903,7 +903,7 @@ Absolute paths (paths starting with `/`) refer to specific locations on the host
 Example: relative_paths_context.wdl
 
 ```wdl
-version 1.3
+version 1.2
 
 task relative_paths_context {
   # This relative path is resolved relative to the WDL document's parent directory.
