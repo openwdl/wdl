@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
+* Clarified symlink handling behavior in the `glob` function ([#744](https://github.com/openwdl/wdl/pull/744)).
+
 + Clarified the restriction on multi-level optionals in the "Optional Types" section. ([#743](https://github.com/openwdl/wdl/pull/743))
 
 + Clarified that relative paths in `File` and `Directory` declarations are resolved relative to the WDL document's parent directory outside the `output` section, and relative to the task's execution directory inside the `output` section. Also clarified that optional files evaluate to `None` in both contexts if the path does not exist.
