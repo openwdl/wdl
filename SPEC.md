@@ -117,9 +117,6 @@ Revisions to this specification are made periodically in order to correct errors
       - [Task Metadata Section](#task-metadata-section)
       - [Parameter Metadata Section](#parameter-metadata-section)
     - [Runtime Access to Requirements, Hints, and Metadata](#runtime-access-to-requirements-hints-and-metadata)
-    - [Advanced Task Examples](#advanced-task-examples)
-      - [Example 1: HISAT2](#example-1-hisat2)
-      - [Example 2: GATK Haplotype Caller](#example-2-gatk-haplotype-caller)
   - [Workflow Definition](#workflow-definition)
     - [Workflow Elements](#workflow-elements)
     - [Evaluation of Workflow Elements](#evaluation-of-workflow-elements)
@@ -393,7 +390,7 @@ WDL also provides features for implementing more complex workflows. For example,
   
   ```json
   {
-    "hello_parallel.all_matches": [["hi_world"], ["hi_pal"]]
+    "hello_parallel.all_matches": [["hi_world"], ["hello"]]
   }
   ```
   </p>
@@ -604,7 +601,7 @@ The following primitive types exist in WDL:
     "primitive_literals.f": 27.3,
     "primitive_literals.s": "hello, world",
     "primitive_literals.x": "hello.txt",
-    "primitive_literals.d": "testdir/hello.txt"
+    "primitive_literals.d": "testdir"
   }
   ```
   </p>
@@ -696,7 +693,7 @@ In multi-line strings, leading *whitespace* is removed according to the followin
       String hw1 = <<<hello  world>>>
       String hw2 = <<<   hello  world   >>>
       String hw3 = <<<   
-          hello world>>>
+          hello  world>>>
       String hw4 = <<<   
           hello  world
           >>>
@@ -733,13 +730,13 @@ In multi-line strings, leading *whitespace* is removed according to the followin
   
   ```json
   {
-    "multiline_strings2.hw0": "hello  world"
-    "multiline_strings2.hw1": "hello  world"
-    "multiline_strings2.hw2": "hello  world"
-    "multiline_strings2.hw3": "hello  world"
-    "multiline_strings2.hw4": "hello  world"
-    "multiline_strings2.hw5": "hello  world"
-    "multiline_strings2.hw6": "hello  world"
+    "multiline_strings2.hw0": "hello  world",
+    "multiline_strings2.hw1": "hello  world",
+    "multiline_strings2.hw2": "hello  world",
+    "multiline_strings2.hw3": "hello  world",
+    "multiline_strings2.hw4": "hello  world",
+    "multiline_strings2.hw5": "hello  world",
+    "multiline_strings2.hw6": "hello  world",
     "multiline_strings2.not_equivalent": "hello \\\n  world"
   }
   ```
@@ -778,6 +775,7 @@ Common leading whitespace is also removed from blank lines that contain whitespa
         this is a
         
           multi-line string
+
       >>>
       
       # This string's common leading whitespace is 8.
@@ -786,6 +784,7 @@ Common leading whitespace is also removed from blank lines that contain whitespa
               this is a
       
                 multi-line string
+
       >>>
     }
   }
@@ -802,9 +801,9 @@ Common leading whitespace is also removed from blank lines that contain whitespa
   
   ```json
   {
-    "multiline_strings3.multi_line_A": "\nthis is a\n\n  multi-line string\n"
-    "multiline_strings3.multi_line_B": "\nthis is a\n\n  multi-line string\n"
-    "multiline_strings3.multi_line_C": "\nthis is a\n\n  multi-line string\n"
+    "multiline_strings3.multi_line_A": "\nthis is a\n\n  multi-line string\n",
+    "multiline_strings3.multi_line_B": "\nthis is a\n\n  multi-line string\n",
+    "multiline_strings3.multi_line_C": "\nthis is a\n\n  multi-line string\n",
     "multiline_strings3.multi_line_D": "\nthis is a\n\n  multi-line string\n"
   }
   ```
@@ -858,6 +857,12 @@ task literals_paths {
     File? f2
   }
 
+  # If baz.txt does not exist, this is an error.
+  File f3 = "baz.txt"
+
+  # If qux.txt does not exist, this is set to `None`.
+  File? f4 = "qux.txt"
+
   command <<<
     # If the user does not overide the value of `f1`, and /foo/bar.txt
     # does not exist, an error will occur when the file is accessed here.
@@ -869,7 +874,6 @@ task literals_paths {
     if [ -f "~{f2}" ]; then
       echo "~{f2}"
     fi
-  >>>
 }
 ```
 
@@ -881,13 +885,78 @@ A path is only required to be valid if and when it is accessed. A path assigned 
 * To write to a file, the path's parent directory must be accessible for writing.
 * To write to a directory, it must exist and be accessible for writing.
 
-Path literals should be absolute paths, since the execution engine is free to set the working directory of a task execution, and thus relative paths may not exist at runtime. 🗑 Use of relative path literals when defining input and private declarations is currently allowed but is deprecated and will be disallowed in WDL 2.0. 
-
 An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path. Remote files must be treated as read-only. A remote file is only required to be vaild at the time that the execution engine needs to localize it.
+
+###### Relative and Absolute Paths
+
+The interpretation of relative paths (paths that do not start with `/`) depends on the context in which they appear:
+
+* *Outside the `output` section (e.g., in `input` or private declarations)*, relative paths are interpreted relative to the parent directory of the WDL document itself on the host filesystem, similar to how [import](#import-statements) paths are resolved.
+* *Inside the `output` section*, relative paths are interpreted relative to the task's execution directory. This is where task commands create their output files. See [Task Outputs](#task-outputs) for details.
+
+In both contexts, if an optional `File?` or `Directory?` declaration refers to a path that does not exist, the value is set to `None`.
+
+Absolute paths (paths starting with `/`) refer to specific locations on the host filesystem when used outside the `output` section. Within the `output` section, absolute paths may be interpreted in a container-dependent way—see [Task Outputs](#task-outputs) for details.
+
+<details>
+<summary>
+Example: relative_paths_context.wdl
+
+```wdl
+version 1.2
+
+task relative_paths_context {
+  # This relative path is resolved relative to the WDL document's parent directory.
+  File input_file = "hello.txt"
+
+  command <<<
+    cat ~{input_file} > output.txt
+  >>>
+
+  output {
+    # This relative path is resolved relative to the execution directory.
+    File result = "output.txt"
+    String content = read_string(result)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "relative_paths_context.content": "hello"
+}
+```
+
+Test config:
+
+```json
+{
+  "exclude_output": "result"
+}
+```
+
+</p>
+</details>
+
+In this example,
+
+- The `input_file` input uses a relative path that refers to a file co-located with the WDL document on the host filesystem.
+- The `result` output uses a relative path that refers to a file created by the command in the execution directory.
 
 #### Optional Types and None
 
 A type may have a `?` postfix quantifier, which means that its value is allowed to be undefined without causing an error. A declaration with an optional type can only be used in calls or functions that accept optional values.
+
+Multi-level optionals are not allowed. A value cannot have multiple levels of optionality, for example, `Int??` is not a valid type. However, nested optionals within compound types are allowed, such as `Array[String?]?`, where each `?` applies to a different structural level of the type.
 
 WDL has a special value `None` whose meaning is "an undefined value". The `None` value has the (hidden) type [`Union`](#union-hidden-type), meaning `None` can be assigned to an optional declaration of any type.
 
@@ -1343,7 +1412,7 @@ workflow test_object {
       a: 10,
       b: "hello"
     }
-    Int i = f.a
+    Int i = obj.a
   }
 }
 ```
@@ -1433,12 +1502,14 @@ Example output:
       "account_number": "123456",
       "routing_number": 300211325,
       "balance": 3.5,
-      "pin_digits": [1, 2, 3, 4]
+      "pin_digits": [1, 2, 3, 4],
+      "username": null
     }
   },
   "test_struct.has_account": true
 }
 ```
+
 </p>
 </details>
 
@@ -1604,7 +1675,7 @@ workflow string_to_file {
   File path2 = path1
 
   output {
-    Boolean paths_equal = path1 == path2
+    Boolean paths_equal = path2 == infile
   }
 }
 ```
@@ -1784,9 +1855,9 @@ workflow map_to_struct {
 
     # What are the keys to this Struct?
     Words map_coercion = {
-      a: 10,
-      b: 11,
-      c: 12
+      "a": 10,
+      "b": 11,
+      "c": 12
     }
   }
 }
@@ -1809,9 +1880,9 @@ Example output:
     "c": 12
   },
   "map_to_struct.map_coercion": {
-    "beware": 10,
-    "key": 11,
-    "lookup": 12
+    "a": 10,
+    "b": 11,
+    "c": 12
   }
 }
 ```
@@ -1840,7 +1911,7 @@ struct A {
   String s
 }
 
-Struct B {
+struct B {
   A a_struct
   Int i
 }
@@ -2695,7 +2766,7 @@ Example output:
 ```json
 {
   "placeholders.cmd": "grep 'h...o' hello",
-  "placehoders.s": "4"
+  "placeholders.s": "4"
 }
 ```
 </p>
@@ -2761,11 +2832,12 @@ Placeholders are evaluated in multi-line strings exactly the same as in regular 
   ```wdl
   version 1.2
 
-  workflow multiline_strings {
-    output {
+  workflow multiline_string_placeholders {
       String spaces = "  "
       String name = "Henry"
       String company = "Acme"
+
+    output {
       # This string evaluates to: "  Hello Henry,\n  Welcome to Acme!"
       # The string still has spaces because the placeholders are evaluated after removing the 
       # common leading whitespace.
@@ -2970,7 +3042,7 @@ task flags {
   >>>
 
   output {
-    String num_matches = read_int(stdout())
+    Int num_matches = read_int(stdout())
   }
 }
 ```
@@ -2989,7 +3061,7 @@ Example output:
 
 ```json
 {
-  "flags.num_matches": "2"
+  "flags.num_matches": 2
 }
 ```
 </p>
@@ -3319,7 +3391,7 @@ task greet_person {
   printf "Hello ~{person.name.first}! You have ~{length(assay_array)} test result(s) available.\n"
 
   if ~{defined(person.income)}; then
-    if [ "~{select_first([person.income]).amount}" -gt 1000 ]; then
+    if [ "$(printf "%.0f" ~{select_first([person.income]).amount})" -gt 1000 ]; then
       currency="~{select_first([select_first([person.income]).currency, "USD"])}"
       printf "Please transfer $currency 500 to continue"
     fi
@@ -4052,22 +4124,21 @@ The environment variable should be evaluated by the engine prior to injecting it
 
 
 <details>
-  <summary>
-  Example: environment_variables.wdl
-  
-  ```wdl
-  version 1.2
+<summary>
+Example: environment_variable_should_echo.wdl
 
-  task test  {
-    input {
-      env String greeting
-    }
-    command <<<
-      echo $foo
-    >>>
-    output {
-      String out= read_string(stdout())
-    }
+```wdl
+version 1.2
+
+task test  {
+  input {
+    env String greeting
+  }
+  command <<<
+    echo $foo
+  >>>
+  output {
+    String out = read_string(stdout())
   }
 
   workflow environment_variable_should_echo {
@@ -4083,10 +4154,12 @@ The environment variable should be evaluated by the engine prior to injecting it
       String out = test.out
     }
   }
-  ```
-  </summary>
-  <p>
-  Example input:
+}
+```
+</summary>
+<p>
+Example input:
+
 
   ```json
   {
@@ -4499,7 +4572,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "csvs"
+  "exclude_output": "outputs.csvs"
 }
 ```
 </p>
@@ -4610,13 +4683,13 @@ Test config:
 
 ```json
 {
-  "exclude_output": "outfiles"
+  "exclude_output": "glob.outfiles"
 }
 ```
 </p>
 </details>
 
-Relative paths are interpreted relative to the execution directory, whereas absolute paths are interpreted in a container-dependent way.
+Relative paths are interpreted relative to the execution directory, whereas absolute paths are interpreted in a container-dependent way. Absolute paths that reference locations outside the task's execution directory may not be supported by all execution engines, particularly in environments where access to the container's filesystem is restricted.
 
 <details>
 <summary>
@@ -4661,7 +4734,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "bashrc"
+  "exclude_output": "relative_and_absolute.bashrc"
 }
 ```
 </p>
@@ -4721,7 +4794,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["example1", "file_array"]
+  "exclude_output": ["optional_output.example1", "optional_output.file_array"]
 }
 ```
 </p>
@@ -5078,7 +5151,7 @@ task test_gpu {
   }
   
   requirements {
-    container: "archlinux:latest"
+    container: "ubuntu:latest"
     gpu: true
   }
 }
@@ -5103,7 +5176,8 @@ Test config:
 
 ```json
 {
-  "dependencies": "gpu"
+  "dependencies": "gpu",
+  "priority": "ignore"
 }
 ```
 </p>
@@ -5293,7 +5367,7 @@ Test config:
 
 ```json
 {
-  "return_code": 1
+  "return_codes": 0
 }
 ```
 </p>
@@ -5335,7 +5409,7 @@ Test config:
 ```json
 {
   "fail": true,
-  "return_code": 42
+  "return_codes": 42
 }
 ```
 </p>
@@ -5348,7 +5422,7 @@ Example: all_return_codes_task.wdl
 ```wdl
 version 1.2
 
-task multi_return_code {
+task all_return_codes {
   command <<<
   exit 42
   >>>
@@ -5376,7 +5450,7 @@ Test config:
 
 ```json
 {
-  "return_code": 42
+  "return_codes": 0
 }
 ```
 </p>
@@ -5452,6 +5526,15 @@ Example output:
   "test_hints.num_lines": 3
 }
 ```
+
+Test config:
+
+```json
+{
+  "priority": "ignore"
+}
+```
+
 </p>
 </details>
 
@@ -5575,7 +5658,9 @@ Example input:
 Example output:
 
 ```json
-{}
+{
+  "input_hint.experience": []
+}
 ```
 </p>
 </details>
@@ -5759,7 +5844,7 @@ Example output:
 
 ```json
 {
-  "ex_paramter_meta.result": 2
+  "ex_paramter_meta.result": 3
 }
 ```
 </p>
@@ -5802,7 +5887,7 @@ Example: test_runtime_info_task.wdl
 ```wdl
 version 1.2
 
-task test_runtime_info_task {
+task test_runtime_info {
   meta {
     description: "Task that shows how to use the implicit 'task' declaration"
   }
@@ -5818,7 +5903,7 @@ task test_runtime_info_task {
   
   output {
     Boolean at_least_two_gb = task.memory >= (2 * 1024 * 1024 * 1024)
-    Int return_code = task.return_code
+    Int? return_code = task.return_code
   }
   
   requirements {
@@ -5849,7 +5934,8 @@ Test config:
 
 ```json
 {
-  "dependencies": ["cpu", "memory"]
+  "dependencies": ["cpu", "memory"],
+  "priority": "optional"
 }
 ```
 </p>
@@ -5857,192 +5943,6 @@ Test config:
 
 If a task is using the deprecated [`runtime`](#-runtime-section) section rather than `requirements` and `hints`, then the runtime values of the reserved `runtime` attributes (i.e., the ones that appear in the `requirements` section) are populated in the `requirements` member.
 
-### Advanced Task Examples
-
-#### Example 1: HISAT2
-
-<details>
-<summary>
-Example: hisat2_task.wdl
-
-```wdl
-version 1.2
-
-task hisat2 {
-  input {
-    File index_tar_gz
-    String sra_acc
-    Int? max_reads
-    Int threads = 8
-    Float memory_gb = 16
-    Float disk_size_gb = 100
-  }
-
-  String index_id = basename(index_tar_gz, ".tar.gz")
-
-  command <<<
-    mkdir "~{index_id}"
-    tar -C "~{index_id}" --strip-components 2 -xzf "~{index_tar_gz}"
-    hisat2 \
-      -p ~{threads} \
-      ~{if defined(max_reads) then "-u ~{select_first([max_reads])}" else ""} \
-      -x "~{index_id}" \
-      --sra-acc ~{sra_acc} > ~{sra_acc}.sam
-  >>>
-  
-  output {
-    File sam = "output.sam"
-  }
-  
-  requirements {
-    container: "quay.io/biocontainers/hisat2:2.2.1--h1b792b2_3"
-    cpu: threads
-    memory: "~{memory_gb} GB"
-    disks: "~{disk_size_gb} GB"
-  }
-
-  meta {
-    description: "Align single-end reads with BWA MEM"
-  }
-
-  parameter_meta {
-    index_tar_gz: "Gzipped tar file with HISAT2 index files"
-    sra_acc: "SRA accession number or reads to align"
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{
-  "hisat2.index_tar_gz": "https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz",
-  "hisat2.sra_acc": "SRR3440404",
-  "hisat2.max_reads": 10
-}
-```
-
-Example output:
-
-```json
-{
-  "hisat2.sam": "SRR3440404.sam"
-}
-```
-
-Test config:
-
-```json
-{
-  "dependencies": ["cpu", "memory", "disks"]
-}
-```
-</p>
-</details>
-
-#### Example 2: GATK Haplotype Caller
-
-<details>
-<summary>
-Example: gatk_haplotype_caller_task.wdl
-
-```wdl
-version 1.2
-
-struct Reference {
-  String id
-  File fasta
-  File index
-  File dict
-}
-
-task gatk_haplotype_caller {
-  input {
-    File bam
-    Reference reference
-    String? interval
-    Int memory_gb = 4
-    Float? disks_gb
-    String? sample_id
-  }
-  
-  String prefix = select_first([sample_id, basename(bam, ".bam")])
-  Float disk_size_gb = select_first([
-    disks_gb, 10 + size([bam, reference.fasta], "GB")
-  ])
-
-  command <<<
-    # ensure all reference files are in the same directory
-    mkdir ref
-    ln -s ~{reference.fasta} ref/~{reference.id}.fasta
-    ln -s ~{reference.index} ref/~{reference.id}.fasta.fai
-    ln -s ~{reference.dict} ref/~{reference.id}.dict
-    gatk --java-options "-Xmx~{memory_gb}g" HaplotypeCaller \
-      ~{if defined(interval) then "-L ~{select_first([interval])}" else ""} \
-      -R ref/~{reference.id}.fasta \
-      -I ~{bam} \
-      -O ~{prefix}.vcf
-  >>>
-
-  output {
-    File vcf = "~{prefix}.vcf"
-  }
-
-  parameter_meta {
-    bam: "BAM file to call"
-    reference_fasta: "Reference genome in FASTA format"
-    memory_gb: "Amount of memory to allocate to the JVM in GB"
-    disks_gb: "Amount of disk space to reserve"
-    sample_id: "The ID of the sample to call"
-  }
-
-  meta {
-    author: "Joe Somebody"
-    email: "joe@company.org"
-  }
-  
-  requirements {
-    container: "broadinstitute/gatk"
-    memory: "~{memory_gb + 1} GB"
-    disks: "~{disk_size_gb} GB"
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{
-  "gatk_haplotype_caller.bam": "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/RMNISTHS_30xdownsample.bam",
-  "gatk_haplotype_caller.reference": {
-    "id":"Homo_sapiens_assembly38",
-    "fasta": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta",
-    "index": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta.fai",
-    "dict": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.dict"
-  },
-  "gatk_haplotype_caller.interval": "chr1:1000000-1010000"
-}
-```
-
-Example output:
-
-```json
-{
-  "gatk_haplotype_caller.vcf": "HG002.vcf"
-}
-```
-
-Test config:
-
-```json
-{
-  "dependencies": ["memory", "disks"]
-}
-```
-</p>
-</details>
 
 ## Workflow Definition
 
@@ -6178,14 +6078,14 @@ When a [call statement](#call-statement) needs to refer to a task or workflow in
 
 <details>
 <summary>
-Example: call_imported_task.wdl
+Example: call_imported.wdl
 
 ```wdl
 version 1.2
 
 import "input_ref_call.wdl" as ns1
 
-workflow call_imported_task {
+workflow call_imported {
   input {
     Int x
     Int y = d1.out
@@ -6205,7 +6105,7 @@ Example input:
 
 ```json
 {
-  "call_imported_task.x": 5
+  "call_imported.x": 5
 }
 ```
 
@@ -6213,7 +6113,7 @@ Example output:
 
 ```json
 {
-  "call_imported_task.result": 20
+  "call_imported.result": 20
 }
 ```
 </p>
@@ -6348,7 +6248,7 @@ Example output:
 
 ```json
 {
-  "other.results": 2
+  "other.results": 3
 }
 ```
 </p>
@@ -6449,7 +6349,7 @@ task nested {
   >>>
 
   output {
-    String greeting = read_string(stdout())
+    String greeting_out = read_string(stdout())
   }
 }
 
@@ -6459,7 +6359,7 @@ workflow test_allow_nested_inputs {
   }
 
   output {
-    String greeting = nested.greeting
+    String nested_greeting = nested.greeting_out
   }
 
   hints {
@@ -6482,7 +6382,7 @@ Example output:
 
 ```json
 {
-  "test_allow_nested_inputs.greeting": "Hello John"
+  "test_allow_nested_inputs.nested_greeting": "Hello John"
 }
 
 ```
@@ -6516,7 +6416,7 @@ workflow multi_nested_inputs {
   }
 
   output {
-    String greeting = test_allow_nested_inputs.greeting
+    String nested_greeting = test_allow_nested_inputs.nested_greeting
   }
 }
 ```
@@ -6534,7 +6434,7 @@ Example output:
 
 ```json
 {
-  "multi_nested_inputs.greeting": "Hello Joe"
+  "multi_nested_inputs.nested_greeting": "Hello Joe"
 }
 ```
 
@@ -7164,7 +7064,7 @@ Example output:
       ["Goodbye Mr. Merry, how are you?", "Goodbye Mr. Merry Brandybuck, how are you?"]
     ]
   ],
-  "nested_scatter.used_honorifics": ["Mr.;", "Wizard", "Mr."]
+  "nested_scatter.used_honorifics": ["Mr.", "Wizard", "Mr."]
 }
 ```
 </p>
@@ -7712,7 +7612,7 @@ Example: test_find_task.wdl
 
 ```wdl
 version 1.2
-workflow find_string {
+workflow test_find {
   input {
     String in = "hello world"
     String pattern1 = "e..o"
@@ -7737,7 +7637,7 @@ Example output:
 ```json
 {
   "test_find.match1": "ello",
-  "test_matches.is_read1": null
+  "test_find.match2": null
 }
 ```
 </p>
@@ -7772,13 +7672,13 @@ Example: test_matches_task.wdl
 
 ```wdl
 version 1.2
-workflow contains_string {
+workflow test_matches {
   input {
-    File fastq
+    File json
   }
   output {
-    Boolean is_compressed = matches(basename(fastq), "\\.(gz|zip|zstd)")
-    Boolean is_read1 = matches(basename(fastq), "_R1")
+    Boolean is_compressed = matches(basename(json), "\\.(gz|zip|zstd)")
+    Boolean is_read1 = matches(basename(json), "_R1")
   }
 }
 ```
@@ -7788,7 +7688,7 @@ Example input:
 
 ```json
 {
-  "fastq": "sample1234_R1.fastq"
+  "test_matches.json": "person.json"
 }
 ```
 
@@ -7797,7 +7697,7 @@ Example output:
 ```json
 {
   "test_matches.is_compressed": false,
-  "test_matches.is_read1": true
+  "test_matches.is_read1": false
 }
 ```
 </p>
@@ -7837,7 +7737,7 @@ workflow test_sub {
     String chocoearly = sub(chocolike, "late", "early") # I like chocoearly when\nit's early
     String chocolate = sub(chocolike, "late$", "early") # I like chocolate when\nit's early
     String chocoearlylate = sub(chocolike, "[^ ]late", "early") # I like chocearly when\nit's late
-    String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate when\nit's late
+    String choco4 = sub(chocolike, " [[:alpha:]]{4} ", " 4444 ") # I 4444 chocolate when\nit's late
     String no_newline = sub(chocolike, "\\n", " ") # "I like chocolate when it's late"
   }
 }
@@ -7858,7 +7758,7 @@ Example output:
   "test_sub.chocoearly": "I like chocoearly when\nit's early",
   "test_sub.chocolate": "I like chocolate when\nit's early",
   "test_sub.chocoearlylate": "I like chocearly when\nit's late",
-  "test_sub.choco4": "I 4444 chocolate 4444\nit's late",
+  "test_sub.choco4": "I 4444 chocolate when\nit's late",
   "test_sub.no_newline": "I like chocolate when it's late"
 }
 ```
@@ -7918,7 +7818,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["data_file"]
+  "exclude_output": ["change_extension.data_file"]
 }
 ```
 </p>
@@ -7984,7 +7884,8 @@ Example output:
 ```json
 {
   "test_basename.is_true1": true,
-  "test_basename.is_true2": true
+  "test_basename.is_true2": true,
+  "test_basename.is_true3": true
 }
 ```
 </p>
@@ -8024,11 +7925,11 @@ Example: join_paths_task.wdl
 ```wdl
 version 1.2
 
-task resolve_paths_task {
+task join_paths {
   input {
     File abs_file = "/usr"
     String abs_str = "/usr"
-    String rel_dir_str = "bin"
+    String rel_str_dir = "bin"
     File rel_file = "echo"
     File rel_dir_file = "mydir"
     String rel_str = "mydata.txt"
@@ -8044,7 +7945,7 @@ task resolve_paths_task {
   File data = join_paths(rel_dir_file, rel_str)
   
   # this resolves to '<working dir>/bin/echo', which is non-existent
-  File doesnt_exist = join_paths([rel_dir_str, rel_file])
+  File doesnt_exist = join_paths([rel_str_dir, rel_file])
   command <<<
     mkdir ~{rel_dir_file}
     ~{bin1} -n "hello" > ~{data}
@@ -8073,8 +7974,8 @@ Example output:
 
 ```json
 {
-  "join_paths_task.bins_equal": true,
-  "join_paths_task.result": "hello"
+  "join_paths.bins_equal": true,
+  "join_paths.result": "hello"
 }
 ``` 
 </p>
@@ -8148,7 +8049,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["files"]
+  "exclude_output": ["gen_files.files"]
 }
 ```
 </p>
@@ -8200,16 +8101,17 @@ version 1.2
 
 task file_sizes {
   command <<<
-    printf "this file is 22 bytes\n" > created_file
+    printf "this file is 22 bytes\n" > out.txt
   >>>
 
+  File created_file
   File? missing_file = None
 
   output {
-    File created_file = "created_file"
-    Float missing_file_bytes = size(missing_file)
+    File created_file = "out.txt"
+    Float missing_file_bytes = size(missing_file, "B") 
     Float created_file_bytes = size(created_file, "B")
-    Float multi_file_kb = size([created_file, missing_file], "K")
+    Float multi_file_kb = size([created_file, missing_file], "K") # 0.022
 
     Map[String, Pair[Int, File]] nested = {
       "a": (10, created_file),
@@ -8258,7 +8160,7 @@ Returns the value of the executed command's standard output (stdout) as a `File`
 
 <details>
 <summary>
-Example: echo_stdout.wdl
+Example: echo_stdout_task.wdl
 
 ```wdl
 version 1.2
@@ -8303,7 +8205,7 @@ Returns the value of the executed command's standard error (stderr) as a `File`.
 
 <details>
 <summary>
-Example: echo_stderr.wdl
+Example: echo_stderr_task.wdl
 
 ```wdl
 version 1.2
@@ -8721,7 +8623,7 @@ task read_tsv {
     } >> data.no_headers.tsv
 
     {
-      printf "header1\header2\n"
+      printf "header1\theader2\n"
       printf "row1\tvalue1\n"
       printf "row2\tvalue2\n"
       printf "row3\tvalue3\n"
@@ -8840,6 +8742,12 @@ Example: write_tsv_task.wdl
 ```wdl
 version 1.2
 
+struct Numbers {
+  String first
+  String second
+  String third
+}
+
 task write_tsv {
   input {
     Array[Array[String]] array = [["one", "two", "three"], ["un", "deux", "trois"]]
@@ -8898,7 +8806,7 @@ Example output:
   "write_tsv.structs_default": ["first", "one", "un"], 
   "write_tsv.structs_no_header": ["two", "deux"], 
   "write_tsv.structs_header": ["second", "two", "deux"], 
-  "write_tsv.structs_user_header": ["no3", "three", "trois"], 
+  "write_tsv.structs_user_header": ["no3", "three", "trois"]
 
 }
 ```
@@ -9376,6 +9284,10 @@ task read_objects {
 
   output {
     Array[Object] my_obj = read_objects(stdout())
+  }
+
+  requirements {
+    container: "python:latest"
   }
 }
 ```
@@ -10255,11 +10167,13 @@ workflow test_unzip {
   Map[String, Int] m = {"a": 0, "b": 1, "c": 2}
   Pair[Array[String], Array[Int]] keys_and_values = unzip(as_pairs(m))
   Pair[Array[Int], Array[String]] expected1 = ([0, 42], ["hello", "goodbye"])
+  Array[String] expected_keys = ["a", "b", "c"]
+  Array[Int] expected_values = [0, 1, 2]
   
   output {
     Boolean is_true1 = unzip(int_str_arr) == expected1
-    Boolean is_true2 = keys_and_values.left == ["a", "b", "c"]
-    Boolean is_true3 = keys_and_values.right == [0, 1, 2]
+    Boolean is_true2 = keys_and_values.left == expected_keys
+    Boolean is_true3 = keys_and_values.right == expected_values
   }
 }
 ```
@@ -10458,15 +10372,19 @@ workflow test_flatten {
     Array[Array[Pair[Float, String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
     Map[Float, String] f2s = as_map(flatten(aap2D))
     Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+    Array[Int] expected1D = [1, 2, 3, 1, 21, 22]
     Array[File] expected2D = ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
     Array[Array[Int]] expected3D = [[1, 2], [3, 4], [5, 6], [7, 8]]
+    Array[Pair[Float, String]] expectedArray = [(0.1, "mouse"), (3.0, "cat"), (15.0, "dog")]
+    Map[Float, String] expectedMap = {0.1: "mouse", 3.0: "cat", 15.0: "dog"}
   }
 
   output {
-    Boolean is_true1 = flatten(ai2D) == [1, 2, 3, 1, 21, 22]
+    Boolean is_true1 = flatten(ai2D) == expected1D
     Boolean is_true2 = flatten(af2D) == expected2D
-    Boolean is_true3 = flatten(aap2D) == [(0.1, "mouse"), (3, "cat"), (15, "dog")]
+    Boolean is_true3 = flatten(aap2D) == expectedArray
     Boolean is_true4 = flatten(ai3D) == expected3D
+    Boolean is_true5 = f2s == expectedMap
   }
 }
 ```
@@ -10485,7 +10403,8 @@ Example output:
   "test_flatten.is_true1": true,
   "test_flatten.is_true2": true,
   "test_flatten.is_true3": true,
-  "test_flatten.is_true4": true
+  "test_flatten.is_true4": true,
+  "test_flatten.is_true5": true
 }
 ```
 </p>
@@ -10643,6 +10562,7 @@ Example: test_select_all.wdl
 ```wdl
 version 1.2
 
+
 workflow test_select_all {
   input {
     Int? maybe_five = 5
@@ -10651,9 +10571,10 @@ workflow test_select_all {
   }
 
   Array[Int] fivethree = select_all([maybe_five, maybe_four_but_is_not, maybe_three])
+  Array[Int] expected = [5, 3]
 
   output {
-    Boolean is_true = fivethree == [5, 3]
+    Boolean is_true = length(fivethree) == 2 && fivethree == expected
   }
 }
 ```
@@ -10883,11 +10804,13 @@ workflow test_keys {
   }
 
   Array[String] str_to_files_keys = key
+  Array[String] expected = ["a", "b", "c"]
+  Array[String] expectedKeys = ["first", "last"]
 
   output {
-    Boolean is_true1 = keys(x) == ["a", "b", "c"]
+    Boolean is_true1 = length(keys(x)) == 3 && keys(x) == expected
     Boolean is_true2 = str_to_files_keys == keys(str_to_files)
-    Boolean is_true3 = keys(name) == ["first", "last"]
+    Boolean is_true3 = length(keys(name)) == 2 && keys(name) == expectedKeys
   }
 }
 ```
@@ -10962,10 +10885,12 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
     }
 
     output {
-      Int? i1 = m[s1] if contains_key(m, key1) else None
-      Int? i2 = m[s2] if contains_key(m, key2) else None
-      String? phone1 = p1.details["phone"] if contains_key(p1, ["details", "phone"]) else None
-      String? phone2 = p2.details["phone"] if contains_key(p2, ["details", "phone"]) else None
+      Int? i1 = if contains_key(m, key1) then m[key1] else None
+      Int? i2 = if contains_key(m, key2) then m[key2] else None
+
+      String? phone1 = if contains_key(p1.details, "phone") then p1.details["phone"] else None
+      String? phone2 = if contains_key(p2.details, "phone") then p2.details["phone"] else None
+
     }
   }
   ```
@@ -10997,7 +10922,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
     "test_contains_key.i1": 1,
     "test_contains_key.i2": null,
     "test_contains_key.phone1": "123-456-7890",
-    "test_contains_key.phone2": null,
+    "test_contains_key.phone2": null
   }
   ``` 
   </p>
@@ -11051,7 +10976,7 @@ workflow test_values {
     }
   }
   
-  scatter (files in values(str_to_files)) {
+  scatter (ints in values(str_to_ints)) {
     call add { x=ints.left, y=ints.right }
   }
   
@@ -11240,7 +11165,7 @@ workflow test_length {
   Array[Int] xs = [1, 2, 3]
   Array[String] ys = ["a", "b", "c"]
   Array[String] zs = []
-  Map[String, Int] m = {"a": 1, "b", 2}
+  Map[String, Int] m = {"a": 1, "b": 2}
   String s = "ABCDE"
 
   output {
@@ -11268,7 +11193,7 @@ Example output:
   "test_length.ylen": 3,
   "test_length.zlen": 0,
   "test_length.mlen": 2,
-  "test_length.slen": 5,
+  "test_length.slen": 5
 }
 ```
 </p>
@@ -11923,7 +11848,7 @@ task serde_array_lines {
   >>>
 
   output {
-    Array[Int] matches = read_lines(stdout())
+    Array[String] matches = read_lines(stdout())
   }
 }
 ```
@@ -11942,7 +11867,7 @@ Example output:
 
 ```json
 {
-  "serde_array_lines.matches": [2, 2]
+  "serde_array_lines.matches": ["2", "2"]
 }
 ```
 </p>
@@ -12103,7 +12028,7 @@ Example output:
 ```json
 {
   "serde_pair.tails_of_two": {
-    "Houston": "Chicago"
+    "Chicago": "Piscataway"
   }
 }
 ```
@@ -12133,7 +12058,7 @@ task serde_int_strings {
   >>>
 
   output {
-    Array[Int] ints = read_lines(stdout())
+    Array[String] ints = read_lines(stdout())
   }
 }
 
@@ -12147,7 +12072,7 @@ workflow serde_homogeneous_pair {
   }
 
   output {
-    Array[Int] ints = flatten(serde_int_strings.ints)
+    Array[String] ints = flatten(serde_int_strings.ints)
   }
 }
 ```
@@ -12168,7 +12093,7 @@ Example output:
 
 ```json
 {
-  "serde_homogeneous_pair.ints": [1, 2, 3, 4]
+  "serde_homogeneous_pair.ints": ["1", "2", "3", "4"]
 }
 ```
 </p>

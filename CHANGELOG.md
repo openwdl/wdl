@@ -20,11 +20,22 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
-* Clarify that `disks` mount points ephemeral and should not already exist
++ Clarified the restriction on multi-level optionals in the "Optional Types" section. ([#743](https://github.com/openwdl/wdl/pull/743))
 
-* Deprecate the use of relative path literals in input and private variable declarations.
++ Clarified that relative paths in `File` and `Directory` declarations are resolved relative to the WDL document's parent directory outside the `output` section, and relative to the task's execution directory inside the `output` section. Also clarified that optional files evaluate to `None` in both contexts if the path does not exist.
+  ([#735](https://github.com/openwdl/wdl/pull/735))
 
-* Include fixes to examples introduced in v1.1.3
++ Clarify that `disks` mount points ephemeral and should not already exist
+
++ Deprecate the use of relative path literals in input and private variable declarations.
+
++ Include fixes to examples introduced in v1.1.3
+
++ Include fixes to examples that don't compile in `wdl-tests` (#707, #708,  #701, #738, #731, #740,  #739). Thanks to @adamnovak and @claymcleod!
+
++ Add in CI/CD for Miniwdl, Sprocket, Toil and Cromwell for spec compliance.
+
++ Remove Advanced Task Examples to clearly distinguish what is the testing is in scope. (#730)
 
 * Clarified symlink handling behavior in the `glob` function ([#744](https://github.com/openwdl/wdl/pull/744)).
 
@@ -254,4 +265,3 @@ draft-2
 ---------------------------
 
 + Added ANTLR4 grammar
-
