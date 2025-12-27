@@ -20,7 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
-* Clarified symlink handling behavior in the `glob` function ([#744](https://github.com/openwdl/wdl/pull/744)).
++ Clarified that when a `Directory` is converted to a `String`, the resulting string does not have a trailing slash ([#745](https://github.com/openwdl/wdl/pull/745)).
+
++ Clarified symlink handling behavior in the `glob` function ([#744](https://github.com/openwdl/wdl/pull/744)).
 
 + Clarified the restriction on multi-level optionals in the "Optional Types" section. ([#743](https://github.com/openwdl/wdl/pull/743))
 
