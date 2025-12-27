@@ -7161,7 +7161,7 @@ When a conditional statement is evaluated, each conditional clause is evaluated 
 The declarations and call outputs promoted to the parent scope depend on a union of the scopes for each conditional statement clause:
 
 - Declarations and call outputs that are made available under every condition, including the exhaustive `else` clause, are promoted to the parent scope as their declared type.
-- Declarations and call outputs that are missing from one or more clauses, are declared as optional is one more clauses, or are missing from the exhaustive `else` clause are promoted to the parent scope as optional versions of their declared type.
+- Declarations and call outputs that are missing from one or more clauses, are declared as optional in one or more clauses, or are missing from the exhaustive `else` clause are promoted to the parent scope as optional versions of their declared type.
 
 Simply put, types that are guaranteed to be evaluated in all cases are promoted as themselves whereas types that may not be evaluated (or are declared as optional in one of the clauses) are promoted as the optional equivalent of themselves. The result is a set of declarations and call outputs available in the parent scope that concretely represent the union of all scopes of the conditional statement. Any declaration in the union map that does not evaluate in a conditional statement clause's body is set to `None`. Further, when finding common types across scopes, the type declared in the earliest conditional statement clause is used as the base type. If a declaration that _would_ be promoted to a parent scope conflicts with an existing name in the parent scope, an error should be returned.
 
