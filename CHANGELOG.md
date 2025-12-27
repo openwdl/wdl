@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
++ Fix `change_extension_task.wdl` example to use string interpolation when passing `File` to `sub()` function ([#747](https://github.com/openwdl/wdl/issues/747)).
+
 + Clarified that when a `Directory` is converted to a `String`, the resulting string does not have a trailing slash ([#745](https://github.com/openwdl/wdl/pull/745)).
 
 + Clarified symlink handling behavior in the `glob` function ([#744](https://github.com/openwdl/wdl/pull/744)).
