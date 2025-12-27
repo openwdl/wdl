@@ -857,6 +857,12 @@ task literals_paths {
     File? f2
   }
 
+  # If baz.txt does not exist, this is an error.
+  File f3 = "baz.txt"
+
+  # If qux.txt does not exist, this is set to `None`.
+  File? f4 = "qux.txt"
+
   command <<<
     # If the user does not overide the value of `f1`, and /foo/bar.txt
     # does not exist, an error will occur when the file is accessed here.
@@ -868,7 +874,6 @@ task literals_paths {
     if [ -f "~{f2}" ]; then
       echo "~{f2}"
     fi
-  >>>
 }
 ```
 
@@ -880,9 +885,72 @@ A path is only required to be valid if and when it is accessed. A path assigned 
 * To write to a file, the path's parent directory must be accessible for writing.
 * To write to a directory, it must exist and be accessible for writing.
 
-Path literals should be absolute paths, since the execution engine is free to set the working directory of a task execution, and thus relative paths may not exist at runtime. 🗑 Use of relative path literals when defining input and private declarations is currently allowed but is deprecated and will be disallowed in WDL 2.0. 
-
 An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path. Remote files must be treated as read-only. A remote file is only required to be vaild at the time that the execution engine needs to localize it.
+
+###### Relative and Absolute Paths
+
+The interpretation of relative paths (paths that do not start with `/`) depends on the context in which they appear:
+
+* *Outside the `output` section (e.g., in `input` or private declarations)*, relative paths are interpreted relative to the parent directory of the WDL document itself on the host filesystem, similar to how [import](#import-statements) paths are resolved.
+* *Inside the `output` section*, relative paths are interpreted relative to the task's execution directory. This is where task commands create their output files. See [Task Outputs](#task-outputs) for details.
+
+In both contexts, if an optional `File?` or `Directory?` declaration refers to a path that does not exist, the value is set to `None`.
+
+Absolute paths (paths starting with `/`) refer to specific locations on the host filesystem when used outside the `output` section. Within the `output` section, absolute paths may be interpreted in a container-dependent way—see [Task Outputs](#task-outputs) for details.
+
+<details>
+<summary>
+Example: relative_paths_context.wdl
+
+```wdl
+version 1.3
+
+task relative_paths_context {
+  # This relative path is resolved relative to the WDL document's parent directory.
+  File input_file = "hello.txt"
+
+  command <<<
+    cat ~{input_file} > output.txt
+  >>>
+
+  output {
+    # This relative path is resolved relative to the execution directory.
+    File result = "output.txt"
+    String content = read_string(result)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "relative_paths_context.content": "hello"
+}
+```
+
+Test config:
+
+```json
+{
+  "exclude_output": "result"
+}
+```
+
+</p>
+</details>
+
+In this example,
+
+- The `input_file` input uses a relative path that refers to a file co-located with the WDL document on the host filesystem.
+- The `result` output uses a relative path that refers to a file created by the command in the execution directory.
 
 #### Optional Types and None
 
@@ -4619,7 +4687,7 @@ Test config:
 </p>
 </details>
 
-Relative paths are interpreted relative to the execution directory, whereas absolute paths are interpreted in a container-dependent way.
+Relative paths are interpreted relative to the execution directory, whereas absolute paths are interpreted in a container-dependent way. Absolute paths that reference locations outside the task's execution directory may not be supported by all execution engines, particularly in environments where access to the container's filesystem is restricted.
 
 <details>
 <summary>

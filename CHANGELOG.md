@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
++ Clarified that relative paths in `File` and `Directory` declarations are resolved relative to the WDL document's parent directory outside the `output` section, and relative to the task's execution directory inside the `output` section. Also clarified that optional files evaluate to `None` in both contexts if the path does not exist.
+  ([#735](https://github.com/openwdl/wdl/pull/735))
+
 * Clarify that `disks` mount points ephemeral and should not already exist
 
 * Deprecate the use of relative path literals in input and private variable declarations.
