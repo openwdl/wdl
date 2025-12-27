@@ -899,7 +899,7 @@ During task execution, the following additional constraints apply:
 * To write to a file, the path's parent directory must be accessible for writing.
 * To write to a directory, it must exist and be accessible for writing.
 
-An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path. Remote files must be treated as read-only. A remote file is only required to be vaild at the time that the execution engine needs to localize it.
+An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path. Remote files must be treated as read-only. For remote files, localization occurs as part of value creation—the remote file must be accessible and valid when the `File` or `Directory` value is evaluated, at which point it is localized and the resulting local path is validated according to the rules above.
 
 ###### Relative and Absolute Paths
 
