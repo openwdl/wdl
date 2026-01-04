@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
++ Updates the compliance suite to use [`spectool`](https://github.com/openwdl/spectool) ([#752](https://github.com/openwdl/wdl/pull/752)).
+
 + Formalize replacement string syntax for `sub()` function to specify backreference support (`\1` through `\9`).
   ([#749](https://github.com/openwdl/wdl/pull/749)).
 
