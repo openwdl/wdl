@@ -1,115 +1,60 @@
-name: Cromwell Spec Conformance - WDL 1.2
+name: Spec Compliance / Cromwell
 
 on:
-  push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  conformance:
+  test:
     runs-on: ubuntu-latest
-    name: Run WDL 1.2 Spec Conformance Tests
-
     steps:
-      - name: Checkout WDL spec repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Install Java (for Cromwell)
+      - name: Install `spectool`
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo openwdl/spectool --pattern '*x86_64*linux*'
+          tar -xzf spectool*.tar.gz
+          chmod +x spectool
+          sudo mv spectool /usr/local/bin/
+          rm -rf spectool*.tar.gz
+          spectool --version
+
+      - name: Install Java
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-11-jre curl
+          sudo apt-get install -y openjdk-11-jre
 
-      - name: Download latest Cromwell
+      - name: Install `cromwell`
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          CROMWELL_URL=$(curl -s https://api.github.com/repos/broadinstitute/cromwell/releases/latest \
-            | grep "browser_download_url" \
-            | grep "cromwell-.*\.jar" \
-            | cut -d '"' -f 4)
-          echo "Downloading $CROMWELL_URL"
-          curl -L $CROMWELL_URL -o cromwell.jar
+          gh release download --repo broadinstitute/cromwell --pattern 'cromwell-*.jar'
+          mv cromwell-*.jar cromwell.jar
+          java -jar cromwell.jar --version
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
+      - name: Run the compliance tests
         run: |
-          pip install subby
-
-      - name: Clone WDL tests
-        run: |
-          git clone https://github.com/openwdl/wdl-tests.git
-
-      - name: Extract tests
-        run: |
-          python3 wdl-tests/scripts/extract_tests.py \
-            -i ${{ github.workspace }}/SPEC.md \
-            -d ${{ github.workspace }}/tests/data/ \
-            -O cromwell_test -v 1.2
-          find cromwell_test/ -name "*.wdl" -type f -exec sed -i 's/^version 1.2/version development/' {} +
-
-      - name: Run tests and capture results
-        run: |
-          mkdir -p cromwell_tests/artifacts
-
-          echo "📊 Running tests..."
-          python3 wdl-tests/scripts/run_tests_cromwell.py \
-            -T ${{ github.workspace }}/cromwell_test \
-            -c ${{ github.workspace }}/cromwell_test/test_config.json \
-            -D ${{ github.workspace }}/cromwell_test/data \
-            --cromwell-jar ${{ github.workspace }}/cromwell.jar \
-            -O cromwell_results | tee cromwell_tests/artifacts/result.log
-
-          echo "📊 Parsing test summary..."
-
-          total=$(grep "Total tests:" cromwell_tests/artifacts/result.log | awk '{print $3}')
-          passed=$(grep "Passed:" cromwell_tests/artifacts/result.log | awk '{print $2}')
-          warnings=$(grep "Warnings:" cromwell_tests/artifacts/result.log | awk '{print $2}')
-          failed=$(grep "Failures:" cromwell_tests/artifacts/result.log | awk '{print $2}')
-          invalid=$(grep "Invalid outputs:" cromwell_tests/artifacts/result.log | awk '{print $3}')
-          ignored=$(grep "Ignored:" cromwell_tests/artifacts/result.log | awk '{print $2}')
-
-          # Write summary JSON
-          cat <<EOF > cromwell_tests/artifacts/results.json
-          {
-            "total": $total,
-            "passed": $passed,
-            "warnings": $warnings,
-            "failures": $failed,
-            "invalid_outputs": $invalid,
-            "ignored": $ignored
-          }
-          EOF
-
-          # Copy list of failures to artifacts
-          cp cromwell_results/failed_tests.txt cromwell_tests/artifacts/failed_tests.txt || touch cromwell_tests/artifacts/failed_tests.txt
-
-          # Generate shields.io badge JSON
-          color="green"
-          total_run=$((total - ignored))
-          if [ "$passed" -lt "$total_run" ]; then color="yellow"; fi
-          if [ "$passed" -eq 0 ]; then color="red"; fi
-          cat <<EOF > cromwell_tests/artifacts/shields.json
-          {
-            "schemaVersion": 1,
-            "label": "Cromwell WDL 1.2",
-            "message": "$passed/$total_run passed",
-            "color": "$color"
-          }
-          EOF
-
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: cromwell-test-results
-          path: cromwell_tests/artifacts/
-
-      - name: Publish badge JSON to current branch
+          mkdir -p ./.results/
+          echo "📊 Running compliance tests for \`${{ github.event.pull_request.head.repo.full_name }}:${{ github.head_ref }}\`..."
+          spectool test \
+            "java -jar ${{ github.workspace }}/cromwell.jar run ~{path} --inputs ~{input} --metadata-output ~{output}" \
+            --all-capabilities \
+            --inject-wdl-version development \
+            --output-selector .outputs \
+            --label "Cromwell / WDL 1.2" \
+            -s $PWD -vv > ./.results/shield.json
+          cat ./.results/shield.json
+      - name: Publish badge JSON
+        # Only publish the badges if this is run by dispatch.
+        if: github.event_name == 'workflow_dispatch'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          BRANCH="${GITHUB_REF_NAME}"
+          BRANCH="${{ github.head_ref }}"
           RUN_ID="${{ github.run_id }}"
           REPO="${{ github.repository }}"
           RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
@@ -117,26 +62,26 @@ jobs:
 
           git fetch origin $BRANCH
           git checkout $BRANCH
-
-          mkdir -p shields
-          cp cromwell_tests/artifacts/shields.json shields/cromwell_shields.json
-          git add shields/cromwell_shields.json
+          mv ./.results/shield.json shields/cromwell.json
+          git add shields/cromwell.json
 
           # Update README only if needed
-          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/cromwell_shields.json"
-          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/cromwell_shields.json"
+          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/cromwell.json"
+          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/cromwell.json"
           run_pattern="https://github.com/$REPO/actions/runs/[0-9]+"
           new_run="https://github.com/$REPO/actions/runs/$RUN_ID"
+          echo $new_run
+          echo $new_url
           if grep -qE "$sed_pattern" README.md; then
             git pull
-            sed -E -i "/cromwell_shields\.json/s|$sed_pattern|$new_url|g" README.md
-            sed -E -i "/cromwell_shields\.json/s|$run_pattern|$new_run|g" README.md
+            sed -E -i "/cromwell\.json/s|$sed_pattern|$new_url|g" README.md
+            sed -E -i "/cromwell\.json/s|$run_pattern|$new_run|g" README.md
             git add README.md
-          fi 
+          fi
 
-          # Only commit if there are staged changes
+          # Commit only if there are staged changes
           if ! git diff --cached --quiet; then
-            git commit -m "chore: updates Cromwell shields badge for \`$BRANCH\`"
+            git commit -m "chore: updates Cromwell shield badge"
             git push $REPO_URL $BRANCH
           else
             echo "🟢 No changes to commit"

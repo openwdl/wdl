@@ -1,118 +1,68 @@
-name: Sprocket Spec Conformance - WDL 1.2
+name: Spec Compliance / Sprocket
 
 on:
-  push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  sprocket-conformance:
+  test:
     runs-on: ubuntu-latest
-    name: Run Sprocket WDL 1.2 Spec Conformance Tests
-
     steps:
       - name: Checkout WDL spec repo
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install Python dependencies
+        uses: actions/checkout@v6
+      - name: Install `spectool`
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          pip install subby
-
-      - name: Install Sprocket dependencies
+          gh release download --repo openwdl/spectool --pattern '*x86_64*linux*'
+          tar -xzf spectool*.tar.gz
+          chmod +x spectool
+          sudo mv spectool /usr/local/bin/
+          rm -rf spectool*.tar.gz
+          spectool --version
+      - name: Install `sprocket`
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          curl -y --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-          . "$HOME/.cargo/env"
-          cargo install sprocket --locked
-
-      - name: Clone WDL tests
+          gh release download --repo stjude-rust-labs/sprocket --pattern '*x86_64*linux*'
+          tar -xzvf sprocket*.tar.gz
+          chmod +x sprocket
+          sudo mv sprocket /usr/local/bin/
+          rm -rf sprocket*.tar.gz
+          sprocket --version
+      - name: Run the compliance tests
         run: |
-          git clone https://github.com/openwdl/wdl-tests.git
-
-      - name: Extract tests
-        run: |
-          python wdl-tests/scripts/extract_tests.py -i ${{ github.workspace }}/SPEC.md -d ${{ github.workspace }}/tests/data/ -O sprocket_test -v 1.2
-
-      - name: Run tests and capture results
-        run: |
-          mkdir -p sprocket_tests/artifacts
-
-          echo "📊 Running tests..."
-          python wdl-tests/scripts/run_tests_sprocket.py \
-            -T ${{ github.workspace }}/sprocket_test \
-            -c ${{ github.workspace }}/sprocket_test/test_config.json \
-            -D ${{ github.workspace }}/sprocket_test/data \
-            -O sprocket_results | tee sprocket_tests/artifacts/result.log
-
-          echo "📊 Parsing test summary..."
-
-          total=$(grep "Total tests:" sprocket_tests/artifacts/result.log | awk '{print $3}')
-          passed=$(grep "Passed:" sprocket_tests/artifacts/result.log | awk '{print $2}')
-          warnings=$(grep "Warnings:" sprocket_tests/artifacts/result.log | awk '{print $2}')
-          failed=$(grep "Failures:" sprocket_tests/artifacts/result.log | awk '{print $2}')
-          invalid=$(grep "Invalid outputs:" sprocket_tests/artifacts/result.log | awk '{print $3}')
-          ignored=$(grep "Ignored:" sprocket_tests/artifacts/result.log | awk '{print $2}')
-
-          # Write summary JSON
-          cat <<EOF > sprocket_tests/artifacts/results.json
-          {
-            "total": $total,
-            "passed": $passed,
-            "warnings": $warnings,
-            "failures": $failed,
-            "invalid_outputs": $invalid,
-            "ignored": $ignored
-          }
-          EOF
-
-          # Copy list of failures to artifacts
-          cp sprocket_test/failed_tests.txt sprocket_tests/artifacts/failed_tests.txt || touch sprocket_tests/artifacts/failed_tests.txt
-
-          # Generate shields.io badge JSON
-          color="green"
-          total_run=$((total - ignored))
-          if [ "$passed" -lt "$total_run" ]; then color="yellow"; fi
-          if [ "$passed" -eq 0 ]; then color="red"; fi
-          cat <<EOF > sprocket_tests/artifacts/shields.json
-          {
-            "schemaVersion": 1,
-            "label": "Sprocket WDL 1.2",
-            "message": "$passed/$total_run passed",
-            "color": "$color"
-          }
-          EOF
-
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: sprocket-test-results
-          path: sprocket_tests/artifacts/
-
-      - name: Publish badge JSON to current branch
+          mkdir -p ./.results/
+          echo "📊 Running compliance tests for \`${{ github.event.pull_request.head.repo.full_name }}:${{ github.head_ref }}\`..."
+          spectool test \
+            "sprocket run ~{path} ~{input} -e ~{target}" \
+            --redirect-stdout \
+            --all-capabilities \
+            --label "Sprocket / WDL 1.2" \
+            -s $PWD -vv > ./.results/shield.json
+          cat ./.results/shield.json
+      - name: Publish badge JSON
+        # Only publish the badges if this is run by dispatch.
+        if: github.event_name == 'workflow_dispatch'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          BRANCH="${GITHUB_REF_NAME}"
+          BRANCH="${{ github.head_ref }}"
           RUN_ID="${{ github.run_id }}"
           REPO="${{ github.repository }}"
           RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
           REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
 
-          
           git fetch origin $BRANCH
           git checkout $BRANCH
-          
-          mkdir -p shields
-          cp sprocket_tests/artifacts/shields.json shields/sprocket_shields.json
-          git add shields/sprocket_shields.json
+          mv ./.results/shield.json shields/sprocket.json
+          git add shields/sprocket.json
 
           # Update README only if needed
-          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/sprocket_shields.json"
-          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/sprocket_shields.json"
+          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/sprocket.json"
+          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/sprocket.json"
           run_pattern="https://github.com/$REPO/actions/runs/[0-9]+"
           new_run="https://github.com/$REPO/actions/runs/$RUN_ID"
           echo $new_run
@@ -122,11 +72,11 @@ jobs:
             sed -E -i "/sprocket_shields\.json/s|$sed_pattern|$new_url|g" README.md
             sed -E -i "/sprocket_shields\.json/s|$run_pattern|$new_run|g" README.md
             git add README.md
-          fi 
+          fi
 
           # Commit only if there are staged changes
           if ! git diff --cached --quiet; then
-            git commit -m "chore: updates Sprocket shields badge for \`$BRANCH\`"
+            git commit -m "chore: updates Sprocket shield badge"
             git push $REPO_URL $BRANCH
           else
             echo "🟢 No changes to commit"
