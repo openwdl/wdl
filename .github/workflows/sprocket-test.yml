@@ -2,6 +2,8 @@ name: Spec Compliance / Sprocket
 
 on:
   pull_request:
+    paths:
+      - 'SPEC.md'
   workflow_dispatch:
 
 jobs:

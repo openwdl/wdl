@@ -2,6 +2,8 @@ name: Spec Compliance / MiniWDL
 
 on:
   pull_request:
+    paths:
+      - 'SPEC.md'
   workflow_dispatch:
 
 jobs:
