@@ -1,10 +1,7 @@
 name: Spec Compliance / Cromwell
 
 on:
-  pull_request:
-    paths:
-      - 'SPEC.md'
-  workflow_dispatch:
+  push:
 
 jobs:
   test:
@@ -49,8 +46,6 @@ jobs:
             -s $PWD -vv > ./.results/shield.json
           cat ./.results/shield.json
       - name: Publish badge JSON
-        # Only publish the badges if this is run by dispatch.
-        if: github.event_name == 'workflow_dispatch'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
