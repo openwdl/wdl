@@ -1,6 +1,6 @@
 # Workflow Description Language (WDL)
 
-This is version 1.2.1 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.2`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.1.*](https://github.com/openwdl/wdl/blob/wdl-1.1/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 and 1.1 specifications that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol). To be considered compliant with WDL 1.2, you must pass 95% or more of the compliance tests using [`spectool`](https://github.com/openwdl/spectool).
+This is version 1.2.1 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.2`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.1.*](https://github.com/openwdl/wdl/blob/wdl-1.1/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 and 1.1 specifications that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol). For an execution engine to be considered compliant with WDL 1.2, you must pass 100% of the compliance tests using [`spectool`](https://github.com/openwdl/spectool).
 
 ## Revisions
 
