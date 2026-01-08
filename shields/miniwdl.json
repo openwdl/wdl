@@ -1,6 +1,9 @@
+[2m2026-01-08T22:01:38.433097Z[0m [32m INFO[0m [2mspectool::repository[0m[2m:[0m using existing git repository
+[2m2026-01-08T22:01:38.456556Z[0m [32m INFO[0m [2mspectool::conformance::test::runner[0m[2m:[0m preparing conformance tests directory: /tmp/.tmpdL0soV
+[2m2026-01-08T22:01:38.477742Z[0m [32m INFO[0m [2mspectool::command::test[0m[2m:[0m using 4 cores
 {
   "schemaVersion": 1,
-  "label": "MiniWDL WDL 1.2",
-  "message": "141/170 passed",
+  "label": "MiniWDL / WDL 1.2",
+  "message": "146/170 passed",
   "color": "yellow"
 }
