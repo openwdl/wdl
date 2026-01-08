@@ -2,7 +2,6 @@ name: Spec Compliance / Cromwell
 
 on:
   push:
-  workflow_dispatch:
 
 jobs:
   test:
@@ -37,7 +36,7 @@ jobs:
       - name: Run the compliance tests
         run: |
           mkdir -p ./.results/
-          echo "📊 Running compliance tests for \`${{ github.event.pull_request.head.repo.full_name }}:${{ github.head_ref }}\`..."
+          echo "📊 Running compliance tests for \`${{ github.repository }}:${{ github.ref_name }}\`..."
           spectool test \
             "java -jar ${{ github.workspace }}/cromwell.jar run ~{path} --inputs ~{input} --metadata-output ~{output}" \
             --all-capabilities \
@@ -48,14 +47,12 @@ jobs:
             -s $PWD -vv > ./.results/shield.json
           cat ./.results/shield.json
       - name: Publish badge JSON
-        # Only publish the badges if this is run by dispatch.
-        if: github.event_name == 'workflow_dispatch'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          BRANCH="${{ github.head_ref }}"
+          BRANCH="${{ github.ref_name }}"
           RUN_ID="${{ github.run_id }}"
           REPO="${{ github.repository }}"
           RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
