@@ -1,92 +1,57 @@
-name: Toil WDL Spec Conformance - WDL 1.1
+name: Spec Compliance / Toil
 
 on:
   push:
+  workflow_dispatch:
 
 jobs:
-  conformance:
+  test:
     runs-on: ubuntu-latest
-    name: Run WDL 1.1 Spec Conformance Tests
-
     steps:
-      - name: Checkout WDL spec repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
+      - name: Install `spectool`
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo openwdl/spectool --pattern '*x86_64*linux*'
+          tar -xzf spectool*.tar.gz
+          chmod +x spectool
+          sudo mv spectool /usr/local/bin/
+          rm -rf spectool*.tar.gz
+          spectool --version
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install Toil WDL and dependencies
+      - name: Install `toil`
         run: |
-          pip install toil[wdl] subby
+          pip install toil[wdl]
+          toil-wdl-runner --version
 
-      - name: Clone WDL tests
+      - name: Run the compliance tests
         run: |
-          git clone https://github.com/openwdl/wdl-tests.git
-
-      - name: Extract tests
-        run: |
-          python wdl-tests/scripts/extract_tests.py -i ${{ github.workspace }}/SPEC.md -d ${{ github.workspace }}/tests/data/ -O toil_test -v 1.1
-
-      - name: Run tests and capture results
-        run: |
-          mkdir -p toil_tests/artifacts
-
-          echo "📊 Running tests..."
-          python wdl-tests/scripts/run_tests_toil.py -T ${{ github.workspace }}/toil_test -c ${{ github.workspace }}/toil_test/test_config.json -D ${{ github.workspace }}/toil_test/data -O toil_results | tee toil_tests/artifacts/result.log
-
-          echo "📊 Parsing test summary..."
-
-          total=$(grep "Total tests:" toil_tests/artifacts/result.log | awk '{print $3}')
-          passed=$(grep "Passed:" toil_tests/artifacts/result.log | awk '{print $2}')
-          warnings=$(grep "Warnings:" toil_tests/artifacts/result.log | awk '{print $2}')
-          failed=$(grep "Failures:" toil_tests/artifacts/result.log | awk '{print $2}')
-          invalid=$(grep "Invalid outputs:" toil_tests/artifacts/result.log | awk '{print $3}')
-          ignored=$(grep "Ignored:" toil_tests/artifacts/result.log | awk '{print $2}')
-
-          # Write summary JSON
-          cat <<EOF > toil_tests/artifacts/results.json
-          {
-            "total": $total,
-            "passed": $passed,
-            "warnings": $warnings,
-            "failures": $failed,
-            "invalid_outputs": $invalid,
-            "ignored": $ignored
-          }
-          EOF
-
-          # Copy list of failures to artifacts
-          cp toil_test/failed_tests.txt toil_tests/artifacts/failed_tests.txt || touch toil_tests/artifacts/failed_tests.txt
-
-          # Generate shields.io badge JSON
-          color="green"
-          total_run=$((total - ignored))
-          if [ "$passed" -lt "$total_run" ]; then color="yellow"; fi
-          if [ "$passed" -eq 0 ]; then color="red"; fi
-          cat <<EOF > toil_tests/artifacts/shields.json
-          {
-            "schemaVersion": 1,
-            "label": "Toil WDL 1.1",
-            "message": "$passed/$total_run passed",
-            "color": "$color"
-          }
-          EOF
-
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: toil-test-results
-          path: toil_tests/artifacts/
-
-      - name: Publish badge JSON to current branch
+          mkdir -p ./.results/
+          echo "📊 Running compliance tests for \`${{ github.event.pull_request.head.repo.full_name }}:${{ github.head_ref }}\`..."
+          spectool test \
+            "toil-wdl-runner ~{path} --inputs ~{input}" \
+            --redirect-stdout \
+            --all-capabilities \
+            --label "Toil / WDL 1.1" \
+            -b wdl-1.1.3 \
+            -s $PWD -vv > ./.results/shield.json
+          cat ./.results/shield.json
+      - name: Publish badge JSON
+        # Only publish the badges if this is run by dispatch.
+        if: github.event_name == 'workflow_dispatch'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          BRANCH="${GITHUB_REF_NAME}"
+          BRANCH="${{ github.head_ref }}"
           RUN_ID="${{ github.run_id }}"
           REPO="${{ github.repository }}"
           RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
@@ -94,25 +59,26 @@ jobs:
 
           git fetch origin $BRANCH
           git checkout $BRANCH
-
-          mkdir -p shields
-          cp toil_tests/artifacts/shields.json shields/toil_shields.json
-          git add shields/toil_shields.json
+          mv ./.results/shield.json shields/toil.json
+          git add shields/toil.json
 
           # Update README only if needed
-          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/toil_shields.json"
-          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/toil_shields.json"
+          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/toil.json"
+          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/toil.json"
           run_pattern="https://github.com/$REPO/actions/runs/[0-9]+"
           new_run="https://github.com/$REPO/actions/runs/$RUN_ID"
+          echo $new_run
+          echo $new_url
           if grep -qE "$sed_pattern" README.md; then
             git pull
-            sed -E -i "/toil_shields\.json/s|$sed_pattern|$new_url|g" README.md
-            sed -E -i "/toil_shields\.json/s|$run_pattern|$new_run|g" README.md
+            sed -E -i "/toil\.json/s|$sed_pattern|$new_url|g" README.md
+            sed -E -i "/toil\.json/s|$run_pattern|$new_run|g" README.md
             git add README.md
-          fi 
+          fi
 
+          # Commit only if there are staged changes
           if ! git diff --cached --quiet; then
-            git commit -m "chore: updates Toil WDL shields badge for \`$BRANCH\`"
+            git commit -m "chore: updates Toil shield badge"
             git push $REPO_URL $BRANCH
           else
             echo "🟢 No changes to commit"

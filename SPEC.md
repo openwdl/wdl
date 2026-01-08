@@ -1,6 +1,6 @@
 # Workflow Description Language (WDL)
 
-This is version 1.1.3 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.1`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol).
+This is version 1.1.3 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.1`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 specification that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol). For an execution engine to be considered compliant with WDL 1.1, it must pass 100% of the compliance tests using [`spectool`](https://github.com/openwdl/spectool).
 
 ## Revisions
 
@@ -208,6 +208,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [Cyclic References](#cyclic-references)
     - [Namespaces without Scope](#namespaces-without-scope)
   - [Evaluation Order](#evaluation-order)
+- [Appendix C: Example Data](#appendix-c-example-data)
 
 ## Introduction
 
@@ -273,7 +274,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
 
   ```json
   {
-    "hello.infile": "greetings.txt",
+    "hello.infile": "data/greetings.txt",
     "hello.pattern": "hello.*"
   }
   ```
@@ -306,12 +307,12 @@ Along with the WDL file, the user must provide the execution engine with values 
 | Variable      | Value         |
 | ------------- | ------------- |
 | hello.pattern | hello.*       |
-| hello.infile  | greetings.txt |
+| hello.infile  | data/greetings.txt |
 
 Running the `hello` workflow with these inputs would yield the following command line from the call to `hello_task`:
 
 ```sh
-grep -E 'hello.*' 'greetings.txt'
+grep -E 'hello.*' 'data/greetings.txt'
 ```
 
 
@@ -358,7 +359,7 @@ WDL also provides features for implementing more complex workflows. For example,
   ```json
   {
     "hello_parallel.pattern": "^[a-z_]+$",
-    "hello_parallel.files": ["greetings.txt", "hello.txt"]
+    "hello_parallel.files": ["data/greetings.txt", "data/hello.txt"]
   }
   ```
   
@@ -943,14 +944,14 @@ workflow test_map {
   Map[Int, Int] int_to_int = {1: 10, 2: 11}
   Map[String, Int] string_to_int = { "a": 1, "b": 2 }
   Map[File, Array[Int]] file_to_ints = {
-    "/path/to/file1": [0, 1, 2],
-    "/path/to/file2": [9, 8, 7]
+    "data/cities.txt": [0, 1, 2],
+    "data/hello.txt": [9, 8, 7]
   }
 
   output {
     Int ten = int_to_int[1]  # evaluates to 10
     Int b = string_to_int["b"]  # evaluates to 2
-    Array[Int] ints = file_to_ints["/path/to/file1"]  # evaluates to [0, 1, 2]
+    Array[Int] ints = file_to_ints["data/cities.txt"]  # evaluates to [0, 1, 2]
   }
 }
 ```
@@ -1219,6 +1220,14 @@ Example output:
 ```json
 {}
 ```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
 </p>
 </details>
 
@@ -1323,7 +1332,7 @@ Example input:
 
 ```json
 {
-  "string_to_file.infile": "hello.txt"
+  "string_to_file.infile": "data/hello.txt"
 }
 ```
 
@@ -2335,7 +2344,7 @@ Example input:
 
 ```json
 {
-  "placeholder_coercion.x": "hello.txt"
+  "placeholder_coercion.x": "data/hello.txt"
 }
 ```
 
@@ -2441,7 +2450,7 @@ Example input:
 
 ```json
 {
-  "flags.infile": "greetings.txt",
+  "flags.infile": "data/greetings.txt",
   "flags.pattern": "world"
 }
 ```
@@ -2796,7 +2805,7 @@ Example input:
       "period": "annually"
     },
     "assay_data": {
-      "wealthitis": "hello.txt"
+      "wealthitis": "data/hello.txt"
     }
   }
 }
@@ -2807,14 +2816,6 @@ Example output:
 ```json
 {
   "greet_person.message": "Hello Richard! You have 1 test result(s) available.\nPlease transfer USD 500 to continue"
-}
-```
-
-Test config:
-
-```json
-{
-  "target": "greet_person"
 }
 ```
 </p>
@@ -2995,7 +2996,7 @@ Example input:
 
 ```json
 {
-  "import_structs.infile": "hello.txt"
+  "import_structs.infile": "data/hello.txt"
 }
 ```
 
@@ -3518,7 +3519,7 @@ Example input:
 
 ```json
 {
-  "test_placeholders.infile": "greetings.txt"
+  "test_placeholders.infile": "data/greetings.txt"
 }
 ```
 
@@ -3573,6 +3574,14 @@ Example output:
 ```json
 {}
 ```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
 </p>
 </details>
 
@@ -3607,6 +3616,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -3653,7 +3670,7 @@ Example input:
 
 ```json
 {
-  "python_strip.infile": "comment.txt"
+  "python_strip.infile": "data/comment.txt"
 }
 ```
 
@@ -3731,7 +3748,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "outputs.csvs"
+  "exclude_outputs": ["outputs.csvs"]
 }
 ```
 </p>
@@ -3840,7 +3857,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "glob.outfiles"
+  "exclude_outputs": ["glob.outfiles"]
 }
 ```
 </p>
@@ -3857,13 +3874,16 @@ version 1.1
 
 task relative_and_absolute {
   command <<<
-  mkdir -p my/path/to
-  printf "something" > my/path/to/something.txt
+    mkdir -p my/path/to
+    printf "something" > my/path/to/something.txt
   >>>
 
   output {
     String something = read_string("my/path/to/something.txt")
-    File bashrc = "/root/.bashrc"
+    # The following may or may not work depending on what the execution engine
+    # supports.
+    #
+    # File bashrc = "/root/.bashrc"
   }
 
   runtime {
@@ -3884,15 +3904,6 @@ Example output:
 ```json
 {
   "relative_and_absolute.something": "something"
-}
-```
-
-Test config:
-
-```json
-{
-  "exclude_output": "relative_and_absolute.bashrc",
-  "priority": "ignore"
 }
 ```
 </p>
@@ -3950,7 +3961,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "optional_output.file_array"
+  "exclude_outputs": ["optional_output.example1", "optional_output.file_array"]
 }
 ```
 
@@ -4177,7 +4188,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "cpu"
+  "capabilities": ["cpu"]
 }
 ```
 </p>
@@ -4233,7 +4244,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "memory"
+  "capabilities": ["memory"]
 }
 ```
 </p>
@@ -4290,8 +4301,8 @@ Test config:
 
 ```json
 {
-  "dependencies": "gpu",
-  "priority": "ignore"
+  "capabilities": ["gpu"],
+  "ignore": true
 }
 ```
 </p>
@@ -4356,7 +4367,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "disks"
+  "capabilities": ["disks"]
 }
 ```
 </p>
@@ -4406,7 +4417,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "disks"
+  "capabilities": ["disks"]
 }
 ```
 </p>
@@ -4477,7 +4488,7 @@ Test config:
 
 ```json
 {
-  "returnCodes": 0
+  "return_code": 0
 }
 ```
 </p>
@@ -4519,7 +4530,7 @@ Test config:
 ```json
 {
   "fail": true,
-  "returnCodes": 42
+  "return_code": 42
 }
 ```
 </p>
@@ -4560,7 +4571,7 @@ Test config:
 
 ```json
 {
-  "returnCodes": 0
+  "return_code": 0
 }
 ```
 </p>
@@ -4612,7 +4623,7 @@ Example input:
 
 ```json
 {
-  "test_hints.foo": "greetings.txt"
+  "test_hints.foo": "data/greetings.txt"
 }
 ```
 
@@ -4620,15 +4631,7 @@ Example output:
 
 ```json
 {
-  "test_hints.num_lines": 2
-}
-```
-
-Test config:
-
-```json
-{
-  "priority": "ignore"
+  "test_hints.num_lines": 3
 }
 ```
 
@@ -4866,7 +4869,7 @@ Example input:
 
 ```json
 {
-  "ex_paramter_meta.infile": "greetings.txt",
+  "ex_paramter_meta.infile": "data/greetings.txt",
   "ex_paramter_meta.lines_only": true
 }
 ```
@@ -4875,7 +4878,7 @@ Example output:
 
 ```json
 {
-  "ex_paramter_meta.result": 2
+  "ex_paramter_meta.result": 3
 }
 ```
 </p>
@@ -5190,7 +5193,7 @@ Example input:
 ```json
 {
   "other.b": true,
-  "other.f": "greetings.txt"
+  "other.f": "data/greetings.txt"
 }
 ```
 
@@ -5198,7 +5201,7 @@ Example output:
 
 ```json
 {
-  "other.results": 2
+  "other.results": 3
 }
 ```
 </p>
@@ -5534,7 +5537,7 @@ Example input:
   "allow_nested.msg1": "hello",
   "allow_nested.msg2": "goodbye",
   "allow_nested.my_ints": [1, 2, 3],
-  "allow_nested.ref_file": "hello.txt",
+  "allow_nested.ref_file": "data/hello.txt",
   "allow_nested.repeat2.i": 2
 }
 ```
@@ -5587,6 +5590,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -6427,7 +6438,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["change_extension.data_file"]
+  "exclude_outputs": ["change_extension.data_file"]
 }
 ```
 </p>
@@ -6563,7 +6574,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["gen_files.files"]
+  "exclude_outputs": ["gen_files.files"]
 }
 ```
 </p>
@@ -6615,9 +6626,9 @@ task file_sizes {
   >>>
 
   File? missing_file = None
-  File created_file = "out.txt"
 
   output {
+    File created_file = "out.txt"
     Float missing_file_bytes = size(missing_file, "B") # 0.0
     Float created_file_bytes = size(created_file, "B") # 22.0
     Float multi_file_kb = size([created_file, missing_file], "K") # 0.022
@@ -6640,6 +6651,7 @@ Example output:
 
 ```json
 {
+  "file_sizes.created_file": "out.txt",
   "file_sizes.missing_file_bytes": 0.0,
   "file_sizes.created_file_bytes": 22.0,
   "file_sizes.multi_file_kb": 0.022
@@ -6997,7 +7009,7 @@ Example input:
 ```json
 {
   "grep.pattern": "world",
-  "grep.file": "greetings.txt"
+  "grep.file": "data/greetings.txt"
 }
 ```
 
@@ -7400,7 +7412,7 @@ Example input:
 
 ```json
 {
-  "read_person.json_file": "person.json"
+  "read_person.json_file": "data/person.json"
 }
 ```
 
@@ -8658,12 +8670,12 @@ version 1.1
 workflow test_flatten {
   input {
     Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
-    Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
+    Array[Array[File]] af2D = [["data/cities.txt"], ["data/wizard.txt", "data/spell.txt"], []]
     Array[Array[Pair[Float, String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
     Map[Float, String] f2s = as_map(flatten(aap2D))
     Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
     Array[Int] expected1D = [1, 2, 3, 1, 21, 22]
-    Array[File] expected2D = ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
+    Array[File] expected2D = ["data/cities.txt", "data/wizard.txt", "data/spell.txt"]
     Array[Array[Int]] expected3D = [[1, 2], [3, 4], [5, 6], [7, 8]]
     Array[Pair[Float, String]] expectedArray = [(0.1, "mouse"), (3.0, "cat"), (15.0, "dog")]
     Map[Float, String] expectedMap = {0.1: "mouse", 3.0: "cat", 15.0: "dog"}
@@ -8763,7 +8775,7 @@ version 1.1
 
 workflow select_first_only_none_fail {
   Int? maybe_four_but_is_not = None
-  select_first([maybe_four_but_is_not])  # error! array contains only None values
+  Int result = select_first([maybe_four_but_is_not])  # error! array contains only None values
 }
 ```
 </summary>
@@ -8798,7 +8810,7 @@ Example: select_first_empty_fail.wdl
 version 1.1
 
 workflow select_first_empty_fail {
-  select_first([])  # error! array is empty
+  Int check = select_first([])  # error! array is empty
 }
 ```
 </summary>
@@ -8908,10 +8920,10 @@ version 1.1
 
 workflow test_as_pairs {
   Map[String, Int] x = {"a": 1, "c": 3, "b": 2}
-  Map[String, Pair[File, File]] y = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+  Map[String, Pair[File, File]] y = {"a": ("data/questions.txt", "data/answers.txt"), "b": ("data/request.txt", "data/response.txt")}
   Array[Pair[String, Int]] expected1 = [("a", 1), ("c", 3), ("b", 2)]
-  Array[Pair[File, String]] expected2 = [("a.bam", "a"), ("b.bam", "b")]
-  Map[File, String] expected3 = {"a.bam": "a", "b.bam": "b"}
+  Array[Pair[File, String]] expected2 = [("data/questions.txt", "a"), ("data/request.txt", "b")]
+  Map[File, String] expected3 = {"data/questions.txt": "a", "data/request.txt": "b"}
 
   scatter (item in as_pairs(y)) {
     String s = item.left
@@ -8972,9 +8984,9 @@ version 1.1
 workflow test_as_map {
   input {
     Array[Pair[String, Int]] x = [("a", 1), ("c", 3), ("b", 2)]
-    Array[Pair[String, Pair[File,File]]] y = [("a", ("a.bam", "a.bai")), ("b", ("b.bam", "b.bai"))]
+    Array[Pair[String, Pair[File,File]]] y = [("a", ("data/cities.txt", "data/comment.txt")), ("b", ("data/hello.txt", "data/greetings.txt"))]
     Map[String, Int] expected1 = {"a": 1, "c": 3, "b": 2}
-    Map[String, Pair[File, File]] expected2 = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+    Map[String, Pair[File, File]] expected2 = {"a": ("data/cities.txt", "data/comment.txt"), "b": ("data/hello.txt", "data/greetings.txt")}
   }
 
   output {
@@ -9063,8 +9075,8 @@ workflow test_keys {
   input {
     Map[String,Int] x = {"a": 1, "b": 2, "c": 3}
     Map[String, Pair[File, File]] str_to_files = {
-      "a": ("a.bam", "a.bai"), 
-      "b": ("b.bam", "b.bai")
+      "a": ("data/questions.txt", "data/answers.txt"),
+      "b": ("data/request.txt", "data/response.txt")
     }
   }
 
@@ -9127,14 +9139,14 @@ workflow test_collect_by_key {
   input {
     Array[Pair[String, Int]] x = [("a", 1), ("b", 2), ("a", 3)]
     Array[Pair[String, Pair[File, File]]] y = [
-      ("a", ("a_1.bam", "a_1.bai")), 
-      ("b", ("b.bam", "b.bai")), 
-      ("a", ("a_2.bam", "a_2.bai"))
+      ("a", ("data/questions.txt", "data/answers.txt")),
+      ("b", ("data/request.txt", "data/response.txt")),
+      ("a", ("data/wizard.txt", "data/spell.txt"))
     ]
     Map[String, Array[Int]] expected1 = {"a": [1, 3], "b": [2]}
     Map[String, Array[Pair[File, File]]] expected2 = {
-      "a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], 
-      "b": [("b.bam", "b.bai")]
+      "a": [("data/questions.txt", "data/answers.txt"), ("data/wizard.txt", "data/spell.txt")],
+      "b": [("data/request.txt", "data/response.txt")]
     }
   }
 
@@ -9731,7 +9743,7 @@ Example input:
 
 ```json
 {
-  "serialize_array_delim.infile": "greetings.txt",
+  "serialize_array_delim.infile": "data/greetings.txt",
   "serialize_array_delim.counts": [1, 2]
 }
 ```
@@ -9754,7 +9766,7 @@ Given an array `[1, 2]`, the instantiated command would be:
 
 ```sh
 for arg in '-n1' '-n2'; do
-  head $arg greetings.txt
+  head $arg data/greetings.txt
 done
 ```
 
@@ -9792,7 +9804,7 @@ Example input:
 
 ```json
 {
-  "serde_array_lines.infile": "greetings.txt",
+  "serde_array_lines.infile": "data/greetings.txt",
   "serde_array_lines.patterns": ["hello", "world"]
 }
 ```
@@ -9811,7 +9823,7 @@ Given an array of patterns `["hello", "world"]`, the instantiated command would 
 
 ```sh
 while read pattern; do
-  grep "$pattern" greetings.txt | wc -l
+  grep "$pattern" data/greetings.txt | wc -l
 done < /jobs/564758/patterns
 ```
 
@@ -9951,8 +9963,8 @@ Example input:
 ```json
 {
   "serde_pair.to_tail": {
-    "cities.txt": 2,
-    "hello.txt": 1
+    "data/cities.txt": 2,
+    "data/hello.txt": 1
   }
 }
 ```
@@ -10118,7 +10130,7 @@ Example input:
 
 ```json
 {
-  "serialize_map.infile": "greetings.txt",
+  "serialize_map.infile": "data/greetings.txt",
   "serialize_map.pattern": "hello",
   "serialize_map.args": {
     "--after-context": "1",
@@ -10668,3 +10680,161 @@ The dependencies are:
 ```
 
 There are no cycles in this dependency graph; thus, this workflow is valid, although perhaps not as readable as it could be with better organization.
+
+## Appendix C: Example Data
+
+This appendix contains example data files that are used in conformance tests throughout the specification.
+
+<details>
+<summary>
+Resource: cities.txt
+
+```txt
+Houston
+Chicago
+Piscataway
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: comment.txt
+
+```txt
+# this is a comment
+A
+B
+C
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: greetings.txt
+
+```txt
+hello world
+hi_world
+hello nurse
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: hello.txt
+
+```txt
+hello
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: questions.txt
+
+```txt
+What is the meaning of life?
+How do I exit vim?
+Why is the sky blue?
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: answers.txt
+
+```txt
+42
+Press ESC then type :q!
+Rayleigh scattering
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: request.txt
+
+```txt
+GET /hello HTTP/1.1
+Host: example.com
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: response.txt
+
+```txt
+HTTP/1.1 200 OK
+Content-Type: text/plain
+
+Hello, World!
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: wizard.txt
+
+```txt
+Gandalf the Grey
+Merlin
+Albus Dumbledore
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: spell.txt
+
+```txt
+You shall not pass!
+Abracadabra
+Expecto Patronum
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: testdir/example.txt
+
+```txt
+This is an example file in a subdirectory.
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: person.json
+
+```json
+{
+    "name": "John",
+    "age": 42
+}
+```
+
+</summary>
+</details>
