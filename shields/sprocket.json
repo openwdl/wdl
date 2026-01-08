@@ -1,6 +1,3 @@
-[2m2026-01-08T22:00:46.986542Z[0m [32m INFO[0m [2mspectool::repository[0m[2m:[0m using existing git repository
-[2m2026-01-08T22:00:47.009810Z[0m [32m INFO[0m [2mspectool::conformance::test::runner[0m[2m:[0m preparing conformance tests directory: /tmp/.tmptsA5cv
-[2m2026-01-08T22:00:47.025882Z[0m [32m INFO[0m [2mspectool::command::test[0m[2m:[0m using 4 cores
 {
   "schemaVersion": 1,
   "label": "Sprocket / WDL 1.2",
