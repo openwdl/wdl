@@ -1,4 +1,0 @@
-# this is a comment
-A
-B
-C
