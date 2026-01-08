@@ -36,7 +36,7 @@ jobs:
       - name: Run the compliance tests
         run: |
           mkdir -p ./.results/
-          echo "📊 Running compliance tests for \`${{ github.event.pull_request.head.repo.full_name }}:${{ github.head_ref }}\`..."
+          echo "📊 Running compliance tests for \`${{ github.repository }}:${{ github.ref_name }}\`..."
           spectool test \
             "java -jar ${{ github.workspace }}/cromwell.jar run ~{path} --inputs ~{input} --metadata-output ~{output}" \
             --all-capabilities \
@@ -51,7 +51,7 @@ jobs:
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          BRANCH="${{ github.head_ref }}"
+          BRANCH="${{ github.ref_name }}"
           RUN_ID="${{ github.run_id }}"
           REPO="${{ github.repository }}"
           RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
