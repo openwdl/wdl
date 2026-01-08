@@ -1,6 +1,6 @@
 # Workflow Description Language (WDL)
 
-This is version 1.2.1 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.2`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.1.*](https://github.com/openwdl/wdl/blob/wdl-1.1/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 and 1.1 specifications that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol).
+This is version 1.2.1 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.2`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.1.*](https://github.com/openwdl/wdl/blob/wdl-1.1/SPEC.md) version of the specification. It also deprecates several aspects of the 1.0 and 1.1 specifications that will be removed in the [next major WDL version](https://github.com/openwdl/wdl/blob/wdl-2.0/SPEC.md) (denoted by the 🗑 symbol). For an execution engine to be considered compliant with WDL 1.2, you must pass 100% of the compliance tests using [`spectool`](https://github.com/openwdl/spectool).
 
 ## Revisions
 
@@ -236,6 +236,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [Cyclic References](#cyclic-references)
     - [Namespaces without Scope](#namespaces-without-scope)
   - [Evaluation Order](#evaluation-order)
+- [Appendix C: Example Data](#appendix-c-example-data)
 
 ## Introduction
 
@@ -301,7 +302,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
 
   ```json
   {
-    "hello.infile": "greetings.txt",
+    "hello.infile": "data/greetings.txt",
     "hello.pattern": "hello.*"
   }
   ```
@@ -384,7 +385,7 @@ WDL also provides features for implementing more complex workflows. For example,
   ```json
   {
     "hello_parallel.pattern": "^[a-z_]+$",
-    "hello_parallel.files": ["greetings.txt", "hello.txt"]
+    "hello_parallel.files": ["data/greetings.txt", "data/hello.txt"]
   }
   ```
   
@@ -922,7 +923,7 @@ version 1.2
 
 task relative_paths_context {
   # This relative path is resolved relative to the WDL document's parent directory.
-  File input_file = "hello.txt"
+  File input_file = "data/hello.txt"
 
   command <<<
     cat ~{input_file} > output.txt
@@ -947,6 +948,7 @@ Example output:
 
 ```json
 {
+  "relative_paths_context.result": "hello.txt"
   "relative_paths_context.content": "hello"
 }
 ```
@@ -955,7 +957,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "result"
+  "exclude_outputs": ["result"]
 }
 ```
 
@@ -1300,14 +1302,14 @@ workflow test_map {
   Map[Int, Int] int_to_int = {1: 10, 2: 11}
   Map[String, Int] string_to_int = { "a": 1, "b": 2 }
   Map[File, Array[Int]] file_to_ints = {
-    "/path/to/file1": [0, 1, 2],
-    "/path/to/file2": [9, 8, 7]
+    "data/cities.txt": [0, 1, 2],
+    "data/hello.txt": [9, 8, 7]
   }
 
   output {
     Int ten = int_to_int[1]  # evaluates to 10
     Int b = string_to_int["b"]  # evaluates to 2
-    Array[Int] ints = file_to_ints["/path/to/file1"]  # evaluates to [0, 1, 2]
+    Array[Int] ints = file_to_ints["data/cities.txt"]  # evaluates to [0, 1, 2]
   }
 }
 ```
@@ -1576,6 +1578,14 @@ Example output:
 ```json
 {}
 ```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
 </p>
 </details>
 
@@ -1700,7 +1710,7 @@ Example input:
 
 ```json
 {
-  "string_to_file.infile": "hello.txt"
+  "string_to_file.infile": "data/hello.txt"
 }
 ```
 
@@ -2373,8 +2383,8 @@ workflow file_directory_equality {
   }
 
   # After canonicalization, these compare as equal
-  Boolean workflow_files_equal = file_a == file_b
-  Boolean workflow_dirs_equal = dir_a == dir_b
+  Boolean files_eq = file_a == file_b
+  Boolean dirs_eq = dir_a == dir_b
 
   call check_equality {
     file_a = file_a,
@@ -2384,8 +2394,8 @@ workflow file_directory_equality {
   }
 
   output {
-    Boolean workflow_files_equal = workflow_files_equal
-    Boolean workflow_dirs_equal = workflow_dirs_equal
+    Boolean workflow_files_equal = files_eq
+    Boolean workflow_dirs_equal = dirs_eq
     Boolean task_files_equal = check_equality.task_files_equal
     Boolean task_dirs_equal = check_equality.task_dirs_equal
   }
@@ -2397,10 +2407,10 @@ Example input:
 
 ```json
 {
-  "file_directory_equality.file_a": "tests/data/hello.txt",
-  "file_directory_equality.file_b": "tests/data/../data/hello.txt",
-  "file_directory_equality.dir_a": "tests/data/testdir/",
-  "file_directory_equality.dir_b": "tests/data/testdir"
+  "file_directory_equality.file_a": "data/hello.txt",
+  "file_directory_equality.file_b": "data/../data/hello.txt",
+  "file_directory_equality.dir_a": "data/testdir/",
+  "file_directory_equality.dir_b": "data/testdir"
 }
 ```
 
@@ -3027,7 +3037,7 @@ Example input:
 
 ```json
 {
-  "placeholder_coercion.x": "hello.txt"
+  "placeholder_coercion.x": "data/hello.txt"
 }
 ```
 
@@ -3076,6 +3086,7 @@ Example output:
   
   ```json
   {
+    "placeholder_none.foo": null,
     "placeholder_none.s": "Foo is "
   }
   ```
@@ -3168,7 +3179,7 @@ Example input:
 
 ```json
 {
-  "flags.infile": "greetings.txt",
+  "flags.infile": "data/greetings.txt",
   "flags.pattern": "world"
 }
 ```
@@ -3536,7 +3547,7 @@ Example input:
       "period": "annually"
     },
     "assay_data": {
-      "wealthitis": "hello.txt"
+      "wealthitis": "data/hello.txt"
     }
   }
 }
@@ -3551,12 +3562,6 @@ Example output:
 ```
 
 Test config:
-
-```json
-{
-  "target": "greet_person"
-}
-```
 </p>
 </details>
 
@@ -3735,7 +3740,7 @@ Example input:
 
 ```json
 {
-  "import_structs.infile": "hello.txt"
+  "import_structs.infile": "data/hello.txt"
 }
 ```
 
@@ -4247,36 +4252,37 @@ Example: environment_variable_should_echo.wdl
 ```wdl
 version 1.2
 
-task test  {
+task test {
   input {
     env String greeting
   }
+
   command <<<
-    echo $foo
+    echo $greeting
   >>>
+
   output {
     String out = read_string(stdout())
   }
+}
 
-  workflow environment_variable_should_echo {
-    input {
-      String greeting 
-    }
+workflow environment_variable_should_echo {
+  input {
+    String greeting
+  }
     
-    call test {
-      input: greeting = greeting
-    }
+  call test {
+    input: greeting = greeting
+  }
     
-    output {
-      String out = test.out
-    }
+  output {
+    String out = test.out
   }
 }
 ```
 </summary>
 <p>
 Example input:
-
 
   ```json
   {
@@ -4291,16 +4297,7 @@ Example input:
     "environment_variable_should_echo.out": "hello"
   }
   ```
-
-  Test config:
-
-  ```json
-  {
-    "fail": false
-  }
-  ```
-
-  </p>
+</p>
 </details>
 
 #### String Escaping and Injection Prevention
@@ -4476,7 +4473,7 @@ Example input:
 
 ```json
 {
-  "test_placeholders.infile": "greetings.txt"
+  "test_placeholders.infile": "data/greetings.txt"
 }
 ```
 
@@ -4531,6 +4528,14 @@ Example output:
 ```json
 {}
 ```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
 </p>
 </details>
 
@@ -4565,6 +4570,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -4611,7 +4624,7 @@ Example input:
 
 ```json
 {
-  "python_strip.infile": "comment.txt"
+  "python_strip.infile": "data/comment.txt"
 }
 ```
 
@@ -4689,7 +4702,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "outputs.csvs"
+  "exclude_outputs": ["outputs.csvs"]
 }
 ```
 </p>
@@ -4800,7 +4813,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "glob.outfiles"
+  "exclude_outputs": ["glob.outfiles"]
 }
 ```
 </p>
@@ -4817,13 +4830,16 @@ version 1.2
 
 task relative_and_absolute {
   command <<<
-  mkdir -p my/path/to
-  printf "something" > my/path/to/something.txt
+    mkdir -p my/path/to
+    printf "something" > my/path/to/something.txt
   >>>
 
   output {
     String something = read_string("my/path/to/something.txt")
-    File bashrc = "/root/.bashrc"
+    # The following may or may not work depending on what the execution engine
+    # supports.
+    #
+    # File bashrc = "/root/.bashrc"
   }
 
   requirements {
@@ -4844,14 +4860,6 @@ Example output:
 ```json
 {
   "relative_and_absolute.something": "something"
-}
-```
-
-Test config:
-
-```json
-{
-  "exclude_output": "relative_and_absolute.bashrc"
 }
 ```
 </p>
@@ -4911,7 +4919,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["optional_output.example1", "optional_output.file_array"]
+  "exclude_outputs": ["optional_output.example1", "optional_output.file_array"]
 }
 ```
 </p>
@@ -5180,7 +5188,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "cpu"
+  "capabilities": ["cpu"]
 }
 ```
 </p>
@@ -5236,7 +5244,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "memory"
+  "capabilities": ["memory"]
 }
 ```
 </p>
@@ -5293,8 +5301,8 @@ Test config:
 
 ```json
 {
-  "dependencies": "gpu",
-  "priority": "ignore"
+  "capabilities": ["gpu"],
+  "ignore": true
 }
 ```
 </p>
@@ -5338,6 +5346,7 @@ task one_mount_point {
 
   requirements {
     disks: "/mnt/outputs 10 GiB"
+    container: "ubuntu"
   }
 }
 ```
@@ -5361,7 +5370,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "disks"
+  "capabilities": ["disks"]
 }
 ```
 </p>
@@ -5411,7 +5420,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "disks"
+  "capabilities": ["disks"]
 }
 ```
 </p>
@@ -5484,7 +5493,7 @@ Test config:
 
 ```json
 {
-  "return_codes": 0
+  "return_code": 0
 }
 ```
 </p>
@@ -5526,7 +5535,7 @@ Test config:
 ```json
 {
   "fail": true,
-  "return_codes": 42
+  "return_code": 42
 }
 ```
 </p>
@@ -5567,7 +5576,7 @@ Test config:
 
 ```json
 {
-  "return_codes": 0
+  "return_code": 0
 }
 ```
 </p>
@@ -5632,7 +5641,7 @@ Example input:
 
 ```json
 {
-  "test_hints.foo": "greetings.txt"
+  "test_hints.foo": "data/greetings.txt"
 }
 ```
 
@@ -5641,14 +5650,6 @@ Example output:
 ```json
 {
   "test_hints.num_lines": 3
-}
-```
-
-Test config:
-
-```json
-{
-  "priority": "ignore"
 }
 ```
 
@@ -5952,7 +5953,7 @@ Example input:
 
 ```json
 {
-  "ex_paramter_meta.infile": "greetings.txt",
+  "ex_paramter_meta.infile": "data/greetings.txt",
   "ex_paramter_meta.lines_only": true
 }
 ```
@@ -6042,8 +6043,8 @@ Example output:
 
 ```json
 {
-  "test_runtime_info_task.at_least_two_gb": true,
-  "test_runtime_info_task.return_code": 1
+  "test_runtime_info.at_least_two_gb": true,
+  "test_runtime_info.return_code": 1
 }
 ```
 
@@ -6051,8 +6052,7 @@ Test config:
 
 ```json
 {
-  "dependencies": ["cpu", "memory"],
-  "priority": "optional"
+  "capabilities": ["cpu", "memory"]
 }
 ```
 </p>
@@ -6357,7 +6357,7 @@ Example input:
 ```json
 {
   "other.b": true,
-  "other.f": "greetings.txt"
+  "other.f": "data/greetings.txt"
 }
 ```
 
@@ -6508,7 +6508,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "allow_nested_inputs"
+  "capabilities": ["allow_nested_inputs"]
 }
 ```
 </p>
@@ -6523,10 +6523,10 @@ Example: multi_nested_inputs.wdl
 ```wdl
 version 1.2
 
-import "test_allow_nested_inputs.wdl"
+import "test_allow_nested_inputs.wdl" as nested
 
 workflow multi_nested_inputs { 
-  call test_allow_nested_inputs
+  call nested.test_allow_nested_inputs
 
   hints {
     allow_nested_inputs: false
@@ -6547,19 +6547,12 @@ Example input:
 }
 ```
 
-Example output:
-
-```json
-{
-  "multi_nested_inputs.nested_greeting": "Hello Joe"
-}
-```
-
 Test config:
 
 ```json
 {
-  "dependencies": "allow_nested_inputs"
+  "capabilities": ["allow_nested_inputs"],
+  "fail": true
 }
 ```
 </p>
@@ -6930,7 +6923,7 @@ Example input:
   "allow_nested.int_val": 3,
   "allow_nested.msg1": "hello",
   "allow_nested.my_ints": [1, 2, 3],
-  "allow_nested.ref_file": "hello.txt",
+  "allow_nested.ref_file": "data/hello.txt",
   "allow_nested.repeat2.opt_string": "goodbye"
 }
 ```
@@ -6983,6 +6976,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -7805,7 +7806,7 @@ Example input:
 
 ```json
 {
-  "test_matches.json": "person.json"
+  "test_matches.json": "data/person.json"
 }
 ```
 
@@ -7942,7 +7943,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["change_extension.data_file"]
+  "exclude_outputs": ["change_extension.data_file"]
 }
 ```
 </p>
@@ -8055,8 +8056,6 @@ task join_paths {
     String abs_str = "/usr"
     String rel_dir_str = "bin"
     String rel_file = "echo"
-    Directory rel_dir_file = "mydir"
-    String rel_str = "mydata.txt"
   }
 
   # these are all equivalent to '/usr/bin/echo'
@@ -8064,21 +8063,13 @@ task join_paths {
   String bin2 = join_paths(abs_str, [rel_dir_str, rel_file])
   String bin3 = join_paths([abs_str, rel_dir_str, rel_file])
 
-  # the default behavior is that this resolves to
-  # '<working dir>/mydir/mydata.txt'
-  String data = join_paths(rel_dir, rel_str)
-
-  # this resolves to '<working dir>/bin/echo', which is non-existent
-  File doesnt_exist = join_paths([rel_dir_str, rel_file])
   command <<<
-    mkdir ~{rel_dir}
-    ~{bin1} -n "hello" > ~{data}
+    ~{bin1} -n "hello" > output.txt
   >>>
 
   output {
     Boolean bins_equal = (bin1 == bin2) && (bin1 == bin3)
-    String result = read_string(data)
-    String missing_path = doesnt_exist
+    String result = read_string("output.txt")
   }
   
   runtime {
@@ -8173,7 +8164,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["gen_files.files"]
+  "exclude_outputs": ["gen_files.files"]
 }
 ```
 </p>
@@ -8228,7 +8219,6 @@ task file_sizes {
     printf "this file is 22 bytes\n" > out.txt
   >>>
 
-  File created_file
   File? missing_file = None
 
   output {
@@ -8237,7 +8227,7 @@ task file_sizes {
     Float created_file_bytes = size(created_file, "B")
     Float multi_file_kb = size([created_file, missing_file], "K") # 0.022
 
-    Map[String, Pair[Int, File]] nested = {
+    Map[String, Pair[Int, File?]] nested = {
       "a": (10, created_file),
       "b": (50, missing_file)
     }
@@ -8261,9 +8251,14 @@ Example output:
 
 ```json
 {
+  "file_sizes.created_file": "out.txt",
   "file_sizes.missing_file_bytes": 0.0,
   "file_sizes.created_file_bytes": 22.0,
   "file_sizes.multi_file_kb": 0.022,
+  "file_size.nested": {
+    "a": (10, "out.txt"),
+    "b": (50, null)
+  }
   "file_sizes.nested_bytes": 22.0
 }
 ```
@@ -8619,7 +8614,7 @@ Example input:
 ```json
 {
   "grep.pattern": "world",
-  "grep.file": "greetings.txt"
+  "grep.file": "data/greetings.txt"
 }
 ```
 
@@ -8810,15 +8805,15 @@ Example output:
   "read_tsv.output_objs3": [
     {
       "name": "row1",
-      "row": "value1"
+      "value": "value1"
     },
     {
       "name": "row2",
-      "row": "value2"
+      "value": "value2"
     },
     {
       "name": "row3",
-      "row": "value3"
+      "value": "value3"
     }
   ]
 }
@@ -8927,7 +8922,7 @@ Example output:
 {
   "write_tsv.array_no_header": ["one", "un"],
   "write_tsv.array_header": ["first", "one", "un"],
-  "write_tsv.structs_default": ["first", "one", "un"], 
+  "write_tsv.structs_default": ["one", "un"], 
   "write_tsv.structs_no_header": ["two", "deux"], 
   "write_tsv.structs_header": ["second", "two", "deux"], 
   "write_tsv.structs_user_header": ["no3", "three", "trois"]
@@ -9138,7 +9133,7 @@ Example input:
 
 ```json
 {
-  "read_person.json_file": "person.json"
+  "read_person.json_file": "data/person.json"
 }
 ```
 
@@ -10461,7 +10456,7 @@ Example output:
   "chunk_array.o1": [["a", "b", "c"], ["d", "e", "f"]],
   "chunk_array.o2": [["a", "b", "c"], ["d", "e"]],
   "chunk_array.o3": [["a", "b"]],
-  "chunk_array.o4": [[]],
+  "chunk_array.o4": [],
   "chunk_array.concats": ["abc", "def"]
 }
 ``` 
@@ -10492,12 +10487,12 @@ version 1.2
 workflow test_flatten {
   input {
     Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
-    Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
+    Array[Array[File]] af2D = [["data/cities.txt"], ["data/wizard.txt", "data/spell.txt"], []]
     Array[Array[Pair[Float, String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
     Map[Float, String] f2s = as_map(flatten(aap2D))
     Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
     Array[Int] expected1D = [1, 2, 3, 1, 21, 22]
-    Array[File] expected2D = ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
+    Array[File] expected2D = ["data/cities.txt", "data/wizard.txt", "data/spell.txt"]
     Array[Array[Int]] expected3D = [[1, 2], [3, 4], [5, 6], [7, 8]]
     Array[Pair[Float, String]] expectedArray = [(0.1, "mouse"), (3.0, "cat"), (15.0, "dog")]
     Map[Float, String] expectedMap = {0.1: "mouse", 3.0: "cat", 15.0: "dog"}
@@ -10603,7 +10598,7 @@ version 1.2
 
 workflow select_first_only_none_fail {
   Int? maybe_four_but_is_not = None
-  select_first([maybe_four_but_is_not])  # error! array contains only None values
+  Int result = select_first([maybe_four_but_is_not])  # error! array contains only None values
 }
 ```
 </summary>
@@ -10638,7 +10633,7 @@ Example: select_first_empty_fail.wdl
 version 1.2
 
 workflow select_first_empty_fail {
-  select_first([])  # error! array is empty
+  Int check = select_first([])  # error! array is empty
 }
 ```
 </summary>
@@ -10749,10 +10744,10 @@ version 1.2
 
 workflow test_as_pairs {
   Map[String, Int] x = {"a": 1, "c": 3, "b": 2}
-  Map[String, Pair[File, File]] y = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+  Map[String, Pair[File, File]] y = {"a": ("data/questions.txt", "data/answers.txt"), "b": ("data/request.txt", "data/response.txt")}
   Array[Pair[String, Int]] expected1 = [("a", 1), ("c", 3), ("b", 2)]
-  Array[Pair[File, String]] expected2 = [("a.bam", "a"), ("b.bam", "b")]
-  Map[File, String] expected3 = {"a.bam": "a", "b.bam": "b"}
+  Array[Pair[File, String]] expected2 = [("data/questions.txt", "a"), ("data/request.txt", "b")]
+  Map[File, String] expected3 = {"data/questions.txt": "a", "data/request.txt": "b"}
 
   scatter (item in as_pairs(y)) {
     String s = item.left
@@ -10813,9 +10808,9 @@ version 1.2
 workflow test_as_map {
   input {
     Array[Pair[String, Int]] x = [("a", 1), ("c", 3), ("b", 2)]
-    Array[Pair[String, Pair[File,File]]] y = [("a", ("a.bam", "a.bai")), ("b", ("b.bam", "b.bai"))]
+    Array[Pair[String, Pair[File,File]]] y = [("a", ("data/cities.txt", "data/comment.txt")), ("b", ("data/hello.txt", "data/greetings.txt"))]
     Map[String, Int] expected1 = {"a": 1, "c": 3, "b": 2}
-    Map[String, Pair[File, File]] expected2 = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+    Map[String, Pair[File, File]] expected2 = {"a": ("data/cities.txt", "data/comment.txt"), "b": ("data/hello.txt", "data/greetings.txt")}
   }
 
   output {
@@ -10914,8 +10909,8 @@ workflow test_keys {
   input {
     Map[String, Int] x = {"a": 1, "b": 2, "c": 3}
     Map[String, Pair[File, File]] str_to_files = {
-      "a": ("a.bam", "a.bai"), 
-      "b": ("b.bam", "b.bai")
+      "a": ("data/questions.txt", "data/answers.txt"),
+      "b": ("data/request.txt", "data/response.txt")
     }
     Name name = Name {
       first: "John",
@@ -10968,7 +10963,7 @@ Example output:
 
 Given a key-value type collection (`Map`, `Struct`, or `Object`) and a key, tests whether the collection contains an entry with the given key.
 
-This function has thre variants:
+This function has three variants:
 
 1. `Boolean contains_key(Map[P, Y], P)`: Tests whether the `Map` has an entry with the given key. If `P` is an optional type (e.g., `String?`), then the second argument may be `None`.
 2. `Boolean contains_key(Object, String)`: Tests whether the `Object` has an entry with the given name.
@@ -10996,7 +10991,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
 
   struct Person {
     String name
-    Map[String, String]? details
+    Map[String, String] details
   }
 
   workflow test_contains_key {
@@ -11034,7 +11029,9 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
       }
     },
     "test_contains_key.p2": {
-      "name": "Agent X"
+      "name": "Agent X",
+      "details": {
+      }
     }
   }
   ```
@@ -11121,7 +11118,7 @@ Example output:
 
 ```json
 {
-  "test.values.sums": [3, 7]
+  "test_values.sums": [3, 7]
 }
 ```
 </p>
@@ -11154,14 +11151,14 @@ workflow test_collect_by_key {
   input {
     Array[Pair[String, Int]] x = [("a", 1), ("b", 2), ("a", 3)]
     Array[Pair[String, Pair[File, File]]] y = [
-      ("a", ("a_1.bam", "a_1.bai")), 
-      ("b", ("b.bam", "b.bai")), 
-      ("a", ("a_2.bam", "a_2.bai"))
+      ("a", ("data/questions.txt", "data/answers.txt")),
+      ("b", ("data/request.txt", "data/response.txt")),
+      ("a", ("data/wizard.txt", "data/spell.txt"))
     ]
     Map[String, Array[Int]] expected1 = {"a": [1, 3], "b": [2]}
     Map[String, Array[Pair[File, File]]] expected2 = {
-      "a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], 
-      "b": [("b.bam", "b.bai")]
+      "a": [("data/questions.txt", "data/answers.txt"), ("data/wizard.txt", "data/spell.txt")],
+      "b": [("data/request.txt", "data/response.txt")]
     }
   }
 
@@ -11921,7 +11918,7 @@ Example input:
 
 ```json
 {
-  "serialize_array_delim.infile": "greetings.txt",
+  "serialize_array_delim.infile": "data/greetings.txt",
   "serialize_array_delim.counts": [1, 2]
 }
 ```
@@ -11982,7 +11979,7 @@ Example input:
 
 ```json
 {
-  "serde_array_lines.infile": "greetings.txt",
+  "serde_array_lines.infile": "data/greetings.txt",
   "serde_array_lines.patterns": ["hello", "world"]
 }
 ```
@@ -12141,8 +12138,8 @@ Example input:
 ```json
 {
   "serde_pair.to_tail": {
-    "cities.txt": 2,
-    "hello.txt": 1
+    "data/cities.txt": 2,
+    "data/hello.txt": 1
   }
 }
 ```
@@ -12308,7 +12305,7 @@ Example input:
 
 ```json
 {
-  "serialize_map.infile": "greetings.txt",
+  "serialize_map.infile": "data/greetings.txt",
   "serialize_map.pattern": "hello",
   "serialize_map.args": {
     "--after-context": "1",
@@ -12857,3 +12854,161 @@ The dependencies are:
 ```
 
 There are no cycles in this dependency graph; thus, this workflow is valid, although perhaps not as readable as it could be with better organization.
+
+## Appendix C: Example Data
+
+This appendix contains example data files that are used in conformance tests throughout the specification.
+
+<details>
+<summary>
+Resource: cities.txt
+
+```txt
+Houston
+Chicago
+Piscataway
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: comment.txt
+
+```txt
+# this is a comment
+A
+B
+C
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: greetings.txt
+
+```txt
+hello world
+hi_world
+hello nurse
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: hello.txt
+
+```txt
+hello
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: questions.txt
+
+```txt
+What is the meaning of life?
+How do I exit vim?
+Why is the sky blue?
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: answers.txt
+
+```txt
+42
+Press ESC then type :q!
+Rayleigh scattering
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: request.txt
+
+```txt
+GET /hello HTTP/1.1
+Host: example.com
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: response.txt
+
+```txt
+HTTP/1.1 200 OK
+Content-Type: text/plain
+
+Hello, World!
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: wizard.txt
+
+```txt
+Gandalf the Grey
+Merlin
+Albus Dumbledore
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: spell.txt
+
+```txt
+You shall not pass!
+Abracadabra
+Expecto Patronum
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: testdir/example.txt
+
+```txt
+This is an example file in a subdirectory.
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: person.json
+
+```json
+{
+    "name": "John",
+    "age": 42
+}
+```
+
+</summary>
+</details>
