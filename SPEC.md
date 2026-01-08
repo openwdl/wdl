@@ -5653,14 +5653,6 @@ Example output:
 }
 ```
 
-Test config:
-
-```json
-{
-  "ignore": true
-}
-```
-
 </p>
 </details>
 
@@ -8064,8 +8056,6 @@ task join_paths {
     String abs_str = "/usr"
     String rel_dir_str = "bin"
     String rel_file = "echo"
-    Directory rel_dir_file = "mydir"
-    String rel_str = "mydata.txt"
   }
 
   # these are all equivalent to '/usr/bin/echo'
@@ -8073,21 +8063,13 @@ task join_paths {
   String bin2 = join_paths(abs_str, [rel_dir_str, rel_file])
   String bin3 = join_paths([abs_str, rel_dir_str, rel_file])
 
-  # the default behavior is that this resolves to
-  # '<working dir>/mydir/mydata.txt'
-  String data = join_paths(rel_dir, rel_str)
-
-  # this resolves to '<working dir>/bin/echo', which is non-existent
-  File doesnt_exist = join_paths([rel_dir_str, rel_file])
   command <<<
-    mkdir ~{rel_dir}
-    ~{bin1} -n "hello" > ~{data}
+    ~{bin1} -n "hello" > output.txt
   >>>
 
   output {
     Boolean bins_equal = (bin1 == bin2) && (bin1 == bin3)
-    String result = read_string(data)
-    String missing_path = doesnt_exist
+    String result = read_string("output.txt")
   }
   
   runtime {
@@ -10616,7 +10598,7 @@ version 1.2
 
 workflow select_first_only_none_fail {
   Int? maybe_four_but_is_not = None
-  select_first([maybe_four_but_is_not])  # error! array contains only None values
+  Int result = select_first([maybe_four_but_is_not])  # error! array contains only None values
 }
 ```
 </summary>
@@ -10651,7 +10633,7 @@ Example: select_first_empty_fail.wdl
 version 1.2
 
 workflow select_first_empty_fail {
-  select_first([])  # error! array is empty
+  Int check = select_first([])  # error! array is empty
 }
 ```
 </summary>
