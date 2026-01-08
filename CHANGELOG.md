@@ -44,6 +44,7 @@ version development
 
 version 1.1.3
 ---------------------------
++ Updates the compliance suite to use [`spectool`](https://github.com/openwdl/spectool) ([#753](https://github.com/openwdl/wdl/pull/753)).
 
 + Fix issues with examples (#653, #654, #661, #662, #663, #664, #665, #666, #668, #671). Thanks to @stxue1!
 
