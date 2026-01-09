@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.1
 ---------------------------
 
++ Clarified that `task.return_code` is only available in the `output` section, where it has type `Int` rather than `Int?` ([#742](https://github.com/openwdl/wdl/pull/742)).
+
 + Updates the compliance suite to use [`spectool`](https://github.com/openwdl/spectool) ([#752](https://github.com/openwdl/wdl/pull/752)).
 
 + Formalize replacement string syntax for `sub()` function to specify backreference support (`\1` through `\9`).
