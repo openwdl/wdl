@@ -1,0 +1,80 @@
+name: Spec Compliance / Sprocket
+
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout WDL spec repo
+        uses: actions/checkout@v6
+      - name: Install `spectool`
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo openwdl/spectool --pattern '*x86_64*linux*'
+          tar -xzf spectool*.tar.gz
+          chmod +x spectool
+          sudo mv spectool /usr/local/bin/
+          rm -rf spectool*.tar.gz
+          spectool --version
+      - name: Install `sprocket`
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo stjude-rust-labs/sprocket --pattern '*x86_64*linux*'
+          tar -xzvf sprocket*.tar.gz
+          chmod +x sprocket
+          sudo mv sprocket /usr/local/bin/
+          rm -rf sprocket*.tar.gz
+          sprocket --version
+      - name: Run the compliance tests
+        run: |
+          mkdir -p ./.results/
+          echo "📊 Running compliance tests for \`${{ github.repository }}:${{ github.ref_name }}\`..."
+          spectool test \
+            "sprocket run ~{path} ~{input} -e ~{target}" \
+            --redirect-stdout \
+            --all-capabilities \
+            --label "Sprocket / WDL 1.2" \
+            -s $PWD -vv > ./.results/shield.json
+          cat ./.results/shield.json
+      - name: Publish badge JSON
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          BRANCH="${{ github.ref_name }}"
+          RUN_ID="${{ github.run_id }}"
+          REPO="${{ github.repository }}"
+          RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
+          REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+
+          git fetch origin $BRANCH
+          git checkout $BRANCH
+          mv ./.results/shield.json shields/sprocket.json
+          git add shields/sprocket.json
+
+          # Update README only if needed
+          sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/sprocket.json"
+          new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/sprocket.json"
+          run_pattern="https://github.com/$REPO/actions/runs/[0-9]+"
+          new_run="https://github.com/$REPO/actions/runs/$RUN_ID"
+          echo $new_run
+          echo $new_url
+          if grep -qE "$sed_pattern" README.md; then
+            git pull
+            sed -E -i "/sprocket_shields\.json/s|$sed_pattern|$new_url|g" README.md
+            sed -E -i "/sprocket_shields\.json/s|$run_pattern|$new_run|g" README.md
+            git add README.md
+          fi
+
+          # Commit only if there are staged changes
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: updates Sprocket shield badge"
+            git push $REPO_URL $BRANCH
+          else
+            echo "🟢 No changes to commit"
+          fi

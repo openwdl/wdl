@@ -4,6 +4,14 @@
 
 <br />
 
+| Engine    | Conformance Tests |
+|-----------|------------------|
+| MiniWDL   | [![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.2.1/shields/miniwdl.json)](https://github.com/openwdl/wdl/actions/runs/20868706052) |
+| Sprocket   | [![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.2.1/shields/sprocket.json)](https://github.com/openwdl/wdl/actions/runs/20544220196) |
+| Toil      | [![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.2.1/shields/toil.json)](https://github.com/openwdl/wdl/actions/runs/20868706051) |
+| Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.2.1/shields/cromwell.json)](https://github.com/openwdl/wdl/actions/runs/20834033484) |
+
+
 The **Workflow Description Language (WDL)** (pronounced as _/hwɪdl/_ or "whittle" with a 'd') is an open standard for describing data processing workflows using a human-readable/writeable syntax.
 It introduces a domain-specific language that aims to provide simple but powerful facilities for (a) defining atomic units of computation (a `task`), (b) for connecting those atomic units together into a larger computation graph (a `workflow`), and (c) for effortlessly scaling the execution of these graphs in multiple environments.
 

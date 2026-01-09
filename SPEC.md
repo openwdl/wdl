@@ -1,6 +1,6 @@
 # Workflow Description Language (WDL)
 
-This is version 1.3.0 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.3`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.2.*](https://github.com/openwdl/wdl/blob/wdl-1.2/SPEC.md) version of the specification.
+This is version 1.3.0 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.3`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.2.*](https://github.com/openwdl/wdl/blob/wdl-1.2/SPEC.md) version of the specification.  For an execution engine to be considered compliant with WDL 1.3, you must pass 100% of the compliance tests using [`spectool`](https://github.com/openwdl/spectool).
 
 ## Deprecations
 
@@ -32,6 +32,8 @@ Revisions to this specification are made periodically in order to correct errors
         - [Strings](#strings)
           - [Multi-line Strings](#multi-line-strings)
         - [Files and Directories](#files-and-directories)
+          - [Path Canonicalization and Validation](#path-canonicalization-and-validation)
+          - [Relative and Absolute Paths](#relative-and-absolute-paths)
       - [Optional Types and None](#optional-types-and-none)
       - [Compound Types](#compound-types)
         - [Array\[X\]](#arrayx)
@@ -129,9 +131,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Task Metadata Section](#task-metadata-section)
       - [Parameter Metadata Section](#parameter-metadata-section)
     - [Runtime Access to Requirements, Hints, and Metadata](#runtime-access-to-requirements-hints-and-metadata)
-    - [Advanced Task Examples](#advanced-task-examples)
-      - [Example 1: HISAT2](#example-1-hisat2)
-      - [Example 2: GATK Haplotype Caller](#example-2-gatk-haplotype-caller)
+      - [Output-Only Task Members](#output-only-task-members)
   - [Workflow Definition](#workflow-definition)
     - [Workflow Elements](#workflow-elements)
     - [Evaluation of Workflow Elements](#evaluation-of-workflow-elements)
@@ -212,9 +212,11 @@ Revisions to this specification are made periodically in order to correct errors
     - [`length`](#length)
 - [Input and Output Formats](#input-and-output-formats)
   - [JSON Input Format](#json-input-format)
+    - [File/Directory Inputs](#filedirectory-inputs)
     - [Optional Inputs](#optional-inputs)
     - [Specifying / Overriding Requirements and Hints](#specifying--overriding-requirements-and-hints)
   - [JSON Output Format](#json-output-format)
+    - [File/Directory Outputs](#filedirectory-outputs)
   - [Extended File/Directory Input/Output Format](#extended-filedirectory-inputoutput-format)
   - [JSON Serialization of WDL Types](#json-serialization-of-wdl-types)
     - [Primitive Types](#primitive-types-1)
@@ -250,6 +252,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [Cyclic References](#cyclic-references)
     - [Namespaces without Scope](#namespaces-without-scope)
   - [Evaluation Order](#evaluation-order)
+- [Appendix C: Example Data](#appendix-c-example-data)
 
 ## Introduction
 
@@ -315,7 +318,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
 
   ```json
   {
-    "hello.infile": "greetings.txt",
+    "hello.infile": "data/greetings.txt",
     "hello.pattern": "hello.*"
   }
   ```
@@ -398,7 +401,7 @@ WDL also provides features for implementing more complex workflows. For example,
   ```json
   {
     "hello_parallel.pattern": "^[a-z_]+$",
-    "hello_parallel.files": ["greetings.txt", "hello.txt"]
+    "hello_parallel.files": ["data/greetings.txt", "data/hello.txt"]
   }
   ```
   
@@ -406,7 +409,7 @@ WDL also provides features for implementing more complex workflows. For example,
   
   ```json
   {
-    "hello.all_matches": [["hi_world"], ["hi_pal"]]
+    "hello_parallel.all_matches": [["hi_world"], ["hello"]]
   }
   ```
   </p>
@@ -458,7 +461,7 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
     # This comment will not be included within the command
     command <<<
       # This comment WILL be included within the command after it has been parsed
-      cat ~{number * 2}
+      echo ~{number * 2}
     >>>
 
     output {
@@ -618,7 +621,7 @@ The following primitive types exist in WDL:
     "primitive_literals.f": 27.3,
     "primitive_literals.s": "hello, world",
     "primitive_literals.x": "hello.txt",
-    "primitive_literals.d": "testdir/hello.txt"
+    "primitive_literals.d": "testdir"
   }
   ```
   </p>
@@ -710,7 +713,7 @@ In multi-line strings, leading *whitespace* is removed according to the followin
       String hw1 = <<<hello  world>>>
       String hw2 = <<<   hello  world   >>>
       String hw3 = <<<   
-          hello world>>>
+          hello  world>>>
       String hw4 = <<<   
           hello  world
           >>>
@@ -747,13 +750,13 @@ In multi-line strings, leading *whitespace* is removed according to the followin
   
   ```json
   {
-    "multiline_strings2.hw0": "hello  world"
-    "multiline_strings2.hw1": "hello  world"
-    "multiline_strings2.hw2": "hello  world"
-    "multiline_strings2.hw3": "hello  world"
-    "multiline_strings2.hw4": "hello  world"
-    "multiline_strings2.hw5": "hello  world"
-    "multiline_strings2.hw6": "hello  world"
+    "multiline_strings2.hw0": "hello  world",
+    "multiline_strings2.hw1": "hello  world",
+    "multiline_strings2.hw2": "hello  world",
+    "multiline_strings2.hw3": "hello  world",
+    "multiline_strings2.hw4": "hello  world",
+    "multiline_strings2.hw5": "hello  world",
+    "multiline_strings2.hw6": "hello  world",
     "multiline_strings2.not_equivalent": "hello \\\n  world"
   }
   ```
@@ -792,6 +795,7 @@ Common leading whitespace is also removed from blank lines that contain whitespa
         this is a
         
           multi-line string
+
       >>>
       
       # This string's common leading whitespace is 8.
@@ -800,6 +804,7 @@ Common leading whitespace is also removed from blank lines that contain whitespa
               this is a
       
                 multi-line string
+
       >>>
     }
   }
@@ -816,9 +821,9 @@ Common leading whitespace is also removed from blank lines that contain whitespa
   
   ```json
   {
-    "multiline_strings3.multi_line_A": "\nthis is a\n\n  multi-line string\n"
-    "multiline_strings3.multi_line_B": "\nthis is a\n\n  multi-line string\n"
-    "multiline_strings3.multi_line_C": "\nthis is a\n\n  multi-line string\n"
+    "multiline_strings3.multi_line_A": "\nthis is a\n\n  multi-line string\n",
+    "multiline_strings3.multi_line_B": "\nthis is a\n\n  multi-line string\n",
+    "multiline_strings3.multi_line_C": "\nthis is a\n\n  multi-line string\n",
     "multiline_strings3.multi_line_D": "\nthis is a\n\n  multi-line string\n"
   }
   ```
@@ -865,18 +870,25 @@ Single- and double-quotes do not need to be escaped within a multi-line string.
 
 A `File` or `Directory` declaration may have have a string value indicating a relative or absolute path on the local file system.
 
-Within a WDL file, literal values for files may only be (relative or absolute) paths that are local to the execution environment. If the specified path does not exist, it is an error unless the declaration is optional.
+###### Path Canonicalization and Validation
+
+When a `File` or `Directory` value is created, the following operations are performed:
+
+- **Path Canonicalization.** Intermediate path components are normalized (resolving `.` for current directory and `..` for parent directory segments), symbolic links are resolved to their final targets, and relative paths are converted to their absolute path form. For `Directory` values, trailing directory separators are removed.
+- **Path Validation.** The path must exist at value creation time. If the path does not exist, an error occurs immediately. The file/directory must accessible for reading (i.e., assigned the appropriate permissions). Additionally, a `File` value cannot refer to a directory; if the path refers to a directory, an error occurs. Similarly, a `Directory` value cannot refer to a file; if the path refers to a file, an error occurs.
+
+Value creation occurs when the value is materialized as a `File`/`Directory` within the execution engine, including
+
+- When a `File` or `Directory` declaration is evaluated
+- When a `String` is coerced to a `File` or `Directory` type
+
+After canonicalization, two `File` or `Directory` values that refer to the same underlying resource are considered equal for all comparison operations, even if they were initialized from different string representations.
 
 ```wdl
 task literals_paths {
   input {
-    # If the user does not overide the value of `f1`, and /foo/bar.txt
-    # does not exist, it is an error.
     File f1 = "/foo/bar.txt"
-
-    # If the user does not override the value of `f2` and /foo/bar.txt
-    # does not exist, then `f2` is set to `None`.
-    File? f2 = "/foo/bar.txt"
+    File? f2
   }
 
   # If baz.txt does not exist, this is an error.
@@ -884,8 +896,31 @@ task literals_paths {
 
   # If qux.txt does not exist, this is set to `None`.
   File? f4 = "qux.txt"
+
+  command <<<
+    # If the user does not overide the value of `f1`, and /foo/bar.txt
+    # does not exist, an error will occur when the `File` value is created.
+    cat "~{f1}"
+
+    # If the user does not specify the value of `f2` it's value is `None`,
+    # which results in the empty-string when interpolated. `-f ""` is
+    # always false.
+    if [ -f "~{f2}" ]; then
+      echo "~{f2}"
+    fi
 }
 ```
+
+Within a WDL file, the execution engine is only required to support literal values for files and directories that are paths local to the execution environment.
+
+During task execution, the following additional constraints apply:
+
+* To write to a file, the path's parent directory must be accessible for writing.
+* To write to a directory, it must exist and be accessible for writing.
+
+An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path. Remote files must be treated as read-only. For remote files, localization occurs as part of value creation—the remote file must be accessible and valid when the `File` or `Directory` value is evaluated, at which point it is localized and the resulting local path is validated according to the rules above.
+
+###### Relative and Absolute Paths
 
 The interpretation of relative paths (paths that do not start with `/`) depends on the context in which they appear:
 
@@ -905,7 +940,7 @@ version 1.3
 
 task relative_paths_context {
   # This relative path is resolved relative to the WDL document's parent directory.
-  File input_file = "hello.txt"
+  File input_file = "data/hello.txt"
 
   command <<<
     cat ~{input_file} > output.txt
@@ -930,6 +965,7 @@ Example output:
 
 ```json
 {
+  "relative_paths_context.result": "hello.txt"
   "relative_paths_context.content": "hello"
 }
 ```
@@ -938,7 +974,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "result"
+  "exclude_outputs": ["result"]
 }
 ```
 
@@ -950,11 +986,11 @@ In this example,
 - The `input_file` input uses a relative path that refers to a file co-located with the WDL document on the host filesystem.
 - The `result` output uses a relative path that refers to a file created by the command in the execution directory.
 
-An execution engine may support [other ways](#input-and-output-formats) to specify `File` and `Directory` inputs (e.g., as URIs), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File`/`Directory` variable is a local path.
-
 #### Optional Types and None
 
 A type may have a `?` postfix quantifier, which means that its value is allowed to be undefined without causing an error. A declaration with an optional type can only be used in calls or functions that accept optional values.
+
+Multi-level optionals are not allowed. A value cannot have multiple levels of optionality, for example, `Int??` is not a valid type. However, nested optionals within compound types are allowed, such as `Array[String?]?`, where each `?` applies to a different structural level of the type.
 
 WDL has a special value `None` whose meaning is "an undefined value". The `None` value has the (hidden) type [`Union`](#union-hidden-type), meaning `None` can be assigned to an optional declaration of any type.
 
@@ -1001,7 +1037,8 @@ An optional declaration has a default initialization of `None`, which indicates 
     "optionals.test_defined": false,
     "optionals.test_defined2": true,
     "optionals.test_is_none": true,
-    "optionals.test_not_none": false
+    "optionals.test_not_none": false,
+    "optionals.test_non_equal": true
   }
   ```
   </p>
@@ -1113,7 +1150,7 @@ task sum {
   }
   
   command <<<
-  printf ~{sep(" ", ints)} | awk '{tot=0; for(i=1;i<=NF;i++) tot+=$i; print tot}'
+  printf "~{sep(" ", ints)}" | awk '{tot=0; for(i=1;i<=NF;i++) tot+=$i; print tot}'
   >>>
   
   output {
@@ -1178,8 +1215,8 @@ Example output:
 {
   "non_empty_optional.nonempty1": [0.0],
   "non_empty_optional.nonempty2": [null, 1],
-  "non_empty_optional.nonempty3": [],
-  "non_empty_optional.nonempty4": [0.0]
+  "non_empty_optional.nonempty3": null,
+  "non_empty_optional.nonempty4": [0]
 }
 ```
 </p>
@@ -1282,14 +1319,14 @@ workflow test_map {
   Map[Int, Int] int_to_int = {1: 10, 2: 11}
   Map[String, Int] string_to_int = { "a": 1, "b": 2 }
   Map[File, Array[Int]] file_to_ints = {
-    "/path/to/file1": [0, 1, 2],
-    "/path/to/file2": [9, 8, 7]
+    "data/cities.txt": [0, 1, 2],
+    "data/hello.txt": [9, 8, 7]
   }
 
   output {
     Int ten = int_to_int[1]  # evaluates to 10
     Int b = string_to_int["b"]  # evaluates to 2
-    Array[Int] ints = file_to_ints["/path/to/file1"]  # evaluates to [0, 1, 2]
+    Array[Int] ints = file_to_ints["data/cities.txt"]  # evaluates to [0, 1, 2]
   }
 }
 ```
@@ -1409,7 +1446,7 @@ workflow test_object {
       a: 10,
       b: "hello"
     }
-    Int i = f.a
+    Int i = obj.a
   }
 }
 ```
@@ -1493,18 +1530,20 @@ Example output:
 
 ```json
 {
-  "test_struct.person": {
+  "test_struct.john": {
     "name": "John",
     "account": {
       "account_number": "123456",
       "routing_number": 300211325,
       "balance": 3.5,
-      "pin_digits": [1, 2, 3, 4]
+      "pin_digits": [1, 2, 3, 4],
+      "username": null
     }
   },
   "test_struct.has_account": true
 }
 ```
+
 </p>
 </details>
 
@@ -1555,6 +1594,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -1818,14 +1865,17 @@ Example: string_to_file.wdl
 version 1.3
 
 workflow string_to_file {
-  String path1 = "/path/to/file"
-  File path2 = "/path/to/file"
+  input {
+    File infile
+  }
+
+  String path1 = "~{infile}"
 
   # valid - String coerces unambiguously to File
-  File path3 = path1
+  File path2 = path1
 
   output {
-    Boolean paths_equal = path2 == path3
+    Boolean paths_equal = path2 == infile
   }
 }
 ```
@@ -1834,7 +1884,9 @@ workflow string_to_file {
 Example input:
 
 ```json
-{}
+{
+  "string_to_file.infile": "data/hello.txt"
+}
 ```
 
 Example output:
@@ -1995,18 +2047,20 @@ workflow map_to_struct {
   String b = "key"
   String c = "lookup"
 
-  # What are the keys to this Struct?
-  Words literal_syntax = Words {
-    a: 10,
-    b: 11,
-    c: 12
-  }
+  output {
+    # What are the keys to this Struct?
+    Words literal_syntax = Words {
+      a: 10,
+      b: 11,
+      c: 12
+    }
 
-  # What are the keys to this Struct?
-  Words map_coercion = {
-    a: 10,
-    b: 11,
-    c: 12
+    # What are the keys to this Struct?
+    Words map_coercion = {
+      "a": 10,
+      "b": 11,
+      "c": 12
+    }
   }
 }
 ```
@@ -2028,9 +2082,9 @@ Example output:
     "c": 12
   },
   "map_to_struct.map_coercion": {
-    "beware": 10,
-    "key": 11,
-    "lookup": 12
+    "a": 10,
+    "b": 11,
+    "c": 12
   }
 }
 ```
@@ -2059,7 +2113,7 @@ struct A {
   String s
 }
 
-Struct B {
+struct B {
   A a_struct
   Int i
 }
@@ -2203,7 +2257,7 @@ task count_lines {
   }
 
   command <<<
-    wc -l ~{write_lines(array)}
+    wc -l < ~{write_lines(array)}
   >>>
   
   output {
@@ -2444,6 +2498,10 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | `File`      | `!=`     | `String`  | `Boolean` |                                                          |
 | 🗑 `File`    | `+`      | `File`    | `File`    | append file paths - error if second path is not relative |
 | 🗑 `File`    | `+`      | `String`  | `File`    | append file paths - error if second path is not relative |
+| `Directory` | `==`     | `Directory` | `Boolean` |                                                        |
+| `Directory` | `!=`     | `Directory` | `Boolean` |                                                        |
+| `Directory` | `==`     | `String`  | `Boolean` |                                                          |
+| `Directory` | `!=`     | `String`  | `Boolean` |                                                          |
 
 Boolean operator evaluation is minimal (or "short-circuiting"), meaning that:
 
@@ -2451,6 +2509,102 @@ Boolean operator evaluation is minimal (or "short-circuiting"), meaning that:
 2. For `A || B`, if `A` evaluates to `true` then `B` is not evaluated.
 
 WDL `String`s are compared by the unicode values of their corresponding characters. Character `a` is less than character `b` if it has a lower unicode value.
+
+`File` and `Directory` values are [canonicalized](#path-canonicalization-and-validation) when the value is created. Two `File` or `Directory` values that refer to the same underlying resource are considered equal, even if they were initialized from different string representations. For example, `/home/user/file.txt` and `/home/user/../user/file.txt` refer to the same file and compare as equal. Similarly, for `Directory` values, trailing slashes are ignored when determining equality (e.g., `/home/user/dir` and `/home/user/dir/` are equal). Equality relationships between `File` and `Directory` values are preserved throughout workflow execution, including before and after [task input localization](#task-input-localization).
+
+When comparing a `File` or `Directory` to a `String`, the `String` is first coerced to `File` or `Directory` (and thus canonicalized) before the comparison is performed.
+
+<details>
+<summary>
+Example: file_directory_equality.wdl
+
+```wdl
+version 1.3
+
+task check_equality {
+  input {
+    File file_a
+    File file_b
+    Directory dir_a
+    Directory dir_b
+  }
+
+  command <<<
+  # The execution engine localizes equal files once
+  # so file_a and file_b will have the same path
+  if [ "~{file_a}" = "~{file_b}" ]; then
+    echo "true" > files_equal.txt
+  else
+    echo "false" > files_equal.txt
+  fi
+
+  if [ "~{dir_a}" = "~{dir_b}" ]; then
+    echo "true" > dirs_equal.txt
+  else
+    echo "false" > dirs_equal.txt
+  fi
+  >>>
+
+  output {
+    Boolean task_files_equal = read_boolean("files_equal.txt")
+    Boolean task_dirs_equal = read_boolean("dirs_equal.txt")
+  }
+}
+
+workflow file_directory_equality {
+  input {
+    File file_a
+    File file_b
+    Directory dir_a
+    Directory dir_b
+  }
+
+  # After canonicalization, these compare as equal
+  Boolean files_eq = file_a == file_b
+  Boolean dirs_eq = dir_a == dir_b
+
+  call check_equality {
+    file_a = file_a,
+    file_b = file_b,
+    dir_a = dir_a,
+    dir_b = dir_b
+  }
+
+  output {
+    Boolean workflow_files_equal = files_eq
+    Boolean workflow_dirs_equal = dirs_eq
+    Boolean task_files_equal = check_equality.task_files_equal
+    Boolean task_dirs_equal = check_equality.task_dirs_equal
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "file_directory_equality.file_a": "data/hello.txt",
+  "file_directory_equality.file_b": "data/../data/hello.txt",
+  "file_directory_equality.dir_a": "data/testdir/",
+  "file_directory_equality.dir_b": "data/testdir"
+}
+```
+
+Example output:
+
+```json
+{
+  "file_directory_equality.workflow_files_equal": true,
+  "file_directory_equality.workflow_dirs_equal": true,
+  "file_directory_equality.task_files_equal": true,
+  "file_directory_equality.task_dirs_equal": true
+}
+```
+</p>
+</details>
+
+In this example, `file_a` and `file_b` use different string representations (`tests/data/hello.txt` vs `tests/data/../data/hello.txt`) but both canonicalize to the same path and compare as equal at workflow scope. When passed to the task, the execution engine localizes the file once, and both `file_a` and `file_b` in the task reference the same localized path. Similarly, `dir_a` includes a trailing slash while `dir_b` does not, but they canonicalize to the same directory and are localized once.
 
 Except for `String + File`, all concatenations between `String` and non-`String` types are deprecated and will be removed in WDL 2.0. The same effect can be achieved using [string interpolation](#expression-placeholders-and-string-interpolation).
 
@@ -2510,8 +2664,8 @@ Example output:
 {
   "array_map_equality.is_true1": true,
   "array_map_equality.is_true2": true,
-  "array_map_equality.is_false1": true,
-  "array_map_equality.is_false2": true
+  "array_map_equality.is_false1": false,
+  "array_map_equality.is_false2": false
 }
 ```
 </p>
@@ -2699,7 +2853,7 @@ version 1.3
 struct Experiment {
   String id
   Array[String] variables
-  Map[String, Float] data
+  Map[String, String] data
 }
 
 workflow nested_access {
@@ -2732,7 +2886,7 @@ Example input:
       "variables": ["name", "height"],
       "data": {
         "name": "Pinky",
-        "height": 7
+        "height": "7"
       }
     },
     {
@@ -2740,7 +2894,7 @@ Example input:
       "variables": ["name", "weight"],
       "data": {
         "name": "Porky",
-        "weight": 1000
+        "weight": "1000"
       }
     }
   ]
@@ -2909,7 +3063,7 @@ Example input:
 {
   "placeholders.start": "h",
   "placeholders.end": "o",
-  "placeholders.input": "hello"
+  "placeholders.instr": "hello"
 }
 ```
 
@@ -2917,7 +3071,8 @@ Example output:
 
 ```json
 {
-  "placeholders.cmd": "grep 'h...o' hello"
+  "placeholders.cmd": "grep 'h...o' hello",
+  "placeholders.s": "4"
 }
 ```
 </p>
@@ -2983,11 +3138,12 @@ Placeholders are evaluated in multi-line strings exactly the same as in regular 
   ```wdl
   version 1.3
 
-  workflow multiline_strings {
-    output {
+  workflow multiline_string_placeholders {
       String spaces = "  "
       String name = "Henry"
       String company = "Acme"
+
+    output {
       # This string evaluates to: "  Hello Henry,\n  Welcome to Acme!"
       # The string still has spaces because the placeholders are evaluated after removing the 
       # common leading whitespace.
@@ -3022,6 +3178,7 @@ The result of evaluating an expression in a placeholder must ultimately be conve
 
 - `String` is substituted directly.
 - `File` is substituted as if it were a `String`.
+- `Directory` is substituted as if it were a `String`. The resulting string does not have a trailing slash.
 - `Int` is formatted without leading zeros (unless the value is `0`), and with a leading `-` if the value is negative.
 - `Float` is printed in the style `[-]ddd.dddddd`, with 6 digits after the decimal point.
 - `Boolean` is converted to the "stringified" version of its literal value, i.e., `true` or `false`.
@@ -3038,12 +3195,15 @@ Example: placeholder_coercion.wdl
 version 1.3
 
 workflow placeholder_coercion {
-  File x = "/hij"
+  input {
+    File x
+  }
+  String x_as_str = x
   Int? i = None
 
   output {
     Boolean is_true1 = "~{"abc"}" == "abc"
-    Boolean is_true2 = "~{x}" == "/hij"
+    Boolean is_true2 = "~{x}" == x_as_str
     Boolean is_true3 = "~{5}" == "5"
     Boolean is_true4 = "~{3.141}" == "3.141000"
     Boolean is_true5 = "~{3.141 * 1E-10}" == "0.000000"
@@ -3057,7 +3217,9 @@ workflow placeholder_coercion {
 Example input:
 
 ```json
-{}
+{
+  "placeholder_coercion.x": "data/hello.txt"
+}
 ```
 
 Example output:
@@ -3105,6 +3267,7 @@ Example output:
   
   ```json
   {
+    "placeholder_none.foo": null,
     "placeholder_none.s": "Foo is "
   }
   ```
@@ -3187,7 +3350,7 @@ task flags {
   >>>
 
   output {
-    String num_matches = read_int(stdout())
+    Int num_matches = read_int(stdout())
   }
 }
 ```
@@ -3197,7 +3360,7 @@ Example input:
 
 ```json
 {
-  "flags.infile": "greetings.txt",
+  "flags.infile": "data/greetings.txt",
   "flags.pattern": "world"
 }
 ```
@@ -3427,7 +3590,7 @@ task bad_sub {
 }
 ```
 
-On the other hand, in the following example all of the types are compatible, but if the `hello.txt` file does not exist at runtime (when the implementation instantiates the command and tries to evaluate the call to `read_lines`), then an error will be raised.
+On the other hand, in the following example all of the types are compatible, but if the `hello.txt` file does not exist when the `File` value is created (when evaluating the declaration `File f = "hello.txt"`), then an error will be raised.
 
 ```wdl
 task missing_file {
@@ -3517,7 +3680,7 @@ struct Person {
     description: "Encapsulates data about a person"
   }
 
-  paramter_meta {
+  parameter_meta {
     name: "The person's name"
     age: "The person's age"
     income: "How much the person makes (optional)"
@@ -3536,7 +3699,7 @@ task greet_person {
   printf "Hello ~{person.name.first}! You have ~{length(assay_array)} test result(s) available.\n"
 
   if ~{defined(person.income)}; then
-    if [ "~{select_first([person.income]).amount}" -gt 1000 ]; then
+    if [ "$(printf "%.0f" ~{select_first([person.income]).amount})" -gt 1000 ]; then
       currency="~{select_first([select_first([person.income]).currency, "USD"])}"
       printf "Please transfer $currency 500 to continue"
     fi
@@ -3554,7 +3717,7 @@ Example input:
 
 ```json
 {
-  "person_struct.person": {
+  "greet_person.person": {
     "name": {
       "first": "Richard",
       "last": "Rich"
@@ -3565,7 +3728,7 @@ Example input:
       "period": "annually"
     },
     "assay_data": {
-      "wealthitis": "hello.txt"
+      "wealthitis": "data/hello.txt"
     }
   }
 }
@@ -3575,17 +3738,11 @@ Example output:
 
 ```json
 {
-  "person_struct.message": "Hello Richard! You have 1 test result(s) available.\nPlease transfer USD 500 to continue"
+  "greet_person.message": "Hello Richard! You have 1 test result(s) available.\nPlease transfer USD 500 to continue"
 }
 ```
 
 Test config:
-
-```json
-{
-  "target": "greet_person"
-}
-```
 </p>
 </details>
 
@@ -3779,7 +3936,7 @@ A document is imported using it's [URI](https://en.wikipedia.org/wiki/Uniform_Re
 * `https://`
 * 🗑 `file://` - Using the `file://` protocol for local imports can be problematic. Its use is deprecated and will be removed in WDL 2.0.
 
-In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. In the primary WDL document, a protocol-less import is relative to the host file system. If a protocol-less import starts with `/` it is interpreted as relative to the root of the host in the resolved URI.
+In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. In the primary WDL document, a protocol-less import is relative to the folder that contains the primary WDL file. If a protocol-less import starts with `/` it is interpreted as relative to the root of the file system that contains the primary WDL file.
 
 Some examples of correct import resolution:
 
@@ -3858,6 +4015,7 @@ task calculate_bill {
 
 workflow import_structs {
   input {
+    File infile
     Person doctor = Person {
       age: 10,
       name: Name {
@@ -3882,12 +4040,12 @@ workflow import_structs {
         period: "hourly"
       },
       assay_data: {
-        "glucose": "hello.txt"
+        "glucose": infile
       }
     }
   }
 
-  call person_struct.greet_person {
+  call person_struct_task.greet_person {
     person = patient
   }
 
@@ -3905,14 +4063,16 @@ workflow import_structs {
 Example input:
 
 ```json
-{}
+{
+  "import_structs.infile": "data/hello.txt"
+}
 ```
 
 Example output:
 
 ```json
 {
-  "import_structs.bill": 175000
+  "import_structs.bill": 175000.0
 }
 ```
 </p>
@@ -3936,7 +4096,7 @@ struct Patient {
 Enums are [imported in the same way as `Struct`s](#struct-namespacing) and have the same namespacing rules, namely that Enums exist in the document's global scope, and importing an `enum` copies its definition into the global scope of the importing document (potentially using an alias).
 
 ```wdl
-version 1.2
+version 1.3
 import "color.wdl" alias Color as Hue
 workflow another_wf {
   input {
@@ -4059,9 +4219,10 @@ Example input:
 `File` and `Directory` inputs may require localization to the execution environment. For example, a file located on a remote web server that is provided to the execution engine as an `https://` URL must first be downloaded to the machine where the task is being executed.
 
 - `File`s and `Directory`s are localized into the execution environment prior to evaluating any expressions. This means that references to `File` or `Directory` declarations in input declaration expressions, private declaration expressions, and the command section are always replaced with the local paths to those files/directories.
+- When multiple input declarations refer to the same canonicalized `File` or `Directory` (i.e., they [compare as equal](#binary-operators-on-primitive-types)), the execution engine should localize the resource once, and all references to those declarations should resolve to the same localized path.
 - When localizing a `File` or `Directory`, the engine may choose to place the local resource wherever it likes so long as it adheres to these rules:
   - The original file/directory name (the "basename") must be preserved even if the path to it has changed.
-  - Two inputs with the same basename must be located separately, to avoid name collision.
+  - Two distinct input files with the same basename must be located separately, to avoid name collision. Note that this refers to two different files (that would not compare as equal), not to multiple input declarations that reference the same underlying file.
   - Two input files that originate from the same "parent" must be localized into the same directory for task execution.
     - For local paths, "parent" means the parent directory.
     - For remote paths specified as a URI, "parent" means the entire URI up to the last '/' of the path (i.e., excluding the final component and any parameters). For example, http://foo.com/bar/a.txt and http://foo.com/bar/b.txt have the same parent (http://foo.com/bar/), so they must be localized into the same directory.
@@ -4436,61 +4597,56 @@ The environment variable should be evaluated by the engine prior to injecting it
 
 <details>
 <summary>
+Example: environment_variable_should_echo.wdl
 
 ```wdl
 version 1.3
 
-task test  {
+task test {
   input {
     env String greeting
   }
+
   command <<<
-    echo $foo
+    echo $greeting
   >>>
+
   output {
-    String out= read_string(stdout())
+    String out = read_string(stdout())
   }
 }
 
 workflow environment_variable_should_echo {
   input {
-    String greeting 
+    String greeting
   }
-  
+    
   call test {
     input: greeting = greeting
   }
-  
+    
   output {
     String out = test.out
   }
+}
 ```
 </summary>
 <p>
 Example input:
 
-```json
-{
-  "environment_variable_should_echo.greeting": "hello"
-}
-```
+  ```json
+  {
+    "environment_variable_should_echo.greeting": "hello"
+  }
+  ```
 
-Example output:
+  Example output:
 
-```json
-{
-  "environment_variable_should_echo.out": "hello"
-}
-```
-
-Test config:
-
-```json
-{
-  "fail": false
-}
-```
-
+  ```json
+  {
+    "environment_variable_should_echo.out": "hello"
+  }
+  ```
 </p>
 </details>
 
@@ -4651,7 +4807,7 @@ task test_placeholders {
     # The `read_lines` function reads the lines from a file into an
     # array. The `sep` function concatenates the lines with a space
     # (" ") delimiter. The resulting string is then printed to stdout.
-    printf ~{sep(" ", read_lines(infile))}
+    printf "~{sep(" ", read_lines(infile))}"
   >>>
   
   output {
@@ -4667,7 +4823,7 @@ Example input:
 
 ```json
 {
-  "test_placeholders.infile": "greetings.txt"
+  "test_placeholders.infile": "data/greetings.txt"
 }
 ```
 
@@ -4722,6 +4878,14 @@ Example output:
 ```json
 {}
 ```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
 </p>
 </details>
 
@@ -4757,6 +4921,14 @@ Example output:
 ```json
 {}
 ```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
 </p>
 </details>
 
@@ -4779,12 +4951,12 @@ task python_strip {
   }
 
   command<<<
-  python <<CODE
+    python <<CODE
     with open("~{infile}") as fp:
       for line in fp:
         if not line.startswith('#'):
           print(line.strip())
-  CODE
+    CODE
   >>>
 
   output {
@@ -4802,7 +4974,7 @@ Example input:
 
 ```json
 {
-  "python_strip.infile": "comment.txt"
+  "python_strip.infile": "data/comment.txt"
 }
 ```
 
@@ -4810,7 +4982,7 @@ Example output:
 
 ```json
 {
-  "python_strip": ["A", "B", "C"]
+  "python_strip.lines": ["A", "B", "C"]
 }
 ```
 </p>
@@ -4820,10 +4992,10 @@ Given an `infile` value of `/path/to/file`, the execution engine will produce th
 
 ```sh
 python <<CODE
-  with open("/path/to/file") as fp:
-    for line in fp:
-      if not line.startswith('#'):
-        print(line.strip())
+with open("/path/to/file") as fp:
+  for line in fp:
+    if not line.startswith('#'):
+      print(line.strip())
 CODE
 ```
 
@@ -4863,8 +5035,7 @@ Example input:
 
 ```json
 {
-  "outputs.t": 5,
-  "outputs.write_outstr": false
+  "outputs.t": 5
 }
 ```
 
@@ -4881,7 +5052,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "csvs"
+  "exclude_outputs": ["outputs.csvs"]
 }
 ```
 </p>
@@ -4959,7 +5130,7 @@ task glob {
   }
 
   command <<<
-  for i in 1..~{num_files}; do
+  for i in {1..~{num_files}}; do
     printf ${i} > file_${i}.txt
   done
   >>>
@@ -4992,7 +5163,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": "outfiles"
+  "exclude_outputs": ["glob.outfiles"]
 }
 ```
 </p>
@@ -5009,13 +5180,16 @@ version 1.3
 
 task relative_and_absolute {
   command <<<
-  mkdir -p my/path/to
-  printf "something" > my/path/to/something.txt
+    mkdir -p my/path/to
+    printf "something" > my/path/to/something.txt
   >>>
 
   output {
-    File something = read_string("my/path/to/something.txt")
-    File bashrc = "/root/.bashrc"
+    String something = read_string("my/path/to/something.txt")
+    # The following may or may not work depending on what the execution engine
+    # supports.
+    #
+    # File bashrc = "/root/.bashrc"
   }
 
   requirements {
@@ -5038,18 +5212,10 @@ Example output:
   "relative_and_absolute.something": "something"
 }
 ```
-
-Test config:
-
-```json
-{
-  "exclude_output": "bashrc"
-}
-```
 </p>
 </details>
 
-All `File` and `Directory` outputs are required to exist, otherwise the task will fail. However, an output may be declared as optional (e.g. `File?`, `Directory?`, or `Array[File?]`), in which case the value will be undefined if the file does not exist.
+All `File` and `Directory` outputs are required to exist when the output section is evaluated (i.e., when the output values are created), otherwise the task will fail. However, an output may be declared as optional (e.g. `File?`, `Directory?`, or `Array[File?]`), in which case the value will be undefined if the file does not exist.
 
 <details>
 <summary>
@@ -5065,7 +5231,7 @@ task optional_output {
 
   command <<<
     printf "1" > example1.txt
-    if ~{make_example2}; do
+    if ~{make_example2}; then
       printf "2" > example2.txt
     fi
   >>>
@@ -5093,6 +5259,8 @@ Example output:
 ```json
 {
   "optional_output.example2": null,
+  "optional_output.example1": "example1.txt",
+  "optional_output.file_array": ["example1.txt", null],
   "optional_output.file_array_len": 1
 }
 ```
@@ -5101,7 +5269,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["example1", "file_array"]
+  "exclude_outputs": ["optional_output.example1", "optional_output.file_array"]
 }
 ```
 </p>
@@ -5193,7 +5361,7 @@ task dynamic_container {
   >>>
   
   output {
-    String is_true = ubuntu_version == read_string(stdout())
+    Boolean is_true = ubuntu_version == read_string(stdout())
   }
 
   requirements {
@@ -5372,7 +5540,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "cpu"
+  "capabilities": ["cpu"]
 }
 ```
 </p>
@@ -5428,7 +5596,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "memory"
+  "capabilities": ["memory"]
 }
 ```
 </p>
@@ -5462,6 +5630,7 @@ task test_gpu {
   }
   
   requirements {
+    container: "ubuntu:latest"
     gpu: true
   }
 }
@@ -5486,7 +5655,8 @@ Test config:
 
 ```json
 {
-  "dependencies": "gpu"
+  "capabilities": ["gpu"],
+  "ignore": true
 }
 ```
 </p>
@@ -5504,9 +5674,11 @@ Test config:
     * `Array[String]` - An array of disk specifications.
 * Default value: `1 GiB`
 
-The `disks` attribute provides a way to request one or more persistent volumes, each of which has a minimum size and is mounted at a specific location. When the `disks` attribute is provided, the execution engine must guarantee the requested resources are available or immediately fail the task prior to instantiating the command.
+The `disks` attribute provides a way to request one or more persistent volumes, each of which has a minimum size and is mounted at a specific location with both read and write permissions. When the `disks` attribute is provided, the execution engine must guarantee the requested resources are available or immediately fail the task prior to instantiating the command.
 
-If a mount point is specified, then it must be an absolute path to a location in the host environment. If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
+If the mount point is omitted, it is assumed to be a persistent volume mounted at the root of the execution directory within a task.
+
+If a mount point is specified, then it must be an absolute path to a location in the execution environment (i.e., within the container). The specified path either must not already exist in the execution environment, or it must be empty and have at least the requested amount of space available. The mount point should be assumed to be ephemeral, i.e., it will be deleted after the task completes.
 
 The execution engine is free to provision any class(es) of persistent volume it has available (e.g., SSD or HDD). The [`disks` hint](#-disks) hint can be used to request specific attributes for the provisioned disks.
 
@@ -5528,6 +5700,7 @@ task one_mount_point {
 
   requirements {
     disks: "/mnt/outputs 10 GiB"
+    container: "ubuntu"
   }
 }
 ```
@@ -5551,7 +5724,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "disks"
+  "capabilities": ["disks"]
 }
 ```
 </p>
@@ -5601,7 +5774,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "disks"
+  "capabilities": ["disks"]
 }
 ```
 </p>
@@ -5674,7 +5847,7 @@ Test config:
 
 ```json
 {
-  "return_code": 1
+  "return_code": 0
 }
 ```
 </p>
@@ -5729,7 +5902,7 @@ Example: all_return_codes_task.wdl
 ```wdl
 version 1.3
 
-task multi_return_code {
+task all_return_codes {
   command <<<
   exit 42
   >>>
@@ -5757,7 +5930,7 @@ Test config:
 
 ```json
 {
-  "return_code": 42
+  "return_code": 0
 }
 ```
 </p>
@@ -5794,7 +5967,7 @@ task test_hints {
   }
 
   command <<<
-  wc -l ~{foo}
+  wc -l < ~{foo}
   >>>
 
   output {
@@ -5824,7 +5997,7 @@ Example input:
 
 ```json
 {
-  "test_hints.foo": "greetings.txt"
+  "test_hints.foo": "data/greetings.txt"
 }
 ```
 
@@ -5835,6 +6008,7 @@ Example output:
   "test_hints.num_lines": 3
 }
 ```
+
 </p>
 </details>
 
@@ -5962,7 +6136,9 @@ Example input:
 Example output:
 
 ```json
-{}
+{
+  "input_hint.experience": []
+}
 ```
 </p>
 </details>
@@ -6119,11 +6295,11 @@ task ex_paramter_meta {
   }
 
   command <<<
-    wc ~{if lines_only then '-l' else ''} ~{infile}
+    wc ~{if lines_only then '-l' else ''} < ~{infile}
   >>>
 
   output {
-     String result = stdout()
+     Int result = read_int(stdout())
   }
 
   requirements {
@@ -6137,7 +6313,7 @@ Example input:
 
 ```json
 {
-  "ex_paramter_meta.infile": "greetings.txt",
+  "ex_paramter_meta.infile": "data/greetings.txt",
   "ex_paramter_meta.lines_only": true
 }
 ```
@@ -6146,7 +6322,7 @@ Example output:
 
 ```json
 {
-  "ex_paramter_meta.result": "3"
+  "ex_paramter_meta.result": 3
 }
 ```
 </p>
@@ -6177,12 +6353,17 @@ This information is provided by the `task` variable, which is implicitly defined
 * `attempt`: An `Int` with the current task attempt. The value must be `0` the first time the task is executed, and incremented by `1` each time the task is retried (if any).
 * `previous` ✨: A [hidden type](#taskprevious-hidden-scoped-type) containing the computed requirements from the previous task attempt. All fields are `None` on the first try.
 * `end_time`: An `Int?` whose value is the time by which the task must be completed, as a [Unix time stamp](https://en.wikipedia.org/wiki/Unix_time). A value of `0` means that the execution engine does not impose a time limit. A value of `None` means that the execution engine cannot determine whether the runtime of the task is limited. A positive value is a guarantee that the task will be preempted at the specified time, but is *not* a guarantee that the task won't be preempted earlier.
-* `return_code`: An `Int?` whose value is initially `None` and is set to the value of the `command`'s return code. The value is only guaranteed to be defined in the `output` section.
 * `meta`: An `Object` containing a copy of the task's `meta` section, or the empty `Object` if there is no `meta` section or if it is empty.
 * `parameter_meta`: An `Object` containing a copy of the task's `parameter_meta` section, or the empty `Object` if there is no `parameter_meta` section or if it is empty.
 * `ext`: An `Object` containing execution engine-specific attributes, or the empty `Object` if there aren't any. Members of `ext` should be considered optional. It is recommended to only access a member of `ext` using [string interpolation](#expression-placeholders-and-string-interpolation) to avoid an error if it is not defined.
 
 If the runtime engine is not able to provide the actual value of a requirement, then it must provide the requested value instead, or the default value if no specific value was requested.
+
+#### Output-Only Task Members
+
+The following members of the `task` variable are only available in the `output` section, after the command has completed execution:
+
+* `return_code`: An `Int` with the value of the `command`'s return code.
 
 <details>
 <summary>
@@ -6191,7 +6372,7 @@ Example: test_runtime_info_task.wdl
 ```wdl
 version 1.3
 
-task test_runtime_info_task {
+task test_runtime_info {
   meta {
     description: "Task that shows how to use the implicit 'task' declaration"
   }
@@ -6207,7 +6388,7 @@ task test_runtime_info_task {
   
   output {
     Boolean at_least_two_gb = task.memory >= (2 * 1024 * 1024 * 1024)
-    Int return_code = task.return_code
+    Int? return_code = task.return_code
   }
   
   requirements {
@@ -6229,8 +6410,8 @@ Example output:
 
 ```json
 {
-  "test_runtime_info_task.at_least_two_gb": true,
-  "test_runtime_info_task.return_code": 1
+  "test_runtime_info.at_least_two_gb": true,
+  "test_runtime_info.return_code": 1
 }
 ```
 
@@ -6238,7 +6419,7 @@ Test config:
 
 ```json
 {
-  "dependencies": ["cpu", "memory"]
+  "capabilities": ["cpu", "memory"]
 }
 ```
 </p>
@@ -6309,192 +6490,6 @@ Example output:
 
 If a task is using the deprecated [`runtime`](#-runtime-section) section rather than `requirements` and `hints`, then the runtime values of the reserved `runtime` attributes (i.e., the ones that appear in the `requirements` section) are populated in the `requirements` member.
 
-### Advanced Task Examples
-
-#### Example 1: HISAT2
-
-<details>
-<summary>
-Example: hisat2_task.wdl
-
-```wdl
-version 1.3
-
-task hisat2 {
-  input {
-    File index
-    String sra_acc
-    Int? max_reads
-    Int threads = 8
-    Float memory_gb = 16
-    Float disk_size_gb = 100
-  }
-
-  String index_id = basename(index, ".tar.gz")
-
-  command <<<
-    mkdir index
-    tar -C index -xzf ~{index}
-    hisat2 \
-      -p ~{threads} \
-      ~{if defined(max_reads) then "-u ~{select_first([max_reads])}" else ""} \
-      -x index/~{index_id} \
-      --sra-acc ~{sra_acc} > ~{sra_acc}.sam
-  >>>
-  
-  output {
-    File sam = "output.sam"
-  }
-  
-  requirements {
-    container: "quay.io/biocontainers/hisat2:2.2.1--h1b792b2_3"
-    cpu: threads
-    memory: "~{memory_gb} GB"
-    disks: "~{disk_size_gb} GB"
-  }
-
-  meta {
-    description: "Align single-end reads with BWA MEM"
-  }
-
-  parameter_meta {
-    index: "Gzipped tar file with HISAT2 index files"
-    sra_acc: "SRA accession number or reads to align"
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{
-  "hisat2.index_tar_gz": "https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz",
-  "hisat2.sra_acc": "SRR3440404",
-  "hisat2.max_reads": 10
-}
-```
-
-Example output:
-
-```json
-{
-  "hisat2.sam": "SRR3440404.sam"
-}
-```
-
-Test config:
-
-```json
-{
-  "dependencies": ["cpu", "memory", "disks"]
-}
-```
-</p>
-</details>
-
-#### Example 2: GATK Haplotype Caller
-
-<details>
-<summary>
-Example: gatk_haplotype_caller_task.wdl
-
-```wdl
-version 1.3
-
-struct Reference {
-  String id
-  File fasta
-  File index
-  File dict
-}
-
-task gatk_haplotype_caller {
-  input {
-    File bam
-    Reference reference
-    String? interval
-    Int memory_gb = 4
-    Float? disks_gb
-    String? sample_id
-  }
-  
-  String prefix = select_first([sample_id, basename(bam, ".bam")])
-  Float disk_size_gb = select_first([
-    disks_gb, 10 + size([bam, reference.fasta], "GB")
-  ])
-
-  command <<<
-    # ensure all reference files are in the same directory
-    mkdir ref
-    ln -s ~{reference.fasta} ref/~{reference.id}.fasta
-    ln -s ~{reference.index} ref/~{reference.id}.fasta.fai
-    ln -s ~{reference.dict} ref/~{reference.id}.dict
-    gatk --java-options "-Xmx~{memory_gb}g" HaplotypeCaller \
-      ~{if defined(interval) then "-L ~{select_first([interval])}" else ""} \
-      -R ref/~{reference.id}.fasta \
-      -I ~{bam} \
-      -O ~{prefix}.vcf
-  >>>
-
-  output {
-    File vcf = "~{prefix}.vcf"
-  }
-
-  parameter_meta {
-    bam: "BAM file to call"
-    reference_fasta: "Reference genome in FASTA format"
-    memory_gb: "Amount of memory to allocate to the JVM in GB"
-    disks_gb: "Amount of disk space to reserve"
-    sample_id: "The ID of the sample to call"
-  }
-
-  meta {
-    author: "Joe Somebody"
-    email: "joe@company.org"
-  }
-  
-  requirements {
-    container: "broadinstitute/gatk"
-    memory: "~{memory_gb + 1} GB"
-    disks: "~{disk_size_gb} GB"
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{
-  "gatk_haplotype_caller.bam": "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/RMNISTHS_30xdownsample.bam",
-  "gatk_haplotype_caller.reference": {
-    "id":"Homo_sapiens_assembly38",
-    "fasta": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta",
-    "index": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta.fai",
-    "dict": "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.dict"
-  },
-  "gatk_haplotype_caller.interval": "chr1:1000000-1010000"
-}
-```
-
-Example output:
-
-```json
-{
-  "gatk_haplotype_caller.vcf": "HG002.vcf"
-}
-```
-
-Test config:
-
-```json
-{
-  "dependencies": ["memory", "disks"]
-}
-```
-</p>
-</details>
 
 ## Workflow Definition
 
@@ -6630,14 +6625,14 @@ When a [call statement](#call-statement) needs to refer to a task or workflow in
 
 <details>
 <summary>
-Example: call_imported_task.wdl
+Example: call_imported.wdl
 
 ```wdl
 version 1.3
 
 import "input_ref_call.wdl" as ns1
 
-workflow call_imported_task {
+workflow call_imported {
   input {
     Int x
     Int y = d1.out
@@ -6657,7 +6652,7 @@ Example input:
 
 ```json
 {
-  "call_imported_task.x": 5
+  "call_imported.x": 5
 }
 ```
 
@@ -6665,7 +6660,7 @@ Example output:
 
 ```json
 {
-  "call_imported_task.result": 20
+  "call_imported.result": 20
 }
 ```
 </p>
@@ -6690,7 +6685,7 @@ task echo {
   }
   
   command <<<
-  printf ~{msg}
+  printf '~{msg}\n'
   >>>
   
   output {
@@ -6758,7 +6753,7 @@ task foobar {
   }
 
   command <<<
-  wc -l ~{infile}
+  wc -l < ~{infile}
   >>>
 
   output {
@@ -6792,7 +6787,7 @@ Example input:
 ```json
 {
   "other.b": true,
-  "other.f": "greetings.txt"
+  "other.f": "data/greetings.txt"
 }
 ```
 
@@ -6901,7 +6896,7 @@ task nested {
   >>>
 
   output {
-    String greeting = read_string(stdout())
+    String greeting_out = read_string(stdout())
   }
 }
 
@@ -6911,7 +6906,7 @@ workflow test_allow_nested_inputs {
   }
 
   output {
-    String greeting = nested.greeting
+    String nested_greeting = nested.greeting_out
   }
 
   hints {
@@ -6934,7 +6929,7 @@ Example output:
 
 ```json
 {
-  "test_allow_nested_inputs.greeting": "Hello John"
+  "test_allow_nested_inputs.nested_greeting": "Hello John"
 }
 
 ```
@@ -6943,7 +6938,7 @@ Test config:
 
 ```json
 {
-  "dependencies": "allow_nested_inputs"
+  "capabilities": ["allow_nested_inputs"]
 }
 ```
 </p>
@@ -6958,17 +6953,17 @@ Example: multi_nested_inputs.wdl
 ```wdl
 version 1.3
 
-import "test_allow_nested_inputs.wdl"
+import "test_allow_nested_inputs.wdl" as nested
 
 workflow multi_nested_inputs { 
-  call test_allow_nested_inputs
+  call nested.test_allow_nested_inputs
 
   hints {
     allow_nested_inputs: false
   }
 
   output {
-    String greeting = test_allow_nested_inputs.greeting
+    String nested_greeting = test_allow_nested_inputs.nested_greeting
   }
 }
 ```
@@ -6982,19 +6977,12 @@ Example input:
 }
 ```
 
-Example output:
-
-```json
-{
-  "multi_nested_inputs.greeting": "Hello Joe"
-}
-```
-
 Test config:
 
 ```json
 {
-  "dependencies": "allow_nested_inputs"
+  "capabilities": ["allow_nested_inputs"],
+  "fail": true
 }
 ```
 </p>
@@ -7030,8 +7018,8 @@ task repeat {
     echo "i must be >= 1"
     exit 1
   fi
-  for i in 1..~{i}; do
-    printf ~{select_first([opt_string, "default"])}
+  for i in {1..~{i}}; do
+    printf '~{select_first([opt_string, "default"])}\n'
   done
   >>>
 
@@ -7326,7 +7314,6 @@ workflow allow_nested {
   input {
     Int int_val
     String msg1
-    String msg2
     Array[Int] my_ints
     File ref_file
   }
@@ -7341,8 +7328,7 @@ workflow allow_nested {
   }
 
   call lib.repeat as repeat2 {
-    # Note: the default value of `0` for the `i` input causes the task to fail
-    opt_string = msg2
+    i = 2
   }
 
   scatter (i in my_ints) {
@@ -7366,10 +7352,9 @@ Example input:
 {
   "allow_nested.int_val": 3,
   "allow_nested.msg1": "hello",
-  "allow_nested.msg2": "goodbye",
   "allow_nested.my_ints": [1, 2, 3],
-  "allow_nested.ref_file": "hello.txt",
-  "allow_nested.repeat2.i": 2
+  "allow_nested.ref_file": "data/hello.txt",
+  "allow_nested.repeat2.opt_string": "goodbye"
 }
 ```
 
@@ -7421,6 +7406,14 @@ Example output:
 
 ```json
 {}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
 ```
 </p>
 </details>
@@ -7538,7 +7531,7 @@ workflow nested_scatter {
     Array[String] salutations = ["Hello", "Goodbye"]
   }
 
-  Array[String] honorifics = ["Wizard", "Mr."]
+  Array[String] honorifics = ["Mr.", "Wizard"]
 
   # the zip() function creates an array of pairs
   Array[Pair[String, String]] name_pairs = zip(first_names, last_names)
@@ -7618,7 +7611,8 @@ Example output:
       ["Hello Mr. Merry, how are you?", "Hello Mr. Merry Brandybuck, how are you?"],
       ["Goodbye Mr. Merry, how are you?", "Goodbye Mr. Merry Brandybuck, how are you?"]
     ]
-  ]
+  ],
+  "nested_scatter.used_honorifics": ["Mr.", "Wizard", "Mr."]
 }
 ```
 </p>
@@ -7764,7 +7758,8 @@ Example output:
 {
   "test_conditional.j_out": 2,
   "test_conditional.result_array": [4, 6, 8, 10],
-  "test_conditional.maybe_result2": [0, 4, 6, 8, 10]
+  "test_conditional.maybe_result2": [0, 4, 6, 8, 10],
+  "test_conditional.j_out": 2
 }
 ```
 </p>
@@ -7797,11 +7792,12 @@ workflow if_else {
   }
   
   if (is_morning) {
-    # The body *is not* evaluated since `is_morning` is `false`.
-    call greet { time = "morning" }
-  } else {
-    # The body *is* evaluated since the clause above did not trigger.
-    call greet { time = "afternoon" }
+    call greet as morning { input: time = "morning" }
+  }
+
+  # the body *is* evaluated since !b is true
+  if (!is_morning) {
+    call greet as afternoon { input: time = "afternoon" }
   }
 
   output {
@@ -7846,7 +7842,7 @@ workflow nested_if {
 
   if (morning) {
     if (friendly) {
-      call if_else.greet { time = "morning" }
+      call if_else.greet { input: time = "morning" }
     }
   }
 
@@ -7951,7 +7947,7 @@ Example output:
 
 ```json
 {
-  "test_floor.all_true": true
+  "test_floor.all_true": [true, true]
 }
 ```
 </p>
@@ -8006,7 +8002,7 @@ Example output:
 
 ```json
 {
-  "test_ceil.all_true": true
+  "test_ceil.all_true": [true, true]
 }
 ```
 </p>
@@ -8061,7 +8057,7 @@ Example output:
 
 ```json
 {
-  "test_round.all_true": true
+  "test_round.all_true": [true, true]
 }
 ```
 </p>
@@ -8164,8 +8160,8 @@ workflow test_max {
 
   output {
     # these two expressions are equivalent
-    Float min1 = if value1 > value2 then value1 else value2
-    Float min2 = max(value1, value2)
+    Float max1 = if value1 > value2 then value1 else value2
+    Float max2 = max(value1, value2)
   }
 }
 ```
@@ -8184,8 +8180,8 @@ Example output:
 
 ```json
 {
-  "test_max.min1": 1.0,
-  "test_max.min2": 1.0
+  "test_max.max1": 2.0,
+  "test_max.max2": 2.0
 }
 ```
 </p>
@@ -8222,6 +8218,7 @@ Example: test_find_task.wdl
 
 ```wdl
 version 1.3
+
 workflow find_string {
   input {
     String in = "hello world"
@@ -8247,7 +8244,7 @@ Example output:
 ```json
 {
   "test_find.match1": "ello",
-  "test_matches.is_read1": null
+  "test_find.match2": null
 }
 ```
 </p>
@@ -8284,13 +8281,14 @@ Example: test_matches_task.wdl
 
 ```wdl
 version 1.3
+
 workflow contains_string {
   input {
-    File fastq
+    File json
   }
   output {
-    Boolean is_compressed = matches(basename(fastq), "\\.(gz|zip|zstd)")
-    Boolean is_read1 = matches(basename(fastq), "_R1")
+    Boolean is_compressed = matches(basename(json), "\\.(gz|zip|zstd)")
+    Boolean is_read1 = matches(basename(json), "_R1")
   }
 }
 ```
@@ -8300,7 +8298,7 @@ Example input:
 
 ```json
 {
-  "fastq": "sample1234_R1.fastq"
+  "contains_string.json": "data/person.json"
 }
 ```
 
@@ -8308,8 +8306,8 @@ Example output:
 
 ```json
 {
-  "test_matches.is_compressed": false,
-  "test_matches.is_read1": true
+  "contains_string.is_compressed": false,
+  "contains_string.is_read1": false
 }
 ```
 </p>
@@ -8323,6 +8321,10 @@ String sub(String, String, String)
 
 Given three String parameters `input`, `pattern`, `replace`, this function replaces all non-overlapping occurrences of `pattern` in `input` by `replace`. `pattern` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
 Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped (e.g., `"\\t"`).
+
+The replacement string `replace` supports the special sequence `\n` (where `n` is a digit 1-9) is replaced by the text matched by the `n`th capturing group from the pattern, or an empty string if the capturing group did not participate in the match. Only `\1` through `\9` are supported as capturing group references, matching the limit of POSIX ERE. Named capture groups are not currently supported.
+
+As with patterns, backslashes in the replace string must be double-escaped. For example, to reference the first capturing group in a WDL workflow, write `"\\1"` (which becomes `\1` when evaluated).
 
 🗑 The option for execution engines to allow other regular expression grammars besides POSIX ERE is deprecated.
 
@@ -8343,14 +8345,16 @@ version 1.3
 
 workflow test_sub {
   String chocolike = "I like chocolate when\nit's late"
+  String question = "when chocolate"
 
   output {
     String chocolove = sub(chocolike, "like", "love") # I love chocolate when\nit's late
     String chocoearly = sub(chocolike, "late", "early") # I like chocoearly when\nit's early
     String chocolate = sub(chocolike, "late$", "early") # I like chocolate when\nit's early
     String chocoearlylate = sub(chocolike, "[^ ]late", "early") # I like chocearly when\nit's late
-    String choco4 = sub(chocolike, " [:alpha:]{4} ", " 4444 ") # I 4444 chocolate 4444\nit's late
+    String choco4 = sub(chocolike, " [[:alpha:]]{4} ", " 4444 ") # I 4444 chocolate when\nit's late
     String no_newline = sub(chocolike, "\\n", " ") # "I like chocolate when it's late"
+    String new_question = sub(question, "([^ ]+) ([^ ]+)", "\\2, \\1?") # "chocolate, when?"
   }
 }
 ```
@@ -8370,8 +8374,9 @@ Example output:
   "test_sub.chocoearly": "I like chocoearly when\nit's early",
   "test_sub.chocolate": "I like chocolate when\nit's early",
   "test_sub.chocoearlylate": "I like chocearly when\nit's late",
-  "test_sub.choco4": "I 4444 chocolate 4444\nit's late",
-  "test_sub.no_newline": "I like chocolate when it's late"
+  "test_sub.choco4": "I 4444 chocolate when\nit's late",
+  "test_sub.no_newline": "I like chocolate when it's late",
+  "test_sub.new_question": "chocolate, when?"
 }
 ```
 </p>
@@ -8399,7 +8404,7 @@ task change_extension {
   output {
     File data_file = "~{prefix}.data"
     String data = read_string(data_file)
-    String index = read_string(sub(data_file, "\\.data$", ".index"))
+    String index = read_string(sub("~{data_file}", "\\.data$", ".index"))
   }
 
   requirements {
@@ -8430,80 +8435,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["data_file"]
-}
-```
-</p>
-</details>
-
-### ✨ `split`
-
-```
-Array[String] split(String, String)
-```
-
-Given the two `String` parameters `input` and `delimiter`, this function splits the input string on the provided delimiter and stores the results in a `Array[String]`. `delimiter` is a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) and is evaluated as a [POSIX Extended Regular Expression (ERE)](https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended).
-Regular expressions are written using regular WDL strings, so backslash characters need to be double-escaped (e.g., `"\\t"`).
-
-**Parameters**:
-
-1. `String`: the input string.
-2. `String`: the delimiter to split on as a regular expression.
-
-**Returns**: the parts of the input string split by the delimiter. If the input delimiter does not match anything in the input string, an array containing a single entry of the input string is returned.
-
-<details>
-<summary>
-Example: test_split.wdl
-
-```wdl
-version 1.3
-
-workflow test_split {
-  String in = "Here's an example\nthat takes up multiple lines"
-
-  output {
-    Array[String] split_by_word = split(in, " ")
-    Array[String] split_by_newline = split(in, "\\n")
-    Array[String] split_by_both = split(in, "\s")
-  }
-}
-```
-</summary>
-<p>
-Example input:
-
-```json
-{}
-```
-
-Example output:
-
-```json
-{
-  "test_split.split_by_word": [
-    "Here's",
-    "an",
-    "example\nthat",
-    "takes",
-    "up",
-    "multiple",
-    "lines"
-  ],
-  "test_split.split_by_newline": [
-    "Here's an example",
-    "that takes up multiple lines"
-  ],
-  "test_split.split_by_both": [
-    "Here's",
-    "an",
-    "example",
-    "that",
-    "takes",
-    "up",
-    "multiple",
-    "lines"
-  ],
+  "exclude_output": ["change_extension.data_file"]
 }
 ```
 </p>
@@ -8569,7 +8501,8 @@ Example output:
 ```json
 {
   "test_basename.is_true1": true,
-  "test_basename.is_true2": true
+  "test_basename.is_true2": true,
+  "test_basename.is_true3": true
 }
 ```
 </p>
@@ -8580,18 +8513,18 @@ Example output:
 *as of version 1.2*
 
 ```
-File join_paths(File, String)
-File join_paths(File, Array[String]+)
-File join_paths(Array[String]+)
+String join_paths(Directory, String)
+String join_paths(Directory, Array[String]+)
+String join_paths(Array[String]+)
 ```
 
-Joins together two or more paths into an absolute path in the host filesystem.
+Joins together two or more paths into an absolute path in the execution environment's filesystem.
 
 There are three choices of this function:
 
-1. `File join_paths(File, String)`: Joins together exactly two paths. The first path may be either absolute or relative and must specify a directory; the second path is relative to the first path and may specify a file or directory.
-2. `File join_paths(File, Array[String]+)`: Joins together any number of relative paths with a base path. The first argument may be either an absolute or a relative path and must specify a directory. The paths in the second array argument must all be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
-3. `File join_paths(Array[String]+)`: Joins together any number of paths. The array must not be empty. The *first* element of the array may be either absolute or relative; subsequent path(s) must be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
+1. `String join_paths(Directory, String)`: Joins together exactly two paths. The second path is relative to the first directory and may specify a file or directory.
+2. `String join_paths(Directory, Array[String]+)`: Joins together any number of relative paths with a base directory. The paths in the array argument must all be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
+3. `String join_paths(Array[String]+)`: Joins together any number of paths. The array must not be empty. The *first* element of the array may be either absolute or relative; subsequent path(s) must be relative. The *last* element may specify a file or directory; all other elements must specify a directory.
 
 An absolute path starts with `/` and indicates that the path is relative to the root of the environment in which the task is executed. Only the first path may be absolute. If any subsequent paths are absolute, it is an error.
 
@@ -8599,10 +8532,10 @@ A relative path does not start with `/` and indicates the path is relative to it
 
 **Parameters**
 
-1. `File|Array[String]+`: Either a path or an array of paths.
-2. `String|Array[String]+`: A relative path or paths; only allowed if the first argument is a `File`.
+1. `Directory|Array[String]+`: Either a directory path or an array of paths.
+2. `String|Array[String]+`: A relative path or paths; only allowed if the first argument is a `Directory`.
 
-**Returns**: A `File` representing an absolute path that results from joining all the paths in order (left-to-right), and resolving the resulting path against the default parent directory if it is relative.
+**Returns**: A `String` representing an absolute path that results from joining all the paths in order (left-to-right), and resolving the resulting path against the default parent directory if it is relative.
 
 <details>
 <summary>
@@ -8611,36 +8544,26 @@ Example: join_paths_task.wdl
 ```wdl
 version 1.3
 
-task resolve_paths_task {
+task join_paths {
   input {
-    File abs_file = "/usr"
+    Directory abs_dir = "/usr"
     String abs_str = "/usr"
     String rel_dir_str = "bin"
-    File rel_file = "echo"
-    File rel_dir_file = "mydir"
-    String rel_str = "mydata.txt"
+    String rel_file = "echo"
   }
 
   # these are all equivalent to '/usr/bin/echo'
-  File bin1 = join_paths(abs_file, [rel_str_dir, rel_file])
-  File bin2 = join_paths(abs_str, [rel_str_dir, rel_file])
-  File bin3 = join_paths([abs_str, rel_str_dir, rel_file])
-  
-  # the default behavior is that this resolves to 
-  # '<working dir>/mydir/mydata.txt'
-  File data = join_paths(rel_dir_file, rel_str)
-  
-  # this resolves to '<working dir>/bin/echo', which is non-existent
-  File doesnt_exist = join_paths([rel_dir_str, rel_file])
+  String bin1 = join_paths(abs_dir, [rel_dir_str, rel_file])
+  String bin2 = join_paths(abs_str, [rel_dir_str, rel_file])
+  String bin3 = join_paths([abs_str, rel_dir_str, rel_file])
+
   command <<<
-    mkdir ~{rel_dir_file}
-    ~{bin1} -n "hello" > ~{data}
+    ~{bin1} -n "hello" > output.txt
   >>>
 
   output {
     Boolean bins_equal = (bin1 == bin2) && (bin1 == bin3)
-    String result = read_string(data)
-    File? missing_file = doesnt_exist
+    String result = read_string("output.txt")
   }
   
   runtime {
@@ -8660,8 +8583,8 @@ Example output:
 
 ```json
 {
-  "join_paths_task.bins_equal": true,
-  "join_paths_task.result": "hello"
+  "join_paths.bins_equal": true,
+  "join_paths.result": "hello"
 }
 ``` 
 </p>
@@ -8676,6 +8599,8 @@ Array[File] glob(String)
 Returns the Bash expansion of the [glob string](https://en.wikipedia.org/wiki/Glob_(programming)) relative to the task's execution directory, and in the same order.
 
 `glob` finds all of the files (but not the directories) in the same order as would be matched by running `echo <glob>` in Bash from the task's execution directory.
+
+Symlinks are handled by following them to their target. Symlinks that point to files are included in the results, while symlinks that point to directories are excluded. Broken symlinks (those that point to non-existent targets) are included.
 
 At least in standard Bash, glob expressions are not evaluated recursively, i.e., files in nested directories are not included. 
 
@@ -8698,7 +8623,7 @@ task gen_files {
   }
 
   command <<<
-    for i in 1..~{num_files}; do
+    for i in {1..~{num_files}}; do
       printf ${i} > a_file_${i}.txt
     done
     mkdir a_dir
@@ -8733,7 +8658,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["files"]
+  "exclude_outputs": ["gen_files.files"]
 }
 ```
 </p>
@@ -8785,18 +8710,18 @@ version 1.3
 
 task file_sizes {
   command <<<
-    printf "this file is 22 bytes\n" > created_file
+    printf "this file is 22 bytes\n" > out.txt
   >>>
 
   File? missing_file = None
 
   output {
-    File created_file = "created_file"
-    Float missing_file_bytes = size(missing_file)
+    File created_file = "out.txt"
+    Float missing_file_bytes = size(missing_file, "B") 
     Float created_file_bytes = size(created_file, "B")
-    Float multi_file_kb = size([created_file, missing_file], "K")
+    Float multi_file_kb = size([created_file, missing_file], "K") # 0.022
 
-    Map[String, Pair[Int, File]] nested = {
+    Map[String, Pair[Int, File?]] nested = {
       "a": (10, created_file),
       "b": (50, missing_file)
     }
@@ -8820,9 +8745,14 @@ Example output:
 
 ```json
 {
+  "file_sizes.created_file": "out.txt",
   "file_sizes.missing_file_bytes": 0.0,
   "file_sizes.created_file_bytes": 22.0,
   "file_sizes.multi_file_kb": 0.022,
+  "file_size.nested": {
+    "a": (10, "out.txt"),
+    "b": (50, null)
+  }
   "file_sizes.nested_bytes": 22.0
 }
 ```
@@ -8843,7 +8773,7 @@ Returns the value of the executed command's standard output (stdout) as a `File`
 
 <details>
 <summary>
-Example: echo_stdout.wdl
+Example: echo_stdout_task.wdl
 
 ```wdl
 version 1.3
@@ -8852,7 +8782,7 @@ task echo_stdout {
   command <<< printf "hello world" >>>
 
   output {
-    File message = read_string(stdout())
+    String message = read_string(stdout())
   }
 }
 ```
@@ -8888,7 +8818,7 @@ Returns the value of the executed command's standard error (stderr) as a `File`.
 
 <details>
 <summary>
-Example: echo_stderr.wdl
+Example: echo_stderr_task.wdl
 
 ```wdl
 version 1.3
@@ -8897,7 +8827,7 @@ task echo_stderr {
   command <<< >&2 printf "hello world" >>>
 
   output {
-    File message = read_string(stderr())
+    String message = read_string(stderr())
   }
 }
 ```
@@ -9178,7 +9108,7 @@ Example input:
 ```json
 {
   "grep.pattern": "world",
-  "grep.file": "greetings.txt"
+  "grep.file": "data/greetings.txt"
 }
 ```
 
@@ -9306,7 +9236,7 @@ task read_tsv {
     } >> data.no_headers.tsv
 
     {
-      printf "header1\header2\n"
+      printf "header1\theader2\n"
       printf "row1\tvalue1\n"
       printf "row2\tvalue2\n"
       printf "row3\tvalue3\n"
@@ -9369,15 +9299,15 @@ Example output:
   "read_tsv.output_objs3": [
     {
       "name": "row1",
-      "row": "value1"
+      "value": "value1"
     },
     {
       "name": "row2",
-      "row": "value2"
+      "value": "value2"
     },
     {
       "name": "row3",
-      "row": "value3"
+      "value": "value3"
     }
   ]
 }
@@ -9424,6 +9354,12 @@ Example: write_tsv_task.wdl
 
 ```wdl
 version 1.3
+
+struct Numbers {
+  String first
+  String second
+  String third
+}
 
 task write_tsv {
   input {
@@ -9480,10 +9416,10 @@ Example output:
 {
   "write_tsv.array_no_header": ["one", "un"],
   "write_tsv.array_header": ["first", "one", "un"],
-  "write_tsv.structs_default": ["first", "one", "un"], 
+  "write_tsv.structs_default": ["one", "un"], 
   "write_tsv.structs_no_header": ["two", "deux"], 
   "write_tsv.structs_header": ["second", "two", "deux"], 
-  "write_tsv.structs_user_header": ["no3", "three", "trois"], 
+  "write_tsv.structs_user_header": ["no3", "three", "trois"]
 
 }
 ```
@@ -9530,8 +9466,8 @@ version 1.3
 
 task read_map {
   command <<<
-    printf "key1\tvalue1\n" >> map_file
-    printf "key2\tvalue2\n" >> map_file
+    printf "key1\tvalue1\n"
+    printf "key2\tvalue2\n"
   >>>
   
   output {
@@ -9691,7 +9627,7 @@ Example input:
 
 ```json
 {
-  "read_person.json_file": "person.json"
+  "read_person.json_file": "data/person.json"
 }
 ```
 
@@ -9789,9 +9725,10 @@ task write_json {
   command <<<
     python <<CODE
     import json
+    import sys
     with open("~{write_json(map)}") as js:
       d = json.load(js)
-      print(list(d.keys()))
+    json.dump(list(d.keys()), sys.stdout)
     CODE
   >>>
 
@@ -9960,6 +9897,10 @@ task read_objects {
 
   output {
     Array[Object] my_obj = read_objects(stdout())
+  }
+
+  requirements {
+    container: "python:latest"
   }
 }
 ```
@@ -10240,7 +10181,7 @@ workflow test_prefix {
   Array[Int] env2 = [1, 2, 3]
 
   output {
-    Array[String] env_prefixed = prefix("-e ", env1)
+    Array[String] env1_prefixed = prefix("-e ", env1)
     Array[String] env2_prefixed = prefix("-f ", env2)
   }
 }
@@ -10328,7 +10269,7 @@ workflow test_suffix {
   Array[Int] env2 = [1, 2, 3]
 
   output {
-    Array[String] env1_suffix = suffix(".txt ", env1)
+    Array[String] env1_suffix = suffix(".txt", env1)
     Array[String] env2_suffix = suffix(".0", env2)
   }
 }
@@ -10578,7 +10519,7 @@ task double {
   command <<< >>>
 
   output {
-    Int d = n * n
+    Int d = 2 * n
   }
 }
 
@@ -10603,7 +10544,7 @@ Example input:
 
 ```json
 {
-  "test_range.n": 5
+  "test_range.i": 5
 }
 ```
 
@@ -10645,7 +10586,9 @@ workflow test_transpose {
   Array[Array[Int]] expected_output_array = [[0, 3], [1, 4], [2, 5]]
   
   output {
-    Boolean is_true = transpose(input_array) == expected_output_array
+    Array[Array[Int]] out = transpose(input_array) 
+    Array[Array[Int]] expected = expected_output_array
+    Boolean is_true = out == expected
   }
 }
 ```
@@ -10661,6 +10604,8 @@ Example output:
 
 ```json
 {
+  "test_transpose.out": [[0, 3], [1, 4], [2, 5]],
+  "test_transpose.expected": [[0, 3], [1, 4], [2, 5]],
   "test_transpose.is_true": true
 }
 ```
@@ -10835,11 +10780,13 @@ workflow test_unzip {
   Map[String, Int] m = {"a": 0, "b": 1, "c": 2}
   Pair[Array[String], Array[Int]] keys_and_values = unzip(as_pairs(m))
   Pair[Array[Int], Array[String]] expected1 = ([0, 42], ["hello", "goodbye"])
+  Array[String] expected_keys = ["a", "b", "c"]
+  Array[Int] expected_values = [0, 1, 2]
   
   output {
     Boolean is_true1 = unzip(int_str_arr) == expected1
-    Boolean is_true2 = keys_and_values.left == ["a", "b", "c"]
-    Boolean is_true3 = keys_and_values.right == [0, 1, 2]
+    Boolean is_true2 = keys_and_values.left == expected_keys
+    Boolean is_true3 = keys_and_values.right == expected_values
   }
 }
 ```
@@ -11007,7 +10954,7 @@ Example output:
   "chunk_array.o1": [["a", "b", "c"], ["d", "e", "f"]],
   "chunk_array.o2": [["a", "b", "c"], ["d", "e"]],
   "chunk_array.o3": [["a", "b"]],
-  "chunk_array.o4": [[]],
+  "chunk_array.o4": [],
   "chunk_array.concats": ["abc", "def"]
 }
 ``` 
@@ -11038,19 +10985,23 @@ version 1.3
 workflow test_flatten {
   input {
     Array[Array[Int]] ai2D = [[1, 2, 3], [1], [21, 22]]
-    Array[Array[File]] af2D = [["/tmp/X.txt"], ["/tmp/Y.txt", "/tmp/Z.txt"], []]
+    Array[Array[File]] af2D = [["data/cities.txt"], ["data/wizard.txt", "data/spell.txt"], []]
     Array[Array[Pair[Float, String]]] aap2D = [[(0.1, "mouse")], [(3, "cat"), (15, "dog")]]
     Map[Float, String] f2s = as_map(flatten(aap2D))
     Array[Array[Array[Int]]] ai3D = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
-    Array[File] expected2D = ["/tmp/X.txt", "/tmp/Y.txt", "/tmp/Z.txt"]
+    Array[Int] expected1D = [1, 2, 3, 1, 21, 22]
+    Array[File] expected2D = ["data/cities.txt", "data/wizard.txt", "data/spell.txt"]
     Array[Array[Int]] expected3D = [[1, 2], [3, 4], [5, 6], [7, 8]]
+    Array[Pair[Float, String]] expectedArray = [(0.1, "mouse"), (3.0, "cat"), (15.0, "dog")]
+    Map[Float, String] expectedMap = {0.1: "mouse", 3.0: "cat", 15.0: "dog"}
   }
 
   output {
-    Boolean is_true1 = flatten(ai2D) == [1, 2, 3, 1, 21, 22]
+    Boolean is_true1 = flatten(ai2D) == expected1D
     Boolean is_true2 = flatten(af2D) == expected2D
-    Boolean is_true3 = flatten(aap2D) == [(0.1, "mouse"), (3, "cat"), (15, "dog")]
+    Boolean is_true3 = flatten(aap2D) == expectedArray
     Boolean is_true4 = flatten(ai3D) == expected3D
+    Boolean is_true5 = f2s == expectedMap
   }
 }
 ```
@@ -11069,7 +11020,8 @@ Example output:
   "test_flatten.is_true1": true,
   "test_flatten.is_true2": true,
   "test_flatten.is_true3": true,
-  "test_flatten.is_true4": true
+  "test_flatten.is_true4": true,
+  "test_flatten.is_true5": true
 }
 ```
 </p>
@@ -11144,7 +11096,7 @@ version 1.3
 
 workflow select_first_only_none_fail {
   Int? maybe_four_but_is_not = None
-  select_first([maybe_four_but_is_not])  # error! array contains only None values
+  Int result = select_first([maybe_four_but_is_not])  # error! array contains only None values
 }
 ```
 </summary>
@@ -11179,7 +11131,7 @@ Example: select_first_empty_fail.wdl
 version 1.3
 
 workflow select_first_empty_fail {
-  select_first([])  # error! array is empty
+  Int check = select_first([])  # error! array is empty
 }
 ```
 </summary>
@@ -11227,6 +11179,7 @@ Example: test_select_all.wdl
 ```wdl
 version 1.3
 
+
 workflow test_select_all {
   input {
     Int? maybe_five = 5
@@ -11235,9 +11188,10 @@ workflow test_select_all {
   }
 
   Array[Int] fivethree = select_all([maybe_five, maybe_four_but_is_not, maybe_three])
+  Array[Int] expected = [5, 3]
 
   output {
-    Boolean is_true = fivethree == [5, 3]
+    Boolean is_true = length(fivethree) == 2 && fivethree == expected
   }
 }
 ```
@@ -11288,10 +11242,10 @@ version 1.3
 
 workflow test_as_pairs {
   Map[String, Int] x = {"a": 1, "c": 3, "b": 2}
-  Map[String, Pair[File, File]] y = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+  Map[String, Pair[File, File]] y = {"a": ("data/questions.txt", "data/answers.txt"), "b": ("data/request.txt", "data/response.txt")}
   Array[Pair[String, Int]] expected1 = [("a", 1), ("c", 3), ("b", 2)]
-  Array[Pair[File, String]] expected2 = [("a.bam", "a"), ("b.bam", "b")]
-  Map[File, String] expected3 = {"a.bam": "a", "b.bam": "b"}
+  Array[Pair[File, String]] expected2 = [("data/questions.txt", "a"), ("data/request.txt", "b")]
+  Map[File, String] expected3 = {"data/questions.txt": "a", "data/request.txt": "b"}
 
   scatter (item in as_pairs(y)) {
     String s = item.left
@@ -11352,9 +11306,9 @@ version 1.3
 workflow test_as_map {
   input {
     Array[Pair[String, Int]] x = [("a", 1), ("c", 3), ("b", 2)]
-    Array[Pair[String, Pair[File,File]]] y = [("a", ("a.bam", "a.bai")), ("b", ("b.bam", "b.bai"))]
+    Array[Pair[String, Pair[File,File]]] y = [("a", ("data/cities.txt", "data/comment.txt")), ("b", ("data/hello.txt", "data/greetings.txt"))]
     Map[String, Int] expected1 = {"a": 1, "c": 3, "b": 2}
-    Map[String, Pair[File, File]] expected2 = {"a": ("a.bam", "a.bai"), "b": ("b.bam", "b.bai")}
+    Map[String, Pair[File, File]] expected2 = {"a": ("data/cities.txt", "data/comment.txt"), "b": ("data/hello.txt", "data/greetings.txt")}
   }
 
   output {
@@ -11453,8 +11407,8 @@ workflow test_keys {
   input {
     Map[String, Int] x = {"a": 1, "b": 2, "c": 3}
     Map[String, Pair[File, File]] str_to_files = {
-      "a": ("a.bam", "a.bai"), 
-      "b": ("b.bam", "b.bai")
+      "a": ("data/questions.txt", "data/answers.txt"),
+      "b": ("data/request.txt", "data/response.txt")
     }
     Name name = Name {
       first: "John",
@@ -11467,11 +11421,13 @@ workflow test_keys {
   }
 
   Array[String] str_to_files_keys = key
+  Array[String] expected = ["a", "b", "c"]
+  Array[String] expectedKeys = ["first", "last"]
 
   output {
-    Boolean is_true1 = keys(x) == ["a", "b", "c"]
+    Boolean is_true1 = length(keys(x)) == 3 && keys(x) == expected
     Boolean is_true2 = str_to_files_keys == keys(str_to_files)
-    Boolean is_true3 = keys(name) == ["first", "last"]
+    Boolean is_true3 = length(keys(name)) == 2 && keys(name) == expectedKeys
   }
 }
 ```
@@ -11507,7 +11463,7 @@ Example output:
 
 Given a key-value type collection (`Map`, `Struct`, or `Object`) and a key, tests whether the collection contains an entry with the given key.
 
-This function has thre choices:
+This function has three choices:
 
 1. `Boolean contains_key(Map[P, Y], P)`: Tests whether the `Map` has an entry with the given key. If `P` is an optional type (e.g., `String?`), then the second argument may be `None`.
 2. `Boolean contains_key(Object, String)`: Tests whether the `Object` has an entry with the given name.
@@ -11535,7 +11491,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
 
   struct Person {
     String name
-    Map[String, String]? details
+    Map[String, String] details
   }
 
   workflow test_contains_key {
@@ -11548,10 +11504,12 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
     }
 
     output {
-      Int? i1 = m[s1] if contains_key(m, key1) else None
-      Int? i2 = m[s2] if contains_key(m, key2) else None
-      String? phone1 = p1.details["phone"] if contains_key(p1, ["details", "phone"]) else None
-      String? phone2 = p2.details["phone"] if contains_key(p2, ["details", "phone"]) else None
+      Int? i1 = if contains_key(m, key1) then m[key1] else None
+      Int? i2 = if contains_key(m, key2) then m[key2] else None
+
+      String? phone1 = if contains_key(p1.details, "phone") then p1.details["phone"] else None
+      String? phone2 = if contains_key(p2.details, "phone") then p2.details["phone"] else None
+
     }
   }
   ```
@@ -11571,7 +11529,9 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
       }
     },
     "test_contains_key.p2": {
-      "name": "Agent X"
+      "name": "Agent X",
+      "details": {
+      }
     }
   }
   ```
@@ -11583,7 +11543,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
     "test_contains_key.i1": 1,
     "test_contains_key.i2": null,
     "test_contains_key.phone1": "123-456-7890",
-    "test_contains_key.phone2": null,
+    "test_contains_key.phone2": null
   }
   ``` 
   </p>
@@ -11639,7 +11599,7 @@ workflow test_values {
     }
   }
   
-  scatter (files in values(str_to_files)) {
+  scatter (ints in values(str_to_ints)) {
     call add { x=ints.left, y=ints.right }
   }
   
@@ -11660,7 +11620,7 @@ Example output:
 
 ```json
 {
-  "test.values.sums": [3, 7]
+  "test_values.sums": [3, 7]
 }
 ```
 </p>
@@ -11693,14 +11653,14 @@ workflow test_collect_by_key {
   input {
     Array[Pair[String, Int]] x = [("a", 1), ("b", 2), ("a", 3)]
     Array[Pair[String, Pair[File, File]]] y = [
-      ("a", ("a_1.bam", "a_1.bai")), 
-      ("b", ("b.bam", "b.bai")), 
-      ("a", ("a_2.bam", "a_2.bai"))
+      ("a", ("data/questions.txt", "data/answers.txt")),
+      ("b", ("data/request.txt", "data/response.txt")),
+      ("a", ("data/wizard.txt", "data/spell.txt"))
     ]
     Map[String, Array[Int]] expected1 = {"a": [1, 3], "b": [2]}
     Map[String, Array[Pair[File, File]]] expected2 = {
-      "a": [("a_1.bam", "a_1.bai"), ("a_2.bam", "a_2.bai")], 
-      "b": [("b.bam", "b.bai")]
+      "a": [("data/questions.txt", "data/answers.txt"), ("data/wizard.txt", "data/spell.txt")],
+      "b": [("data/request.txt", "data/response.txt")]
     }
   }
 
@@ -11907,7 +11867,7 @@ workflow test_length {
   Array[Int] xs = [1, 2, 3]
   Array[String] ys = ["a", "b", "c"]
   Array[String] zs = []
-  Map[String, Int] m = {"a": 1, "b", 2}
+  Map[String, Int] m = {"a": 1, "b": 2}
   String s = "ABCDE"
 
   output {
@@ -11935,7 +11895,7 @@ Example output:
   "test_length.ylen": 3,
   "test_length.zlen": 0,
   "test_length.mlen": 2,
-  "test_length.slen": 5,
+  "test_length.slen": 5
 }
 ```
 </p>
@@ -11971,6 +11931,12 @@ Here is an example JSON input file for a workflow `wf`:
 ```
 
 WDL implementations are only required to support workflow execution, and not necessarily task execution, so a JSON input format for tasks is not specified. However, it is strongly suggested that if an implementation does support task execution, that it also supports this JSON input format for tasks. It is left to the discretion of the WDL implementation whether it is required to prefix the task input with the task name, i.e., `mytask.infile` vs. `infile`.
+
+### File/Directory Inputs
+
+It is up to the execution engine to resolve input files and directories and stage them into the execution environment. The execution engine is free to specify the values that are allowed for `File` and `Directory` parameters, but at a minimum it is required to support POSIX absolute file paths (e.g., `/path/to/file`).
+
+It is strongly recommended that input files and directories be specified as absolute paths to local files or as URLs. If relative paths are allowed, then it is suggested that they be resolved relative to the directory that contains the input JSON file (if a file is provided) or to the working directory in which the workflow is initially launched.
 
 ### Optional Inputs
 
@@ -12072,6 +12038,12 @@ The output JSON will look like:
 ```
 
 It is recommended (but not required) that JSON outputs be "pretty printed" to be more human-readable.
+
+### File/Directory Outputs
+
+It is up to the execution engine to provide workflow `File` and `Directory` outputs to the user that persist following a successful execution of the workflow. The execution engine is free to specify the values that are allowed for `File` and `Directory` parameters, but at a minimum it is required to support POSIX absolute file paths (e.g., `/path/to/file`).
+
+It is strongly recommended that output files and directories be specified as absolute paths to local files or as URLs. If relative paths are allowed, then it is suggested that they be resolved relative to the directory that contains the output JSON file (if a file is written) or to a single common directory containing all the workflow outputs.
 
 ## Extended File/Directory Input/Output Format
 
@@ -12527,7 +12499,7 @@ Example input:
 
 ```json
 {
-  "serialize_array_delim.infile": "greetings.txt",
+  "serialize_array_delim.infile": "data/greetings.txt",
   "serialize_array_delim.counts": [1, 2]
 }
 ```
@@ -12536,7 +12508,7 @@ Example output:
 
 ```json
 {
-  "serialize_array_delim.strings": [
+  "serialize_array_delim.heads": [
     "hello world",
     "hello world",
     "hi_world"
@@ -12578,7 +12550,7 @@ task serde_array_lines {
   >>>
 
   output {
-    Array[Int] matches = read_lines(stdout())
+    Array[String] matches = read_lines(stdout())
   }
 }
 ```
@@ -12588,7 +12560,7 @@ Example input:
 
 ```json
 {
-  "serde_array_lines.infile": "greetings.txt",
+  "serde_array_lines.infile": "data/greetings.txt",
   "serde_array_lines.patterns": ["hello", "world"]
 }
 ```
@@ -12597,7 +12569,7 @@ Example output:
 
 ```json
 {
-  "serde_array_lines.matches": [2, 2]
+  "serde_array_lines.matches": ["2", "2"]
 }
 ```
 </p>
@@ -12747,8 +12719,8 @@ Example input:
 ```json
 {
   "serde_pair.to_tail": {
-    "cities.txt": 2,
-    "hello.txt": 1
+    "data/cities.txt": 2,
+    "data/hello.txt": 1
   }
 }
 ```
@@ -12758,7 +12730,7 @@ Example output:
 ```json
 {
   "serde_pair.tails_of_two": {
-    "Houston": "Chicago"
+    "Chicago": "Piscataway"
   }
 }
 ```
@@ -12788,7 +12760,7 @@ task serde_int_strings {
   >>>
 
   output {
-    Array[Int] ints = read_lines(stdout())
+    Array[String] ints = read_lines(stdout())
   }
 }
 
@@ -12802,7 +12774,7 @@ workflow serde_homogeneous_pair {
   }
 
   output {
-    Array[Int] ints = flatten(serde_int_strings.ints)
+    Array[String] ints = flatten(serde_int_strings.ints)
   }
 }
 ```
@@ -12823,7 +12795,7 @@ Example output:
 
 ```json
 {
-  "serde_homogeneous_pair.ints": [1, 2, 3, 4]
+  "serde_homogeneous_pair.ints": ["1", "2", "3", "4"]
 }
 ```
 </p>
@@ -12876,7 +12848,7 @@ task grep2 {
   opts=( ~{sep(" ", quote(opts_and_values.left))} )
   values=( ~{sep(" ", quote(opts_and_values.right))} )
   command="grep"
-  for i in 1..~{n}; do
+  for i in {0..~{n-1}}; do
     command="$command ${opts[i]}"="${values[i]}"
   done
   $command ~{pattern} ~{infile}
@@ -12914,7 +12886,7 @@ Example input:
 
 ```json
 {
-  "serialize_map.infile": "greetings.txt",
+  "serialize_map.infile": "data/greetings.txt",
   "serialize_map.pattern": "hello",
   "serialize_map.args": {
     "--after-context": "1",
@@ -12959,7 +12931,7 @@ task serde_map_tsv {
   >>>
 
   output {
-    Map[String, String] new_items = read_map("lines")
+    Map[String, String] new_items = read_map(stdout())
   }
 }
 ```
@@ -13030,7 +13002,7 @@ version 1.3
 
 task serde_map_json {
   input {
-    Map[String, Float] read_quality_scores
+    Map[String, Int] read_quality_scores
   }
 
   command <<<
@@ -13046,7 +13018,7 @@ task serde_map_json {
   >>>
 
   output {
-    Map[String, Float] ascii_values = read_json(stdout())
+    Map[String, Int] ascii_values = read_json(stdout())
   }
 
   requirements {
@@ -13463,3 +13435,161 @@ The dependencies are:
 ```
 
 There are no cycles in this dependency graph; thus, this workflow is valid, although perhaps not as readable as it could be with better organization.
+
+# Appendix C: Example Data
+
+This appendix contains example data files that are used in conformance tests throughout the specification.
+
+<details>
+<summary>
+Resource: cities.txt
+
+```txt
+Houston
+Chicago
+Piscataway
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: comment.txt
+
+```txt
+# this is a comment
+A
+B
+C
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: greetings.txt
+
+```txt
+hello world
+hi_world
+hello nurse
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: hello.txt
+
+```txt
+hello
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: questions.txt
+
+```txt
+What is the meaning of life?
+How do I exit vim?
+Why is the sky blue?
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: answers.txt
+
+```txt
+42
+Press ESC then type :q!
+Rayleigh scattering
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: request.txt
+
+```txt
+GET /hello HTTP/1.1
+Host: example.com
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: response.txt
+
+```txt
+HTTP/1.1 200 OK
+Content-Type: text/plain
+
+Hello, World!
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: wizard.txt
+
+```txt
+Gandalf the Grey
+Merlin
+Albus Dumbledore
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: spell.txt
+
+```txt
+You shall not pass!
+Abracadabra
+Expecto Patronum
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: testdir/example.txt
+
+```txt
+This is an example file in a subdirectory.
+```
+
+</summary>
+</details>
+
+<details>
+<summary>
+Resource: person.json
+
+```json
+{
+    "name": "John",
+    "age": 42
+}
+```
+
+</summary>
+</details>
