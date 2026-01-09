@@ -1,3 +1,0 @@
-hello world
-hi_world
-hello nurse
