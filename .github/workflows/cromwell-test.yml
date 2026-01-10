@@ -37,21 +37,25 @@ jobs:
           mv cromwell-*.jar cromwell.jar
           java -jar cromwell.jar --version
 
+      - name: Create results directory
+        run: mkdir -p ./.results/
+
       - name: Run the compliance tests
         run: |
-          mkdir -p ./.results/
           echo "📊 Running compliance tests for \`${{ github.repository }}:${{ github.ref_name }}\`..."
           spectool test \
             "java -jar ${{ github.workspace }}/cromwell.jar run ~{path} --inputs ~{input} --metadata-output ~{output}" \
             --all-capabilities \
             --inject-wdl-version development \
             --output-selector .outputs \
-            --label "Cromwell / WDL 1.2" \
+            --label "Cromwell / WDL 1.3" \
             -s $PWD -vv > ./.results/shield.json 2> ./.results/logs.txt
+          cat ./.results/logs.txt
           cat ./.results/shield.json
           cp SPEC.md ./.results/SPEC.md
 
       - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cromwell-results

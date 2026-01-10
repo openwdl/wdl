@@ -33,20 +33,24 @@ jobs:
           sudo mv sprocket /usr/local/bin/
           rm -rf sprocket*.tar.gz
           sprocket --version
+      - name: Create results directory
+        run: mkdir -p ./.results/
+
       - name: Run the compliance tests
         run: |
-          mkdir -p ./.results/
           echo "📊 Running compliance tests for \`${{ github.repository }}:${{ github.ref_name }}\`..."
           spectool test \
             "sprocket run ~{path} ~{input} -e ~{target}" \
             --redirect-stdout \
             --all-capabilities \
-            --label "Sprocket / WDL 1.2" \
+            --label "Sprocket / WDL 1.3" \
             -s $PWD -vv > ./.results/shield.json 2> ./.results/logs.txt
+          cat ./.results/logs.txt
           cat ./.results/shield.json
           cp SPEC.md ./.results/SPEC.md
 
       - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sprocket-results
