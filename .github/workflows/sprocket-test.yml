@@ -2,6 +2,8 @@ name: Spec Compliance / Sprocket
 
 on:
   push:
+    paths:
+      - 'SPEC.md'
 
 jobs:
   test:

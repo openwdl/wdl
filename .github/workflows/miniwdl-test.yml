@@ -2,6 +2,8 @@ name: Spec Compliance / MiniWDL
 
 on:
   push:
+    paths:
+      - 'SPEC.md'
 
 jobs:
   test:
