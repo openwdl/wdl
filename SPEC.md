@@ -4431,20 +4431,18 @@ workflow optional_with_default {
   }
   
   if (use_salutation) {
-    call say_hello as hello1 { 
-      name = name 
+    call say_hello {
+      name = name
     }
-  }
-
-  if (!use_salutation) {
-    call say_hello as hello2 {
+  } else {
+    call say_hello {
       name = name,
-      salutation = None 
+      salutation = None
     }
   }
 
   output {
-    String greeting = select_first([hello1.greeting, hello2.greeting])
+    String greeting = say_hello.greeting
   }
 }
 ```
@@ -7790,14 +7788,11 @@ workflow if_else {
   input {
     Boolean is_morning = false
   }
-  
-  if (is_morning) {
-    call greet as morning { input: time = "morning" }
-  }
 
-  # the body *is* evaluated since !b is true
-  if (!is_morning) {
-    call greet as afternoon { input: time = "afternoon" }
+  if (is_morning) {
+    call greet { input: time = "morning" }
+  } else {
+    call greet { input: time = "afternoon" }
   }
 
   output {
@@ -8243,8 +8238,8 @@ Example output:
 
 ```json
 {
-  "test_find.match1": "ello",
-  "test_find.match2": null
+  "find_string.match1": "ello",
+  "find_string.match2": null
 }
 ```
 </p>
@@ -8435,7 +8430,7 @@ Test config:
 
 ```json
 {
-  "exclude_output": ["change_extension.data_file"]
+  "exclude_outputs": ["change_extension.data_file"]
 }
 ```
 </p>
