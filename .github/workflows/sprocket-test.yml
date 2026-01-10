@@ -42,8 +42,16 @@ jobs:
             --redirect-stdout \
             --all-capabilities \
             --label "Sprocket / WDL 1.2" \
-            -s $PWD -vv > ./.results/shield.json
+            -s $PWD -vv > ./.results/shield.json 2> ./.results/logs.txt
           cat ./.results/shield.json
+          cp SPEC.md ./.results/SPEC.md
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprocket-results
+          path: ./.results/
+
       - name: Publish badge JSON
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
