@@ -2,6 +2,8 @@ name: Spec Compliance / Cromwell
 
 on:
   push:
+    paths:
+      - 'SPEC.md'
 
 jobs:
   test:

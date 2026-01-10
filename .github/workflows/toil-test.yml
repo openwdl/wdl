@@ -2,6 +2,8 @@ name: Spec Compliance / Toil
 
 on:
   push:
+    paths:
+      - 'SPEC.md'
 
 jobs:
   test:
