@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'SPEC.md'
+  schedule:
+    - cron: '0 3 * * 3'
 
 jobs:
   test:
