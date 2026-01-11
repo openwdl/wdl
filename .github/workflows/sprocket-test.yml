@@ -43,7 +43,7 @@ jobs:
             "sprocket run ~{path} ~{input} -e ~{target}" \
             --redirect-stdout \
             --all-capabilities \
-            --label "Sprocket / WDL 1.3" \
+            --label "Sprocket / WDL 1.4" \
             -s $PWD -vv > ./.results/shield.json 2> ./.results/logs.txt
           cat ./.results/logs.txt
           cat ./.results/shield.json
