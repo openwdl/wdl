@@ -10,7 +10,7 @@ Aspects of the specification that will be removed in the [next major WDL version
 
 Revisions to this specification are made periodically in order to correct errors, clarify language, or add additional examples. Revisions are released as "patches" to the specification, i.e., the third number in the specification version is incremented. No functionality is added or removed after the initial revision of the specification is ratified.
 
-* [1.3.0](https://github.com/openwdl/wdl/tree/release-1.3.0/SPEC.md): 202X-XX-XX
+* [1.3.0](https://github.com/openwdl/wdl/tree/release-1.3.0/SPEC.md): 2026-01-12
  
 ## Table of Contents
 
