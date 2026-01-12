@@ -6161,7 +6161,7 @@ A hint to the execution engine that a task _may_ be tried using a preemptible in
 
 Engines must only count failed attempts against the `preemptible` count if the reason for the failure was preemption. Other failures (e.g., non-zero exit codes) count against the total number of attempts but not the `preemptible` count.
 
-The total number of task execution attempts (preemptible and non-preemptible combined) must not exceed the value of `max_retries` plus one (for the initial attempt). For example, if `preemptible` is `3` and `max_retries` is `2`, the engine may try the task on a preemptible instance up to 3 times, but the total number of attempts across all instance types must not exceed 3 (i.e., 2 retries plus the initial attempt).
+The total number of task execution attempts (preemptible and non-preemptible combined) must not exceed the value of `max_retries` plus one (for the initial attempt).
 
 A value of `0` means the task must not be tried with a preemptible instance.
 
