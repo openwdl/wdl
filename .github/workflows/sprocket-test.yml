@@ -79,8 +79,8 @@ jobs:
           echo $new_url
           if grep -qE "$sed_pattern" README.md; then
             git pull
-            sed -E -i "/sprocket_shields\.json/s|$sed_pattern|$new_url|g" README.md
-            sed -E -i "/sprocket_shields\.json/s|$run_pattern|$new_run|g" README.md
+            sed -E -i "/sprocket\.json/s|$sed_pattern|$new_url|g" README.md
+            sed -E -i "/sprocket\.json/s|$run_pattern|$new_run|g" README.md
             git add README.md
           fi
 
