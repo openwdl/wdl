@@ -22,7 +22,61 @@ version 1.3.0
 
 + Introduced the `preemptible` task hint ([#728](https://github.com/openwdl/wdl/pull/728)).
 
++ Clarified that relative paths in `File` and `Directory` declarations are resolved relative to the WDL document's parent directory outside the `output` section, and relative to the task's execution directory inside the `output` section. Also clarified that optional files evaluate to `None` in both contexts if the path does not exist.
+  ([#735](https://github.com/openwdl/wdl/pull/735))
+
++ Added `previous` to the `task` variable, enabling runtime access to the previous attempt's computed requirements ([#734](https://github.com/openwdl/wdl/pull/734)).
+
++ Added `max_retries` to the `task` variable ([#733](https://github.com/openwdl/wdl/pull/733)).
+
++ Introduced the `split` standard library function ([#729](https://github.com/openwdl/wdl/pull/729)).
+
 + Documents may now load any document with the same major version and a minor version that is less than or equal to that document's version ([#698](https://github.com/openwdl/wdl/pull/698)).
+
++ Added enumeration types (`enum`) that define closed sets of named variants with associated values. Enums support explicit and implicit typing, and variant values can be of any WDL type including primitives, compound types, and user-defined types.
+([#695](https://github.com/openwdl/wdl/pull/695))
+
++ Added `value()` standard library function to extract the inner value from an enum variant.
+([#695](https://github.com/openwdl/wdl/pull/695))
+
+version 1.2.1
+---------------------------
+
++ Clarified that `task.return_code` is only available in the `output` section, where it has type `Int` rather than `Int?` ([#742](https://github.com/openwdl/wdl/pull/742)).
+
++ Updates the compliance suite to use [`spectool`](https://github.com/openwdl/spectool) ([#752](https://github.com/openwdl/wdl/pull/752)).
+
++ Formalize replacement string syntax for `sub()` function to specify backreference support (`\1` through `\9`).
+  ([#749](https://github.com/openwdl/wdl/pull/749)).
+
++ Clarify `File` and `Directory` path canonicalization, validation, and equality semantics. Clarify when `File`s and `Directories` must exist (at declaration evaluation time, not access time). Add `Directory` comparison operators to binary operators table ([#748](https://github.com/openwdl/wdl/pull/748)).
+
++ Clarify that `File` values cannot refer to directories and `Directory` values cannot refer to files; attempting to assign the wrong type of path is an error ([#748](https://github.com/openwdl/wdl/pull/748)).
+
++ Update `join_paths` function: change return type from `File` to `String` (since the result can be either a file or directory path), and change first argument from `File` to `Directory` for the first two overloads ([#748](https://github.com/openwdl/wdl/pull/748)).
+
++ Fix `change_extension_task.wdl` example to use string interpolation when passing `File` to `sub()` function ([#747](https://github.com/openwdl/wdl/issues/747)).
+
++ Clarified that when a `Directory` is converted to a `String`, the resulting string does not have a trailing slash ([#745](https://github.com/openwdl/wdl/pull/745)).
+
++ Clarified symlink handling behavior in the `glob` function ([#744](https://github.com/openwdl/wdl/pull/744)).
+
++ Clarified the restriction on multi-level optionals in the "Optional Types" section. ([#743](https://github.com/openwdl/wdl/pull/743))
+
++ Clarified that relative paths in `File` and `Directory` declarations are resolved relative to the WDL document's parent directory outside the `output` section, and relative to the task's execution directory inside the `output` section. Also clarified that optional files evaluate to `None` in both contexts if the path does not exist.
+  ([#735](https://github.com/openwdl/wdl/pull/735))
+
++ Clarify that `disks` mount points ephemeral and should not already exist
+
++ Deprecate the use of relative path literals in input and private variable declarations.
+
++ Include fixes to examples introduced in v1.1.3
+
++ Include fixes to examples that don't compile in `wdl-tests` (#707, #708,  #701, #738, #731, #740,  #739). Thanks to @adamnovak and @claymcleod!
+
++ Add in CI/CD for Miniwdl, Sprocket, Toil and Cromwell for spec compliance.
+
++ Remove Advanced Task Examples to clearly distinguish what is the testing is in scope. (#730)
 
 version 1.2.0
 ---------------------------
@@ -42,7 +96,7 @@ version 1.2.0
 + Added `disks` and `gpu` reserved hints for requesting specific resources.
 
 + Added `contains_key` function to standard library. [PR 603](https://github.com/openwdl/wdl/pull/603)
-
+****
 + Added exponentiation operator (`**`).
 
 + Added `find`, and `matches` functions.
@@ -90,6 +144,11 @@ version 1.2.0
 + Clarified the meaning of a remote parent folder for the purposes of localization.
 
 + Clarified that accessing a non-existent member of an object, struct, or call is an error.
+
+version 1.1.3
+---------------------------
+
+* Fix issues with examples (#653, #654, #661, #662, #663, #664, #666, #667, #668). Thanks to @stxue1!
 
 version 1.1.2
 ---------------------------
@@ -245,4 +304,3 @@ draft-2
 ---------------------------
 
 + Added ANTLR4 grammar
-
