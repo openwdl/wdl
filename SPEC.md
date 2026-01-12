@@ -5568,11 +5568,20 @@ Provides output-specific hints. Each key must refer to a parameter defined in th
 * Accepted types: `Int`
 * Default value: `0`
 
-A hint to the execution engine that a task _may_ be tried using a preemptible instance the specified number of times. Engines that are not configured to use or do not support preemptible instances may ignore this parameter and the implied number of retries completely.
+A hint to the execution engine that a task _may_ be tried using a preemptible instance up to the specified number of times. If all preemptible attempts fail due to preemption, the engine must fall back to executing on a non-preemptible instance (up to the limit imposed by `max_retries`). Engines that are not configured to use or do not support preemptible instances may ignore this hint entirely.
 
-Engines should only count failed tasks against the `preemptible` count if the reason for the failure was preemption. Other failures, such as unexpected non-zero exit codes, should be counted against the [`max_retries`](#max_retries) requirement instead.
+Engines must only count failed attempts against the `preemptible` count if the reason for the failure was preemption. Other failures (e.g., non-zero exit codes) count against the total number of attempts but not the `preemptible` count.
 
-A value of `0` means the task should not be tried with a preemptible instance.
+The total number of task execution attempts (preemptible and non-preemptible combined) must not exceed the value of `max_retries` plus one (for the initial attempt). For example, if `preemptible` is `3` and `max_retries` is `2`, the engine may try the task on a preemptible instance up to 3 times, but the total number of attempts across all instance types must not exceed 3 (i.e., 2 retries plus the initial attempt).
+
+A value of `0` means the task must not be tried with a preemptible instance.
+
+For example,
+
+* With `preemptible: 3` and `max_retries: 4`, the engine may try up to 3 preemptible attempts and, if all are preempted, fall back to non-preemptible for up to 2 more attempts.
+* With `preemptible: 3` and `max_retries: 2`, the engine may try preemptible up to 3 times but is capped at 3 total attempts, leaving no room for a non-preemptible fallback.
+* With `preemptible: 0` and `max_retries: 2`, the engine must not use preemptible instances and may retry up to 2 times on non-preemptible instances.
+* With `preemptible: 3` and `max_retries: 0`, the single attempt may be on a preemptible instance, but no retries are allowed.
 
 ```wdl
 task preemptible_example {
