@@ -1,6 +1,7 @@
 name: Spec Compliance / Toil
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'SPEC.md'

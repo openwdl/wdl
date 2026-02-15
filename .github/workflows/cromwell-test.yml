@@ -1,6 +1,7 @@
 name: Spec Compliance / Cromwell
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'SPEC.md'
