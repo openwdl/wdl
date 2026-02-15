@@ -6,8 +6,8 @@ This is version 1.2.1 of the Workflow Description Language (WDL) specification. 
 
 Revisions to this specification are made periodically in order to correct errors, clarify language, or add additional examples. Revisions are released as "patches" to the specification, i.e., the third number in the specification version is incremented. No functionality is added or removed after the initial revision of the specification is ratified.
 
-* [1.2.1]():
-* [1.2.0](https://github.com/openwdl/wdl/tree/release-1.2.0/SPEC.md): 2024-05-24
+* [v1.2.1](https://github.com/openwdl/wdl/releases/tag/v1.2.1): 2026-02-15
+* [v1.2.0](https://github.com/openwdl/wdl/releases/tag/v1.2.0): 2024-05-24
  
 ## Table of Contents
 
