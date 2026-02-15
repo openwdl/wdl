@@ -40,7 +40,7 @@ jobs:
           mkdir -p ./.results/
           echo "📊 Running compliance tests for \`${{ github.repository }}:${{ github.ref_name }}\`..."
           spectool test \
-            "sprocket run ~{path} ~{input} -e ~{target}" \
+            "sprocket run ~{path} ~{input} -t ~{target}" \
             --redirect-stdout \
             --all-capabilities \
             --label "Sprocket / WDL 1.1" \
