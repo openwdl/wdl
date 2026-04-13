@@ -528,6 +528,7 @@ call
 command
 else
 enum
+env
 false
 hints
 if
