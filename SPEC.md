@@ -512,6 +512,7 @@ as
 call
 command
 else
+env
 false
 hints
 if

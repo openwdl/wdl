@@ -17,6 +17,11 @@ Keep the changelog pleasant to read in the text editor:
 + Properly indent blocks.
 -->
 
+version 1.2.2
+---------------------------
+
++ Clarified that `env` is a reserved keyword ([#764](https://github.com/openwdl/wdl/pull/764)).
+
 version 1.2.1
 ---------------------------
 
