@@ -224,6 +224,8 @@ Every module must contain an **entrypoint** WDL file at its root. By default, th
 
 The entrypoint defines the module's public surface. Its imports—and how those imports are written—determine what is visible to consumers. A file that the entrypoint does not import is private to the module and is not reachable from outside it. This provides visibility control without introducing a new access-control keyword.
 
+The entrypoint itself uses ordinary quoted imports to pull in its sibling files, exactly as defined in [`SPEC.md`](../SPEC.md). Consumers of the module reach the resulting surface through symbolic imports (see [Symbolic Module Paths](#symbolic-module-paths) and the symbolic import forms in [`SPEC.md`](../SPEC.md)).
+
 A minimal module:
 
 ```
@@ -241,7 +243,14 @@ version 1.4
 import "csvcut.wdl"
 ```
 
-The contents of `csvcut.wdl`—its tasks, workflows, and user-defined types—become available under the `csvcut` namespace to consumers.
+The contents of `csvcut.wdl`—its tasks, workflows, and user-defined types—become available under the `csvcut` namespace to consumers using the associated rules outlined in [`SPEC.md`](../SPEC.md). A consumer imports the module symbolically:
+
+```wdl
+version 1.4
+
+import openwdl/csvcut              # namespace: csvcut
+# or: import openwdl/csvcut as csv  # namespace: csv
+```
 
 A module with multiple files controls its surface the same way:
 
