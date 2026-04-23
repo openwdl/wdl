@@ -304,7 +304,7 @@ How versions are discovered depends on the source type.
 
 For **Git-based dependencies**, the resolver lists the repository's Git tags and parses each as a semver version, stripping a leading `v` if present (e.g., tag `v1.2.0` → version `1.2.0`). Tags that do not parse as valid semver are ignored. The resulting set is matched against the `version` requirement. Publishing a new version therefore consists of tagging a commit; there is no separate publication step, no upload, no registry submission.
 
-**Tag-to-manifest consistency.** The `version` field in `module.json` at the tagged commit must match the version encoded in the tag (after stripping `v` and any path prefix). A tag `v1.2.0` pointing to a commit whose `module.json` declares `"version": "1.3.0"` is a validation error. Engines must reject such mismatches during resolution and surface a clear error message.
+**Tag-to-manifest consistency.** The `version` field in `module.json` at the tagged commit must match the version encoded in the tag (after stripping `v` and any path prefix). A tag `v1.2.0` pointing to a commit whose `module.json` declares `"version": "1.3.0"` is a validation error. Engines must reject such mismatches during resolution and surface a clear error message that suggests either downgrading to a known-good version or filing an issue on the upstream repository.
 
 **Multi-module repositories.** A repository containing multiple independently versioned modules must use path-prefixed tags, following the convention established by [Go modules](https://go.dev/doc/modules/managing-source). For a module at path `foo/` relative to the repository root, version tags take the form `foo/v1.2.0`. For modules at the repository root, tags use the bare form `v1.2.0`. When discovering versions for a module at path `P`, the resolver filters to tags matching `P/v*` (or `v*` if `P` is the root) and ignores all others.
 
@@ -336,7 +336,7 @@ Engines are responsible for upholding lockfile invariants. Before executing a wo
 
 Lockfiles apply only to the module they sit in. When resolving dependencies, the engine consults the consuming module's `module.json` constraints and, if present, the consumer's own `module-lock.json`; lockfiles shipped by upstream dependencies are not consulted. This keeps consumers in control of their transitive version choices and prevents upstream version decisions from silently propagating through the dependency tree.
 
-Cached module sources (the local directories where resolved modules are downloaded or cloned) must **not** be committed. These are ephemeral and can be reconstructed from the lockfile. Engines should store cached modules in a location outside the project directory (e.g., a user-level cache) or in a directory conventionally covered by `.gitignore`.
+Cached module sources (the local directories where resolved modules are downloaded or cloned) must **not** be committed. These are ephemeral and can be reconstructed from the lockfile. This specification does not prescribe where engines store the cache. An engine may keep it inside the project directory (e.g., under a `modules/` subdirectory by default, covered by `.gitignore`) or outside it (e.g., under a user-level global cache); the choice is an engine concern.
 
 A companion JSON Schema is available at [`schemas/module-lock.schema.json`](schemas/module-lock.schema.json).
 
@@ -509,7 +509,7 @@ Engines are encouraged to:
 
 Engines must rely on the user's configured Git credential helpers for authentication to private repositories. If the user's `git` command can clone a repository, module resolution from that repository must succeed without additional configuration. Engines must not introduce a new credential store or configuration format specifically for module resolution.
 
-This approach works with SSH keys, personal access tokens, and platform-specific credential managers (macOS Keychain, Windows Credential Manager, `git-credential-libsecret`, etc.) without modification. Most developers and CI systems already have Git credentials configured, and any such configuration applies to module resolution automatically.
+This approach works with SSH keys, personal access tokens, and platform-specific credential managers (macOS Keychain, Windows Credential Manager, etc.) without modification. Most developers and CI systems already have Git credentials configured, and any such configuration applies to module resolution automatically.
 
 ## API Stability Guidance
 
