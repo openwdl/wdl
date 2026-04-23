@@ -72,6 +72,14 @@ jobs:
           mv ./.results/shield.json shields/sprocket.json
           git add shields/sprocket.json
 
+          # Skip if the shield contents didn't change; the README run-URL
+          # rewrite below always produces a diff, so without this guard we
+          # commit a no-op every scheduled run.
+          if git diff --cached --quiet -- shields/sprocket.json; then
+            echo "🟢 Shield unchanged; skipping commit"
+            exit 0
+          fi
+
           # Update README only if needed
           sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/sprocket.json"
           new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/sprocket.json"
