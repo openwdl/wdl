@@ -75,6 +75,14 @@ jobs:
           mv ./.results/shield.json shields/toil.json
           git add shields/toil.json
 
+          # Skip if the shield contents didn't change; the README run-URL
+          # rewrite below always produces a diff, so without this guard we
+          # commit a no-op every scheduled run.
+          if git diff --cached --quiet -- shields/toil.json; then
+            echo "🟢 Shield unchanged; skipping commit"
+            exit 0
+          fi
+
           # Update README only if needed
           sed_pattern="https://raw.githubusercontent.com/openwdl/wdl/.*/shields/toil.json"
           new_url="https://raw.githubusercontent.com/openwdl/wdl/$BRANCH/shields/toil.json"
