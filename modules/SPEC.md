@@ -321,7 +321,11 @@ When the constraints are incompatible (e.g., `^1.0.0` and `^2.0.0`), both versio
 
 ## Lockfile (`module-lock.json`)
 
-Every module must have a `module-lock.json` file at its root. The lockfile pins the fully resolved dependency tree—every module in the tree, the exact commit each was resolved to, and a content checksum that detects tampering. The lockfile must be committed to version control; it is what makes builds reproducible regardless of upstream changes.
+A `module-lock.json` file, if present at a module's root, pins the fully resolved dependency tree—every module in the tree, the exact commit each was resolved to, and a content checksum that detects tampering. Modules whose consumers need reproducible builds should maintain a lockfile; modules intended as libraries, where version resolution is deliberately left to the consumer, may omit it. When a lockfile exists, it must be committed to version control.
+
+Engines are responsible for upholding lockfile invariants. Before executing a workflow that imports a module with a lockfile, the engine must verify that each cached module's content matches the recorded checksum and refuse to proceed on mismatch. Engines that perform dependency resolution are also responsible for generating and updating the lockfile so its content remains consistent with the resolved tree.
+
+Lockfiles apply only to the module they sit in. When resolving dependencies, the engine consults the consuming module's `module.json` constraints and, if present, the consumer's own `module-lock.json`; lockfiles shipped by upstream dependencies are not consulted. This keeps consumers in control of their transitive version choices and prevents upstream version decisions from silently propagating through the dependency tree.
 
 Cached module sources (the local directories where resolved modules are downloaded or cloned) must **not** be committed. These are ephemeral and can be reconstructed from the lockfile. Engines should store cached modules in a location outside the project directory (e.g., a user-level cache) or in a directory conventionally covered by `.gitignore`.
 
@@ -533,13 +537,9 @@ This appendix is non-normative. It preserves the design rationale behind decisio
 
 **Distributed hosting over a centralized registry.** Git-based resolution was chosen over a central package server. The cost is discoverability—distributed systems are harder to search—which the ecosystem may address through community-maintained indexes outside the scope of this specification. The benefit is that no single organization can become a bottleneck or point of failure for the ecosystem. Environments that cannot depend on third-party SaaS can use this system unmodified.
 
-**Duplicate dependencies over conflict resolution.** Other ecosystems (npm, Go) invest significant complexity in version resolution. This specification does not. WDL tasks run in isolated containers; there is no shared memory, no symbol table, no binary linking. Two versions of the same dependency coexist without interference. The duplication cost is negligible for text files.
-
 **Separate tool versioning.** The module version and the upstream tool version are tracked in distinct fields, but they are not independent. The module version contract is that unchanged versions must produce unchanged expected output; a tool update that alters output requires a module version bump. The `tools` array exists for provenance and license tracking, not as a substitute for proper semver on the module itself.
 
 **Display name, not resolution name.** The `name` field exists for human consumption. It is not used for dependency resolution; the importer names each dependency locally. This eliminates global namespace management, the squatting problem, and the need for a naming authority.
-
-**Lockfile as a specification requirement.** Making `module-lock.json` optional would undermine reproducibility. Requiring it ensures every module is reproducible by default.
 
 **Out-of-band signing over Git-native signing.** Git tag signing would be simpler today, but it couples security to the transport mechanism. A `module.sig` file travels with the module regardless of distribution mechanism—Git clone, tarball, or any future format. The cost is a separate signing step; engines can reduce this to a single command.
 
