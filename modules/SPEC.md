@@ -27,7 +27,6 @@ This document is a peer specification to [`SPEC.md`](../SPEC.md), the WDL langua
 - [Credential Management](#credential-management)
 - [API Stability Guidance](#api-stability-guidance)
 - [Engine Tooling Expectations](#engine-tooling-expectations)
-- [Known Open Questions](#known-open-questions)
 - [Appendix: Rationale](#appendix-rationale)
 
 ## Introduction
@@ -483,10 +482,6 @@ csvcut/
 
 Ed25519 was chosen because it is fast, produces small signatures (64 bytes) and small keys (32 bytes), and has mature implementations in every major language. Engines can verify signatures in-process without shelling out to external tools or depending on a system keychain.
 
-### Why Out-of-Band Rather than Git-Native Signing
-
-Git tag and commit signing would be simpler today: authors already sign tags, and engines could verify them directly. Git signatures, however, couple the security model to the transport mechanism. If modules are ever distributed as tarballs, through a package server, or through any non-Git mechanism, Git signatures do not travel with the content. A `module.sig` file does. The cost is a separate signing step; the benefit is a security model that survives changes to distribution infrastructure.
-
 ### Trust on First Use (TOFU)
 
 The trust model follows trust on first use:
@@ -532,14 +527,6 @@ Compliant engines must provide, at minimum, the following:
 
 Engines may additionally provide higher-level commands for authoring convenience (e.g., scaffolding, validation, upgrade). This specification does not prescribe the command surface; engine authors are free to design their own CLI.
 
-Semantic annotation of task inputs and outputs (e.g., file format, ontology terms from EDAM) is a complementary concern and out of scope for this specification. Standardized `parameter_meta` conventions for declaring input/output formats would help tooling match compatible tasks and are worth pursuing as a separate effort.
-
-## Known Open Questions
-
-The following concerns are acknowledged but not resolved in this version of the specification. They are listed here so future revisions can track and address them.
-
-- **Cascaded importing of WDL documents through the dependency tree, while decoupling version requirements from source code.** The current specification requires consumers to explicitly declare every module they import directly. An open question is whether, and how, a module should be able to re-export or surface its dependencies' entrypoints so that consumers can reach them without redeclaring the transitive dependency. The challenge is to do so without reintroducing the version-coupling problem that the module system was designed to eliminate.
-
 ## Appendix: Rationale
 
 This appendix is non-normative. It preserves the design rationale behind decisions made during the RFC process so that future readers have context for the specification's shape.
@@ -557,5 +544,3 @@ This appendix is non-normative. It preserves the design rationale behind decisio
 **Optional signing with encouraged adoption.** Requiring signatures would be more secure but would raise the authoring barrier. Making it optional, with an engine-level policy that enforces it for security-conscious environments, preserves adoption while enabling strong policy where needed.
 
 **Soft deprecation of remote URL imports.** A hard removal would strand existing workflows. Warnings give the ecosystem time to migrate while making the direction clear.
-
-**Auto-discovery over workspace configuration.** A separate workspace manifest (e.g., `wdl-workspace.json` listing member modules) was considered and rejected. One concept (the module) with one file format (`module.json`) is simpler to explain, implement, and support across all repository layouts.
