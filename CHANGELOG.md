@@ -17,7 +17,19 @@ Keep the changelog pleasant to read in the text editor:
 + Properly indent blocks.
 -->
 
-<<<<<<< HEAD
+version 1.4.0
+---------------------------
+
++ ✨ Added a module specification and ecosystem. A new peer specification at [`modules/SPEC.md`](modules/SPEC.md) defines the `module.json` manifest, dependency resolution, `module-lock.json`, content hashing, module signing, credential management, and engine tooling expectations.
+
++ ✨ Reserved the `from` keyword for symbolic import syntax in WDL 1.4 documents. Earlier `version` declarations continue to parse `from` as an ordinary identifier.
+
++ ✨ Added symbolic import forms to `SPEC.md`, including the bare symbolic import (`import <module-path>`) and the `from` variants for selective member imports.
+
++ ✨ Defined symmetric namespacing rules for user-defined types under symbolic imports.
+
++ ✨ Soft-deprecated remote URL imports (`http://`, `https://`). Compliant engines should emit a warning when encountering them. Removal is targeted for a future major version.
+
 version 1.3.0
 ---------------------------
 
@@ -37,7 +49,7 @@ version 1.3.0
 
 + Added `value()` standard library function to extract the inner value from an enum variant.
 ([#695](https://github.com/openwdl/wdl/pull/695))
-=======
+
 version 1.2.1
 ---------------------------
 
@@ -76,7 +88,6 @@ version 1.2.1
 + Add in CI/CD for Miniwdl, Sprocket, Toil and Cromwell for spec compliance.
 
 + Remove Advanced Task Examples to clearly distinguish what is the testing is in scope. (#730)
->>>>>>> wdl-1.2
 
 version 1.2.0
 ---------------------------

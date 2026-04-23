@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/openwdl/wdl/feat/modules/modules/schemas/module-lock.schema.json",
+  "title": "WDL Module Lockfile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "dependencies"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "dependencies": { "$ref": "#/$defs/dependencyMap" }
+  },
+  "$defs": {
+    "dependencyMap": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/dependencyEntry" }
+    },
+    "dependencyEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "modules"],
+      "properties": {
+        "source": { "$ref": "#/$defs/source" },
+        "modules": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/moduleEntry" }
+        }
+      }
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["git", "commit"],
+          "properties": {
+            "git": { "type": "string", "format": "uri" },
+            "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path"],
+          "properties": { "path": { "type": "string" } }
+        }
+      ]
+    },
+    "moduleEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "checksum", "dependencies"],
+      "properties": {
+        "version": { "type": "string" },
+        "checksum": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "signer": { "type": "string" },
+        "dependencies": { "$ref": "#/$defs/dependencyMap" }
+      }
+    }
+  }
+}

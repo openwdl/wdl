@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/openwdl/wdl/feat/modules/modules/schemas/module.schema.json",
+  "title": "WDL Module Manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["name", "version", "license"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$" },
+    "license": { "type": "string", "minLength": 1 },
+    "authors": { "type": "array", "items": { "type": "string" } },
+    "description": { "type": "string" },
+    "repository": { "type": "string", "format": "uri" },
+    "homepage": { "type": "string", "format": "uri" },
+    "index": { "type": "string" },
+    "readme": { "oneOf": [{ "type": "string" }, { "const": false }] },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name", "version", "license"],
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "license": { "type": "string" },
+          "homepage": { "type": "string", "format": "uri" },
+          "doi": { "type": "string" },
+          "biotools": { "type": "string" }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "oneOf": [
+          {
+            "required": ["git", "version"],
+            "not": { "anyOf": [{ "required": ["tag"] }, { "required": ["branch"] }, { "required": ["commit"] }] },
+            "properties": {
+              "git": { "type": "string", "format": "uri" },
+              "version": { "type": "string" },
+              "path": { "type": "string" }
+            }
+          },
+          {
+            "required": ["git", "tag"],
+            "not": { "anyOf": [{ "required": ["version"] }, { "required": ["branch"] }, { "required": ["commit"] }] },
+            "properties": {
+              "git": { "type": "string", "format": "uri" },
+              "tag": { "type": "string" },
+              "path": { "type": "string" }
+            }
+          },
+          {
+            "required": ["git", "branch"],
+            "not": { "anyOf": [{ "required": ["version"] }, { "required": ["tag"] }, { "required": ["commit"] }] },
+            "properties": {
+              "git": { "type": "string", "format": "uri" },
+              "branch": { "type": "string" },
+              "path": { "type": "string" }
+            }
+          },
+          {
+            "required": ["git", "commit"],
+            "not": { "anyOf": [{ "required": ["version"] }, { "required": ["tag"] }, { "required": ["branch"] }] },
+            "properties": {
+              "git": { "type": "string", "format": "uri" },
+              "commit": { "type": "string" },
+              "path": { "type": "string" }
+            }
+          },
+          {
+            "required": ["path"],
+            "not": { "anyOf": [{ "required": ["git"] }, { "required": ["version"] }, { "required": ["tag"] }, { "required": ["branch"] }, { "required": ["commit"] }] },
+            "properties": {
+              "path": { "type": "string" }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
