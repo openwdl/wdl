@@ -3957,34 +3957,31 @@ Some examples of correct import resolution:
 
 ### ✨ Symbolic Import Forms
 
-A symbolic import names a module declared in the consuming module's `module.json`. The general form is an unquoted path, optionally narrowed with the `from` keyword to select specific members. The eight forms of symbolic import are:
+A symbolic import names a module declared in the consuming module's `module.json`. The general form is an unquoted path, optionally narrowed with the `from` keyword to select specific members. The four forms of symbolic import are:
 
 1. `import <module-path>` — the module is brought into scope under a namespace equal to the last path component of `<module-path>`.
 2. `import <module-path> as <alias>` — the module is brought into scope under the name `<alias>`.
-3. `import <member> from <module-path>` — `<member>` is brought directly into scope.
-4. `import <member> from <module-path> as <alias>` — `<member>` is accessible as `<alias>.<member>`.
-5. `import <member> as <Name> from <module-path>` — `<member>` is renamed to `<Name>` and brought directly into scope.
-6. `import <member> as <Name> from <module-path> as <alias>` — `<member>` is renamed to `<Name>` and accessible as `<alias>.<Name>`.
-7. `import <ns>.<Item> from <module-path> [as <alias>]` — a specific `<Item>` is selected from a namespace `<ns>` within the module. The item (not the namespace) is what enters scope, optionally under `<alias>`.
-8. `import <ns>.{<A> [as <B>], ...} from <module-path> [as <alias>]` — multiple items are selected from a single namespace in one statement. Each item may be independently renamed with `as`. All selected items enter scope directly, or under `<alias>` if specified.
+3. `import * from <module-path> [as <alias>]` — every top-level item exposed by the module's entrypoint is brought into scope. Without `as <alias>`, items enter scope unqualified; with `as <alias>`, they are accessible as `<alias>.<Item>`.
+4. `import { <member> [as <Name>], ... } from <module-path> [as <alias>]` — one or more specific items are selected by name. Each `<member>` is a dotted path (`<name>`, `<ns>.<name>`, `<ns>.<inner>.<name>`, and so on) into the module's exposed surface. A per-member `as <Name>` renames the selected item locally; a trailing `as <alias>` groups all selected items under the alias namespace. A trailing comma after the last member is permitted.
 
 `from` is only valid with symbolic imports. A `from` clause used with a quoted URI import is a syntax error.
 
-A `<member>` in rules 3–6 may be any top-level item exposed by the module's entrypoint: a namespace (i.e., the name under which the entrypoint imported a file), a task, a workflow, a struct, or an enum.
+A `<member>` in form 4 may resolve to any top-level item exposed by the module's entrypoint: a namespace (the name under which the entrypoint imported a file), a task, a workflow, a struct, or an enum. Dotted paths reach deeper into nested namespaces.
 
 Examples:
 
 ```wdl
 version 1.4
 
-import openwdl/csvkit                                           # csvkit.sort.CsvSort
-import openwdl/csvkit as csv                                     # csv.sort.CsvSort
-import sort from openwdl/csvkit                                  # sort.CsvSort
-import sort from openwdl/csvkit as csv                           # csv.sort.CsvSort
-import sort as sorter from openwdl/csvkit                        # sorter.CsvSort
-import sort as sorter from openwdl/csvkit as csv                 # csv.sorter.CsvSort
-import sort.CsvSort from openwdl/csvkit                          # call CsvSort
-import sort.{CsvSort as MySort, CsvSortStable} from openwdl/csvkit  # call MySort, call CsvSortStable
+import openwdl/csvkit                                                            # csvkit.sort.CsvSort
+import openwdl/csvkit as csv                                                     # csv.sort.CsvSort
+import * from openwdl/csvkit                                                     # sort.CsvSort
+import * from openwdl/csvkit as csv                                              # csv.sort.CsvSort
+import { sort } from openwdl/csvkit                                              # sort.CsvSort
+import { sort as sorter } from openwdl/csvkit                                    # sorter.CsvSort
+import { sort.CsvSort } from openwdl/csvkit                                      # call CsvSort
+import { sort.CsvSort as MySort, sort.CsvSortStable } from openwdl/csvkit        # call MySort, call CsvSortStable
+import { sort.CsvSort, sort.CsvSortStable } from openwdl/csvkit as csv           # call csv.CsvSort, call csv.CsvSortStable
 ```
 
 ### ✨ Scoping Rules for Symbolic Imports

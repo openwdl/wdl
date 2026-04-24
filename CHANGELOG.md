@@ -24,7 +24,7 @@ version 1.4.0
 
 + ✨ Reserved the `from` keyword for symbolic import syntax in WDL 1.4 documents. Earlier `version` declarations continue to parse `from` as an ordinary identifier.
 
-+ ✨ Added symbolic import forms to `SPEC.md`, including the bare symbolic import (`import <module-path>`) and the `from` variants for selective member imports.
++ ✨ Added the four symbolic import forms to `SPEC.md`: bare module path, aliased module path, wildcard (`import * from <module-path>`), and braced member list (`import { <member>, ... } from <module-path>`). Each member supports arbitrary-depth dotted paths and optional per-member renames.
 
 + ✨ Defined symmetric namespacing rules for user-defined types under symbolic imports.
 
