@@ -86,8 +86,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Command Section Serialization of Enums](#command-section-serialization-of-enums)
   - [Import Statements](#import-statements)
     - [Import URIs](#import-uris)
-    - ✨ [Symbolic Import Forms](#-symbolic-import-forms)
-    - ✨ [Scoping Rules for Symbolic Imports](#-scoping-rules-for-symbolic-imports)
+    - ✨ [Import Forms](#-import-forms)
     - [Importing and Aliasing Structs](#importing-and-aliasing-structs)
     - [Importing and Aliasing Enums](#importing-and-aliasing-enums)
   - [Task Definition](#task-definition)
@@ -3906,15 +3905,7 @@ This demonstrates that `~{verbosity}` produces the choice name "Info", while `~{
 
 Although a WDL workflow and the task(s) it calls may be defined completely within a single WDL document, splitting them across multiple documents can be beneficial for modularity and code reuse. Furthermore, complex workflows consisting of multiple subworkflows must be defined across multiple documents because each document is allowed at most one workflow.
 
-The `import` statement is the basis for modularity in WDL. A document may contain any number of `import` statements. Two import forms are supported:
-
-1. **Quoted URI imports.** A quoted string literal is treated as a URI (local path, `http://`, or `https://`). These imports behave as described below in [Import URIs](#import-uris), [Importing and Aliasing Structs](#importing-and-aliasing-structs), and [Importing and Aliasing Enums](#importing-and-aliasing-enums). Remote URL imports (`http://`, `https://`) are soft-deprecated starting in WDL 1.4 in favor of the symbolic import form below; compliant engines should emit a warning when encountering them.
-
-2. ✨ **Symbolic module imports.** An unquoted path refers to a module declared in the consuming module's `module.json`. Resolution is defined by the [WDL Module Specification](modules/SPEC.md). The symbolic import forms—including the `from` syntax for selective member imports—are described in [✨ Symbolic Import Forms](#-symbolic-import-forms) below.
-
-Because existing `import` statements require quotes, any unquoted `import` source is unambiguously a symbolic import; no new marker or keyword is required to distinguish the two.
-
-Each imported WDL document is assigned a unique namespace used to refer to its members. For quoted imports, the default namespace is the filename minus the `.wdl` extension, and it may be overridden with `as <identifier>`. The tasks and workflows imported through a namespace are accessible only through that namespace—see [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details.
+The `import` statement is the basis for modularity in WDL. A document may contain any number of `import` statements. An import names a source and selects which of the source's items enter the importing document's scope. A source is either a quoted URI (see [Import URIs](#import-uris)) or ✨ an unquoted symbolic module path resolved through the consuming module's `module.json` per the [WDL Module Specification](modules/SPEC.md). The three available forms are described in [✨ Import Forms](#-import-forms).
 
 ```wdl
 import "http://example.com/lib/analysis_tasks" as analysis
@@ -3955,51 +3946,31 @@ Some examples of correct import resolution:
 | http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | /openwdl/otherwdls/subworkflow.wdl | http://www.github.com/openwdl/otherwdls/subworkflow.wdl |
 | /some/path/hello.wdl                                  | /another/path/world.wdl            | /another/path/world.wdl                                 |
 
-### ✨ Symbolic Import Forms
+### ✨ Import Forms
 
-A symbolic import names a module declared in the consuming module's `module.json`. The three forms of symbolic import are:
+An import statement takes one of three forms. Every form accepts the same two source styles, and the source style affects only how the build system locates the imported document.
 
-1. `import <module-path> [as <alias>]` — every top-level item exposed by the module's entrypoint is brought into scope under a namespace. The namespace defaults to the last component of `<module-path>`; `as <alias>` renames it.
-2. `import * from <module-path> [as <alias>]` — every top-level item exposed by the module's entrypoint is brought into the consuming document's scope. Without `as <alias>`, items enter scope unqualified; `as <alias>` groups them under `<alias>` and is therefore equivalent to `import <module-path> as <alias>`.
-3. `import { <member> [as <Name>], ... } from <module-path> [as <alias>]` — only the selected items are brought into scope. Each `<member>` is a dotted path (`<name>`, `<ns>.<name>`, `<ns>.<inner>.<name>`, and so on) into the module's exposed surface. A per-member `as <Name>` renames the selected item locally; the trailing `as <alias>` groups all selected items under `<alias>`. A trailing comma after the last member is permitted.
+1. `import <source> [as <alias>] (alias <Old> as <New>)*`. User-defined types (structs and enums) from `<source>` are copied into the importing document's scope. Tasks and workflows from `<source>` are accessible only through the import's namespace, which defaults to the filename minus the `.wdl` extension for a quoted URI or to the last component of the path for a symbolic module path. `as <alias>` overrides the default namespace; `alias <Old> as <New>` renames a struct or enum as it is copied. `alias` cannot rename tasks or workflows. See [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for how the namespace is used.
+2. `import * from <source>`. Every task, workflow, and user-defined type from `<source>` enters the importing document's scope. No namespace is introduced.
+3. `import { <member> [as <Name>], ... } from <source>`. Only the listed items enter the importing document's scope. A per-member `as <Name>` renames the selected item locally. A trailing comma after the last member is permitted. No namespace is introduced.
 
-`from` is only valid with symbolic imports. A `from` clause used with a quoted URI import is a syntax error.
+Forms 2 and 3 do not accept a trailing `as <alias>` or `alias` clause.
 
-A `<member>` in form 3 may resolve to any top-level item exposed by the module's entrypoint: a namespace (the name under which the entrypoint imported a file), a task, a workflow, a struct, or an enum. Dotted paths reach deeper into nested namespaces.
+A `<source>` is either a quoted URI or an unquoted symbolic module path. A quoted URI (e.g., `"foo.wdl"`, `"https://example.com/lib.wdl"`) resolves per [Import URIs](#import-uris). A symbolic module path takes the form `<dep>[/<sub-path>]` and resolves through the consuming module's `module.json` per the [WDL Module Specification](modules/SPEC.md). The two source styles produce identical scoping in every form; once resolved, they are interchangeable.
 
 Examples:
 
 ```wdl
 version 1.4
 
-import openwdl/csvkit                                                            # csvkit.sort.CsvSort
-import openwdl/csvkit as csv                                                     # csv.sort.CsvSort
-import * from openwdl/csvkit                                                     # sort.CsvSort
-import * from openwdl/csvkit as csv                                              # csv.sort.CsvSort (same as form 1 with alias)
-import { sort } from openwdl/csvkit                                              # sort.CsvSort
-import { sort as sorter } from openwdl/csvkit                                    # sorter.CsvSort
-import { sort.CsvSort } from openwdl/csvkit                                      # call CsvSort
-import { sort.CsvSort as MySort, sort.CsvSortStable } from openwdl/csvkit        # call MySort, call CsvSortStable
-import { sort.CsvSort, sort.CsvSortStable } from openwdl/csvkit as csv           # call csv.CsvSort, call csv.CsvSortStable
+import "csvkit.wdl"                                              # csvkit.CsvSort, struct types in scope
+import "csvkit.wdl" as csv                                       # csv.CsvSort, struct types in scope
+import * from "csvkit.wdl"                                       # CsvSort directly in scope
+import { CsvSort } from "csvkit.wdl"                             # CsvSort directly in scope
+import { CsvSort as MySort, CsvSortStable } from "csvkit.wdl"    # MySort and CsvSortStable in scope
+import openwdl/csvkit                                            # symbolic source, same semantics as form 1
+import { CsvSort } from openwdl/csvkit                           # symbolic source, same semantics as form 3
 ```
-
-### ✨ Scoping Rules for Symbolic Imports
-
-Symbolic imports namespace all member types **symmetrically**. Tasks, workflows, structs, and enums accessed through a symbolic import are all reached through the same namespace path; no member type is copied into the consuming document's global scope.
-
-This is distinct from quoted URI imports, which copy struct and enum definitions into the importing document's global scope (see [Importing and Aliasing Structs](#importing-and-aliasing-structs) and [Importing and Aliasing Enums](#importing-and-aliasing-enums)). Symbolic imports do not carry that behavior.
-
-Given:
-
-```wdl
-import openwdl/csvkit as csv
-```
-
-If `csv`'s entrypoint imports `sort.wdl` and `sort.wdl` defines a struct `CsvSortResult`, the struct is accessed as `csv.sort.CsvSortResult`. It is not available unqualified in the importing document.
-
-The worst-case qualification depth is three: `<alias>.<namespace>.<member>`. This bound is fixed regardless of how deep the module's own import tree is, because WDL namespaces are not transitively visible—consumers see only what the module's entrypoint directly exposes.
-
-The `alias` clause described in [Importing and Aliasing Structs](#importing-and-aliasing-structs) is specific to quoted URI imports and is not used with symbolic imports. To rename a member of a symbolic import, use the `as` forms defined above.
 
 ### Importing and Aliasing Structs
 
