@@ -85,8 +85,8 @@ Revisions to this specification are made periodically in order to correct errors
       - [JSON Input and Output for Enums](#json-input-and-output-for-enums)
       - [Command Section Serialization of Enums](#command-section-serialization-of-enums)
   - [Import Statements](#import-statements)
-    - [Import URIs](#import-uris)
     - ✨ [Import Forms](#-import-forms)
+    - [Import URIs](#import-uris)
     - [Importing and Aliasing Structs](#importing-and-aliasing-structs)
     - [Importing and Aliasing Enums](#importing-and-aliasing-enums)
   - [Task Definition](#task-definition)
@@ -3927,25 +3927,6 @@ workflow wf {
 }
 ```
 
-### Import URIs
-
-A quoted URI is one of the two source styles an `import` statement may use. It identifies the imported document by its [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier), which uniquely describes a local or network-accessible location. The execution engine must at least support the following protocols for import URIs:
-
-* `http://`
-* `https://`
-* 🗑 `file://` - Using the `file://` protocol for local imports can be problematic. Its use is deprecated and will be removed in WDL 2.0.
-
-In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. In the primary WDL document, a protocol-less import is relative to the folder that contains the primary WDL file. If a protocol-less import starts with `/` it is interpreted as relative to the root of the file system that contains the primary WDL file.
-
-Some examples of correct import resolution:
-
-| Root Workflow Location                                | Imported Path                      | Resolved Path                                           |
-| ----------------------------------------------------- | ---------------------------------- | ------------------------------------------------------- |
-| /foo/bar/baz/qux.wdl                                  | some/task.wdl                      | /foo/bar/baz/some/task.wdl                              |
-| http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | subworkflow.wdl                    | http://www.github.com/openwdl/coolwdls/subworkflow.wdl  |
-| http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | /openwdl/otherwdls/subworkflow.wdl | http://www.github.com/openwdl/otherwdls/subworkflow.wdl |
-| /some/path/hello.wdl                                  | /another/path/world.wdl            | /another/path/world.wdl                                 |
-
 ### ✨ Import Forms
 
 An import statement takes one of three forms. Every form accepts the same two source styles, and the source style affects only how the build system locates the imported document.
@@ -3971,6 +3952,25 @@ import { CsvSort as MySort, CsvSortStable } from "csvkit.wdl"    # `MySort` and 
 import openwdl/csvkit                                            # tasks via `csvkit` namespace; structs/enums in scope
 import { CsvSort } from openwdl/csvkit                           # only `CsvSort` in scope
 ```
+
+### Import URIs
+
+A quoted URI is one of the two source styles an `import` statement may use. It identifies the imported document by its [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier), which uniquely describes a local or network-accessible location. The execution engine must at least support the following protocols for import URIs:
+
+* `http://`
+* `https://`
+* 🗑 `file://` - Using the `file://` protocol for local imports can be problematic. Its use is deprecated and will be removed in WDL 2.0.
+
+In the event that there is no protocol specified, the import is resolved **relative to the location of the current document**. In the primary WDL document, a protocol-less import is relative to the folder that contains the primary WDL file. If a protocol-less import starts with `/` it is interpreted as relative to the root of the file system that contains the primary WDL file.
+
+Some examples of correct import resolution:
+
+| Root Workflow Location                                | Imported Path                      | Resolved Path                                           |
+| ----------------------------------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| /foo/bar/baz/qux.wdl                                  | some/task.wdl                      | /foo/bar/baz/some/task.wdl                              |
+| http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | subworkflow.wdl                    | http://www.github.com/openwdl/coolwdls/subworkflow.wdl  |
+| http://www.github.com/openwdl/coolwdls/myWorkflow.wdl | /openwdl/otherwdls/subworkflow.wdl | http://www.github.com/openwdl/otherwdls/subworkflow.wdl |
+| /some/path/hello.wdl                                  | /another/path/world.wdl            | /another/path/world.wdl                                 |
 
 ### Importing and Aliasing Structs
 
