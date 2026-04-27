@@ -3963,13 +3963,13 @@ Examples:
 ```wdl
 version 1.4
 
-import "csvkit.wdl"                                              # csvkit.CsvSort, struct types in scope
-import "csvkit.wdl" as csv                                       # csv.CsvSort, struct types in scope
-import * from "csvkit.wdl"                                       # CsvSort directly in scope
-import { CsvSort } from "csvkit.wdl"                             # CsvSort directly in scope
-import { CsvSort as MySort, CsvSortStable } from "csvkit.wdl"    # MySort and CsvSortStable in scope
-import openwdl/csvkit                                            # symbolic source, same semantics as form 1
-import { CsvSort } from openwdl/csvkit                           # symbolic source, same semantics as form 3
+import "csvkit.wdl"                                              # tasks via `csvkit` namespace; structs/enums in scope
+import "csvkit.wdl" as csv                                       # tasks via `csv` namespace; structs/enums in scope
+import * from "csvkit.wdl"                                       # tasks, workflows, structs, enums all in scope
+import { CsvSort } from "csvkit.wdl"                             # only `CsvSort` in scope
+import { CsvSort as MySort, CsvSortStable } from "csvkit.wdl"    # `MySort` and `CsvSortStable` in scope
+import openwdl/csvkit                                            # tasks via `csvkit` namespace; structs/enums in scope
+import { CsvSort } from openwdl/csvkit                           # only `CsvSort` in scope
 ```
 
 ### Importing and Aliasing Structs
