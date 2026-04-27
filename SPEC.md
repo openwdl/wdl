@@ -3929,7 +3929,7 @@ workflow wf {
 
 ### Import URIs
 
-A document is imported using it's [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier), which uniquely describes its local or network-accessible location. The execution engine must at least support the following protocols for import URIs:
+A quoted URI is one of the two source styles an `import` statement may use. It identifies the imported document by its [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier), which uniquely describes a local or network-accessible location. The execution engine must at least support the following protocols for import URIs:
 
 * `http://`
 * `https://`
