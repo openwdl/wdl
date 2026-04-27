@@ -20,15 +20,11 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
-+ ✨ Added a module specification and ecosystem. A new peer specification at [`modules/SPEC.md`](modules/SPEC.md) defines the `module.json` manifest, dependency resolution, `module-lock.json`, content hashing, module signing, credential management, and engine tooling expectations.
++ Added a module specification and ecosystem. A new peer specification at [`modules/SPEC.md`](modules/SPEC.md) defines the `module.json` manifest, dependency resolution, `module-lock.json`, content hashing, module signing, credential management, and engine tooling expectations.
 
-+ ✨ Reserved the `from` keyword for symbolic import syntax in WDL 1.4 documents. Earlier `version` declarations continue to parse `from` as an ordinary identifier.
++ Reserved the `from` keyword. Earlier `version` declarations continue to parse `from` as an ordinary identifier.
 
-+ ✨ Added three symbolic import forms to `SPEC.md`: module path, wildcard (`import * from <module-path>`), and braced member list (`import { <member>, ... } from <module-path>`). Each form accepts an optional trailing `as <alias>` that groups the imported items under a namespace. Members in the braced form support arbitrary-depth dotted paths and optional per-member renames.
-
-+ ✨ Defined symmetric namespacing rules for user-defined types under symbolic imports.
-
-+ ✨ Soft-deprecated remote URL imports (`http://`, `https://`). Compliant engines should emit a warning when encountering them. Removal is targeted for a future major version.
++ Added two new import forms alongside the existing one. `import * from <source>` brings every task, workflow, and user-defined type from `<source>` into the importing document's scope. `import { <member> [as <Name>], ... } from <source>` brings only the listed items, with an optional per-member `as <Name>` rename. A `<source>` is either a quoted URI or an unquoted symbolic module path resolved through the consuming module's `module.json`.
 
 version 1.3.0
 ---------------------------
