@@ -12,8 +12,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-
+      - name: Checkout WDL spec repo
+        uses: actions/checkout@v6
       - name: Install `spectool`
         env:
           GH_TOKEN: ${{ github.token }}
@@ -24,7 +24,6 @@ jobs:
           sudo mv spectool /usr/local/bin/
           rm -rf spectool*.tar.gz
           spectool --version
-
       - name: Install `sprocket`
         env:
           GH_TOKEN: ${{ github.token }}
@@ -35,22 +34,22 @@ jobs:
           sudo mv sprocket /usr/local/bin/
           rm -rf sprocket*.tar.gz
           sprocket --version
-
+      - name: Create results directory
+        run: mkdir -p ./.results/
       - name: Run the compliance tests
         run: |
-          mkdir -p ./.results/
           echo "📊 Running compliance tests for \`${{ github.repository }}:${{ github.ref_name }}\`..."
           spectool test \
-            "sprocket run ~{path} ~{input} -t ~{target}" \
-            --redirect-stdout \
+            "sprocket run ~{path} @~{input} -t ~{target} -o /tmp/out --index-on ~{target}" \
+            --output-file "/tmp/out/index/~{target}/outputs.json" \
             --all-capabilities \
             --label "Sprocket / WDL 1.1" \
-            -b wdl-1.1.3 \
             -s $PWD -vv > ./.results/shield.json 2> ./.results/logs.txt
+          cat ./.results/logs.txt
           cat ./.results/shield.json
           cp SPEC.md ./.results/SPEC.md
-
       - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sprocket-results
