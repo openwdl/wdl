@@ -3939,6 +3939,8 @@ Forms 2 and 3 do not accept a trailing `as <alias>` or `alias` clause.
 
 A `<source>` is either a quoted URI or an unquoted symbolic module path. A quoted URI (e.g., `"foo.wdl"`, `"https://example.com/lib.wdl"`) resolves per [Import URIs](#import-uris). A symbolic module path takes the form `<dep>[/<sub-path>]` and resolves through the consuming module's `module.json` per the [WDL Module Specification](modules/SPEC.md). The two source styles produce identical scoping in every form; once resolved, they are interchangeable.
 
+A symbolic module path is a sequence of `/`-separated components. Each component must be a valid WDL identifier. Empty components, leading or trailing `/`, `.`, `..`, whitespace, null bytes, and any other character not permitted in a WDL identifier are themselves not permitted in a symbolic module path. A document containing an import whose symbolic path violates this grammar is malformed.
+
 Examples:
 
 ```wdl

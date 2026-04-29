@@ -8,6 +8,7 @@ This document is a peer specification to [`SPEC.md`](../SPEC.md), the WDL langua
 
 - [Introduction](#introduction)
 - [Module Directory Layout](#module-directory-layout)
+- [Module File Tree Constraints](#module-file-tree-constraints)
 - [Manifest File (`module.json`)](#manifest-file-modulejson)
   - [Core Fields](#core-fields)
   - [Tools](#tools)
@@ -19,8 +20,10 @@ This document is a peer specification to [`SPEC.md`](../SPEC.md), the WDL langua
 - [Resolution](#resolution)
   - [Version Discovery](#version-discovery)
   - [Transitive Dependencies](#transitive-dependencies)
+  - [Cycle Detection](#cycle-detection)
   - [Version Precedence](#version-precedence)
   - [Version Resolution and Conflicts](#version-resolution-and-conflicts)
+  - [Resource Limits](#resource-limits)
 - [Lockfile (`module-lock.json`)](#lockfile-module-lockjson)
 - [Content Hashing](#content-hashing)
 - [Module Signing](#module-signing)
@@ -84,6 +87,15 @@ openwdl-tasks/
 ```
 
 Both layouts are valid. The resolution logic is identical for both. Authors who require fine-grained independent versioning may split modules further; authors who prefer fewer manifests may group related tasks under a single `module.json`.
+
+## Module File Tree Constraints
+
+The structural rules below are normative.
+
+1. Each file's relative path (computed per [Content Hashing](#content-hashing)) is treated as a sequence of `/`-separated components. The path must contain no `.` or `..` components, must not be absolute (no leading `/`, no Windows-style drive letter), and must not contain a null byte.
+2. Symbolic links inside a module are permitted only if their targets, after full resolution, fall inside the module root. A symlink whose target escapes the module root makes the module invalid.
+3. The names `module.json`, `module-lock.json`, and `module.sig` are reserved for files at the module root. A file with any of these names appearing at any other path within the module tree is a validation error.
+4. A module that, when materialized on disk, would produce any path failing these rules is invalid; engines must refuse to load it and surface a clear error identifying the offending entry.
 
 ## Manifest File (`module.json`)
 
@@ -216,6 +228,7 @@ For Git dependencies, an optional **`path`** key sets the root directory for mod
 - The `name` field is for display only. It plays no role in dependency resolution; consumers name each dependency locally in their own `module.json`. This eliminates global namespace management and the associated squatting problem.
 - The `readme` field defaults to `README.md` if omitted.
 - Engines **must ignore unrecognized fields** anywhere in `module.json`—at the top level, within `tools` entries, within `dependencies` entries, and in any nested object—rather than treating them as errors. This allows the format to evolve; new optional fields can be added without breaking older engines.
+- Engines must parse `module.json` strictly, per [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259). Duplicate keys within any object, trailing commas, comments, leading byte-order marks, and any other non-JSON extension are validation errors and must be rejected. The same parsing requirements apply to `module-lock.json`. Strict parsing eliminates ambiguity—different parsers must produce identical document trees—and prevents attacks that hide overrides behind tolerated parser quirks.
 
 ## Module Entrypoint
 
@@ -276,6 +289,8 @@ A **symbolic module path** is the unquoted path used in a symbolic import (see [
 
 If `<sub-path>` is omitted, the target module is the one whose `module.json` sits at the root of the dependency source.
 
+Each component of `<dep-name>` and `<sub-path>` must be a valid WDL identifier, per the symbolic module path grammar in [`SPEC.md`](../SPEC.md). Empty components, leading or trailing `/`, `.`, `..`, whitespace, null bytes, and any other character not permitted in a WDL identifier are themselves not permitted in a symbolic module path. Because `<sub-path>` is the directory path (relative to the source root) that contains the target module's `module.json`, this means every directory along the path from the source root to a module's root must itself be named with a valid WDL identifier. Resolvers must reject symbolic paths that violate this rule rather than performing path joins that could escape the resolved module's directory.
+
 Examples, given a consumer `module.json` with `"openwdl": { "git": "https://github.com/openwdl/tasks", "version": "^1.0.0" }`:
 
 - `openwdl` refers to a module whose `module.json` lives at the root of `openwdl/tasks`.
@@ -317,6 +332,10 @@ For **local path dependencies**, the resolver reads the `version` field from the
 
 Dependencies are fully transitive. If module A depends on module B and B depends on C, the resolver walks the full tree.
 
+### Cycle Detection
+
+A dependency cycle exists when, during resolution, the resolver re-enters a module it is already in the process of resolving along the current path through the dependency tree. Cycles are not permitted: a module may not transitively depend on itself. Engines must detect cycles during resolution and refuse to proceed.
+
 ### Version Precedence
 
 Version precedence follows [SemVer v2.0.0, section 11](https://semver.org/#spec-item-11). When multiple tags satisfy a version requirement, the resolver selects the highest version according to semver precedence rules. Build metadata (anything following `+`) is ignored for precedence purposes.
@@ -326,6 +345,10 @@ Version precedence follows [SemVer v2.0.0, section 11](https://semver.org/#spec-
 When multiple modules in the dependency tree require the same dependency with compatible version constraints (e.g., `^1.2.0` and `^1.5.0`), the resolver should attempt to find a single version satisfying all constraints. This avoids unnecessary duplication.
 
 When the constraints are incompatible (e.g., `^1.0.0` and `^2.0.0`), both versions are fetched and used independently. No deduplication is attempted and no warning is emitted. WDL modules are text files, and the tasks they define execute in isolated containers with no shared runtime state; no conflict can arise from duplicate versions coexisting. The cost of duplication is a few kilobytes of WDL source per duplicate.
+
+### Resource Limits
+
+Resolution consumes network and disk resources whose size is controlled by upstream repositories rather than the consumer. Engines may impose upper bounds on resolution-time resource use—tag count, repository size, file count, dependency depth, or any other dimension that proves problematic in practice—and report a clear error identifying the offending dependency when a bound is exceeded. The specific limits, and whether any are enforced at all, are an engine concern.
 
 ## Lockfile (`module-lock.json`)
 
@@ -431,8 +454,8 @@ Both the lockfile checksum and module signatures depend on the same deterministi
 The algorithm:
 
 1. Enumerate all files in the module directory, recursively. Exclude `module.sig` and `module-lock.json`.
-2. Compute each file's relative path from the module root using `/` as the path separator, regardless of the host operating system.
-3. Sort the file list lexicographically by relative path, comparing UTF-8 byte values.
+2. Compute each file's relative path from the module root using `/` as the path separator, regardless of the host operating system. Normalize each relative path to Unicode Normalization Form C (NFC) before any further use. If two distinct entries normalize to the same NFC form, the module is invalid.
+3. Sort the file list lexicographically by relative path, comparing UTF-8 byte values of the NFC-normalized paths.
 4. Initialize a SHA-256 hasher.
 5. For each file in sorted order:
    a. Hash the byte length of the relative path as a little-endian 64-bit unsigned integer.
