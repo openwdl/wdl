@@ -149,7 +149,7 @@ For cases where semver requirements do not suffice (pre-release testing, pinning
 
 - **`tag`** — a specific Git tag name (e.g., `"v1.2.0-rc1"`). Not subject to semver resolution.
 - **`branch`** — a Git branch name. The resolved commit varies over time; the lockfile pins the exact commit at resolution time.
-- **`commit`** — a full Git commit SHA. The most precise and immutable selector.
+- **`commit`** — a Git commit SHA. Any prefix that uniquely identifies a commit in the source repository is accepted; the resolver expands the prefix to the full 40-character SHA at lock time and records the full SHA in `module-lock.json`. The most precise and immutable selector.
 
 The four selectors—`version`, `tag`, `branch`, and `commit`—are mutually exclusive. Specifying more than one on a single dependency is invalid.
 
