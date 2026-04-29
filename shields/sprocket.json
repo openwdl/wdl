@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "Sprocket / WDL 1.1",
-  "message": "132/146 passed",
-  "color": "yellow"
+  "message": "68/146 passed",
+  "color": "red"
 }
