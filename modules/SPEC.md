@@ -435,12 +435,14 @@ The algorithm:
 3. Sort the file list lexicographically by relative path, comparing UTF-8 byte values.
 4. Initialize a SHA-256 hasher.
 5. For each file in sorted order:
-   a. Hash the relative path (UTF-8 bytes).
-   b. Hash the file contents (raw bytes).
+   a. Hash the byte length of the relative path as a little-endian 64-bit unsigned integer.
+   b. Hash the relative path (UTF-8 bytes).
+   c. Hash the byte length of the file contents as a little-endian 64-bit unsigned integer.
+   d. Hash the file contents (raw bytes).
 6. Hash the total file count as a little-endian 64-bit unsigned integer.
 7. Finalize. The resulting hex-encoded digest is the module's content hash.
 
-The entry count in step 6 ensures that a module with files `a` and `bc` produces a different digest than a module with files `ab` and `c`, even if the concatenation of paths and contents happens to collide.
+The length prefixes in step 5 and the file count in step 6 together make the input to the hasher an injective encoding of the module's contents: no two distinct modules can produce the same byte stream. Without length framing, a file `foo.wdl` containing `bar` and a file `foo.wdlbar` containing nothing would feed identical bytes into the hasher; with length framing, the two encodings differ on their first eight bytes.
 
 The lockfile records the digest in the format `sha256:<hex_digest>`.
 
