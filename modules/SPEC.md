@@ -419,7 +419,7 @@ Each module entry contains:
 
 - **`version`** (string, required). The version from the module's `module.json` at lock time.
 - **`checksum`** (string, required). The module's content hash in the format `sha256:<hex_digest>`, computed using the content hashing algorithm defined in [Content Hashing](#content-hashing).
-- **`signer`** (string, optional). The signer's Ed25519 public key, base64-encoded, if the module was signed at lock time. See [Module Signing](#module-signing).
+- **`signer`** (string, optional). The signer's Ed25519 public key in OpenSSH public key format (see [Signature File Format](#signature-file-format)), if the module was signed at lock time. See [Module Signing](#module-signing).
 - **`dependencies`** (object, required). The module's own transitive dependencies, in the same format as the top-level `dependencies` object. Empty if the module has no dependencies.
 
 When two modules in the dependency tree require different versions of the same source, both resolved versions appear in the tree at whatever point in the nesting they were required. See [Version Resolution and Conflicts](#version-resolution-and-conflicts) for the resolver's behavior that produces this shape.
@@ -459,7 +459,7 @@ Module authors sign a module by producing a `module.sig` file at the module root
 ```json
 {
   "algorithm": "ed25519",
-  "public_key": "base64-encoded-32-byte-public-key",
+  "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN3kJh1mYpQ9... user@example.com",
   "signature": "base64-encoded-64-byte-signature"
 }
 ```
@@ -467,7 +467,7 @@ Module authors sign a module by producing a `module.sig` file at the module root
 The fields:
 
 - **`algorithm`** (string, required). The signing algorithm. The only value currently permitted is `"ed25519"`. Future specification versions may add additional algorithms; engines must reject unrecognized values.
-- **`public_key`** (string, required). The signer's Ed25519 public key, base64-encoded.
+- **`public_key`** (string, required). The signer's Ed25519 public key in OpenSSH public key format—the single-line `ssh-ed25519 <base64-blob> [comment]` representation produced by `ssh-keygen -t ed25519` (i.e., the contents of the corresponding `.pub` file). Engines must parse the OpenSSH wire format inside the base64 blob to recover the underlying 32-byte Ed25519 public key for verification. Trailing whitespace and the optional comment field are not significant.
 - **`signature`** (string, required). The Ed25519 signature over the module's raw 32-byte content hash, base64-encoded.
 
 A signed module looks like:
@@ -480,7 +480,7 @@ csvcut/
   csvcut.wdl
 ```
 
-Ed25519 was chosen because it is fast, produces small signatures (64 bytes) and small keys (32 bytes), and has mature implementations in every major language. Engines can verify signatures in-process without shelling out to external tools or depending on a system keychain.
+Ed25519 was chosen because it is fast, produces small signatures (64 bytes) and small keys (32 bytes), and has mature implementations in every major language. Engines can verify signatures in-process without shelling out to external tools or depending on a system keychain. Keys are stored in OpenSSH public key format so authors can generate a signing key with the standard `ssh-keygen -t ed25519` tool and use the resulting `.pub` file directly; the OpenSSH wire format inside the base64 blob is short, well-specified, and supported by mainstream cryptography libraries.
 
 ### Trust on First Use (TOFU)
 
