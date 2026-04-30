@@ -54,7 +54,7 @@ The language-level grammar for symbolic imports, and the scoping rules that gove
 
 A module is a directory containing a `module.json` manifest at its root and one or more `.wdl` files. There is no additional organizational construct—no workspace type, no grouping file, no hierarchy requirement.
 
-When the resolver encounters a dependency source (a Git repository or a local path), it scans the source tree for `module.json` files. Each such file identifies a module, registered at the path where it sits relative to the source root. A repository may therefore contain one module at the root, many modules in subdirectories, or any combination.
+Each dependency declared by a consumer points to exactly one module folder: the directory containing that module's `module.json`. A repository may host a single module at its root or several modules in distinct subdirectories, but a single dependency entry never resolves to more than one module. To consume multiple modules from the same repository, declare each as its own dependency, distinguished by the `path` field (see [Path within a Repository](#path-within-a-repository)).
 
 A single-module repository:
 
@@ -110,8 +110,9 @@ The manifest file for a module is always located at the module's root directory 
 - **`description`** (string, optional). A brief description of what the module does.
 - **`repository`** (string, optional). The canonical Git URL for the module's source repository.
 - **`homepage`** (string, optional). A URL for the module's documentation or landing page, if distinct from the repository.
-- **`index`** (string, optional). Path to the module's entrypoint WDL file, relative to the module root. Defaults to `index.wdl` if omitted.
+- **`entrypoint`** (string, optional). Path to the module's entrypoint WDL file, relative to the module root. Defaults to `index.wdl` if omitted.
 - **`readme`** (string, optional). Path to a markdown file relative to the module root. If omitted, engines and tooling look for `README.md` in the module directory. If set to `false`, no readme is associated with the module.
+- **`exclude`** (array of strings, optional). A list of gitignore-style glob patterns identifying files within the module that consumers may not reach via symbolic import. Patterns are evaluated against paths relative to the module root, using `/` as the separator. Plain directory names exclude the directory and everything beneath it; `*` matches any sequence of non-separator characters; `**` matches any sequence including separators. The patterns govern the public import surface only and have no effect on content hashing, signing, validation, or quoted imports within the module itself. See [Symbolic Module Paths](#symbolic-module-paths) for the resolution behavior. Defaults to the empty list.
 
 ### Tools
 
@@ -189,7 +190,7 @@ A dependency with a **`path`** key points to a local filesystem directory. No ve
 
 #### Path within a Repository
 
-For Git dependencies, an optional **`path`** key sets the root directory for module scanning within the repository. This is useful when WDL modules live in a subdirectory alongside other files.
+For Git dependencies, an optional **`path`** key names the directory within the repository that contains the module's `module.json`. The dependency resolves to that directory and only that directory. To consume multiple modules from the same repository, declare each as its own dependency, each with a different `path` value.
 
 ```json
 {
@@ -232,39 +233,32 @@ For Git dependencies, an optional **`path`** key sets the root directory for mod
 
 ## Module Entrypoint
 
-Every module must contain an **entrypoint** WDL file at its root. By default, the entrypoint is `index.wdl`. Authors may override this by setting the `index` field in `module.json` to a different path relative to the module root. The override is intended for cases where the default name conflicts with domain terminology (e.g., a module wrapping a database indexing tool may wish to use `db_index.wdl` to avoid confusion with the module entrypoint).
+Every module designates an **entrypoint** WDL file. By default, the entrypoint is `index.wdl` at the module root. Authors may override this by setting the `entrypoint` field in `module.json` to a different path relative to the module root. The override is intended for cases where the default name conflicts with domain terminology (e.g., a module wrapping a database indexing tool may prefer `db_index.wdl` to avoid confusion with the module entrypoint).
 
-The entrypoint defines the module's public surface. Its imports—and how those imports are written—determine what is visible to consumers. A file that the entrypoint does not import is private to the module and is not reachable from outside it. This provides visibility control without introducing a new access-control keyword.
+The entrypoint provides the module's **default surface**: when a consumer writes a **root module import** of the dependency (`import samtools`, with no sub-path), the engine resolves the import to the entrypoint file. The entrypoint file uses ordinary quoted imports to pull in its sibling files, exactly as defined in [`SPEC.md`](../SPEC.md), and the names brought into scope by those imports become the surface that root module consumers see.
 
-The entrypoint itself uses ordinary quoted imports to pull in its sibling files, exactly as defined in [`SPEC.md`](../SPEC.md). Consumers of the module reach the resulting surface through symbolic imports (see [Symbolic Module Paths](#symbolic-module-paths) and the symbolic import forms in [`SPEC.md`](../SPEC.md)).
+The entrypoint is the default surface, not a privacy boundary. Consumers may also import individual files within the module folder by sub-path (see [Symbolic Module Paths](#symbolic-module-paths)); such imports do not pass through the entrypoint, and any `.wdl` file in the module folder is reachable in this way. Authors who wish to mark certain files as internal should list them in the manifest's `exclude` field, which removes the matched paths from the public import surface (see [Core Fields](#core-fields)).
 
-A minimal module:
+If a consumer writes a root module import and the entrypoint file does not exist at the resolved path, the engine must refuse to proceed and surface an error; the wording and presentation of that error are engine-specific. This error is raised at import time, not at manifest validation time; a manifest with no `entrypoint` field and no `index.wdl` on disk is valid until something tries to resolve a root module import against it.
+
+A minimal module places its tasks, workflows, and user-defined types directly in the entrypoint:
 
 ```
 csvcut/
   module.json
   index.wdl
-  csvcut.wdl
 ```
 
-Where `index.wdl` contains:
+A consumer with a dependency named `csvcut` then chooses how to bring those names into scope using the import forms defined in [`SPEC.md`](../SPEC.md#-import-forms):
 
 ```wdl
 version 1.4
 
-import "csvcut.wdl"
+import csvcut              # tasks/workflows reachable as `csvcut.*`; UDTs in scope unqualified
+import * from csvcut       # tasks, workflows, and UDTs all in scope unqualified, no namespace
 ```
 
-The contents of `csvcut.wdl`—its tasks, workflows, and user-defined types—become available under the `csvcut` namespace to consumers using the associated rules outlined in [`SPEC.md`](../SPEC.md). A consumer imports the module symbolically:
-
-```wdl
-version 1.4
-
-import openwdl/csvcut              # namespace: csvcut
-# or: import openwdl/csvcut as csv  # namespace: csv
-```
-
-A module with multiple files controls its surface the same way:
+A module with multiple files curates its default surface by importing them from the entrypoint:
 
 ```wdl
 version 1.4
@@ -274,7 +268,29 @@ import "grep.wdl" as search
 import "cut.wdl"
 ```
 
-Here, `sort`, `search`, and `cut` are the three namespaces the module exposes. Internal helper files that `index.wdl` does not import remain private.
+Here, `sort`, `search`, and `cut` are the three namespaces an `import csvcut` consumer sees. Files the entrypoint does not import are still reachable via sub-path imports; the entrypoint's import list controls only what `import csvcut` (without a sub-path) brings into scope.
+
+A module may also omit the entrypoint entirely and rely solely on sub-path imports:
+
+```
+csvcut/
+  module.json
+  sort.wdl
+  grep.wdl
+  cut.wdl
+```
+
+With this layout, `import csvcut` raises the missing-entrypoint error described above, but each individual file remains reachable by sub-path:
+
+```wdl
+version 1.4
+
+import csvcut/sort
+import csvcut/grep as search
+import csvcut/cut
+```
+
+This shape suits modules whose surface is a flat collection of independent units that consumers always pick from explicitly.
 
 ## Symbolic Module Paths
 
@@ -284,20 +300,20 @@ A **symbolic module path** is the unquoted path used in a symbolic import (see [
 <dep-name>[/<sub-path>]
 ```
 
-- **`<dep-name>`** is the key under which the consumer declared the dependency in their `module.json`.
-- **`<sub-path>`** (optional) is a `/`-separated path that addresses a specific module within a multi-module dependency source. It is the directory path, relative to the source root, that contains the target module's `module.json`.
+- **`<dep-name>`** is the key under which the consumer declared the dependency in their `module.json`. It is a single WDL identifier; dependency keys may not contain `/`.
+- **`<sub-path>`** (optional) is a `/`-separated file path within the dependency's module folder. The resolver appends `.wdl` to the joined path and reads that file directly, without consulting the entrypoint.
 
-If `<sub-path>` is omitted, the target module is the one whose `module.json` sits at the root of the dependency source.
+If `<sub-path>` is omitted, the import resolves to the module's entrypoint (see [Module Entrypoint](#module-entrypoint)).
 
-Each component of `<dep-name>` and `<sub-path>` must be a valid WDL identifier, per the symbolic module path grammar in [`SPEC.md`](../SPEC.md). Empty components, leading or trailing `/`, `.`, `..`, whitespace, null bytes, and any other character not permitted in a WDL identifier are themselves not permitted in a symbolic module path. Because `<sub-path>` is the directory path (relative to the source root) that contains the target module's `module.json`, this means every directory along the path from the source root to a module's root must itself be named with a valid WDL identifier. Resolvers must reject symbolic paths that violate this rule rather than performing path joins that could escape the resolved module's directory.
+Each component of `<dep-name>` and `<sub-path>` must be a valid WDL identifier, per the symbolic module path grammar in [`SPEC.md`](../SPEC.md). Empty components, leading or trailing `/`, `.`, `..`, whitespace, null bytes, and any other character not permitted in a WDL identifier are themselves not permitted in a symbolic module path.
 
-Examples, given a consumer `module.json` with `"openwdl": { "git": "https://github.com/openwdl/tasks", "version": "^1.0.0" }`:
+A sub-path may not escape the dependency's module folder. The identifier-only component rule already forbids `..`, so a path such as `samtools/../another_file` is rejected at parse time rather than being resolved against the surrounding repository. This guarantee is normative: engines may rely on it to fetch only the module folder—via sparse Git checkout, partial clone, or any other mechanism that omits the rest of the repository—without risk that a symbolic import will later require content outside that folder.
 
-- `openwdl` refers to a module whose `module.json` lives at the root of `openwdl/tasks`.
-- `openwdl/csvkit` refers to the module at `csvkit/module.json` within the same repository.
-- `openwdl/csvkit/subtools` refers to a nested module at `csvkit/subtools/module.json` if one exists.
+Sub-path resolution is a direct file lookup. Intermediate directories along the sub-path do not need to contain `module.json` files, and any nested `module.json` files that happen to be present along the way are ignored.
 
-Path components are case-sensitive. A path that does not resolve to a discovered module is a resolution error.
+If the manifest's `exclude` field matches the path that resolution would otherwise read—either the entrypoint file for a root module import or `<sub-path>.wdl` for a sub-path import—the engine must treat the import as unresolvable and surface a missing-file error that names the path. The file's presence on disk is irrelevant; an excluded path is not part of the module's public import surface. Excluding the entrypoint therefore makes root module imports of that dependency fail while leaving non-excluded files reachable by sub-path. Quoted imports inside the module (e.g., the entrypoint's own `import "helper.wdl"`) are file-relative and are unaffected by `exclude`.
+
+Path components are case-sensitive. A symbolic path whose resolved file does not exist on disk is a resolution error; the engine must surface an appropriate error.
 
 ## Resolution
 
@@ -305,10 +321,10 @@ When a parser encounters a symbolic import, resolution proceeds as follows:
 
 1. Split the module path on the first `/`. The left side is the dependency name; the right side (if any) is the sub-path within the dependency.
 2. Look up the dependency name in the consuming module's `module.json` under `dependencies`.
-3. Resolve the source: clone the Git repository at the selected version, or read the directory referenced by a local `path`.
-4. Scan the source recursively for `module.json` files, registering each as a module at its relative path.
-5. Look up the sub-path (or the root module if no sub-path was given) in the registered modules.
-6. Parse the target module's entrypoint (see [Module Entrypoint](#module-entrypoint)) and resolve the requested name against its scope according to the symbolic import rules in [`SPEC.md`](../SPEC.md#-symbolic-import-forms).
+3. Resolve the source: clone the Git repository at the selected version, or read the directory referenced by a local `path`. The dependency's **module folder** is the source root, narrowed to the directory named by the dependency's optional `path` field if present. The module folder must contain a `module.json`.
+4. If no sub-path was given, locate the module's entrypoint file: the path named by the manifest's `entrypoint` field, or `<module-folder>/index.wdl` if the field is absent. If the manifest's `exclude` field matches that path, treat the file as unresolvable and raise a missing-file error per [Symbolic Module Paths](#symbolic-module-paths). Otherwise, if the file does not exist on disk, raise the dedicated missing-entrypoint error described in [Module Entrypoint](#module-entrypoint).
+5. If a sub-path was given, append `.wdl` to the sub-path and locate `<module-folder>/<sub-path>.wdl`. If the manifest's `exclude` field matches that path, or the file does not exist on disk, raise a missing-file resolution error that names the path. The entrypoint is not consulted in this branch.
+6. Parse the resolved file and resolve the requested name against its scope according to the symbolic import rules in [`SPEC.md`](../SPEC.md#-symbolic-import-forms).
 
 These steps describe the logical behavior that compliant engines must produce. Implementation mechanics—caching strategies, scan ordering, eager vs. lazy fetching—are left to the engine.
 
@@ -320,7 +336,7 @@ For **Git-based dependencies**, the resolver lists the repository's Git tags and
 
 **Tag-to-manifest consistency.** The `version` field in `module.json` at the tagged commit must match the version encoded in the tag (after stripping `v` and any path prefix). A tag `v1.2.0` pointing to a commit whose `module.json` declares `"version": "1.3.0"` is a validation error. Engines must reject such mismatches during resolution and surface a clear error message that suggests either downgrading to a known-good version or filing an issue on the upstream repository.
 
-**Multi-module repositories.** A repository containing multiple independently versioned modules must use path-prefixed tags, following the convention established by [Go modules](https://go.dev/doc/modules/managing-source). For a module at path `foo/` relative to the repository root, version tags take the form `foo/v1.2.0`. For modules at the repository root, tags use the bare form `v1.2.0`. When discovering versions for a module at path `P`, the resolver filters to tags matching `P/v*` (or `v*` if `P` is the root) and ignores all others.
+**Multi-module repositories.** A repository containing multiple independently versioned modules must use path-prefixed tags, following the convention established by [Go modules](https://go.dev/doc/modules/managing-source). For a module at path `foo/` relative to the repository root, version tags take the form `foo/v1.2.0`. For modules at the repository root, tags use the unprefixed form `v1.2.0`. When discovering versions for a module at path `P`, the resolver filters to tags matching `P/v*` (or `v*` if `P` is the root) and ignores all others.
 
 A repository containing `csvkit/` at version `1.2.0` and `duckdb/` at version `3.0.1` would therefore have tags `csvkit/v1.2.0` and `duckdb/v3.0.1`.
 

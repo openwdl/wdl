@@ -13,8 +13,9 @@
     "description": { "type": "string" },
     "repository": { "type": "string", "format": "uri" },
     "homepage": { "type": "string", "format": "uri" },
-    "index": { "type": "string" },
+    "entrypoint": { "type": "string" },
     "readme": { "oneOf": [{ "type": "string" }, { "const": false }] },
+    "exclude": { "type": "array", "items": { "type": "string" } },
     "tools": {
       "type": "array",
       "items": {
@@ -33,6 +34,7 @@
     },
     "dependencies": {
       "type": "object",
+      "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9_]*$" },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": true,
