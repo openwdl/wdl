@@ -1,6 +1,7 @@
 name: Spec Compliance / Sprocket
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'SPEC.md'
@@ -35,27 +36,24 @@ jobs:
           sprocket --version
       - name: Create results directory
         run: mkdir -p ./.results/
-
       - name: Run the compliance tests
         run: |
           echo "📊 Running compliance tests for \`${{ github.repository }}:${{ github.ref_name }}\`..."
           spectool test \
-            "sprocket run ~{path} ~{input} -e ~{target}" \
-            --redirect-stdout \
+            "sprocket run ~{path} @~{input} -t ~{target} -o /tmp/out --index-on ~{target}" \
+            --output-file "/tmp/out/index/~{target}/outputs.json" \
             --all-capabilities \
             --label "Sprocket / WDL 1.4" \
             -s $PWD -vv > ./.results/shield.json 2> ./.results/logs.txt
           cat ./.results/logs.txt
           cat ./.results/shield.json
           cp SPEC.md ./.results/SPEC.md
-
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sprocket-results
           path: ./.results/
-
       - name: Publish badge JSON
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -90,8 +88,8 @@ jobs:
           echo $new_url
           if grep -qE "$sed_pattern" README.md; then
             git pull
-            sed -E -i "/sprocket_shields\.json/s|$sed_pattern|$new_url|g" README.md
-            sed -E -i "/sprocket_shields\.json/s|$run_pattern|$new_run|g" README.md
+            sed -E -i "/sprocket\.json/s|$sed_pattern|$new_url|g" README.md
+            sed -E -i "/sprocket\.json/s|$run_pattern|$new_run|g" README.md
             git add README.md
           fi
 
