@@ -473,15 +473,16 @@ The algorithm:
 2. Compute each file's relative path from the module root using `/` as the path separator, regardless of the host operating system. Normalize each relative path to Unicode Normalization Form C (NFC) before any further use. If two distinct entries normalize to the same NFC form, the module is invalid.
 3. Sort the file list lexicographically by relative path, comparing UTF-8 byte values of the NFC-normalized paths.
 4. Initialize a SHA-256 hasher.
-5. For each file in sorted order:
+5. Hash the magic sequence: the literal ASCII bytes `wdl-module-content`, a single `\0` byte, the literal ASCII bytes `v1`, and a single `\0` byte (22 bytes total). The first field is the protocol identifier; the second is the algorithm version.
+6. For each file in sorted order:
    a. Hash the byte length of the relative path as a little-endian 64-bit unsigned integer.
    b. Hash the relative path (UTF-8 bytes).
    c. Hash the byte length of the file contents as a little-endian 64-bit unsigned integer.
    d. Hash the file contents (raw bytes).
-6. Hash the total file count as a little-endian 64-bit unsigned integer.
-7. Finalize. The resulting hex-encoded digest is the module's content hash.
+7. Hash the total file count as a little-endian 64-bit unsigned integer.
+8. Finalize. The resulting hex-encoded digest is the module's content hash.
 
-The length prefixes in step 5 and the file count in step 6 together make the input to the hasher an injective encoding of the module's contents: no two distinct modules can produce the same byte stream. Without length framing, a file `foo.wdl` containing `bar` and a file `foo.wdlbar` containing nothing would feed identical bytes into the hasher; with length framing, the two encodings differ on their first eight bytes.
+The magic sequence in step 5 prevents cross-protocol confusion: a digest produced by this algorithm cannot collide with a digest produced by a different algorithm that uses SHA-256 over different framing. The length prefixes in step 6 and the file count in step 7 together make the rest of the input an injective encoding of the module's contents: no two distinct modules can produce the same byte stream. Without length framing, a file `foo.wdl` containing `bar` and a file `foo.wdlbar` containing nothing would feed identical bytes into the hasher; with length framing, the two encodings differ on their first eight bytes.
 
 The lockfile records the digest in the format `sha256:<hex_digest>`.
 
