@@ -110,9 +110,9 @@ The manifest file for a module is always located at the module's root directory 
 - **`description`** (string, optional). A brief description of what the module does.
 - **`repository`** (string, optional). The canonical Git URL for the module's source repository.
 - **`homepage`** (string, optional). A URL for the module's documentation or landing page, if distinct from the repository.
-- **`entrypoint`** (string, optional). Path to the module's entrypoint WDL file, relative to the module root. Defaults to `index.wdl` if omitted.
-- **`readme`** (string, optional). Path to a markdown file relative to the module root. If omitted, engines and tooling look for `README.md` in the module directory. If set to `false`, no readme is associated with the module.
-- **`exclude`** (array of strings, optional). A list of gitignore-style glob patterns identifying files within the module that consumers may not reach via symbolic import. Patterns are evaluated against paths relative to the module root, using `/` as the separator. Plain directory names exclude the directory and everything beneath it; `*` matches any sequence of non-separator characters; `**` matches any sequence including separators. The patterns govern the public import surface only and have no effect on content hashing, signing, validation, or quoted imports within the module itself. See [Symbolic Module Paths](#symbolic-module-paths) for the resolution behavior. Defaults to the empty list.
+- **`entrypoint`** (string, optional). Path to the module's entrypoint WDL file. The path must be relative and, after resolving any `.` or `..` components, must point to a location under the module root; absolute paths (leading `/` or a Windows-style drive letter) and paths that resolve outside the module root are not permitted. The path separator is `/`. Defaults to `index.wdl` if omitted.
+- **`readme`** (string, optional). Path to a markdown file. The path must be relative and, after resolving any `.` or `..` components, must point to a location under the module root; absolute paths (leading `/` or a Windows-style drive letter) and paths that resolve outside the module root are not permitted. The path separator is `/`. If omitted, engines and tooling look for `README.md` in the module directory. If set to `false`, no readme is associated with the module.
+- **`exclude`** (array of strings, optional). A list of gitignore-style glob patterns identifying files within the module that consumers may not reach via symbolic import. Each pattern must be a relative path that, after resolving any `.` or `..` components, points to a location under the module root. Absolute paths (leading `/` or a Windows-style drive letter) and patterns that resolve outside the module root are not permitted. The path separator is `/`. Plain directory names exclude the directory and everything beneath it; `*` matches any sequence of non-separator characters; `**` matches any sequence including separators. The patterns govern the public import surface only and have no effect on content hashing, signing, validation, or quoted imports within the module itself. See [Symbolic Module Paths](#symbolic-module-paths) for the resolution behavior. Defaults to the empty list.
 
 ### Tools
 
@@ -150,8 +150,8 @@ Example:
 ```json
 {
   "dependencies": {
-    "csvkit": { "git": "https://github.com/someone/csvkit-wdl", "version": "^1.2.0" },
-    "openwdl": { "git": "https://github.com/openwdl/tasks", "version": ">=2.0.0, <3.0.0" }
+    "csvkit": { "git": "https://git.openwdl.org/someone/csvkit-wdl", "version": "^1.2.0" },
+    "openwdl": { "git": "https://git.openwdl.org/openwdl/tasks", "version": ">=2.0.0, <3.0.0" }
   }
 }
 ```
@@ -169,9 +169,9 @@ The four selectors—`version`, `tag`, `branch`, and `commit`—are mutually exc
 ```json
 {
   "dependencies": {
-    "bleeding_edge": { "git": "https://github.com/org/tool", "branch": "main" },
-    "pinned": { "git": "https://github.com/org/tool", "commit": "abc123d" },
-    "prerelease": { "git": "https://github.com/org/tool", "tag": "v2.0.0-rc1" }
+    "bleeding_edge": { "git": "https://git.openwdl.org/org/tool", "branch": "main" },
+    "pinned": { "git": "https://git.openwdl.org/org/tool", "commit": "abc123d" },
+    "prerelease": { "git": "https://git.openwdl.org/org/tool", "tag": "v2.0.0-rc1" }
   }
 }
 ```
@@ -190,12 +190,12 @@ A dependency with a **`path`** key points to a local filesystem directory. No ve
 
 #### Path within a Repository
 
-For Git dependencies, an optional **`path`** key names the directory within the repository that contains the module's `module.json`. The dependency resolves to that directory and only that directory. To consume multiple modules from the same repository, declare each as its own dependency, each with a different `path` value.
+For Git dependencies, an optional **`path`** key names the directory within the repository that contains the module's `module.json`. The dependency resolves to that directory and only that directory. The path must be relative and, after resolving any `.` or `..` components, must point to a location under the repository root; absolute paths (leading `/` or a Windows-style drive letter) and paths that resolve outside the repository root are not permitted. The path separator is `/`. To consume multiple modules from the same repository, declare each as its own dependency, each with a different `path` value.
 
 ```json
 {
   "dependencies": {
-    "mytool": { "git": "https://github.com/org/mytool", "version": "^1.0.0", "path": "wdl" }
+    "mytool": { "git": "https://git.openwdl.org/org/mytool", "version": "^1.0.0", "path": "wdl" }
   }
 }
 ```
@@ -209,8 +209,8 @@ For Git dependencies, an optional **`path`** key names the directory within the 
   "license": "MIT OR Apache-2.0",
   "authors": ["Jane Doe <jane.doe@example.com>"],
   "description": "WDL wrapper for csvcut column selection",
-  "repository": "https://github.com/someone/csvcut-wdl",
-  "homepage": "https://someone.github.io/csvcut-wdl",
+  "repository": "https://git.openwdl.org/someone/csvcut-wdl",
+  "homepage": "https://csvcut-wdl.someone.example.com",
   "tools": [
     {
       "name": "csvcut",
@@ -388,7 +388,7 @@ The `module-lock.json` file is a JSON object with the following structure:
   "dependencies": {
     "openwdl": {
       "source": {
-        "git": "https://github.com/openwdl/tasks",
+        "git": "https://git.openwdl.org/openwdl/tasks",
         "commit": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
       },
       "modules": {
@@ -398,7 +398,7 @@ The `module-lock.json` file is a JSON object with the following structure:
           "dependencies": {
             "common": {
               "source": {
-                "git": "https://github.com/openwdl/common",
+                "git": "https://git.openwdl.org/openwdl/common",
                 "commit": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5"
               },
               "modules": {
@@ -415,7 +415,7 @@ The `module-lock.json` file is a JSON object with the following structure:
     },
     "duckdb": {
       "source": {
-        "git": "https://github.com/someone/duckdb-wdl",
+        "git": "https://git.openwdl.org/someone/duckdb-wdl",
         "commit": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3"
       },
       "modules": {
