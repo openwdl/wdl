@@ -389,7 +389,8 @@ The `module-lock.json` file is a JSON object with the following structure:
     "openwdl": {
       "source": {
         "git": "https://git.openwdl.org/openwdl/tasks",
-        "commit": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+        "commit": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+        "path": "csvcut"
       },
       "modules": {
         "csvcut": {
@@ -451,7 +452,7 @@ The fields:
 
 Each dependency entry contains:
 
-- **`source`** (object, required). The resolved source. For Git sources, this contains `git` (the repository URL) and `commit` (the full 40-character SHA that the `tag`, `branch`, or `commit` reference resolved to at lock time). For local path sources, this contains only `path`.
+- **`source`** (object, required). The resolved source. For Git sources, this contains `git` (the repository URL), `commit` (the full 40-character SHA that the `tag`, `branch`, or `commit` reference resolved to at lock time), and optionally `path` (the sub-path within the repository, matching the `path` key in the consuming `module.json` dependency declaration; omitted when the module sits at the repository root). For local path sources, this contains only `path`.
 - **`modules`** (object, required). A map from module path within the dependency source to that module's locked state. The key is the relative path from the source root to the directory containing `module.json`. For modules at the source root, the key is `"."`.
 
 Each module entry contains:

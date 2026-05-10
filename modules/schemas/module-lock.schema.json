@@ -35,7 +35,8 @@
           "required": ["git", "commit"],
           "properties": {
             "git": { "type": "string", "format": "uri" },
-            "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+            "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "path": { "type": "string" }
           }
         },
         {
