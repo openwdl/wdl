@@ -392,25 +392,17 @@ The `module-lock.json` file is a JSON object with the following structure:
         "commit": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
         "path": "csvcut"
       },
-      "modules": {
-        "csvcut": {
-          "version": "1.2.0",
-          "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "dependencies": {
-            "common": {
-              "source": {
-                "git": "https://git.openwdl.org/openwdl/common",
-                "commit": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5"
-              },
-              "modules": {
-                ".": {
-                  "version": "0.3.0",
-                  "checksum": "sha256:4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
-                  "dependencies": {}
-                }
-              }
-            }
-          }
+      "version": "1.2.0",
+      "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "dependencies": {
+        "common": {
+          "source": {
+            "git": "https://git.openwdl.org/openwdl/common",
+            "commit": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5"
+          },
+          "version": "0.3.0",
+          "checksum": "sha256:4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+          "dependencies": {}
         }
       }
     },
@@ -419,31 +411,23 @@ The `module-lock.json` file is a JSON object with the following structure:
         "git": "https://git.openwdl.org/someone/duckdb-wdl",
         "commit": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3"
       },
-      "modules": {
-        ".": {
-          "version": "3.0.1",
-          "checksum": "sha256:d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
-          "dependencies": {}
-        }
-      }
+      "version": "3.0.1",
+      "checksum": "sha256:d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+      "dependencies": {}
     },
     "local_utils": {
       "source": {
         "path": "../../shared/utils"
       },
-      "modules": {
-        ".": {
-          "version": "0.5.0",
-          "checksum": "sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
-          "dependencies": {}
-        }
-      }
+      "version": "0.5.0",
+      "checksum": "sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "dependencies": {}
     }
   }
 }
 ```
 
-The structure is recursive: each module's `dependencies` field has the same shape as the top-level `dependencies` object, mirroring the full dependency tree.
+The structure is recursive: each dependency's `dependencies` field has the same shape as the top-level `dependencies` object, mirroring the full dependency tree. A dependency resolves to exactly one module, so the module's version, checksum, and transitive dependencies sit directly on the dependency entry rather than behind an intermediate map.
 
 The fields:
 
@@ -453,10 +437,6 @@ The fields:
 Each dependency entry contains:
 
 - **`source`** (object, required). The resolved source. For Git sources, this contains `git` (the repository URL), `commit` (the full 40-character SHA that the `tag`, `branch`, or `commit` reference resolved to at lock time), and optionally `path` (the sub-path within the repository, matching the `path` key in the consuming `module.json` dependency declaration; omitted when the module sits at the repository root). For local path sources, this contains only `path`.
-- **`modules`** (object, required). A map from module path within the dependency source to that module's locked state. The key is the relative path from the source root to the directory containing `module.json`. For modules at the source root, the key is `"."`.
-
-Each module entry contains:
-
 - **`version`** (string, required). The version from the module's `module.json` at lock time.
 - **`checksum`** (string, required). The module's content hash in the format `sha256:<hex_digest>`, computed using the content hashing algorithm defined in [Content Hashing](#content-hashing).
 - **`signer`** (string, optional). The signer's Ed25519 public key in OpenSSH public key format (see [Signature File Format](#signature-file-format)), if the module was signed at lock time. See [Module Signing](#module-signing).

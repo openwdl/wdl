@@ -18,13 +18,13 @@
     "dependencyEntry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["source", "modules"],
+      "required": ["source", "version", "checksum", "dependencies"],
       "properties": {
         "source": { "$ref": "#/$defs/source" },
-        "modules": {
-          "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/moduleEntry" }
-        }
+        "version": { "type": "string" },
+        "checksum": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "signer": { "type": "string", "pattern": "^ssh-ed25519 [A-Za-z0-9+/]+=*( .*)?$" },
+        "dependencies": { "$ref": "#/$defs/dependencyMap" }
       }
     },
     "source": {
@@ -46,17 +46,6 @@
           "properties": { "path": { "type": "string" } }
         }
       ]
-    },
-    "moduleEntry": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["version", "checksum", "dependencies"],
-      "properties": {
-        "version": { "type": "string" },
-        "checksum": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
-        "signer": { "type": "string", "pattern": "^ssh-ed25519 [A-Za-z0-9+/]+=*( .*)?$" },
-        "dependencies": { "$ref": "#/$defs/dependencyMap" }
-      }
     }
   }
 }
