@@ -129,7 +129,7 @@ The `tools` array is metadata: it describes which version of the upstream softwa
 
 ### Dependencies
 
-The `dependencies` field is a JSON object with one key per dependency. Each key must be a valid WDL identifier. The key is the **consumer-chosen name** and need not match the dependency's own `name` field; two consumers may refer to the same module by different local names without ambiguity.
+The `dependencies` field is a JSON object with one key per dependency. Each key must match `[A-Za-z][A-Za-z0-9_-]*` and, after replacing every `-` with `_`, must be a valid WDL identifier (i.e., not a reserved keyword). Hyphens and underscores are interchangeable for the purpose of identity: `spell-book` and `spell_book` name the same dependency and must not both appear in a single `dependencies` object. The key is the **consumer-chosen name** and need not match the dependency's own `name` field; two consumers may refer to the same module by different local names without ambiguity.
 
 Each dependency must specify a source and a version selector. A dependency with a `git` URL and no `version`, `tag`, `branch`, or `commit` is invalid.
 
@@ -300,12 +300,12 @@ A **symbolic module path** is the unquoted path used in a symbolic import (see [
 <dep-name>[/<sub-path>]
 ```
 
-- **`<dep-name>`** is the key under which the consumer declared the dependency in their `module.json`. It is a single WDL identifier; dependency keys may not contain `/`.
+- **`<dep-name>`** is the key under which the consumer declared the dependency in their `module.json`, with any hyphens normalized to underscores. It must not contain `/`.
 - **`<sub-path>`** (optional) is a `/`-separated file path within the dependency's module folder. The resolver appends `.wdl` to the joined path and reads that file directly, without consulting the entrypoint.
 
 If `<sub-path>` is omitted, the import resolves to the module's entrypoint (see [Module Entrypoint](#module-entrypoint)).
 
-Each component of `<dep-name>` and `<sub-path>` must be a valid WDL identifier, per the symbolic module path grammar in [`SPEC.md`](../SPEC.md). Empty components, leading or trailing `/`, `.`, `..`, whitespace, null bytes, and any other character not permitted in a WDL identifier are themselves not permitted in a symbolic module path.
+The `<dep-name>` component must satisfy the dependency-name grammar described in [Dependencies](#dependencies); engines normalize it (replacing `-` with `_`) before looking up the dependency. Each component of `<sub-path>` must be a valid WDL identifier, per the symbolic module path grammar in [`SPEC.md`](../SPEC.md). Empty components, leading or trailing `/`, `.`, `..`, whitespace, null bytes, and any other character not permitted in a WDL identifier are themselves not permitted in a symbolic module path.
 
 A sub-path may not escape the dependency's module folder. The identifier-only component rule already forbids `..`, so a path such as `samtools/../another_file` is rejected at parse time rather than being resolved against the surrounding repository. This guarantee is normative: engines may rely on it to fetch only the module folder—via sparse Git checkout, partial clone, or any other mechanism that omits the rest of the repository—without risk that a symbolic import will later require content outside that folder.
 
