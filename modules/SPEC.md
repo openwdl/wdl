@@ -390,6 +390,7 @@ The `module-lock.json` file is a JSON object with the following structure:
       "source": {
         "git": "https://git.openwdl.org/openwdl/tasks",
         "commit": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+        "selector": {"version": "^1"},
         "path": "csvcut"
       },
       "version": "1.2.0",
@@ -398,7 +399,8 @@ The `module-lock.json` file is a JSON object with the following structure:
         "common": {
           "source": {
             "git": "https://git.openwdl.org/openwdl/common",
-            "commit": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5"
+            "commit": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
+            "selector": {"version": "^0.3"}
           },
           "version": "0.3.0",
           "checksum": "sha256:4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
@@ -409,7 +411,8 @@ The `module-lock.json` file is a JSON object with the following structure:
     "duckdb": {
       "source": {
         "git": "https://git.openwdl.org/someone/duckdb-wdl",
-        "commit": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3"
+        "commit": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+        "selector": {"tag": "v3.0.1"}
       },
       "version": "3.0.1",
       "checksum": "sha256:d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
@@ -436,7 +439,7 @@ The fields:
 
 Each dependency entry contains:
 
-- **`source`** (object, required). The resolved source. For Git sources, this contains `git` (the repository URL), `commit` (the full 40-character SHA that the `tag`, `branch`, or `commit` reference resolved to at lock time), and optionally `path` (the sub-path within the repository, matching the `path` key in the consuming `module.json` dependency declaration; omitted when the module sits at the repository root). For local path sources, this contains only `path`.
+- **`source`** (object, required). The resolved source. For Git sources, this contains `git` (the repository URL), `commit` (the full 40-character SHA that the `tag`, `branch`, or `commit` reference resolved to at lock time), `selector` (the selector from the consuming `module.json` that produced this entry, encoded as an object with a single key of `version`, `tag`, `branch`, or `commit`), and optionally `path` (the sub-path within the repository, matching the `path` key in the consuming `module.json` dependency declaration; omitted when the module sits at the repository root). For local path sources, this contains only `path`.
 - **`version`** (string, required). The version from the module's `module.json` at lock time.
 - **`checksum`** (string, required). The module's content hash in the format `sha256:<hex_digest>`, computed using the content hashing algorithm defined in [Content Hashing](#content-hashing).
 - **`signer`** (string, optional). The signer's Ed25519 public key in OpenSSH public key format (see [Signature File Format](#signature-file-format)), if the module was signed at lock time. See [Module Signing](#module-signing).

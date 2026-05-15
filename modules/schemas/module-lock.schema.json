@@ -27,15 +27,44 @@
         "dependencies": { "$ref": "#/$defs/dependencyMap" }
       }
     },
+    "gitSelector": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["version"],
+          "properties": { "version": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tag"],
+          "properties": { "tag": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["branch"],
+          "properties": { "branch": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["commit"],
+          "properties": { "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" } }
+        }
+      ]
+    },
     "source": {
       "oneOf": [
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["git", "commit"],
+          "required": ["git", "commit", "selector"],
           "properties": {
             "git": { "type": "string", "format": "uri" },
             "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "selector": { "$ref": "#/$defs/gitSelector" },
             "path": { "type": "string" }
           }
         },
