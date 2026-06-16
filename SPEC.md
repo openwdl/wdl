@@ -164,6 +164,9 @@ Revisions to this specification are made periodically in order to correct errors
     - [`glob`](#glob)
       - [Non-standard Bash](#non-standard-bash)
     - [`size`](#size)
+    - [`list_directory`](#list_directory)
+    - [`list_directory_recursive`](#list_directory_recursive)
+    - [`list_subdirectories`](#list_subdirectories)
     - [`stdout`](#stdout)
     - [`stderr`](#stderr)
     - [`read_string`](#read_string)
@@ -8750,6 +8753,295 @@ Example output:
     "b": (50, null)
   }
   "file_sizes.nested_bytes": 22.0
+}
+```
+</p>
+</details>
+
+### `list_directory`
+
+*as of version 1.4*
+
+```
+Array[File] list_directory(Directory)
+Array[File] list_directory(Directory, String)
+```
+
+Returns an array of all files in the top level of the given directory. If the optional glob pattern is provided, only files whose basenames match the pattern are included. Subdirectories are not included in the result; use [`list_subdirectories`](#list_subdirectories) to obtain those.
+
+Results are sorted lexicographically by basename to ensure deterministic ordering across platforms and filesystems.
+
+When a glob pattern is provided, it follows standard glob matching rules: patterns without a leading `.` do not match hidden files (dotfiles). When no pattern is provided, all files are returned including hidden files.
+
+**Parameters**
+
+1. `Directory`: The directory whose immediate file contents to list.
+2. `String`: (Optional) A glob pattern to filter results by basename (e.g., `"*.fastq.gz"`).
+
+**Returns**: An `Array[File]` containing the files in the top level of the directory that match the pattern. Returns an empty array if the directory contains no matching files.
+
+**Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
+
+<details>
+<summary>
+Example: list_fastqs_task.wdl
+
+```wdl
+version 1.4
+
+task list_fastqs {
+  input {
+    Directory sample_dir
+  }
+
+  Array[File] fastqs = list_directory(sample_dir, "*.fastq.gz")
+
+  command <<<
+    echo "~{sep(' ', fastqs)}"
+  >>>
+
+  output {
+    Int num_fastqs = length(fastqs)
+    String file_list = read_string(stdout())
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "list_fastqs.sample_dir": "/path/to/samples"
+}
+```
+
+Example output (given the directory contains `a.fastq.gz`, `b.fastq.gz`, and `readme.txt`):
+
+```json
+{
+  "list_fastqs.num_fastqs": 2,
+  "list_fastqs.file_list": "/path/to/samples/a.fastq.gz /path/to/samples/b.fastq.gz"
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: scatter_directory_workflow.wdl
+
+```wdl
+version 1.4
+
+workflow scatter_directory {
+  input {
+    Directory input_dir
+  }
+
+  Array[File] all_files = list_directory(input_dir)
+
+  scatter (f in all_files) {
+    call process_file { input: infile = f }
+  }
+
+  output {
+    Array[File] results = process_file.outfile
+  }
+}
+
+task process_file {
+  input {
+    File infile
+  }
+
+  command <<<
+    wc -l ~{infile} > result.txt
+  >>>
+
+  output {
+    File outfile = "result.txt"
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "scatter_directory.input_dir": "/path/to/dir"
+}
+```
+
+Example output (given the directory contains files `a.txt` and `b.txt`):
+
+```json
+{
+  "scatter_directory.results": ["/path/to/output/result.txt", "/path/to/output/result.txt"]
+}
+```
+</p>
+</details>
+
+### `list_directory_recursive`
+
+*as of version 1.4*
+
+```
+Array[File] list_directory_recursive(Directory)
+Array[File] list_directory_recursive(Directory, String)
+```
+
+Returns an array of all files at any depth within the given directory (recursive walk). If the optional glob pattern is provided, only files whose basenames match the pattern are included. Subdirectories themselves are not included in the result.
+
+Results are sorted lexicographically by their path relative to the input directory.
+
+When a glob pattern is provided, it follows standard glob matching rules: patterns without a leading `.` do not match hidden files (dotfiles). When no pattern is provided, all files are returned including hidden files.
+
+**Parameters**
+
+1. `Directory`: The directory to recursively list.
+2. `String`: (Optional) A glob pattern to filter results by basename (e.g., `"*.bam"`).
+
+**Returns**: An `Array[File]` containing all files found recursively within the directory that match the pattern. Returns an empty array if no matching files are found.
+
+**Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
+
+<details>
+<summary>
+Example: find_bams_task.wdl
+
+```wdl
+version 1.4
+
+task find_bams {
+  input {
+    Directory project_dir
+  }
+
+  Array[File] bams = list_directory_recursive(project_dir, "*.bam")
+
+  command <<<
+    for bam in ~{sep(' ', bams)}; do
+      samtools index "$bam"
+    done
+  >>>
+
+  output {
+    Array[File] indices = glob("*.bai")
+  }
+
+  requirements {
+    container: "biocontainers/samtools:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "find_bams.project_dir": "/data/project"
+}
+```
+
+Example output (given the directory tree contains `sample1/aligned.bam` and `sample2/aligned.bam`):
+
+```json
+{
+  "find_bams.indices": ["/path/to/exec/aligned.bai", "/path/to/exec/aligned.bai"]
+}
+```
+</p>
+</details>
+
+### `list_subdirectories`
+
+*as of version 1.4*
+
+```
+Array[Directory] list_subdirectories(Directory)
+```
+
+Returns an array of immediate child directories within the given directory. Only direct children are returned; this function is not recursive.
+
+Results are sorted lexicographically by basename to ensure deterministic ordering across platforms and filesystems.
+
+**Parameters**
+
+1. `Directory`: The parent directory whose immediate subdirectories to list.
+
+**Returns**: An `Array[Directory]` containing the immediate subdirectories. Returns an empty array if the directory contains no subdirectories.
+
+**Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
+
+<details>
+<summary>
+Example: process_samples_workflow.wdl
+
+```wdl
+version 1.4
+
+workflow process_samples {
+  input {
+    Directory data_root  # contains one subdirectory per sample
+  }
+
+  Array[Directory] sample_dirs = list_subdirectories(data_root)
+
+  scatter (sample_dir in sample_dirs) {
+    Array[File] fastqs = list_directory(sample_dir, "*.fastq.gz")
+    call align { input: reads = fastqs }
+  }
+
+  output {
+    Array[File] bams = align.bam
+  }
+}
+
+task align {
+  input {
+    Array[File] reads
+  }
+
+  command <<<
+    bwa mem ref.fa ~{sep(' ', reads)} | samtools sort -o aligned.bam
+  >>>
+
+  output {
+    File bam = "aligned.bam"
+  }
+
+  requirements {
+    container: "biocontainers/bwa:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "process_samples.data_root": "/data/samples"
+}
+```
+
+Example output (given `/data/samples` contains subdirectories `sample1/` and `sample2/`, each with FASTQ files):
+
+```json
+{
+  "process_samples.bams": ["/path/to/output/aligned.bam", "/path/to/output/aligned.bam"]
 }
 ```
 </p>
