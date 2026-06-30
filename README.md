@@ -8,7 +8,7 @@
 |-----------|------------------|
 | MiniWDL   | [![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/shields/miniwdl.json)](https://github.com/openwdl/wdl/actions/runs/28450565458) |
 | Sprocket   | [![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/shields/sprocket.json)](https://github.com/openwdl/wdl/actions/runs/28450565456) |
-| Toil      | [![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/shields/toil.json)](https://github.com/openwdl/wdl/actions/runs/20901280371) |
+| Toil      | [![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/shields/toil.json)](https://github.com/openwdl/wdl/actions/runs/28450565454) |
 | Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/shields/cromwell.json)](https://github.com/openwdl/wdl/actions/runs/20901280368) |
 
 
