@@ -387,7 +387,9 @@ Resolution consumes network and disk resources whose size is controlled by upstr
 
 A `module-lock.json` file, if present at a module's root, pins the fully resolved dependency tree—every module in the tree, the exact commit each was resolved to, and a content checksum that detects tampering. Modules whose consumers need reproducible builds should maintain a lockfile; modules intended as libraries, where version resolution is deliberately left to the consumer, may omit it. When a lockfile exists, it must be committed to version control.
 
-Engines are responsible for upholding lockfile invariants. Before executing a workflow that imports a module with a lockfile, the engine must verify that each cached Git-sourced module's content matches the recorded checksum and refuse to proceed on mismatch. Local path sources carry no checksum; their content is read as-is at execution time. Engines that perform dependency resolution are also responsible for generating and updating the lockfile so its content remains consistent with the resolved tree.
+Engines are responsible for upholding lockfile invariants. Before executing a workflow that imports a module with a lockfile, the engine must verify that each cached Git-sourced module's content matches the recorded checksum and refuse to proceed on mismatch. Local path sources carry no checksum; their content is read as-is at execution time.
+
+The engine must also verify that the lockfile matches its manifest: every dependency declared in `module.json` must have a lockfile entry whose source and selector match the declaration, and every top-level lockfile entry must correspond to a declared dependency. A lockfile that does not match its manifest is stale; the engine must regenerate it, or surface an error, before executing. Engines that perform dependency resolution are also responsible for generating and updating the lockfile so its content remains consistent with the resolved tree.
 
 Lockfiles apply only to the module they sit in. When resolving dependencies, the engine consults the consuming module's `module.json` constraints and, if present, the consumer's own `module-lock.json`; lockfiles shipped by upstream dependencies are not consulted. There is therefore no lockfile conflict between a consumer and a dependency: the consumer's resolver owns the full tree it records, and an upstream lockfile is ignored during downstream resolution. This keeps consumers in control of their transitive version choices and prevents upstream version decisions from silently propagating through the dependency tree.
 
@@ -528,6 +530,8 @@ The trust model follows trust on first use:
 5. If a previously signed module is later resolved without a `module.sig`, the engine must refuse to proceed, exactly as if the signing key had changed. The user must explicitly accept the removal through the same engine-specific trust command.
 
 The lockfile `signer` field is absent for unsigned modules and for local path dependencies, which are not subject to signature verification.
+
+A legitimate key rotation is indistinguishable from a compromise at the protocol level; the engine cannot tell them apart, so the user must. Authors rotating a signing key should announce the new key through a channel consumers already trust, such as the repository's README or a release note, so that users have something to verify against before accepting the new key.
 
 ### Engine Policy
 
