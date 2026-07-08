@@ -34,7 +34,7 @@ This document is a peer specification to [`SPEC.md`](../SPEC.md), the WDL langua
 
 ## Introduction
 
-A WDL **module** is a directory containing a `module.json` manifest and one or more `.wdl` files. A module declares its own version, dependencies, license, and the upstream tools it wraps. Modules are resolved and composed by compliant execution engines through the mechanisms defined in this specification.
+A WDL **module** is a directory containing a `module.json` manifest and one or more `.wdl` files. A module declares its dependencies, license, and the upstream tools it wraps; a module's own version is defined by its Git tags (see [Version Discovery](#version-discovery)). Modules are resolved and composed by compliant execution engines through the mechanisms defined in this specification.
 
 This specification describes:
 
@@ -52,7 +52,7 @@ The language-level grammar for symbolic imports, and the scoping rules that gove
 
 ## Module Directory Layout
 
-A module is a directory containing a `module.json` manifest at its root and one or more `.wdl` files. There is no additional organizational construct—no workspace type, no grouping file, no hierarchy requirement.
+A module is a directory containing a `module.json` manifest at its root and one or more `.wdl` files. There is no additional organizational construct—no workspace type, no grouping file, no hierarchy requirement. This specification defines the logical module tree that engines consume; archive formats for distributing that tree, such as zipped module bundles, are intentionally left to future tooling as long as they materialize the same files and metadata.
 
 Each dependency declared by a consumer points to exactly one module folder: the directory containing that module's `module.json`. A repository may host a single module at its root or several modules in distinct subdirectories, but a single dependency entry never resolves to more than one module. To consume multiple modules from the same repository, declare each as its own dependency, distinguished by the `path` field (see [Path within a Repository](#path-within-a-repository)).
 
@@ -93,9 +93,10 @@ Both layouts are valid. The resolution logic is identical for both. Authors who 
 The structural rules below are normative.
 
 1. Each file's relative path (computed per [Content Hashing](#content-hashing)) is treated as a sequence of `/`-separated components. The path must contain no `.` or `..` components, must not be absolute (no leading `/`, no Windows-style drive letter), and must not contain a null byte.
-2. Symbolic links inside a module are permitted only if their targets, after full resolution, fall inside the module root. A symlink whose target escapes the module root makes the module invalid.
+2. Symbolic links are not permitted anywhere in a module tree. A module containing a symbolic link is invalid.
 3. The names `module.json`, `module-lock.json`, and `module.sig` are reserved for files at the module root. A file with any of these names appearing at any other path within the module tree is a validation error.
-4. A module that, when materialized on disk, would produce any path failing these rules is invalid; engines must refuse to load it and surface a clear error identifying the offending entry.
+4. A quoted import inside a module must resolve to a file inside the same module root. An import such as `import "../shared.wdl"` that escapes the module root makes the module invalid, even if the target file exists on disk.
+5. A module that, when materialized on disk, would produce any path failing these rules is invalid; engines must refuse to load it and surface a clear error identifying the offending entry.
 
 ## Manifest File (`module.json`)
 
@@ -104,15 +105,14 @@ The manifest file for a module is always located at the module's root directory 
 ### Core Fields
 
 - **`name`** (string, required). A human-readable display name for the module (e.g., `"csvcut"`, `"csvkit-sort"`). Used by tooling for display. Not used for dependency resolution.
-- **`version`** (string, required). The module version, conforming to [SemVer v2.0.0](https://semver.org/). The versioning contract is that unchanged versions must produce unchanged expected output. A change to the WDL interface (inputs, outputs, behavior) or to the wrapped tool's output behavior requires a version bump.
 - **`license`** (string, required). An [SPDX license expression](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/) (e.g., `"MIT"`, `"Apache-2.0"`, `"MIT OR Apache-2.0"`, `"MIT AND (Apache-2.0 WITH LLVM-exception)"`).
 - **`authors`** (array of strings, optional). Author descriptions. The convention for individual authors is `"First Last <first.last@example.com>"`, but this is not enforced.
 - **`description`** (string, optional). A brief description of what the module does.
 - **`repository`** (string, optional). The canonical Git URL for the module's source repository.
-- **`homepage`** (string, optional). A URL for the module's documentation or landing page, if distinct from the repository.
+- **`homepage`** (string, optional). A URL for the module's documentation or landing page, if distinct from the repository. Use this for external documentation; `readme` is only for documentation files that ship inside the module tree.
 - **`entrypoint`** (string, optional). Path to the module's entrypoint WDL file. The path must be relative and, after resolving any `.` or `..` components, must point to a location under the module root; absolute paths (leading `/` or a Windows-style drive letter) and paths that resolve outside the module root are not permitted. The path separator is `/`. Defaults to `index.wdl` if omitted.
-- **`readme`** (string, optional). Path to a markdown file. The path must be relative and, after resolving any `.` or `..` components, must point to a location under the module root; absolute paths (leading `/` or a Windows-style drive letter) and paths that resolve outside the module root are not permitted. The path separator is `/`. If omitted, engines and tooling look for `README.md` in the module directory. If set to `false`, no readme is associated with the module.
-- **`exclude`** (array of strings, optional). A list of gitignore-style glob patterns identifying files within the module that consumers may not reach via symbolic import. Each pattern must be a relative path that, after resolving any `.` or `..` components, points to a location under the module root. Absolute paths (leading `/` or a Windows-style drive letter) and patterns that resolve outside the module root are not permitted. The path separator is `/`. Plain directory names exclude the directory and everything beneath it; `*` matches any sequence of non-separator characters; `**` matches any sequence including separators. The patterns govern the public import surface only and have no effect on content hashing, signing, validation, or quoted imports within the module itself. See [Symbolic Module Paths](#symbolic-module-paths) for the resolution behavior. Defaults to the empty list.
+- **`readme`** (string or `false`, optional). Path to a markdown file. The path must be relative and, after resolving any `.` or `..` components, must point to a location under the module root; absolute paths (leading `/` or a Windows-style drive letter) and paths that resolve outside the module root are not permitted. The path separator is `/`. If omitted, engines and tooling look for `README.md` in the module directory. If set to `false`, no readme is associated with the module.
+- **`exclude`** (array of strings, optional). A list of gitignore-style glob patterns identifying files within the module that consumers may not reach via symbolic import. Each pattern must be a relative path that, after resolving any `.` or `..` components, points to a location under the module root. Absolute paths (leading `/` or a Windows-style drive letter) and patterns that resolve outside the module root are not permitted. The path separator is `/`. Plain directory names exclude the directory and everything beneath it; `*` matches any sequence of non-separator characters; `**` matches any sequence including separators. The patterns govern the public import surface only and have no effect on content hashing, signing, validation, packaging, or quoted imports within the module itself. Excluded files remain part of the module tree unless a future distribution format defines a separate packaging rule. See [Symbolic Module Paths](#symbolic-module-paths) for the resolution behavior. Defaults to the empty list.
 
 ### Tools
 
@@ -121,9 +121,8 @@ The `tools` field is an array of objects that tracks the upstream software wrapp
 - **`name`** (string, required). The tool name.
 - **`version`** (string, required). The tool version.
 - **`license`** (string, required). The tool's SPDX license identifier.
-- **`homepage`** (string, optional). URL for the tool's homepage or repository.
-- **`doi`** (string, optional). DOI for the tool's publication.
-- **`biotools`** (string, optional). [bio.tools](https://bio.tools/) registry identifier.
+- **`url`** (string, optional). URL for the tool's homepage, documentation, repository, or canonical project page.
+- **`links`** (object, optional). Additional named links for tool-specific metadata. Keys are consumer-readable labels such as `"doi"`, `"biotools"`, or `"documentation"`; values are URLs.
 
 The `tools` array is metadata: it describes which version of the upstream software the module wraps, for provenance and license tracking. It does not substitute for the module's own semver version. If the wrapped tool changes in a way that alters expected output, the module version must also change, independent of the `tools` entry.
 
@@ -139,11 +138,13 @@ The recommended form declares a **`version`** field containing a semver requirem
 
 The version requirement syntax:
 
-- **`^1.2.0`** — compatible updates: `>=1.2.0, <2.0.0`. This is the default behavior when no operator is specified, i.e., `"1.2.0"` is equivalent to `"^1.2.0"`.
+- **`^1.2.0`** — compatible updates. Versions are compatible when they differ only to the right of the leftmost non-zero component: `^1.2.0` is `>=1.2.0, <2.0.0`, `^0.2.3` is `>=0.2.3, <0.3.0`, and `^0.0.3` is `>=0.0.3, <0.0.4`. This is the default behavior when no operator is specified, i.e., `"1.2.0"` is equivalent to `"^1.2.0"`.
 - **`~1.2.0`** — patch-level updates only: `>=1.2.0, <1.3.0`.
 - **`=1.2.0`** — exactly this version.
 - **`>=1.0.0, <2.0.0`** — an explicit range using comparison operators (`>=`, `>`, `<=`, `<`), combined with commas.
 - **`*`** — any version. Permitted but discouraged.
+
+A requirement may omit trailing version components. Missing components are treated as `0` in the lower bound, while the upper bound follows from the components given: `^1` is `>=1.0.0, <2.0.0`, `~1.2` is `>=1.2.0, <1.3.0`, `~1` is `>=1.0.0, <2.0.0`, and `=1.2` is `>=1.2.0, <1.3.0`.
 
 Example:
 
@@ -161,8 +162,8 @@ Example:
 For cases where semver requirements do not suffice (pre-release testing, pinning to a specific commit, tracking a development branch), the following alternative selectors are available:
 
 - **`tag`** — a specific Git tag name (e.g., `"v1.2.0-rc1"`). Not subject to semver resolution.
-- **`branch`** — a Git branch name. The resolved commit varies over time; the lockfile pins the exact commit at resolution time.
-- **`commit`** — a Git commit SHA. Any prefix that uniquely identifies a commit in the source repository is accepted; the resolver expands the prefix to the full 40-character SHA at lock time and records the full SHA in `module-lock.json`. The most precise and immutable selector.
+- **`branch`** — a Git branch name. The resolved commit varies over time; the lockfile pins the exact commit SHA at resolution time.
+- **`commit`** — a Git commit SHA selector. Any prefix that uniquely identifies a commit in the source repository is accepted; the resolver expands the prefix to the full 40-character SHA at lock time and records that value in `module-lock.json`. The most precise and immutable selector.
 
 The four selectors—`version`, `tag`, `branch`, and `commit`—are mutually exclusive. Specifying more than one on a single dependency is invalid.
 
@@ -178,7 +179,7 @@ The four selectors—`version`, `tag`, `branch`, and `commit`—are mutually exc
 
 #### Local Path Dependencies
 
-A dependency with a **`path`** key points to a local filesystem directory. No version selector is required; the module is used as-is from the local path.
+A dependency with a **`path`** key points to a local filesystem directory. Local path dependencies take no version selector; the module is used as-is from the local path.
 
 ```json
 {
@@ -200,12 +201,23 @@ For Git dependencies, an optional **`path`** key names the directory within the 
 }
 ```
 
+A complete `dependencies` object may mix selector styles and source types:
+
+```json
+{
+  "dependencies": {
+    "csvkit": { "git": "https://git.openwdl.org/openwdl/tasks", "version": "^1.2.0", "path": "csvkit" },
+    "duckdb": { "git": "https://git.openwdl.org/openwdl/tasks", "tag": "duckdb/v3.0.1", "path": "duckdb" },
+    "local_utils": { "path": "../local-utils" }
+  }
+}
+```
+
 ### Full Example
 
 ```json
 {
   "name": "csvcut",
-  "version": "1.2.0",
   "license": "MIT OR Apache-2.0",
   "authors": ["Jane Doe <jane.doe@example.com>"],
   "description": "WDL wrapper for csvcut column selection",
@@ -216,7 +228,11 @@ For Git dependencies, an optional **`path`** key names the directory within the 
       "name": "csvcut",
       "version": "2.0.1",
       "license": "MIT",
-      "homepage": "https://csvkit.readthedocs.io/"
+      "url": "https://csvkit.readthedocs.io/",
+      "links": {
+        "doi": "https://doi.org/10.21105/joss.04704",
+        "biotools": "https://bio.tools/csvkit"
+      }
     }
   ],
   "dependencies": {}
@@ -235,7 +251,9 @@ For Git dependencies, an optional **`path`** key names the directory within the 
 
 Every module designates an **entrypoint** WDL file. By default, the entrypoint is `index.wdl` at the module root. Authors may override this by setting the `entrypoint` field in `module.json` to a different path relative to the module root. The override is intended for cases where the default name conflicts with domain terminology (e.g., a module wrapping a database indexing tool may prefer `db_index.wdl` to avoid confusion with the module entrypoint).
 
-The entrypoint provides the module's **default surface**: when a consumer writes a **root module import** of the dependency (`import samtools`, with no sub-path), the engine resolves the import to the entrypoint file. The entrypoint file uses ordinary quoted imports to pull in its sibling files, exactly as defined in [`SPEC.md`](../SPEC.md), and the names brought into scope by those imports become the surface that root module consumers see.
+The default name `index.wdl` mirrors package index conventions: it names the file that represents the directory as a whole. A module that prefers `main.wdl` or another project-specific name can use the `entrypoint` field without changing resolution semantics.
+
+The entrypoint provides the module's **default surface**: when a consumer writes a **root module import** of the dependency (`import samtools`, with no sub-path), the engine resolves the import to the entrypoint file. The entrypoint file uses ordinary quoted imports to pull in its sibling files, exactly as defined in [`SPEC.md`](../SPEC.md#-import-forms), and the names brought into its scope become the surface that root module consumers see. Tasks and workflows enter that scope only through the scope-merging forms (`import * from`, `import { ... } from`); a form 1 (namespaced) import contributes the user-defined types it copies into scope, while its tasks and workflows remain referenceable only by namespace within the entrypoint and are not part of the module's surface.
 
 The entrypoint is the default surface, not a privacy boundary. Consumers may also import individual files within the module folder by sub-path (see [Symbolic Module Paths](#symbolic-module-paths)); such imports do not pass through the entrypoint, and any `.wdl` file in the module folder is reachable in this way. Authors who wish to mark certain files as internal should list them in the manifest's `exclude` field, which removes the matched paths from the public import surface (see [Core Fields](#core-fields)).
 
@@ -258,17 +276,19 @@ import csvcut              # tasks/workflows reachable as `csvcut.*`; UDTs in sc
 import * from csvcut       # tasks, workflows, and UDTs all in scope unqualified, no namespace
 ```
 
-A module with multiple files curates its default surface by importing them from the entrypoint:
+A module with multiple files curates its default surface by importing them from the entrypoint with the scope-merging forms:
 
 ```wdl
 version 1.4
 
-import "sort.wdl"
-import "grep.wdl" as search
-import "cut.wdl"
+import * from "sort.wdl"
+import * from "grep.wdl"
+import { cut_columns } from "cut.wdl"
 ```
 
-Here, `sort`, `search`, and `cut` are the three namespaces an `import csvcut` consumer sees. Files the entrypoint does not import are still reachable via sub-path imports; the entrypoint's import list controls only what `import csvcut` (without a sub-path) brings into scope.
+Names brought into the entrypoint's scope this way become members of the entrypoint's namespace, so they are exactly what an `import csvcut` consumer reaches as `csvcut.*` (or unqualified, via `import * from csvcut`). A namespaced (form 1) import in the entrypoint contributes only the user-defined types it copies into scope; the namespace it creates is local to the entrypoint, and tasks and workflows behind it do not propagate to consumers. Files the entrypoint does not import are still reachable via sub-path imports; the entrypoint's import list controls only what `import csvcut` (without a sub-path) brings into scope.
+
+An entrypoint may contain only `version` and `import` statements. In that shape, the imported declarations form the root module surface, and the entrypoint does not need to define its own workflow, task, struct, or enum.
 
 A module may also omit the entrypoint entirely and rely solely on sub-path imports:
 
@@ -294,7 +314,7 @@ This shape suits modules whose surface is a flat collection of independent units
 
 ## Symbolic Module Paths
 
-A **symbolic module path** is the unquoted path used in a symbolic import (see [`SPEC.md`](../SPEC.md#-symbolic-import-forms) for grammar). It has the general form:
+A **symbolic module path** is the unquoted path used in a symbolic import (see [`SPEC.md`](../SPEC.md#-import-forms) for grammar). It has the general form:
 
 ```
 <dep-name>[/<sub-path>]
@@ -307,11 +327,13 @@ If `<sub-path>` is omitted, the import resolves to the module's entrypoint (see 
 
 The `<dep-name>` component must satisfy the dependency-name grammar described in [Dependencies](#dependencies); engines normalize it (replacing `-` with `_`) before looking up the dependency. Each component of `<sub-path>` must be a valid WDL identifier, per the symbolic module path grammar in [`SPEC.md`](../SPEC.md). Empty components, leading or trailing `/`, `.`, `..`, whitespace, null bytes, and any other character not permitted in a WDL identifier are themselves not permitted in a symbolic module path.
 
+Sub-path components are matched against file and directory names with the same normalization applied to `<dep-name>`: a component matches a directory entry whose name, after replacing every `-` with `_`, equals the component (with `.wdl` appended for the final component). The component `my_task` therefore matches either `my_task.wdl` or `my-task.wdl`. If more than one entry in the same directory matches a component, resolution fails with an ambiguity error naming the matching entries.
+
 A sub-path may not escape the dependency's module folder. The identifier-only component rule already forbids `..`, so a path such as `samtools/../another_file` is rejected at parse time rather than being resolved against the surrounding repository. This guarantee is normative: engines may rely on it to fetch only the module folder—via sparse Git checkout, partial clone, or any other mechanism that omits the rest of the repository—without risk that a symbolic import will later require content outside that folder.
 
 Sub-path resolution is a direct file lookup. Intermediate directories along the sub-path do not need to contain `module.json` files, and any nested `module.json` files that happen to be present along the way are ignored.
 
-If the manifest's `exclude` field matches the path that resolution would otherwise read—either the entrypoint file for a root module import or `<sub-path>.wdl` for a sub-path import—the engine must treat the import as unresolvable and surface a missing-file error that names the path. The file's presence on disk is irrelevant; an excluded path is not part of the module's public import surface. Excluding the entrypoint therefore makes root module imports of that dependency fail while leaving non-excluded files reachable by sub-path. Quoted imports inside the module (e.g., the entrypoint's own `import "helper.wdl"`) are file-relative and are unaffected by `exclude`.
+If the manifest's `exclude` field matches the path that resolution would otherwise read—either the entrypoint file for a root module import or `<sub-path>.wdl` for a sub-path import—the engine must treat the import as unresolvable and surface a missing-file error that names the path. The file's presence on disk is irrelevant; an excluded path is not part of the module's public import surface. `exclude` is an import-surface policy, not a filesystem security boundary: it controls resolution through symbolic module paths, but it does not hide bytes from a user who already has direct access to the module source. Excluding the entrypoint therefore makes root module imports of that dependency fail while leaving non-excluded files reachable by sub-path. Quoted imports inside the module (e.g., the entrypoint's own `import "helper.wdl"`) are file-relative and are unaffected by `exclude`.
 
 Path components are case-sensitive. A symbolic path whose resolved file does not exist on disk is a resolution error; the engine must surface an appropriate error.
 
@@ -323,8 +345,8 @@ When a parser encounters a symbolic import, resolution proceeds as follows:
 2. Look up the dependency name in the consuming module's `module.json` under `dependencies`.
 3. Resolve the source: clone the Git repository at the selected version, or read the directory referenced by a local `path`. The dependency's **module folder** is the source root, narrowed to the directory named by the dependency's optional `path` field if present. The module folder must contain a `module.json`.
 4. If no sub-path was given, locate the module's entrypoint file: the path named by the manifest's `entrypoint` field, or `<module-folder>/index.wdl` if the field is absent. If the manifest's `exclude` field matches that path, treat the file as unresolvable and raise a missing-file error per [Symbolic Module Paths](#symbolic-module-paths). Otherwise, if the file does not exist on disk, raise the dedicated missing-entrypoint error described in [Module Entrypoint](#module-entrypoint).
-5. If a sub-path was given, append `.wdl` to the sub-path and locate `<module-folder>/<sub-path>.wdl`. If the manifest's `exclude` field matches that path, or the file does not exist on disk, raise a missing-file resolution error that names the path. The entrypoint is not consulted in this branch.
-6. Parse the resolved file and resolve the requested name against its scope according to the symbolic import rules in [`SPEC.md`](../SPEC.md#-symbolic-import-forms).
+5. If a sub-path was given, append `.wdl` to the sub-path and locate `<module-folder>/<sub-path>.wdl`, matching each component with the hyphen normalization described in [Symbolic Module Paths](#symbolic-module-paths). If the manifest's `exclude` field matches the resolved path, or no entry matches, raise a missing-file resolution error that names the path. The entrypoint is not consulted in this branch.
+6. Parse the resolved file and resolve the requested name against its scope according to the symbolic import rules in [`SPEC.md`](../SPEC.md#-import-forms). The resolved file is subject to the language specification's version-compatibility rule for imports: it must have the same major version and a minor version less than or equal to that of the importing document. A dependency authored against a newer minor version therefore fails at import time, regardless of how it was resolved.
 
 These steps describe the logical behavior that compliant engines must produce. Implementation mechanics—caching strategies, scan ordering, eager vs. lazy fetching—are left to the engine.
 
@@ -332,17 +354,17 @@ These steps describe the logical behavior that compliant engines must produce. I
 
 How versions are discovered depends on the source type.
 
-For **Git-based dependencies**, the resolver lists the repository's Git tags and parses each as a semver version, stripping a leading `v` if present (e.g., tag `v1.2.0` → version `1.2.0`). Tags that do not parse as valid semver are ignored. The resulting set is matched against the `version` requirement. Publishing a new version therefore consists of tagging a commit; there is no separate publication step, no upload, no registry submission.
+For **Git-based dependencies**, the resolver lists the repository's Git tags and considers those of the form `v<semver>` (e.g., tag `v1.2.0` → version `1.2.0`). The `v` prefix is required: a tag without it, or whose remainder does not parse as valid semver, is not a version tag and is ignored. The resulting set is matched against the `version` requirement. Publishing a new version therefore consists of tagging a commit; there is no separate publication step, no upload, no registry submission.
 
-**Tag-to-manifest consistency.** The `version` field in `module.json` at the tagged commit must match the version encoded in the tag (after stripping `v` and any path prefix). A tag `v1.2.0` pointing to a commit whose `module.json` declares `"version": "1.3.0"` is a validation error. Engines must reject such mismatches during resolution and surface a clear error message that suggests either downgrading to a known-good version or filing an issue on the upstream repository.
+Git tags are the sole source of module versions. The versioning contract is that unchanged versions must produce unchanged expected output: a change to the WDL interface (inputs, outputs, behavior) or to the wrapped tool's output behavior requires tagging a new version.
 
 **Multi-module repositories.** A repository containing multiple independently versioned modules must use path-prefixed tags, following the convention established by [Go modules](https://go.dev/doc/modules/managing-source). For a module at path `foo/` relative to the repository root, version tags take the form `foo/v1.2.0`. For modules at the repository root, tags use the unprefixed form `v1.2.0`. When discovering versions for a module at path `P`, the resolver filters to tags matching `P/v*` (or `v*` if `P` is the root) and ignores all others.
 
 A repository containing `csvkit/` at version `1.2.0` and `duckdb/` at version `3.0.1` would therefore have tags `csvkit/v1.2.0` and `duckdb/v3.0.1`.
 
-**Tag mutability.** Git tags are mutable and may be force-pushed to a different commit. The lockfile (see [Lockfile](#lockfile-module-lockjson)) guards against this by pinning the full commit SHA and a content checksum for every resolved module. After a lockfile exists, engines verify against the SHA and checksum rather than the tag. Tag movement can only affect initial resolution; the content hash ensures that what was fetched is what is evaluated. Engines should warn when a tag's commit differs from the SHA recorded in the lockfile.
+**Tag mutability.** Git tags are mutable and may be force-pushed to a different commit. The lockfile (see [Lockfile](#lockfile-module-lockjson)) guards against this by pinning the full commit SHA and a content checksum for every resolved module. After a lockfile exists, engines verify against the SHA and checksum rather than the tag. Tag movement can only affect initial resolution; the content hash ensures that what was fetched is what is evaluated. Engines should warn when a tag's commit differs from the `sha` recorded in the lockfile.
 
-For **local path dependencies**, the resolver reads the `version` field from the `module.json` at the specified path. If the dependency declaration includes a `version` requirement, the local module's version must satisfy it; otherwise resolution fails.
+**Local path dependencies** have no version discovery; the module at the specified path is used as-is.
 
 ### Transitive Dependencies
 
@@ -350,7 +372,7 @@ Dependencies are fully transitive. If module A depends on module B and B depends
 
 ### Cycle Detection
 
-A dependency cycle exists when, during resolution, the resolver re-enters a module it is already in the process of resolving along the current path through the dependency tree. Cycles are not permitted: a module may not transitively depend on itself. Engines must detect cycles during resolution and refuse to proceed.
+A dependency cycle exists when, during resolution, the resolver re-enters a module it is already in the process of resolving along the current path through the dependency tree. For cycle detection, module identity is the module's source coordinates—the Git repository URL and `path` for Git sources, or the resolved directory for local path sources—irrespective of version or selector. Cycles are not permitted: a module may not transitively depend on itself, even at a different version. Engines must detect cycles during resolution and refuse to proceed.
 
 ### Version Precedence
 
@@ -370,9 +392,9 @@ Resolution consumes network and disk resources whose size is controlled by upstr
 
 A `module-lock.json` file, if present at a module's root, pins the fully resolved dependency tree—every module in the tree, the exact commit each was resolved to, and a content checksum that detects tampering. Modules whose consumers need reproducible builds should maintain a lockfile; modules intended as libraries, where version resolution is deliberately left to the consumer, may omit it. When a lockfile exists, it must be committed to version control.
 
-Engines are responsible for upholding lockfile invariants. Before executing a workflow that imports a module with a lockfile, the engine must verify that each cached module's content matches the recorded checksum and refuse to proceed on mismatch. Engines that perform dependency resolution are also responsible for generating and updating the lockfile so its content remains consistent with the resolved tree.
+Engines are responsible for upholding lockfile invariants. Before executing a workflow that imports a module with a lockfile, the engine must verify that each cached Git-sourced module's content matches the recorded checksum and refuse to proceed on mismatch. Local path sources carry no checksum; their content is read as-is at execution time. Engines that perform dependency resolution are also responsible for generating and updating the lockfile so its content remains consistent with the resolved tree.
 
-Lockfiles apply only to the module they sit in. When resolving dependencies, the engine consults the consuming module's `module.json` constraints and, if present, the consumer's own `module-lock.json`; lockfiles shipped by upstream dependencies are not consulted. This keeps consumers in control of their transitive version choices and prevents upstream version decisions from silently propagating through the dependency tree.
+Lockfiles apply only to the module they sit in. When resolving dependencies, the engine consults the consuming module's `module.json` constraints and, if present, the consumer's own `module-lock.json`; lockfiles shipped by upstream dependencies are not consulted. There is therefore no lockfile conflict between a consumer and a dependency: the consumer's resolver owns the full tree it records, and an upstream lockfile is ignored during downstream resolution. This keeps consumers in control of their transitive version choices and prevents upstream version decisions from silently propagating through the dependency tree.
 
 Cached module sources (the local directories where resolved modules are downloaded or cloned) must **not** be committed. These are ephemeral and can be reconstructed from the lockfile. This specification does not prescribe where engines store the cache. An engine may keep it inside the project directory (e.g., under a `modules/` subdirectory by default, covered by `.gitignore`) or outside it (e.g., under a user-level global cache); the choice is an engine concern.
 
@@ -389,20 +411,18 @@ The `module-lock.json` file is a JSON object with the following structure:
     "openwdl": {
       "source": {
         "git": "https://git.openwdl.org/openwdl/tasks",
-        "commit": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+        "sha": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
         "selector": {"version": "^1"},
         "path": "csvcut"
       },
-      "version": "1.2.0",
       "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "dependencies": {
         "common": {
           "source": {
             "git": "https://git.openwdl.org/openwdl/common",
-            "commit": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
+            "sha": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
             "selector": {"version": "^0.3"}
           },
-          "version": "0.3.0",
           "checksum": "sha256:4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
           "dependencies": {}
         }
@@ -411,10 +431,9 @@ The `module-lock.json` file is a JSON object with the following structure:
     "duckdb": {
       "source": {
         "git": "https://git.openwdl.org/someone/duckdb-wdl",
-        "commit": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+        "sha": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
         "selector": {"tag": "v3.0.1"}
       },
-      "version": "3.0.1",
       "checksum": "sha256:d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
       "dependencies": {}
     },
@@ -422,15 +441,13 @@ The `module-lock.json` file is a JSON object with the following structure:
       "source": {
         "path": "../../shared/utils"
       },
-      "version": "0.5.0",
-      "checksum": "sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
       "dependencies": {}
     }
   }
 }
 ```
 
-The structure is recursive: each dependency's `dependencies` field has the same shape as the top-level `dependencies` object, mirroring the full dependency tree. A dependency resolves to exactly one module, so the module's version, checksum, and transitive dependencies sit directly on the dependency entry rather than behind an intermediate map.
+The structure is recursive: each dependency's `dependencies` field has the same shape as the top-level `dependencies` object, mirroring the full dependency tree. A dependency resolves to exactly one module, so the module's checksum and transitive dependencies sit directly on the dependency entry rather than behind an intermediate map.
 
 The fields:
 
@@ -439,10 +456,9 @@ The fields:
 
 Each dependency entry contains:
 
-- **`source`** (object, required). The resolved source. For Git sources, this contains `git` (the repository URL), `commit` (the full 40-character SHA that the `tag`, `branch`, or `commit` reference resolved to at lock time), `selector` (the selector from the consuming `module.json` that produced this entry, encoded as an object with a single key of `version`, `tag`, `branch`, or `commit`), and optionally `path` (the sub-path within the repository, matching the `path` key in the consuming `module.json` dependency declaration; omitted when the module sits at the repository root). For local path sources, this contains only `path`.
-- **`version`** (string, required). The version from the module's `module.json` at lock time.
-- **`checksum`** (string, required). The module's content hash in the format `sha256:<hex_digest>`, computed using the content hashing algorithm defined in [Content Hashing](#content-hashing).
-- **`signer`** (string, optional). The signer's Ed25519 public key in OpenSSH public key format (see [Signature File Format](#signature-file-format)), if the module was signed at lock time. See [Module Signing](#module-signing).
+- **`source`** (object, required). The resolved source. For Git sources, this contains `git` (the repository URL), `sha` (the full 40-character commit SHA that the `tag`, `branch`, or `commit` selector resolved to at lock time), `selector` (the selector from the consuming `module.json` that produced this entry, encoded as an object with a single key of `version`, `tag`, `branch`, or `commit`), and optionally `path` (the sub-path within the repository, matching the `path` key in the consuming `module.json` dependency declaration; omitted when the module sits at the repository root). For local path sources, this contains only `path`.
+- **`checksum`** (string, required for Git sources). The module's content hash in the format `sha256:<hex_digest>`, computed using the content hashing algorithm defined in [Content Hashing](#content-hashing). Absent for local path sources.
+- **`signer`** (string, optional; Git sources only). The signer's Ed25519 public key in OpenSSH public key format (see [Signature File Format](#signature-file-format)), if the module was signed at lock time. See [Module Signing](#module-signing).
 - **`dependencies`** (object, required). The module's own transitive dependencies, in the same format as the top-level `dependencies` object. Empty if the module has no dependencies.
 
 When two modules in the dependency tree require different versions of the same source, both resolved versions appear in the tree at whatever point in the nesting they were required. See [Version Resolution and Conflicts](#version-resolution-and-conflicts) for the resolver's behavior that produces this shape.
@@ -453,7 +469,7 @@ Both the lockfile checksum and module signatures depend on the same deterministi
 
 The algorithm:
 
-1. Enumerate all files in the module directory, recursively. Exclude `module.sig` and `module-lock.json`.
+1. Enumerate all files in the module directory, recursively. Exclude `module.sig`, `module-lock.json`, and any entry named `.git` (and, when it is a directory, everything beneath it).
 2. Compute each file's relative path from the module root using `/` as the path separator, regardless of the host operating system. Normalize each relative path to Unicode Normalization Form C (NFC) before any further use. If two distinct entries normalize to the same NFC form, the module is invalid.
 3. Sort the file list lexicographically by relative path, comparing UTF-8 byte values of the NFC-normalized paths.
 4. Initialize a SHA-256 hasher.
@@ -514,8 +530,9 @@ The trust model follows trust on first use:
 2. On subsequent resolutions, the engine verifies the signature matches the previously recorded key.
 3. If the signing key has changed, the engine must **refuse to proceed** and surface a clear warning explaining what happened. The user must explicitly accept the new key through an engine-specific command (e.g., `sprocket module trust openwdl/csvcut`). This protects against compromised repositories where an attacker replaces both content and signature.
 4. If a module was unsigned on first resolution and later becomes signed, the engine records the key going forward without disruption.
+5. If a previously signed module is later resolved without a `module.sig`, the engine must refuse to proceed, exactly as if the signing key had changed. The user must explicitly accept the removal through the same engine-specific trust command.
 
-The lockfile `signer` field is absent for unsigned modules.
+The lockfile `signer` field is absent for unsigned modules and for local path dependencies, which are not subject to signature verification.
 
 ### Engine Policy
 
@@ -547,7 +564,7 @@ Compliant engines must provide, at minimum, the following:
 1. **Dependency resolution.** Given a module and its `module.json`, resolve all dependencies according to this specification and generate or update `module-lock.json` as required.
 2. **Lockfile verification.** Before executing any workflow that imports a module, verify the content checksum of each cached module against the lockfile. Refuse to proceed on mismatch.
 3. **Signature verification.** When a `module.sig` is present, verify the signature against the module's content hash, compare the signer's public key against the lockfile entry, and enforce the trust-on-first-use contract.
-4. **Structural validation.** Report clear errors for malformed `module.json` files, missing required fields, invalid SPDX license expressions, invalid semver versions, tag-to-manifest version mismatches, and unrecognized selectors.
+4. **Structural validation.** Report clear errors for malformed `module.json` files, missing required fields, invalid SPDX license expressions, invalid semver version requirements, and unrecognized selectors.
 
 Engines may additionally provide higher-level commands for authoring convenience (e.g., scaffolding, validation, upgrade). This specification does not prescribe the command surface; engine authors are free to design their own CLI.
 
@@ -557,7 +574,9 @@ This appendix is non-normative. It preserves the design rationale behind decisio
 
 **Distributed hosting over a centralized registry.** Git-based resolution was chosen over a central package server. The cost is discoverability—distributed systems are harder to search—which the ecosystem may address through community-maintained indexes outside the scope of this specification. The benefit is that no single organization can become a bottleneck or point of failure for the ecosystem. Environments that cannot depend on third-party SaaS can use this system unmodified.
 
-**Separate tool versioning.** The module version and the upstream tool version are tracked in distinct fields, but they are not independent. The module version contract is that unchanged versions must produce unchanged expected output; a tool update that alters output requires a module version bump. The `tools` array exists for provenance and license tracking, not as a substitute for proper semver on the module itself.
+**Versions from Git tags.** Following Go modules, a module's version is defined by its Git tags rather than a manifest field. A manifest version would duplicate the tag and require engines to detect and reject mismatches between the two; deriving the version from the tag alone leaves nothing to fall out of sync.
+
+**Separate tool versioning.** The module version (defined by Git tags) and the upstream tool version (tracked in the `tools` field) are recorded in different places, but they are not independent. The module version contract is that unchanged versions must produce unchanged expected output; a tool update that alters output requires a module version bump. The `tools` array exists for provenance and license tracking, not as a substitute for proper semver on the module itself.
 
 **Display name, not resolution name.** The `name` field exists for human consumption. It is not used for dependency resolution; the importer names each dependency locally. This eliminates global namespace management, the squatting problem, and the need for a naming authority.
 

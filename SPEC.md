@@ -3905,7 +3905,7 @@ This demonstrates that `~{verbosity}` produces the choice name "Info", while `~{
 
 Although a WDL workflow and the task(s) it calls may be defined completely within a single WDL document, splitting them across multiple documents can be beneficial for modularity and code reuse. Furthermore, complex workflows consisting of multiple subworkflows must be defined across multiple documents because each document is allowed at most one workflow.
 
-The `import` statement is the basis for modularity in WDL. A document may contain any number of `import` statements. An import names a source and selects which of the source's items enter the importing document's scope. A source is either a quoted URI (see [Import URIs](#import-uris)) or ✨ an unquoted symbolic module path resolved through the consuming module's `module.json` per the [WDL Module Specification](modules/SPEC.md). The three available forms are described in [✨ Import Forms](#-import-forms).
+The `import` statement is the basis for modularity in WDL. A document may contain any number of `import` statements. An import names a source and selects which of the source's items enter the importing document's scope. A source is either a quoted URI (see [Import URIs](#import-uris)) or ✨ an unquoted symbolic module path resolved through the consuming module's `module.json` per the [WDL Module Specification](modules/SPEC.md). The three available forms are described in [✨ Import Forms](#-import-forms). Regardless of source style and form, the imported document must be a WDL document **with the same major version and a minor version less than or equal to the minor version of the importing document**.
 
 ```wdl
 import "http://example.com/lib/analysis_tasks" as analysis
@@ -3929,13 +3929,17 @@ workflow wf {
 
 ### ✨ Import Forms
 
-An import statement takes one of three forms. Every form accepts the same two source styles, and the source style affects only how the build system locates the imported document.
+An import statement takes one of three forms. Every form accepts the same two source styles, and the source style affects only how the execution engine locates the imported document.
 
 1. `import <source> [as <alias>] (alias <Old> as <New>)*`. User-defined types (structs and enums) from `<source>` are copied into the importing document's scope. Tasks and workflows from `<source>` are accessible only through the import's namespace, which defaults to the filename minus the `.wdl` extension for a quoted URI or to the last component of the path for a symbolic module path. `as <alias>` overrides the default namespace; `alias <Old> as <New>` renames a struct or enum as it is copied. `alias` cannot rename tasks or workflows. See [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for how the namespace is used.
 2. `import * from <source>`. Every task, workflow, and user-defined type from `<source>` enters the importing document's scope. No namespace is introduced.
-3. `import { <member> [as <Name>], ... } from <source>`. Only the listed items enter the importing document's scope. A per-member `as <Name>` renames the selected item locally. A trailing comma after the last member is permitted. No namespace is introduced.
+3. `import { <member> [as <Name>] (, <member> [as <Name>])* [,] } from <source>`. Only the listed items enter the importing document's scope. A per-member `as <Name>` renames the selected item locally. A trailing comma after the last member is permitted. No namespace is introduced.
 
 Forms 2 and 3 do not accept a trailing `as <alias>` or `alias` clause.
+
+Names brought into a document's scope by forms 2 and 3—like user-defined types copied in by form 1—become members of that document's namespace and are visible to importers of that document exactly as if they were defined locally. The namespace created by form 1 is not itself a member of the importing document's namespace: tasks and workflows reachable only through a form 1 namespace do not propagate to downstream importers, and hierarchical namespaces cannot be constructed through chained imports.
+
+Forms 2 and 3 must not introduce duplicate names into the importing document's scope. A task or workflow name brought in by a scope-merging import that collides with a local declaration, with a name brought in by another import, or with a namespace identifier introduced by a form 1 import is an error—unless the colliding names denote the same underlying declaration in the same resolved source document, in which case they refer to that single declaration and no error is raised. This mirrors the rule for identical struct definitions and keeps diamond-shaped import graphs—two documents that each re-export the same shared file—usable without renames. Genuine conflicts are resolved with form 3's `as <Name>` rename or by selecting fewer members. User-defined types follow the rules in [Importing and Aliasing Structs](#importing-and-aliasing-structs): identical definitions may coexist; conflicting definitions require an alias.
 
 A `<source>` is either a quoted URI or an unquoted symbolic module path. A quoted URI (e.g., `"foo.wdl"`, `"https://example.com/lib.wdl"`) resolves per [Import URIs](#import-uris). A symbolic module path takes the form `<dep>[/<sub-path>]` and resolves through the consuming module's `module.json` per the [WDL Module Specification](modules/SPEC.md). The two source styles produce identical scoping in every form; once resolved, they are interchangeable.
 
@@ -3948,6 +3952,7 @@ version 1.4
 
 import "csvkit.wdl"                                              # tasks via `csvkit` namespace; structs/enums in scope
 import "csvkit.wdl" as csv                                       # tasks via `csv` namespace; structs/enums in scope
+import "csvkit.wdl" alias CsvConfig as CsvkitConfig              # rename an imported struct or enum
 import * from "csvkit.wdl"                                       # tasks, workflows, structs, enums all in scope
 import { CsvSort } from "csvkit.wdl"                             # only `CsvSort` in scope
 import { CsvSort as MySort, CsvSortStable } from "csvkit.wdl"    # `MySort` and `CsvSortStable` in scope

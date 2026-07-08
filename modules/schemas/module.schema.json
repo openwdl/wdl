@@ -1,13 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/openwdl/wdl/feat/modules/modules/schemas/module.schema.json",
+  "$id": "https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/modules/schemas/module.schema.json",
   "title": "WDL Module Manifest",
   "type": "object",
   "additionalProperties": true,
-  "required": ["name", "version", "license"],
+  "required": ["name", "license"],
   "properties": {
     "name": { "type": "string", "minLength": 1 },
-    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$" },
     "license": { "type": "string", "minLength": 1 },
     "authors": { "type": "array", "items": { "type": "string" } },
     "description": { "type": "string" },
@@ -26,9 +25,11 @@
           "name": { "type": "string" },
           "version": { "type": "string" },
           "license": { "type": "string" },
-          "homepage": { "type": "string", "format": "uri" },
-          "doi": { "type": "string" },
-          "biotools": { "type": "string" }
+          "url": { "type": "string", "format": "uri" },
+          "links": {
+            "type": "object",
+            "additionalProperties": { "type": "string", "format": "uri" }
+          }
         }
       }
     },

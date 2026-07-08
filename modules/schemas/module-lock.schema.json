@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/openwdl/wdl/feat/modules/modules/schemas/module-lock.schema.json",
+  "$id": "https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/modules/schemas/module-lock.schema.json",
   "title": "WDL Module Lockfile",
   "type": "object",
   "additionalProperties": false,
@@ -18,13 +18,22 @@
     "dependencyEntry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["source", "version", "checksum", "dependencies"],
+      "required": ["source", "dependencies"],
       "properties": {
         "source": { "$ref": "#/$defs/source" },
-        "version": { "type": "string" },
         "checksum": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
         "signer": { "type": "string", "pattern": "^ssh-ed25519 [A-Za-z0-9+/]+=*( .*)?$" },
         "dependencies": { "$ref": "#/$defs/dependencyMap" }
+      },
+      "if": {
+        "properties": { "source": { "$ref": "#/$defs/gitSource" } },
+        "required": ["source"]
+      },
+      "then": { "required": ["checksum"] },
+      "else": {
+        "not": {
+          "anyOf": [{ "required": ["checksum"] }, { "required": ["signer"] }]
+        }
       }
     },
     "gitSelector": {
@@ -55,26 +64,25 @@
         }
       ]
     },
+    "gitSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["git", "sha", "selector"],
+      "properties": {
+        "git": { "type": "string", "format": "uri" },
+        "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "selector": { "$ref": "#/$defs/gitSelector" },
+        "path": { "type": "string" }
+      }
+    },
+    "pathSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": { "path": { "type": "string" } }
+    },
     "source": {
-      "oneOf": [
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["git", "commit", "selector"],
-          "properties": {
-            "git": { "type": "string", "format": "uri" },
-            "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-            "selector": { "$ref": "#/$defs/gitSelector" },
-            "path": { "type": "string" }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["path"],
-          "properties": { "path": { "type": "string" } }
-        }
-      ]
+      "oneOf": [{ "$ref": "#/$defs/gitSource" }, { "$ref": "#/$defs/pathSource" }]
     }
   }
 }
