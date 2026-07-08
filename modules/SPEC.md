@@ -179,7 +179,7 @@ The four selectors—`version`, `tag`, `branch`, and `commit`—are mutually exc
 
 #### Local Path Dependencies
 
-A dependency with a **`path`** key points to a local filesystem directory. Local path dependencies take no version selector; the module is used as-is from the local path.
+A dependency with a **`path`** key points to a local filesystem directory. Local path dependencies take no version selector; the module is used as-is from the local path. The target directory must be a module root: it must contain its own `module.json` and satisfies all module validation rules independently. A `path` dependency does not extend the consuming module's boundary; it names a separate module, exactly as a `git` dependency does.
 
 ```json
 {
