@@ -3960,6 +3960,51 @@ import openwdl/csvkit                                            # tasks via `cs
 import { CsvSort } from openwdl/csvkit                           # only `CsvSort` in scope
 ```
 
+In the following example, form 2 brings the task `double` into the document's scope and form 3 imports the same task under the name `twice`:
+
+<details>
+<summary>
+Example: import_forms.wdl
+
+```wdl
+version 1.4
+
+import * from "input_ref_call.wdl"
+import { double as twice } from "input_ref_call.wdl"
+
+workflow import_forms {
+  input {
+    Int i
+  }
+
+  call double { int_in = i }
+  call twice { int_in = double.out }
+
+  output {
+    Int result = twice.out
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "import_forms.i": 5
+}
+```
+
+Example output:
+
+```json
+{
+  "import_forms.result": 20
+}
+```
+</p>
+</details>
+
 ### Import URIs
 
 A quoted URI is one of the two source styles an `import` statement may use. It identifies the imported document by its [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier), which uniquely describes a local or network-accessible location. The execution engine must at least support the following protocols for import URIs:
