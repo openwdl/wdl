@@ -36,6 +36,8 @@ This document is a peer specification to [`SPEC.md`](../SPEC.md), the WDL langua
 
 A WDL **module** is a directory containing a `module.json` manifest and one or more `.wdl` files. A module declares its dependencies, license, and the upstream tools it wraps; a module's own version is defined by its Git tags (see [Version Discovery](#version-discovery)). Modules are resolved and composed by compliant execution engines through the mechanisms defined in this specification.
 
+Modules are independent of WDL version. The `.wdl` files within a module may use any WDL version, including versions earlier than 1.4, and consumers of those files are subject to the version-compatibility rule in [`SPEC.md`](../SPEC.md#import-statements) at each import site. Symbolic import syntax is available only in documents with `version` 1.4 or later, so a module composed entirely of pre-1.4 documents cannot reference its declared dependencies and can participate in a dependency tree only as a leaf.
+
 This specification describes:
 
 - The required directory layout for a module.
