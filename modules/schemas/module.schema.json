@@ -26,9 +26,9 @@
           "version": { "type": "string" },
           "license": { "type": "string" },
           "url": { "type": "string", "format": "uri" },
-          "links": {
-            "type": "object",
-            "additionalProperties": { "type": "string", "format": "uri" }
+          "ids": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9._-]*:.+$" }
           }
         }
       }

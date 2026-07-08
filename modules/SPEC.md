@@ -122,7 +122,7 @@ The `tools` field is an array of objects that tracks the upstream software wrapp
 - **`version`** (string, required). The tool version.
 - **`license`** (string, required). The tool's SPDX license identifier.
 - **`url`** (string, optional). URL for the tool's homepage, documentation, repository, or canonical project page.
-- **`links`** (object, optional). Additional named links for tool-specific metadata. Keys are consumer-readable labels such as `"doi"`, `"biotools"`, or `"documentation"`; values are URLs.
+- **`ids`** (array of strings, optional). External identifiers for the tool. Each entry is a [CURIE](https://www.w3.org/TR/curie/) of the form `prefix:reference`, using a prefix registered with [identifiers.org](https://identifiers.org/) or the [Bioregistry](https://bioregistry.io/) (e.g., `"doi:10.21105/joss.04704"`, `"biotools:csvkit"`).
 
 The `tools` array is metadata: it describes which version of the upstream software the module wraps, for provenance and license tracking. It does not substitute for the module's own semver version. If the wrapped tool changes in a way that alters expected output, the module version must also change, independent of the `tools` entry.
 
@@ -229,10 +229,7 @@ A complete `dependencies` object may mix selector styles and source types:
       "version": "2.0.1",
       "license": "MIT",
       "url": "https://csvkit.readthedocs.io/",
-      "links": {
-        "doi": "https://doi.org/10.21105/joss.04704",
-        "biotools": "https://bio.tools/csvkit"
-      }
+      "ids": ["doi:10.21105/joss.04704", "biotools:csvkit"]
     }
   ],
   "dependencies": {}
