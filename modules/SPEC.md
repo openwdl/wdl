@@ -285,8 +285,6 @@ import { cut_columns } from "cut.wdl"
 
 Names brought into the entrypoint's scope this way become members of the entrypoint's namespace, so they are exactly what an `import csvcut` consumer reaches as `csvcut.*` (or unqualified, via `import * from csvcut`). A namespaced (form 1) import in the entrypoint contributes only the user-defined types it copies into scope; the namespace it creates is local to the entrypoint, and tasks and workflows behind it do not propagate to consumers. Files the entrypoint does not import are still reachable via sub-path imports; the entrypoint's import list controls only what `import csvcut` (without a sub-path) brings into scope.
 
-An entrypoint may contain only `version` and `import` statements. In that shape, the imported declarations form the root module surface, and the entrypoint does not need to define its own workflow, task, struct, or enum.
-
 A module may also omit the entrypoint entirely and rely solely on sub-path imports:
 
 ```
