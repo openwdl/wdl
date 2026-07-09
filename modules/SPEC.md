@@ -136,7 +136,7 @@ Each dependency must specify a source and a version selector. A dependency with 
 
 #### Version Requirements (Default)
 
-The recommended form declares a **`version`** field containing a semver requirement. The resolver lists Git tags from the repository, parses each as semver (stripping a leading `v` if present, e.g., `v1.2.0` → `1.2.0`), and selects the highest matching version.
+The recommended form declares a **`version`** field containing a semver requirement, written without a `v` prefix (e.g. `"^1.2.0"`, not `"v1.2.0"`). The resolver lists the repository's Git tags, keeps those of the form `v<semver>`—the `v` prefix is required on the tag, not on this requirement (see [Version Discovery](#version-discovery))—and selects the highest tagged version that satisfies the requirement.
 
 The version requirement syntax:
 
@@ -468,7 +468,7 @@ Both the lockfile checksum and module signatures depend on the same deterministi
 
 The algorithm:
 
-1. Enumerate all files in the module directory, recursively. Exclude `module.sig`, `module-lock.json`, and any entry named `.git` (and, when it is a directory, everything beneath it).
+1. Enumerate all files in the module directory, recursively. Exclude `module.sig`, `module-lock.json`, any entry named `.git` (and, when it is a directory, everything beneath it), and any engine-managed cache or scratch directory the engine writes inside the module tree (and everything beneath it). An engine that materializes its dependency cache inside the module tree (see [Lockfile](#lockfile-module-lockjson)) must exclude that directory from hashing and must keep it out of version control, so that a distributed module never contains it and the digest of the distributed content remains identical across engines.
 2. Compute each file's relative path from the module root using `/` as the path separator, regardless of the host operating system. Normalize each relative path to Unicode Normalization Form C (NFC) before any further use. If two distinct entries normalize to the same NFC form, the module is invalid.
 3. Sort the file list lexicographically by relative path, comparing UTF-8 byte values of the NFC-normalized paths.
 4. Initialize a SHA-256 hasher.
