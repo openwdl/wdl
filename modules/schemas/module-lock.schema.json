@@ -23,6 +23,7 @@
         "source": { "$ref": "#/$defs/source" },
         "checksum": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
         "signer": { "type": "string", "pattern": "^ssh-ed25519 [A-Za-z0-9+/]+=*( .*)?$" },
+        "signer_identity": { "$ref": "#/$defs/signerIdentity" },
         "dependencies": { "$ref": "#/$defs/dependencyMap" }
       },
       "if": {
@@ -32,8 +33,21 @@
       "then": { "required": ["checksum"] },
       "else": {
         "not": {
-          "anyOf": [{ "required": ["checksum"] }, { "required": ["signer"] }]
+          "anyOf": [
+            { "required": ["checksum"] },
+            { "required": ["signer"] },
+            { "required": ["signer_identity"] }
+          ]
         }
+      }
+    },
+    "signerIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [{ "required": ["name"] }, { "required": ["email"] }],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "email": { "type": "string", "minLength": 1 }
       }
     },
     "gitSelector": {
