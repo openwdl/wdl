@@ -416,10 +416,6 @@ The `module-lock.json` file is a JSON object with the following structure:
       },
       "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "signer": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN3kJh1mYpQ9...",
-      "signer_identity": {
-        "name": "Jane Doe",
-        "email": "jane@example.com"
-      },
       "dependencies": {
         "common": {
           "source": {
@@ -463,7 +459,6 @@ Each dependency entry contains:
 - **`source`** (object, required). The resolved source. For Git sources, this contains `git` (the repository URL), `sha` (the full 40-character commit SHA that the `tag`, `branch`, or `commit` selector resolved to at lock time), `selector` (the selector from the consuming `module.json` that produced this entry, encoded as an object with a single key of `version`, `tag`, `branch`, or `commit`), and optionally `path` (the sub-path within the repository, matching the `path` key in the consuming `module.json` dependency declaration; omitted when the module sits at the repository root). For local path sources, this contains only `path`.
 - **`checksum`** (string, required for Git sources). The module's content hash in the format `sha256:<hex_digest>`, computed using the content hashing algorithm defined in [Content Hashing](#content-hashing). Absent for local path sources.
 - **`signer`** (string, optional; Git sources only). The signer's Ed25519 public key in OpenSSH public key format (see [Signature File Format](#signature-file-format)), if the module was signed at lock time. See [Module Signing](#module-signing).
-- **`signer_identity`** (object, optional; Git sources only). The signer identity metadata copied from the dependency's `module.sig` file at lock time. If present, it may contain `name` (string, optional) and `email` (string, optional). Engines may display this metadata when reporting untrusted, changed, or removed signer keys, but must use only the `signer` key for verification and trust decisions.
 - **`dependencies`** (object, required). The module's own transitive dependencies, in the same format as the top-level `dependencies` object. Empty if the module has no dependencies.
 
 When two modules in the dependency tree require different versions of the same source, both resolved versions appear in the tree at whatever point in the nesting they were required. See [Version Resolution and Conflicts](#version-resolution-and-conflicts) for the resolver's behavior that produces this shape.
@@ -536,13 +531,13 @@ Ed25519 was chosen because it is fast, produces small signatures (64 bytes) and 
 
 The trust model follows trust on first use:
 
-1. On first resolution, if `module.sig` is present, the engine verifies the signature and records the signer's public key in `module-lock.json` under the module entry's `signer` field. If the signature file also contains `identity`, the engine may record it under `signer_identity`.
+1. On first resolution, if `module.sig` is present, the engine verifies the signature and records the signer's public key in `module-lock.json` under the module entry's `signer` field. If the signature file also contains `identity`, the engine may copy it into a user-level trust store when the signer key is accepted.
 2. On subsequent resolutions, the engine verifies the signature matches the previously recorded key.
 3. If the signing key has changed, the engine must **refuse to proceed** and surface a clear warning explaining what happened. The user must explicitly accept the new key through an engine-specific command (e.g., `sprocket module trust openwdl/csvcut`). This protects against compromised repositories where an attacker replaces both content and signature.
 4. If a module was unsigned on first resolution and later becomes signed, the engine records the key going forward without disruption.
 5. If a previously signed module is later resolved without a `module.sig`, the engine must refuse to proceed, exactly as if the signing key had changed. The user must explicitly accept the removal through the same engine-specific trust command.
 
-The lockfile `signer` and `signer_identity` fields are absent for unsigned modules and for local path dependencies, which are not subject to signature verification.
+The lockfile `signer` field is absent for unsigned modules and for local path dependencies, which are not subject to signature verification.
 
 A legitimate key rotation is indistinguishable from a compromise at the protocol level; the engine cannot tell them apart, so the user must. Authors rotating a signing key should announce the new key through a channel consumers already trust, such as the repository's README or a release note, so that users have something to verify against before accepting the new key.
 
