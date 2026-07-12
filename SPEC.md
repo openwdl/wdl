@@ -7738,13 +7738,13 @@ Example: test_find_task.wdl
 version 1.2
 workflow test_find {
   input {
-    String in = "hello world"
+    String text = "hello world"
     String pattern1 = "e..o"
     String pattern2 = "goodbye"
   }
   output {
-    String? match1 = find(in, pattern1)  # "ello"
-    String? match2 = find(in, pattern2)  # None
+    String? match1 = find(text, pattern1)  # "ello"
+    String? match2 = find(text, pattern2)  # None
   }  
 }
 ```
