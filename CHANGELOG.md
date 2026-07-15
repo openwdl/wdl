@@ -20,7 +20,7 @@ Keep the changelog pleasant to read in the text editor:
 version 1.3.0
 ---------------------------
 
-+ Introduced the `preemptible` task hint ([#728](https://github.com/openwdl/wdl/pull/728)).
++ Introduced the `preemptible` task hint and `preemptible_only` task requirement ([#728](https://github.com/openwdl/wdl/pull/728)).
 
 + Clarified that relative paths in `File` and `Directory` declarations are resolved relative to the WDL document's parent directory outside the `output` section, and relative to the task's execution directory inside the `output` section. Also clarified that optional files evaluate to `None` in both contexts if the path does not exist.
   ([#735](https://github.com/openwdl/wdl/pull/735))
