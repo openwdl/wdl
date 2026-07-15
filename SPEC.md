@@ -1,6 +1,6 @@
 # Workflow Description Language (WDL)
 
-This is version 1.3.0 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.3`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.2.*](https://github.com/openwdl/wdl/blob/wdl-1.2/SPEC.md) version of the specification.  For an execution engine to be considered compliant with WDL 1.3, you must pass 100% of the compliance tests using [`spectool`](https://github.com/openwdl/spectool).
+This is version 1.4.0 of the Workflow Description Language (WDL) specification. It describes WDL `version 1.4`. It introduces a number of new features (denoted by the ✨ symbol) and clarifications to the [1.3.*](https://github.com/openwdl/wdl/blob/wdl-1.3/SPEC.md) version of the specification. For an execution engine to be considered compliant with WDL 1.4, you must pass 100% of the compliance tests using [`spectool`](https://github.com/openwdl/spectool).
 
 ## Deprecations
 
@@ -10,6 +10,7 @@ Aspects of the specification that will be removed in the [next major WDL version
 
 Revisions to this specification are made periodically in order to correct errors, clarify language, or add additional examples. Revisions are released as "patches" to the specification, i.e., the third number in the specification version is incremented. No functionality is added or removed after the initial revision of the specification is ratified.
 
+* [1.4.0](https://github.com/openwdl/wdl/tree/release-1.4.0/SPEC.md): 202X-XX-XX
 * [1.3.0](https://github.com/openwdl/wdl/tree/release-1.3.0/SPEC.md): 202X-XX-XX
  
 ## Table of Contents
@@ -47,7 +48,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [`Union` (Hidden Type)](#union-hidden-type)
         - [`hints`, `input`, and `output` (Scoped Types)](#hints-input-and-output-scoped-types)
         - [`task` (Hidden Scoped Type)](#task-hidden-scoped-type)
-        - ✨ [`task.previous` (Hidden Scoped Type)](#taskprevious-hidden-scoped-type)
+        - [`task.previous` (Hidden Scoped Type)](#taskprevious-hidden-scoped-type)
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
@@ -158,13 +159,16 @@ Revisions to this specification are made periodically in order to correct errors
     - [`find`](#-find)
     - [`matches`](#-matches)
     - [`sub`](#sub)
-    - [✨ `split`](#-split)
+    - [`split`](#-split)
   - [File Functions](#file-functions)
     - [`basename`](#basename)
     - [`join_paths`](#-join_paths)
     - [`glob`](#glob)
       - [Non-standard Bash](#non-standard-bash)
     - [`size`](#size)
+    - [`list_directory`](#list_directory)
+    - [`list_directory_recursive`](#list_directory_recursive)
+    - [`list_subdirectories`](#list_subdirectories)
     - [`stdout`](#stdout)
     - [`stderr`](#stderr)
     - [`read_string`](#read_string)
@@ -207,8 +211,8 @@ Revisions to this specification are made periodically in order to correct errors
     - [`contains_key`](#-contains_key)
     - [`values`](#-values)
     - [`collect_by_key`](#collect_by_key)
-  - ✨ [Enum Functions](#-enum-functions)
-    - ✨ [`value`](#-value)
+  - [Enum Functions](#-enum-functions)
+    - [`value`](#-value)
   - [Other Functions](#other-functions)
     - [`defined`](#defined)
     - [`length`](#length)
@@ -278,7 +282,7 @@ Below is the code for the "Hello World" workflow in WDL. This is just meant to g
   Example: hello.wdl
       
   ```wdl
-  version 1.3
+  version 1.4
 
   task hello_task {
     input {
@@ -370,7 +374,7 @@ WDL also provides features for implementing more complex workflows. For example,
   Example: hello_parallel.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
   
   import "hello.wdl"
 
@@ -448,7 +452,7 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
   
   ```wdl
   # Comments are allowed before version
-  version 1.3
+  version 1.4
 
   # This is how you
   # write a long
@@ -579,7 +583,7 @@ The following primitive types exist in WDL:
   Example: primitive_literals.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
 
   task write_file_task {
     command <<<
@@ -658,7 +662,7 @@ Strings that begin with `<<<` and end with `>>>` may span multiple lines.
   Example: multiline_strings1.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
 
   workflow multiline_strings1 {
     output {
@@ -706,7 +710,7 @@ In multi-line strings, leading *whitespace* is removed according to the followin
   Example: multiline_strings2.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
 
   workflow multiline_strings2 {
     output {
@@ -772,7 +776,7 @@ Common leading whitespace is also removed from blank lines that contain whitespa
   Example: multiline_strings3.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
 
   workflow multiline_strings3 {
     output {
@@ -839,7 +843,7 @@ Single- and double-quotes do not need to be escaped within a multi-line string.
   Example: multiline_strings4.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
 
   workflow multiline_strings4 {
     output {
@@ -938,7 +942,7 @@ Absolute paths (paths starting with `/`) refer to specific locations on the host
 Example: relative_paths_context.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task relative_paths_context {
   # This relative path is resolved relative to the WDL document's parent directory.
@@ -1003,7 +1007,7 @@ An optional declaration has a default initialization of `None`, which indicates 
   Example: optionals.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
 
   workflow optionals {
     input {
@@ -1063,7 +1067,7 @@ An array value can be initialized with an array literal - a comma-separated list
   Example: array_access.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
 
   workflow array_access {
     input {
@@ -1102,7 +1106,7 @@ An array value can be initialized with an array literal - a comma-separated list
   Example: empty_array_fail.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
   
   workflow empty_array_fail {
     Array[Int] empty = []
@@ -1144,7 +1148,7 @@ An `Array` may have an empty value (i.e. an array of length zero), unless it is 
 Example: sum_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task sum {
   input {
@@ -1189,7 +1193,7 @@ Attempting to assign an empty array literal to a non-empty `Array` declaration r
 Example: non_empty_optional.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow non_empty_optional {
   output {
@@ -1229,7 +1233,7 @@ Example output:
 Example: non_empty_optional_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow non_empty_optional_fail {
   # these both cause an error - can't assign empty array value to non-empty Array type
@@ -1274,7 +1278,7 @@ A `Pair` can be initialized with a pair literal - a comma-separated pair of valu
 Example: test_pairs.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_pairs {
   Pair[Int, Array[String]] data = (5, ["hello", "goodbye"])
@@ -1315,7 +1319,7 @@ A `Map` can be initialized with a map literal - a comma-separated list of key-va
 Example: test_map.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_map {
   Map[Int, Int] int_to_int = {1: 10, 2: 11}
@@ -1357,7 +1361,7 @@ Example output:
 Example: test_map_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_map_fail {
   Map[String, Int] string_to_int = { "a": 1, "b": 2 }
@@ -1395,7 +1399,7 @@ A `Map` is insertion-ordered, meaning the order in which elements are added to t
 Example: test_map_ordering.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_map_ordering {
   # declaration using a map literal
@@ -1440,7 +1444,7 @@ An `Object` can be initialized using an object literal value, which begins with 
 Example: test_object.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_object {
   output {
@@ -1489,7 +1493,7 @@ The value of a specific member of a struct value can be [accessed](#member-acces
 Example: test_struct.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct BankAccount {
   String account_number
@@ -1554,7 +1558,7 @@ Example output:
 Example: incomplete_struct_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 # importing a WDL automatically imports all its structs into
 # the current namespace
@@ -1784,7 +1788,7 @@ The [`hints`](#-hints-section) section has [three scoped types](#hints-scoped-ty
 
 The [`task` type](#runtime-access-to-requirements-hints-and-metadata) is a hidden type that is available in both pre-evaluation contexts (`requirements`, `hints`, and the deprecated `runtime` sections) with a limited set of members, and in post-evaluation contexts (`command` and `output` sections) with the full set of members.
 
-##### ✨ `task.previous` (Hidden Scoped Type)
+##### `task.previous` (Hidden Scoped Type)
 
 The [`task.previous` type](#runtime-access-to-requirements-hints-and-metadata) is a hidden type that contains the previously computed requirements from the last task attempt. It is scoped to within the `task` variable and contains the following optional members:
 
@@ -1821,7 +1825,7 @@ Primitive types can always be converted to `String` using [string interpolation]
 Example: primitive_to_string.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow primitive_to_string {
   input {
@@ -1864,7 +1868,7 @@ For example, file paths are always represented as strings, making the conversion
 Example: string_to_file.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow string_to_file {
   input {
@@ -1908,7 +1912,7 @@ Attempting to use a declaration that is both of the wrong type and for which the
 Example: coercion_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow coercion_fail {
   Array[String] strings = ["/foo/bar"]
@@ -2036,7 +2040,7 @@ There are two exceptions where coercion from `T?` to `T` is allowed:
 Example: map_to_struct.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct Words {
   Int a
@@ -2109,7 +2113,7 @@ Two `Struct` types are considered compatible when the following are true:
 Example: struct_to_struct.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct A {
   String s
@@ -2192,7 +2196,7 @@ A [task](#task-definition) or [workflow](#workflow-definition) may declare input
 Example: declarations.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow declarations {
   input {
@@ -2237,7 +2241,7 @@ A declaration may be initialized with an [expression](#expressions), which inclu
 Example: task_outputs.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task greet {
   input {
@@ -2313,7 +2317,7 @@ It must be possible to organize all of the statements within a scope into a dire
 Example: circular.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow circular {
   Int i = j + 1
@@ -2357,7 +2361,7 @@ A "simple" expression is one that can be evaluated unambiguously without any kno
 Example: expressions_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task expressions {
   input {
@@ -2521,7 +2525,7 @@ When comparing a `File` or `Directory` to a `String`, the `String` is first coer
 Example: file_directory_equality.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task check_equality {
   input {
@@ -2638,7 +2642,7 @@ Since `Array`s and `Map`s are ordered, the order of their elements are also comp
 Example: array_map_equality.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow array_map_equality {
   output {
@@ -2680,7 +2684,7 @@ Example output:
 Example: compare_coerced.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow compare_coerced {
   Array[Int] i = [1, 2, 3]
@@ -2720,7 +2724,7 @@ The equality and inequality operators are exceptions to the general rules on [co
 Example: compare_optionals.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow compare_optionals {
   Int i = 1
@@ -2797,7 +2801,7 @@ The syntax `x.y` refers to member access. The left-hand side `x` is evaluated as
 Example: member_access.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct MyType {
   String s
@@ -2850,7 +2854,7 @@ Access to elements of compound members can be chained into a single expression.
 Example: nested_access.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct Experiment {
   String id
@@ -2923,7 +2927,7 @@ Attempting to access a non-existent member of an object, struct, or call results
 Example: illegal_access_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "member_access.wdl"
 
@@ -2974,7 +2978,7 @@ This operator takes three arguments: a condition expression, an if-true expressi
 Example: ternary.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task mem {
   input {
@@ -3041,7 +3045,7 @@ When a string expression is evaluated, its placeholders are evaluated first, and
 Example: placeholders.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow placeholders {
   input {
@@ -3097,7 +3101,7 @@ Placeholders may contain other placeholders to any level of nesting, and placeho
 Example: nested_placeholders.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow nested_placeholders {
   input {
@@ -3138,7 +3142,7 @@ Placeholders are evaluated in multi-line strings exactly the same as in regular 
   Example: multiline_string_placeholders.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
 
   workflow multiline_string_placeholders {
       String spaces = "  "
@@ -3194,7 +3198,7 @@ If an expression within a placeholder evaluates to `None`, and either causes the
 Example: placeholder_coercion.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow placeholder_coercion {
   input {
@@ -3245,7 +3249,7 @@ Example output:
   Example: placeholder_none.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
 
   workflow placeholder_none {
     output {
@@ -3285,7 +3289,7 @@ Within expression placeholders the string concatenation operator (`+`) gains the
 Example: concat_optional.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow concat_optional {
   input {
@@ -3331,7 +3335,7 @@ Among other uses, concatenation of optionals can be used to facilitate the formu
 Example: flags_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task flags {
   input {
@@ -3409,7 +3413,7 @@ The `sep` option can be replaced with a call to the [`sep`](#sep) function:
 Example: sep_option_to_function.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow sep_option_to_function {
   input {
@@ -3474,7 +3478,7 @@ The `true` and `false` options can be replaced with the use of an if-then-else e
 Example: true_false_ternary_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task true_false_ternary {
   input {
@@ -3538,7 +3542,7 @@ The `default` option can be replaced in several ways - most commonly with an `if
 Example: default_option_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task default_option {
   input {
@@ -3629,7 +3633,7 @@ If a workflow appears in the primary WDL file, it is called the "top-level" work
 There are multiple versions of the WDL specification. Every WDL document must include a version statement to specify which version (major and minor) of the specification it adheres to. From `draft-3` forward, the first non-comment statement of all WDL files must be a `version` statement. For example:
 
 ```wdl
-version 1.3
+version 1.4
 ```
 
 or
@@ -3637,12 +3641,12 @@ or
 ```wdl
 #Licence header
 
-version 1.3
+version 1.4
 ```
 
 A WDL file that does not have a `version` statement must be treated as [`draft-2`](https://github.com/openwdl/wdl/blob/main/versions/draft-2/SPEC.md).
 
-Because patches to the WDL specification do not change any functionality, all revisions that carry the same major and minor version numbers are considered equivalent. For example, `version 1.3` is used for a WDL document that adheres to the `1.3.x` specification, regardless of the value of `x`.
+Because patches to the WDL specification do not change any functionality, all revisions that carry the same major and minor version numbers are considered equivalent. For example, `version 1.4` is used for a WDL document that adheres to the `1.4.x` specification, regardless of the value of `x`.
 
 ## Struct Definition
 
@@ -3659,7 +3663,7 @@ A `struct` definition may include a `meta` section with metadata about the struc
 Example: person_struct_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct Name {
   String first
@@ -3788,7 +3792,7 @@ When an enum value is serialized using string interpolation, it is serialized to
 An `enum` cannot be coerced to or from any other type. However, an enum value can be [serialized to/deserialized from JSON](#json-input-and-output-for-enums) and can be used in [command sections](#command-section-serialization-of-enums).
 
 ```wdl
-version 1.3
+version 1.4
 
 enum Pet {
   Cat,
@@ -3962,7 +3966,7 @@ A struct may be imported with a different name using an `alias` clause of the fo
 Example: import_structs.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "person_struct_task.wdl"
   alias Person as Patient
@@ -4098,7 +4102,7 @@ struct Patient {
 Enums are [imported in the same way as `Struct`s](#struct-namespacing) and have the same namespacing rules, namely that Enums exist in the document's global scope, and importing an `enum` copies its definition into the global scope of the importing document (potentially using an alias).
 
 ```wdl
-version 1.3
+version 1.4
 import "color.wdl" alias Color as Hue
 workflow another_wf {
   input {
@@ -4184,7 +4188,7 @@ A task's `input` section declares its input parameters. The values for declarati
 Example: task_inputs_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task task_inputs {
   input {
@@ -4299,7 +4303,7 @@ The following task has several inputs with type quantifiers:
 Example: input_type_quantifiers_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task input_type_quantifiers {
   input {
@@ -4411,7 +4415,7 @@ In detail, if a caller omits an input from the call `input:` section, then the d
 Example: optional_with_default.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task say_hello {
   input {
@@ -4480,7 +4484,7 @@ For example, this task takes an input and then performs a calculation, using a p
 Example: private_declaration_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task private_declaration {
   input {
@@ -4526,7 +4530,7 @@ The value of a private declaration may *not* be specified by the task caller, no
 Example: private_declaration_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task test {
   input {
@@ -4600,7 +4604,7 @@ The environment variable should be evaluated by the engine prior to injecting it
 Example: environment_variable_should_echo.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task test {
   input {
@@ -4796,7 +4800,7 @@ Any valid WDL expression may be used within a placeholder. For example, a comman
 Example: test_placeholders_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task test_placeholders {
   input {
@@ -4846,7 +4850,7 @@ In most cases, the `~{}` style of placeholder is preferred, to avoid ambiguity b
 Example: bash_variables_fail_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task bash_variables {
   input {
@@ -4898,7 +4902,7 @@ The implementation is *not* responsible for interpreting the contents of the com
 Example: bash_comment_fail_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task bash_comment {
   # String greeting = "hello"
@@ -4943,7 +4947,7 @@ For example, consider a task that calls the `python` interpreter with an in-line
 Example: python_strip_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task python_strip {
   input {
@@ -5010,7 +5014,7 @@ The `output` section contains declarations that are exposed as outputs of the ta
 Example: outputs_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task outputs {
   input {
@@ -5076,7 +5080,7 @@ A common pattern is to use a placeholder in a string expression to construct a f
 Example: file_output_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task file_output {
   input {
@@ -5122,7 +5126,7 @@ Another common pattern is to use the [`glob`](#glob) function to define outputs 
 Example: glob_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task glob {
   input {
@@ -5176,7 +5180,7 @@ Relative paths are interpreted relative to the execution directory, whereas abso
 Example: relative_and_absolute_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task relative_and_absolute {
   command <<<
@@ -5222,7 +5226,7 @@ All `File` and `Directory` outputs are required to exist when the output section
 Example: optional_output_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task optional_output {
   input {
@@ -5349,7 +5353,7 @@ The value of a `requirements` attribute may be any expression that evaluates to 
 Example: dynamic_container_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task dynamic_container {
   input {
@@ -5431,7 +5435,7 @@ If the value is a `String` or `Array[String]` and none of the specified containe
 Example: test_containers.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task single_image_task {
   command <<< printf "hello" >>>
@@ -5503,7 +5507,7 @@ The `cpu` attribute defines the _minimum_ number of CPU cores required for this 
 Example: test_cpu_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task test_cpu {
   command <<<
@@ -5560,7 +5564,7 @@ The `memory` attribute defines the _minimum_ memory (RAM) required for this task
 Example: test_memory_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task test_memory {
   command <<<
@@ -5618,7 +5622,7 @@ The [`gpu` and `fpga` hints](#-gpu-and--fpga) can be used to request specific at
 Example: test_gpu_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task test_gpu {
   command <<<
@@ -5687,7 +5691,7 @@ The execution engine is free to provision any class(es) of persistent volume it 
 Example: one_mount_point_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task one_mount_point {
   command <<<
@@ -5737,7 +5741,7 @@ If an array of disk specifications is used to specify multiple disk mounts, only
 Example: multi_mount_points_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task multi_mount_points {
   command <<<
@@ -5815,7 +5819,7 @@ An attempt that ends in preemption counts against `preemptible` and does not cou
 Once `preemptible` attempts have ended in preemption, the task fails regardless of the number of retries remaining under `max_retries`.
 
 ```wdl
-version 1.3
+version 1.4
 
 task preemptible_only_example {
   command <<< echo "hello" >>>
@@ -5849,7 +5853,7 @@ The `return_codes` attribute specifies the return code, or set of return codes, 
 Example: single_return_code_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task single_return_code {
   command <<<
@@ -5890,7 +5894,7 @@ Test config:
 Example: multi_return_code_fail_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task multi_return_code {
   command <<<
@@ -5932,7 +5936,7 @@ Test config:
 Example: all_return_codes_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task all_return_codes {
   command <<<
@@ -5991,7 +5995,7 @@ The following hints are reserved. An implementation is not required to support t
 Example: test_hints_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task test_hints {
   input {
@@ -6114,7 +6118,7 @@ Provides input-specific hints. Each key must refer to a parameter defined in the
 Example: input_hint_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct Person {
   String name
@@ -6201,7 +6205,7 @@ A value of `0` suggests that the task should not run on a preemptible instance.
 When [`preemptible_only`](#-preemptible_only) is `true`, the engine must honor this hint and must not run the task on a non-preemptible instance.
 
 ```wdl
-version 1.3
+version 1.4
 
 task preemptible_example {
   command <<< echo "hello" >>>
@@ -6291,7 +6295,7 @@ Note that, unlike the WDL `Object` type, metadata objects are not deprecated and
 Example: test_meta_values.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_meta_values {
   meta {
@@ -6333,7 +6337,7 @@ This section contains metadata specific to input and output parameters. Any key 
 Example: ex_paramter_meta_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task ex_paramter_meta {
   input {
@@ -6414,11 +6418,11 @@ This information is provided by the `task` variable, which is implicitly defined
 * `gpu`: An `Array[String]` with one specification per allocated GPU. The specification is execution engine-specific. If no GPUs were allocated, then the value must be an empty array.
 * `fpga`: An `Array[String]` with one specification per allocated FPGA. The specification is execution engine-specific. If no FPGAs were allocated, then the value must be an empty array.
 * `disks`: A `Map[String, Int]` with one entry for each disk mount point. The key is the mount point and the value is the initial amount of disk space allocated, in bytes. The execution engine must, at a minimum, provide one entry for each disk mount point requested, but may provide more. The amount of disk space available for a given mount point may increase during the lifetime of the task (e.g., autoscaling volumes provided by some cloud services).
-* `max_retries` ✨: An `Int` with the maximum number of retry attempts.
+* `max_retries`: An `Int` with the maximum number of retry attempts.
 * `preemptible` ✨: An `Int` with the maximum number of attempts that may use a preemptible instance.
 * `preemptible_only` ✨: A `Boolean` indicating whether the task may run only on preemptible instances.
 * `attempt`: An `Int` with the current task attempt. The value must be `0` the first time the task is executed, and incremented by `1` each time the task is retried (if any).
-* `previous` ✨: A [hidden type](#taskprevious-hidden-scoped-type) containing the computed requirements from the previous task attempt. All fields are `None` on the first try.
+* `previous`: A [hidden type](#taskprevious-hidden-scoped-type) containing the computed requirements from the previous task attempt. All fields are `None` on the first try.
 * `end_time`: An `Int?` whose value is the time by which the task must be completed, as a [Unix time stamp](https://en.wikipedia.org/wiki/Unix_time). A value of `0` means that the execution engine does not impose a time limit. A value of `None` means that the execution engine cannot determine whether the runtime of the task is limited. A positive value is a guarantee that the task will be preempted at the specified time, but is *not* a guarantee that the task won't be preempted earlier.
 * `meta`: An `Object` containing a copy of the task's `meta` section, or the empty `Object` if there is no `meta` section or if it is empty.
 * `parameter_meta`: An `Object` containing a copy of the task's `parameter_meta` section, or the empty `Object` if there is no `parameter_meta` section or if it is empty.
@@ -6437,7 +6441,7 @@ The following members of the `task` variable are only available in the `output` 
 Example: test_runtime_info_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task test_runtime_info {
   meta {
@@ -6499,7 +6503,7 @@ Only a limited subset of the `task` variable members (`name`, `id`, `attempt`, `
 Example: test_task_previous.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task test_task_previous {
   requirements {
@@ -6623,7 +6627,7 @@ As with tasks, declarations can appear in the body of a workflow in any order. E
 Example: input_ref_call.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task double {
   input {
@@ -6695,7 +6699,7 @@ When a [call statement](#call-statement) needs to refer to a task or workflow in
 Example: call_imported.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "input_ref_call.wdl" as ns1
 
@@ -6742,7 +6746,7 @@ In the following more extensive example, all of the fully-qualified names that e
 Example: main.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "other.wdl" as other_wf
 
@@ -6812,7 +6816,7 @@ Example output:
 Example: other.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task foobar {
   input {
@@ -6950,7 +6954,7 @@ The execution engine may refuse to execute a workflow when `allow_nested_inputs`
 Example: test_allow_nested_inputs.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task nested {
   input {
@@ -7018,7 +7022,7 @@ Setting `allow_nested_inputs` to `false` in a workflow has the effect of also se
 Example: multi_nested_inputs.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "test_allow_nested_inputs.wdl" as nested
 
@@ -7070,7 +7074,7 @@ If a call input has the same name as a declaration from the current scope, the n
 Example: call_example.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "other.wdl" as lib
 
@@ -7162,7 +7166,7 @@ For historical reasons, the keyword `input:` may optionally precede the list of 
 Example: test_input_keyword.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "call_example.wdl" as lib
 
@@ -7226,7 +7230,7 @@ An `after` clause can be used to create an explicit dependency between `x` and `
 Example: test_after.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "call_example.wdl" as lib
 
@@ -7280,7 +7284,7 @@ A `call`'s outputs are available to be used as inputs to other calls in the work
 Example: copy_input.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task greet {
   input {
@@ -7354,7 +7358,7 @@ The following table describes whether a subworkflow or task input's value must b
 Example: allow_nested.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "call_example.wdl" as lib
 
@@ -7448,7 +7452,7 @@ The `allow_nested_inputs` directive only applies to user-supplied inputs. There 
 Example: call_subworkflow_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "copy_input.wdl" as copy
 
@@ -7502,7 +7506,7 @@ After evaluation has completed for all iterations of a `scatter`, each declarati
 Example: test_scatter.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task say_hello {
   input {
@@ -7572,7 +7576,7 @@ If scatters are nested to multiple levels, the output types are also nested to t
 Example: nested_scatter.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "test_scatter.wdl" as scat
 
@@ -7758,7 +7762,7 @@ In the example below, `Int j` is accessible anywhere in the conditional body, an
 Example: test_conditional.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task gt_three {
   input {
@@ -7837,7 +7841,7 @@ Example output:
 Example: if_else.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task greet {
   input {
@@ -7894,7 +7898,7 @@ It is impossible to have a multi-level optional type, e.g., `Int??`. The outputs
 Example: nested_if.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 import "if_else.wdl"
 
@@ -7981,7 +7985,7 @@ Rounds a floating point number **down** to the next lower integer.
 Example: test_floor.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_floor {
   input {
@@ -8036,7 +8040,7 @@ Rounds a floating point number **up** to the next higher integer.
 Example: test_ceil.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_ceil {
   input {
@@ -8091,7 +8095,7 @@ Rounds a floating point number to the nearest integer based on standard rounding
 Example: test_round.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_round {
   input {
@@ -8152,7 +8156,7 @@ Returns the smaller of two values. If both values are `Int`s, the return value i
 Example: test_min.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_min {
   input {
@@ -8214,7 +8218,7 @@ Returns the larger of two values. If both values are `Int`s, the return value is
 Example: test_max.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_max {
   input {
@@ -8281,17 +8285,17 @@ String? first_match = find("hello\tBob", "\\t")
 Example: test_find_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow find_string {
   input {
-    String in = "hello world"
+    String text = "hello world"
     String pattern1 = "e..o"
     String pattern2 = "goodbye"
   }
   output {
-    String? match1 = find(in, pattern1)  # "ello"
-    String? match2 = find(in, pattern2)  # None
+    String? match1 = find(text, pattern1)  # "ello"
+    String? match2 = find(text, pattern2)  # None
   }  
 }
 ```
@@ -8344,7 +8348,7 @@ Boolean has_tab = matches("hello\tBob", "\\t")
 Example: test_matches_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow contains_string {
   input {
@@ -8405,7 +8409,7 @@ As with patterns, backslashes in the replace string must be double-escaped. For 
 Example: test_sub.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_sub {
   String chocolike = "I like chocolate when\nit's late"
@@ -8453,7 +8457,7 @@ Any arguments are allowed so long as they can be coerced to `String`s. For examp
 Example: change_extension_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task change_extension {
   input {
@@ -8542,7 +8546,7 @@ The optional second parameter specifies a literal suffix to remove from the file
 Example: test_basename.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_basename {
   output {
@@ -8606,7 +8610,7 @@ A relative path does not start with `/` and indicates the path is relative to it
 Example: join_paths_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task join_paths {
   input {
@@ -8679,7 +8683,7 @@ At least in standard Bash, glob expressions are not evaluated recursively, i.e.,
 Example: gen_files_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task gen_files {
   input {
@@ -8770,7 +8774,7 @@ If the size cannot be represented in the specified unit because the resulting va
 Example: file_sizes_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task file_sizes {
   command <<<
@@ -8823,6 +8827,295 @@ Example output:
 </p>
 </details>
 
+### `list_directory`
+
+*as of version 1.4*
+
+```
+Array[File] list_directory(Directory)
+Array[File] list_directory(Directory, String)
+```
+
+Returns an array of all files in the top level of the given directory. If the optional glob pattern is provided, only files whose basenames match the pattern are included. Subdirectories are not included in the result; use [`list_subdirectories`](#list_subdirectories) to obtain those.
+
+Results are sorted lexicographically by basename to ensure deterministic ordering across platforms and filesystems.
+
+When a glob pattern is provided, it follows standard glob matching rules: patterns without a leading `.` do not match hidden files (dotfiles). When no pattern is provided, all files are returned including hidden files.
+
+**Parameters**
+
+1. `Directory`: The directory whose immediate file contents to list.
+2. `String`: (Optional) A glob pattern to filter results by basename (e.g., `"*.fastq.gz"`).
+
+**Returns**: An `Array[File]` containing the files in the top level of the directory that match the pattern. Returns an empty array if the directory contains no matching files.
+
+**Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
+
+<details>
+<summary>
+Example: list_fastqs_task.wdl
+
+```wdl
+version 1.4
+
+task list_fastqs {
+  input {
+    Directory sample_dir
+  }
+
+  Array[File] fastqs = list_directory(sample_dir, "*.fastq.gz")
+
+  command <<<
+    echo "~{sep(' ', fastqs)}"
+  >>>
+
+  output {
+    Int num_fastqs = length(fastqs)
+    String file_list = read_string(stdout())
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "list_fastqs.sample_dir": "/path/to/samples"
+}
+```
+
+Example output (given the directory contains `a.fastq.gz`, `b.fastq.gz`, and `readme.txt`):
+
+```json
+{
+  "list_fastqs.num_fastqs": 2,
+  "list_fastqs.file_list": "/path/to/samples/a.fastq.gz /path/to/samples/b.fastq.gz"
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: scatter_directory_workflow.wdl
+
+```wdl
+version 1.4
+
+workflow scatter_directory {
+  input {
+    Directory input_dir
+  }
+
+  Array[File] all_files = list_directory(input_dir)
+
+  scatter (f in all_files) {
+    call process_file { input: infile = f }
+  }
+
+  output {
+    Array[File] results = process_file.outfile
+  }
+}
+
+task process_file {
+  input {
+    File infile
+  }
+
+  command <<<
+    wc -l ~{infile} > result.txt
+  >>>
+
+  output {
+    File outfile = "result.txt"
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "scatter_directory.input_dir": "/path/to/dir"
+}
+```
+
+Example output (given the directory contains files `a.txt` and `b.txt`):
+
+```json
+{
+  "scatter_directory.results": ["/path/to/output/result.txt", "/path/to/output/result.txt"]
+}
+```
+</p>
+</details>
+
+### `list_directory_recursive`
+
+*as of version 1.4*
+
+```
+Array[File] list_directory_recursive(Directory)
+Array[File] list_directory_recursive(Directory, String)
+```
+
+Returns an array of all files at any depth within the given directory (recursive walk). If the optional glob pattern is provided, only files whose basenames match the pattern are included. Subdirectories themselves are not included in the result.
+
+Results are sorted lexicographically by their path relative to the input directory.
+
+When a glob pattern is provided, it follows standard glob matching rules: patterns without a leading `.` do not match hidden files (dotfiles). When no pattern is provided, all files are returned including hidden files.
+
+**Parameters**
+
+1. `Directory`: The directory to recursively list.
+2. `String`: (Optional) A glob pattern to filter results by basename (e.g., `"*.bam"`).
+
+**Returns**: An `Array[File]` containing all files found recursively within the directory that match the pattern. Returns an empty array if no matching files are found.
+
+**Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
+
+<details>
+<summary>
+Example: find_bams_task.wdl
+
+```wdl
+version 1.4
+
+task find_bams {
+  input {
+    Directory project_dir
+  }
+
+  Array[File] bams = list_directory_recursive(project_dir, "*.bam")
+
+  command <<<
+    for bam in ~{sep(' ', bams)}; do
+      samtools index "$bam"
+    done
+  >>>
+
+  output {
+    Array[File] indices = glob("*.bai")
+  }
+
+  requirements {
+    container: "biocontainers/samtools:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "find_bams.project_dir": "/data/project"
+}
+```
+
+Example output (given the directory tree contains `sample1/aligned.bam` and `sample2/aligned.bam`):
+
+```json
+{
+  "find_bams.indices": ["/path/to/exec/aligned.bai", "/path/to/exec/aligned.bai"]
+}
+```
+</p>
+</details>
+
+### `list_subdirectories`
+
+*as of version 1.4*
+
+```
+Array[Directory] list_subdirectories(Directory)
+```
+
+Returns an array of immediate child directories within the given directory. Only direct children are returned; this function is not recursive.
+
+Results are sorted lexicographically by basename to ensure deterministic ordering across platforms and filesystems.
+
+**Parameters**
+
+1. `Directory`: The parent directory whose immediate subdirectories to list.
+
+**Returns**: An `Array[Directory]` containing the immediate subdirectories. Returns an empty array if the directory contains no subdirectories.
+
+**Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
+
+<details>
+<summary>
+Example: process_samples_workflow.wdl
+
+```wdl
+version 1.4
+
+workflow process_samples {
+  input {
+    Directory data_root  # contains one subdirectory per sample
+  }
+
+  Array[Directory] sample_dirs = list_subdirectories(data_root)
+
+  scatter (sample_dir in sample_dirs) {
+    Array[File] fastqs = list_directory(sample_dir, "*.fastq.gz")
+    call align { input: reads = fastqs }
+  }
+
+  output {
+    Array[File] bams = align.bam
+  }
+}
+
+task align {
+  input {
+    Array[File] reads
+  }
+
+  command <<<
+    bwa mem ref.fa ~{sep(' ', reads)} | samtools sort -o aligned.bam
+  >>>
+
+  output {
+    File bam = "aligned.bam"
+  }
+
+  requirements {
+    container: "biocontainers/bwa:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "process_samples.data_root": "/data/samples"
+}
+```
+
+Example output (given `/data/samples` contains subdirectories `sample1/` and `sample2/`, each with FASTQ files):
+
+```json
+{
+  "process_samples.bams": ["/path/to/output/aligned.bam", "/path/to/output/aligned.bam"]
+}
+```
+</p>
+</details>
+
 ### `stdout`
 
 ```
@@ -8840,7 +9133,7 @@ Returns the value of the executed command's standard output (stdout) as a `File`
 Example: echo_stdout_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task echo_stdout {
   command <<< printf "hello world" >>>
@@ -8885,7 +9178,7 @@ Returns the value of the executed command's standard error (stderr) as a `File`.
 Example: echo_stderr_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task echo_stderr {
   command <<< >&2 printf "hello world" >>>
@@ -8934,7 +9227,7 @@ If the file contains any internal newline characters, they are left in tact.
 Example: read_string_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task read_string {
   # this file will contain "this\nfile\nhas\nfive\nlines\n"
@@ -8987,7 +9280,7 @@ Reads a file that contains a single line containing only an integer and (optiona
 Example: read_int_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task read_int {
   command <<<
@@ -9036,7 +9329,7 @@ Reads a file that contains only a numeric value and (optional) whitespace. If th
 Example: read_float_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task read_float {
   command <<<
@@ -9088,7 +9381,7 @@ Reads a file that contains a single line containing only a boolean value and (op
 Example: read_bool_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task read_bool {
   command <<<
@@ -9144,7 +9437,7 @@ If the file is empty, an empty array is returned.
 Example: grep_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task grep {
   input {
@@ -9208,7 +9501,7 @@ Writes a file with one line for each element in a `Array[String]`. All lines are
 Example: write_lines_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task write_lines {
   input {
@@ -9289,7 +9582,7 @@ If the entire contents of the file can not be read for any reason, the calling t
 Example: read_tsv_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task read_tsv {
   command <<<
@@ -9417,7 +9710,7 @@ If the entire contents of the file can not be written for any reason, the callin
 Example: write_tsv_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct Numbers {
   String first
@@ -9526,7 +9819,7 @@ If the file is empty, an empty map is returned.
 Example: read_map_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task read_map {
   command <<<
@@ -9581,7 +9874,7 @@ Since `Map`s are ordered, the order of the lines in the file is guaranteed to be
 Example: write_map_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task write_map {
   input {
@@ -9668,7 +9961,7 @@ Note that an empty file is not valid according to the JSON specification, and so
 Example: read_person.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct Person {
   String name
@@ -9742,7 +10035,7 @@ When serializing compound types, all nested types must be serializable or an err
 Example: write_json_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow write_json_fail {
   Pair[Int, Map[Int, String]] x = (1, {2: "hello"})
@@ -9779,7 +10072,7 @@ Test config:
 Example: write_json_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task write_json {
   input {
@@ -9867,7 +10160,7 @@ The second row specifies the object member values corresponding to the names in 
 Example: read_object_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task read_object {
   command <<<
@@ -9947,7 +10240,7 @@ If the file is empty or contains only a header line, an empty array is returned.
 Example: read_objects_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task read_objects {
   command <<<
@@ -10046,7 +10339,7 @@ The member values must be serializable to strings, meaning that only primitive t
 Example: write_object_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task write_object {
   input {
@@ -10130,7 +10423,7 @@ The member values must be serializable to strings, meaning that only primitive t
 Example: write_objects_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task write_objects {
   input {
@@ -10238,7 +10531,7 @@ Adds a prefix to each element of the input array of primitive values. Equivalent
 Example: test_prefix.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_prefix {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -10274,7 +10567,7 @@ Example output:
 Example: test_prefix_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_prefix_fail {
   Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
@@ -10326,7 +10619,7 @@ Adds a suffix to each element of the input array of primitive values. Equivalent
 Example: test_suffix.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_suffix {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -10362,7 +10655,7 @@ Example output:
 Example: test_suffix_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_suffix_fail {
   Array[Array[String]] env3 = [["a", "b], ["c", "d"]]
@@ -10413,7 +10706,7 @@ Adds double-quotes (`"`) around each element of the input array of primitive val
 Example: test_quote.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_quote {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -10463,7 +10756,7 @@ Adds single-quotes (`'`) around each element of the input array of primitive val
 Example: test_squote.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_squote {
   Array[String] env1 = ["key1=value1", "key2=value2", "key3=value3"]
@@ -10514,7 +10807,7 @@ Concatenates the elements of an array together into a string with the given sepa
 Example: test_sep.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_sep {
   Array[String] a = ["file_1", "file_2"]
@@ -10573,7 +10866,7 @@ Creates an array of the given length containing sequential integers starting fro
 Example: test_range.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task double {
   input {
@@ -10641,7 +10934,7 @@ Transposes a two-dimensional array according to the standard matrix transpositio
 Example: test_transpose.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_transpose {
   # input array is 2 rows * 3 columns
@@ -10698,7 +10991,7 @@ Given `Array[X]` of length `M`, and `Array[Y]` of length `N`, the cross product 
 Example: test_cross.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_cross {
   Array[Int] xs = [1, 2, 3]
@@ -10750,7 +11043,7 @@ Creates an array of `Pair`s containing the [dot product](https://en.wikipedia.or
 Example: test_zip.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_zip {
   Array[Int] xs = [1, 2, 3]
@@ -10785,7 +11078,7 @@ Example output:
 Example: test_zip_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_zip_fail {
   Array[Int] xs = [1, 2, 3]
@@ -10837,7 +11130,7 @@ Creates a `Pair` of `Arrays`, the first containing the elements from the `left` 
 Example: test_unzip.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_unzip {
   Array[Pair[Int, String]] int_str_arr = [(0, "hello"), (42, "goodbye")]
@@ -10899,7 +11192,7 @@ Tests whether the given array contains at least one occurrence of the given valu
 Example: test_contains.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task null_sample {
   command <<<
@@ -10981,7 +11274,7 @@ Given an array and a length *n*, splits the array into consecutive, non-overlapp
 Example: chunk_array.wdl
 
 ```wdl
-version 1.3
+version 1.4
 workflow chunk_array {
   Array[String] s1 = ["a", "b", "c", "d", "e", "f"]
   Array[String] s2 = ["a", "b", "c", "d", "e"]
@@ -11044,7 +11337,7 @@ Flattens a nested `Array[Array[X]]` by concatenating all of the element arrays, 
 Example: test_flatten.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_flatten {
   input {
@@ -11112,7 +11405,7 @@ Selects the first - i.e., left-most - non-`None` value from an `Array` of option
 Example: test_select_first.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_select_first {
   input {
@@ -11156,7 +11449,7 @@ Example output:
 Example: select_first_only_none_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow select_first_only_none_fail {
   Int? maybe_four_but_is_not = None
@@ -11192,7 +11485,7 @@ Test config:
 Example: select_first_empty_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow select_first_empty_fail {
   Int check = select_first([])  # error! array is empty
@@ -11241,7 +11534,7 @@ Filters the input `Array` of optional values by removing all `None` values. The 
 Example: test_select_all.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 
 workflow test_select_all {
@@ -11302,7 +11595,7 @@ Converts a `Map` into an `Array` of `Pair`s. Since `Map`s are ordered, the outpu
 Example: test_as_pairs.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_as_pairs {
   Map[String, Int] x = {"a": 1, "c": 3, "b": 2}
@@ -11365,7 +11658,7 @@ Converts an `Array` of `Pair`s into a `Map` in which the left elements of the `P
 Example: test_as_map.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_as_map {
   input {
@@ -11405,7 +11698,7 @@ Example output:
 Example: test_as_map_fail.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_as_map_fail {
   # this fails with an error - the "a" key is duplicated
@@ -11460,7 +11753,7 @@ When the input `Map` or `Object` is empty, an empty array is returned.
 Example: test_keys.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct Name {
   String first
@@ -11551,7 +11844,7 @@ For example, if the first argument is a `Map[String, Map[String, Int]]` and the 
   Example: test_contains_key.wdl
   
   ```wdl
-  version 1.3
+  version 1.4
 
   struct Person {
     String name
@@ -11636,7 +11929,7 @@ Returns an `Array` of the values from the input `Map`, in the same order as the 
 Example: test_values.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task add {
   input {
@@ -11711,7 +12004,7 @@ The order of the keys in the output `Map` is the same as the order of their firs
 Example: test_collect_by_key.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_collect_by_key {
   input {
@@ -11753,13 +12046,13 @@ Example output:
 </p>
 </details>
 
-## ✨ Enum Functions
+## Enum Functions
 
 These functions operate on enum values.
 
 **Restrictions**: None
 
-### ✨ `value`
+### `value`
 
 ```
 T value(Enum)
@@ -11778,7 +12071,7 @@ Returns the underlying value associated with an enum choice.
 Example: test_enum_value.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 enum Color {
   Red = "#FF0000",
@@ -11853,7 +12146,7 @@ Tests whether the given optional value is defined, i.e., has a non-`None` value.
 Example: is_defined.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow is_defined {
   input {
@@ -11925,7 +12218,7 @@ Returns the length of the input argument as an `Int`:
 Example: test_length.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow test_length {
   Array[Int] xs = [1, 2, 3]
@@ -12241,7 +12534,7 @@ A `Pair[X, X]` may be converted to a two-element array.
 Example: pair_to_array.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow pair_to_array {
   Pair[Int, Int] p = (1, 2)
@@ -12281,7 +12574,7 @@ A `Pair[X, Y]` may be converted to a struct with two members `X left` and `Y rig
 Example: pair_to_struct.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct StringIntPair {
   String l
@@ -12338,7 +12631,7 @@ A `Map[P, Y]` can be converted to a `Struct` with two array members: `Array[X] k
 Example: map_to_struct2.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 struct IntStringMap {
   Array[Int] keys
@@ -12395,7 +12688,7 @@ A `Map[P, P]` can be converted to an array of `Pair`s. Each pair can then be con
 Example: map_to_array.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 workflow map_to_array {
   Map[Int, Int] m = {0: 7, 1: 42}
@@ -12453,7 +12746,7 @@ Deserialization of primitive values is done via one of the `read_*` functions, e
 Example: read_write_primitives_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task read_write_primitives {
   input {
@@ -12532,7 +12825,7 @@ This method applies to an array of a primitive type. Each element of the array i
 Example: serialize_array_delim_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task serialize_array_delim {
   input {
@@ -12599,7 +12892,7 @@ This method applies to an array of a primitive type. Using `write_lines`, Each e
 Example: serde_array_lines_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task serde_array_lines {
   input {
@@ -12663,7 +12956,7 @@ This method applies to an array of any type that can be serialized to JSON. Call
 Example: serde_array_json_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task serde_array_json {
   input {
@@ -12742,7 +13035,7 @@ The most common approach to `Pair` serialization is to serialize the `left` and 
 Example: serde_pair.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task tail {
   input {
@@ -12810,7 +13103,7 @@ A homogeneous `Pair[X, X]` can be converted to/from an `Array` and then serializ
 Example: serde_homogeneous_pair.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task serde_int_strings {
   input {
@@ -12880,7 +13173,7 @@ A `Map` is a common way to represent a set of arguments that need to be passed t
 Example: serialize_map.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task grep1 {
   input {
@@ -12979,7 +13272,7 @@ A `Map[String, String]` value can be serialized as a two-column TSV file using [
 Example: serde_map_tsv_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task serde_map_tsv {
   input {
@@ -13062,7 +13355,7 @@ A `Map[String, Y]` value can be serialized as a JSON `object` using [`write_json
 Example: serde_map_json_task.wdl
 
 ```wdl
-version 1.3
+version 1.4
 
 task serde_map_json {
   input {
@@ -13200,7 +13493,7 @@ The `output` section can be considered a nested scope within the task. Expressio
 For example, in this task:
 
 ```wdl
-version 1.3
+version 1.4
 
 task my_task {
   input {
