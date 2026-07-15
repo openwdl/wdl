@@ -61,6 +61,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [Expressions](#expressions)
       - [Built-in Operators](#built-in-operators)
         - [Unary Operators](#unary-operators)
+        - [Unwrap Operator](#unwrap-operator)
         - [Binary Operators on Primitive Types](#binary-operators-on-primitive-types)
         - [Equality of Compound Types](#equality-of-compound-types)
         - [Equality and Inequality Comparison of Optional Types](#equality-and-inequality-comparison-of-optional-types)
@@ -999,6 +1000,8 @@ Multi-level optionals are not allowed. A value cannot have multiple levels of op
 WDL has a special value `None` whose meaning is "an undefined value". The `None` value has the (hidden) type [`Union`](#union-hidden-type), meaning `None` can be assigned to an optional declaration of any type.
 
 An optional declaration has a default initialization of `None`, which indicates that it is undefined. An optional declaration may be initialized to any literal or expression of the correct type, including the special `None` value.
+
+An optional value can be converted to its corresponding non-optional type using the postfix [unwrap operator](#unwrap-operator) (`!`), which raises an error if the value is `None`.
 
 <details>
   <summary>
@@ -2020,7 +2023,7 @@ Boolean b3 = 1 == true
 
 ###### Coercion of Optional Types
 
-A non-optional type `T` can always be coerced to an optional type `T?`, but the reverse is not true - coercion from `T?` to `T` is not allowed because the latter cannot accept `None`.
+A non-optional type `T` can always be coerced to an optional type `T?`, but the reverse is not true - coercion from `T?` to `T` is not allowed because the latter cannot accept `None`. A value of type `T?` can be converted to `T` using the [unwrap operator](#unwrap-operator) (`!`) or the [`select_first`](#select_first) function, both of which raise an error if the value is `None`.
 
 This constraint propagates into compound types. For example, an `Array[T?]` can contain both optional and non-optional elements. This facilitates the common idiom [`select_first([expr, default])`](#select_first), where `expr` is of type `T?` and `default` is of type `T`, for converting an optional type to a non-optional type. However, an `Array[T?]` could not be passed to the [`sep`](#sep) function, which requires an `Array[T]`.
 
@@ -2425,6 +2428,140 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | `-`      | `Int`     | `Int`     |
 | `!`      | `Boolean` | `Boolean` |
 
+##### Unwrap Operator
+
+The postfix `!` operator unwraps an optional value. Its operand must be an expression of an optional type `T?`, and the type of the unwrap expression is the corresponding non-optional type `T`. If the operand evaluates to a defined value, the unwrap expression evaluates to that value. If the operand evaluates to `None`, an error is raised. Applying `!` to an expression of a non-optional type is a type error.
+
+| Operator | LHS Type | Result |
+| -------- | -------- | ------ |
+| `!`      | `T?`     | `T`    |
+
+The expression `x!` is equivalent to [`select_first([x])`](#select_first).
+
+The unwrap operator has higher precedence than any prefix or binary operator (see the [operator precedence table](#operator-precedence-table)). For example, `-x!` is evaluated as `-(x!)`, and `a + b!` is evaluated as `a + (b!)`. The unwrap operator may be combined with [member access](#member-access), index, and function call operations, which are applied in left-to-right order. For example, in `person.income!.amount`, the optional `income` member of `person` is unwrapped before its `amount` member is accessed.
+
+The character sequence `!=` is always interpreted as the [inequality operator](#binary-operators-on-primitive-types). When the unwrap operator is followed by an operator that begins with `=`, the two must be separated by whitespace or parentheses, e.g., `x! == y` or `(x!) == y`.
+
+<details>
+<summary>
+Example: test_unwrap.wdl
+
+```wdl
+version 1.4
+
+workflow test_unwrap {
+  input {
+    Int? maybe_five = 5
+    Int? maybe_ten = 10
+  }
+
+  output {
+    Int certainly_five = maybe_five!
+    Int fifteen = maybe_five! + maybe_ten!
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_unwrap.certainly_five": 5,
+  "test_unwrap.fifteen": 15
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: unwrap_none_fail.wdl
+
+```wdl
+version 1.4
+
+workflow unwrap_none_fail {
+  Int? maybe_five = None
+  Int five = maybe_five!  # error! cannot unwrap a value that is None
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
+
+Within [expression placeholders](#expression-placeholders-and-string-interpolation), an error raised by the unwrap operator is subject to the rules described in [Expression Placeholder Coercion](#expression-placeholder-coercion), i.e., the placeholder evaluates to the empty string.
+
+<details>
+<summary>
+Example: unwrap_placeholder.wdl
+
+```wdl
+version 1.4
+
+workflow unwrap_placeholder {
+  input {
+    String salutation = "hello"
+    String? name1
+    String? name2 = "Fred"
+  }
+
+  output {
+    # since name1 is undefined, unwrapping it raises an error, the placeholder
+    # evaluates to the empty string, and the value of greeting1 = "nice to meet you!"
+    String greeting1 = "~{salutation + ' ' + name1! + ' '}nice to meet you!"
+
+    # since name2 is defined, unwrapping it succeeds, and the value of
+    # greeting2 = "hello Fred, nice to meet you!"
+    String greeting2 = "~{salutation + ' ' + name2! + ', '}nice to meet you!"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "unwrap_placeholder.greeting1": "nice to meet you!",
+  "unwrap_placeholder.greeting2": "hello Fred, nice to meet you!"
+}
+```
+</p>
+</details>
+
 ##### Binary Operators on Primitive Types
 
 | LHS Type    | Operator | RHS Type  | Result    | Semantics                                                |
@@ -2765,10 +2902,11 @@ Example output:
 
 | Precedence | Operator type         | Associativity | Example      |
 | ---------- | --------------------- | ------------- | ------------ |
-| 12         | Grouping              | n/a           | `(x)`        |
-| 11         | Member Access         | left-to-right | `x.y`        |
-| 10         | Index                 | left-to-right | `x[y]`       |
-| 9          | Function Call         | left-to-right | `x(y,z,...)` |
+| 13         | Grouping              | n/a           | `(x)`        |
+| 12         | Member Access         | left-to-right | `x.y`        |
+| 11         | Index                 | left-to-right | `x[y]`       |
+| 10         | Function Call         | left-to-right | `x(y,z,...)` |
+| 9          | Unwrap                | left-to-right | `x!`         |
 | 8          | Logical NOT           | right-to-left | `!x`         |
 |            | Unary Negation        | right-to-left | `-x`         |
 | 7          | Exponentiation        | left-to-right | `x**y`       |
@@ -11323,6 +11461,8 @@ X select_first(Array[X?], X)
 ```
 
 Selects the first - i.e., left-most - non-`None` value from an `Array` of optional values. The optional second parameter provides a default value that is returned if the array is empty or contains only `None` values. If the default value is not provided and the array is empty or contains only `None` values, then an error is raised.
+
+Calling `select_first` with a single-element array is equivalent to the [unwrap operator](#unwrap-operator): `select_first([x])` is equivalent to `x!`.
 
 **Parameters**
 

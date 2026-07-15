@@ -17,6 +17,11 @@ Keep the changelog pleasant to read in the text editor:
 + Properly indent blocks.
 -->
 
+version 1.4.0
+---------------------------
+
++ Added the postfix unwrap operator (`!`), which converts a value of optional type `T?` to type `T` and raises an error if the value is `None`. `x!` is equivalent to `select_first([x])` ([#777](https://github.com/openwdl/wdl/pull/777)).
+
 <<<<<<< HEAD
 version 1.3.0
 ---------------------------
