@@ -5790,11 +5790,13 @@ Test config:
 * Default value: `0`
 * Alias: `maxRetries`
 
-The `max_retries` attribute specifies the maximum number of times a task should be retried in the event of failure. The execution engine must retry the task at least once and up to (but not exceeding) the specified number of attempts.
+The `max_retries` attribute specifies the maximum number of times a task should be retried following a failure other than preemption. The execution engine must retry the task at least once and up to (but not exceeding) the specified number of attempts.
+
+A retry on a preemptible instance following preemption is governed by [`preemptible`](#-preemptible) and does not count against `max_retries`. Starting a non-preemptible attempt after exhausting the `preemptible` attempts does count as one retry.
 
 The execution engine may choose to define an upper bound (>= 1) on the number of retry attempts that it permits.
 
-A value of `0` means that the task as not retryable, and therefore any failure in the task should never result in a retry by the execution engine, and the final status of the task should remain the same.
+A value of `0` means that a failure other than preemption must not result in a retry. It does not prevent retries on preemptible instances following preemption, but it prevents the engine from starting a non-preemptible attempt after the `preemptible` attempts are exhausted.
 
 ```wdl
 task max_retries_test {
