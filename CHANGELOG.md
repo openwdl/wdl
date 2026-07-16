@@ -47,7 +47,7 @@ version 1.1.4
 
 + Specified that workflow-level `File` values use a stable logical file system
   context, including when workflow expressions are evaluated on different
-  machines.
+  machines ([#788](https://github.com/openwdl/wdl/pull/788)).
 
 + Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
 
