@@ -1691,10 +1691,10 @@ enum FavoriteNumber {
 }
 
 # ERROR: the inner type of this enum cannot be unambiguously resolved, as
-# `Int` and `String` do not coerce to a common type.
+# `Int` and `Boolean` do not coerce to a common type.
 enum InvalidEnum {
   Number = 42,
-  Text = "hello"
+  Toggle = true
 }
 
 # ERROR: cannot use computed expressions in enum values
@@ -1948,10 +1948,15 @@ Test config:
 
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
+Whether a coercion is valid is determined from the source and target types during static analysis. Some valid coercions may still fail during dynamic evaluation because the source value cannot be represented by the target type. Unless otherwise specified, a failed coercion raises an error.
+
 | Target Type      | Source Type      | Notes/Constraints                                                                                                                                |
 | ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `File`           | `String`         |                                                                                                                                                  |
 | `Directory`      | `String`         |
+| `Int`            | `String`         | The `String` is parsed using the same rules as [`read_int`](#read_int)                                                                            |
+| `Float`          | `String`         | The `String` is parsed using the same rules as [`read_float`](#read_float)                                                                        |
+| `Boolean`        | `String`         | The `String` is parsed using the same rules as [`read_boolean`](#read_boolean)                                                                    |
 | `Float`          | `Int`            | May cause overflow error                                                                                                                         |
 | `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                                                     |
 | `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                                                     |
@@ -1968,7 +1973,79 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | `Enum`           | `String`         | `String` value must exactly match one of the enum's choice names                                                                                |
 | `String`         | `Enum`           | The enum choice is serialized to its choice name                                                                                               |
 
-The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-serializationdeserialization-using-write_linesread_lines) for details and best practices.
+<details>
+<summary>
+Example: string_to_primitives.wdl
+
+```wdl
+version 1.4
+
+workflow string_to_primitives {
+  Int integer = " 42 "
+  Float floating_point = " 3.5 "
+  Boolean boolean = " TRUE "
+
+  output {
+    Int integer_result = integer
+    Float float_result = floating_point
+    Boolean boolean_result = boolean
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "string_to_primitives.boolean_result": true,
+  "string_to_primitives.float_result": 3.5,
+  "string_to_primitives.integer_result": 42
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: string_to_int_fail.wdl
+
+```wdl
+version 1.4
+
+workflow string_to_int_fail {
+  Int invalid = "not an integer"
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
 
 ###### Order of Precedence
 
@@ -2173,7 +2250,6 @@ Example output:
 Implementers may choose to allow limited exceptions to the above rules, with the understanding that workflows depending on these exceptions may not be portable. These exceptions are provided for backward-compatibility, are considered deprecated, and will be removed in a future version of WDL.
 
 * `Float` to `Int`, when the coercion can be performed with no loss of precision, e.g. `1.0 -> 1`.
-* `String` to `Int`/`Float`, when the coercion can be performed with no loss of precision.
 * `X?` may be coerced to `X`, and an error is raised if the value is undefined.
 * `Array[X]` to `Array[X]+`, when the array is non-empty (an error is raised otherwise).
 * `Map[W, X]` to `Array[Pair[Y, Z]]`, in the case where `W` is coercible to `Y` and `X` is coercible to `Z`.
