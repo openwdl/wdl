@@ -36,11 +36,17 @@ jobs:
           sprocket --version
       - name: Create results directory
         run: mkdir -p ./.results/
+      - name: Enable WDL 1.4 support
+        run: |
+          cat > sprocket.toml <<'EOF'
+          [common.wdl.feature_flags]
+          wdl_1_4 = true
+          EOF
       - name: Run the compliance tests
         run: |
           echo "📊 Running compliance tests for \`${{ github.repository }}:${{ github.ref_name }}\`..."
           spectool test \
-            "sprocket run ~{path} @~{input} -t ~{target} -o /tmp/out --index-on ~{target}" \
+            "sprocket --config $PWD/sprocket.toml run ~{path} @~{input} -t ~{target} -o /tmp/out --index-on ~{target}" \
             --output-file "/tmp/out/index/~{target}/outputs.json" \
             --all-capabilities \
             --label "Sprocket / WDL 1.4" \
