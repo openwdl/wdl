@@ -28,6 +28,8 @@ Revisions to this specification are made periodically in order to correct errors
     - [Literals](#literals)
     - [Types](#types)
       - [Primitive Types](#primitive-types)
+        - [Integer Literals](#integer-literals)
+        - [Floating-Point Literals](#floating-point-literals)
         - [Strings](#strings)
       - [Optional Types and None](#optional-types-and-none)
       - [Compound Types](#compound-types)
@@ -542,6 +544,240 @@ The following primitive types exist in WDL:
     * An execution engine may support other ways to specify [`File` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
       * Remote files must be treated as read-only.
       * A remote file is only required to be vaild at the time that the execution engine needs to localize it.
+
+##### Integer Literals
+
+An `Int` literal has one of the following forms:
+
+* Decimal: `0`, or a digit from `1` through `9` followed by zero or more ASCII decimal digits (`0` through `9`).
+* Hexadecimal: `0x` or `0X` followed by one or more hexadecimal digits (`0` through `9`, `a` through `f`, or `A` through `F`).
+* Octal: `0o` or `0O` followed by one or more octal digits (`0` through `7`).
+
+Leading zeros are not allowed in a decimal literal, so a legacy octal form such as `0755` is invalid. WDL does not support binary or other base prefixes in integer literals.
+
+##### Floating-Point Literals
+
+A `Float` literal has one of the following forms, where `digit` is an ASCII decimal digit and `exponent` is `e` or `E`, an optional `+` or `-`, and one or more digits:
+
+* `digit+ exponent`, e.g., `1e3`
+* `digit+ . digit* exponent?`, e.g., `1.`, `1.0`, or `1.25e-3`
+* `. digit+ exponent?`, e.g., `.5`
+
+A decimal numeric literal without a decimal point or exponent is an `Int` literal. A leading `+` or `-` is a unary operator, not part of a numeric literal. Numeric literals do not support digit separators, type suffixes, or non-finite values such as `NaN` and `Infinity`. A numeric literal that is outside the range of its type is an error.
+
+<details>
+  <summary>
+  Example: numeric_literals.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow numeric_literals {
+    output {
+      Int zero = 0
+      Int decimal = 42
+      Int lowercase_hexadecimal = 0xcafe
+      Int uppercase_hexadecimal = 0XCAFE
+      Int lowercase_octal = 0o755
+      Int uppercase_octal = 0O755
+      Float decimal_point = 1.0
+      Float trailing_point = 1.
+      Float leading_point = .5
+      Float exponent = 1e3
+      Float uppercase_exponent = 1E10
+      Float signed_exponent = 1.25e-3
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+
+  ```json
+  {}
+  ```
+
+  Example output:
+
+  ```json
+  {
+    "numeric_literals.zero": 0,
+    "numeric_literals.decimal": 42,
+    "numeric_literals.lowercase_hexadecimal": 51966,
+    "numeric_literals.uppercase_hexadecimal": 51966,
+    "numeric_literals.lowercase_octal": 493,
+    "numeric_literals.uppercase_octal": 493,
+    "numeric_literals.decimal_point": 1.0,
+    "numeric_literals.trailing_point": 1.0,
+    "numeric_literals.leading_point": 0.5,
+    "numeric_literals.exponent": 1000.0,
+    "numeric_literals.uppercase_exponent": 10000000000.0,
+    "numeric_literals.signed_exponent": 0.00125
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: legacy_octal_literal.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow legacy_octal_literal {
+    Int value = 0755
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: invalid_hexadecimal_digit.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow invalid_hexadecimal_digit {
+    Int value = 0xG
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: invalid_binary_literal.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow invalid_binary_literal {
+    Int value = 0b101010
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: malformed_numeric_prefix.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow malformed_numeric_prefix {
+    Int value = 0x
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: invalid_octal_digit.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow invalid_octal_digit {
+    Int value = 0o8
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: incomplete_exponent.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow incomplete_exponent {
+    Float value = 1e
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: non_finite_float_literal.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow non_finite_float_literal {
+    Float value = NaN
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
 
 <details>
   <summary>
@@ -6812,7 +7048,7 @@ Example output:
 Int read_int(File)
 ```
 
-Reads a file that contains a single line containing only an integer and (optional) whitespace. If the line contains a valid integer, that value is returned as an `Int`. If the file is empty or does not contain a single integer, an error is raised.
+Reads a file that contains a single line containing only an integer and (optional) whitespace. After removing surrounding whitespace, the value must consist of an optional `+` or `-` followed by any form accepted for an [`Int` source literal](#integer-literals). The source-literal radix and leading-zero rules apply, so hexadecimal and octal prefixes are supported but a legacy octal form such as `0755` is invalid. If the line contains a valid integer, that value is returned as an `Int`. If the file is empty, the value is outside the range of `Int`, or the file does not contain a single integer, an error is raised.
 
 **Parameters**
 
@@ -6829,11 +7065,15 @@ version 1.1
 
 task read_int {
   command <<<
-  printf "  1  \n" > int_file
+  printf "  -42  \n" > decimal_file
+  printf "  0Xcafe  \n" > hexadecimal_file
+  printf "  0o755  \n" > octal_file
   >>>
 
   output {
-    Int i = read_int("int_file")
+    Int decimal = read_int("decimal_file")
+    Int hexadecimal = read_int("hexadecimal_file")
+    Int octal = read_int("octal_file")
   }
 }
 ```
@@ -6849,7 +7089,44 @@ Example output:
 
 ```json
 {
-  "read_int.i": 1
+  "read_int.decimal": -42,
+  "read_int.hexadecimal": 51966,
+  "read_int.octal": 493
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: read_int_legacy_octal_task.wdl
+
+```wdl
+version 1.1
+
+task read_int_legacy_octal {
+  command <<<
+  printf "0755\n" > int_file
+  >>>
+
+  output {
+    Int value = read_int("int_file")
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
 }
 ```
 </p>
@@ -6861,7 +7138,7 @@ Example output:
 Float read_float(File)
 ```
 
-Reads a file that contains only a numeric value and (optional) whitespace. If the line contains a valid floating point number, that value is returned as a `Float`. If the file is empty or does not contain a single float, an error is raised.
+Reads a file that contains only a numeric value and (optional) whitespace. After removing surrounding whitespace, the value must consist of an optional `+` or `-` followed by any form accepted for an [`Int`](#integer-literals) or [`Float`](#floating-point-literals) source literal. An integer-form value is converted to the corresponding `Float`. The source-literal radix and leading-zero rules apply, so hexadecimal and octal prefixes are supported but a legacy octal form such as `0755` is invalid. If the file contains a valid numeric value, that value is returned as a `Float`. If the file is empty, the value is outside the finite range of `Float`, or the file does not contain a single numeric value, an error is raised.
 
 **Parameters**
 
@@ -6879,12 +7156,16 @@ version 1.1
 task read_float {
   command <<<
   printf "  1  \n" > int_file
-  printf "  2.0  \n" > float_file
+  printf "  1.25e-3  \n" > float_file
+  printf "  0xCAFE  \n" > hexadecimal_file
+  printf "  0O755  \n" > octal_file
   >>>
 
   output {
-    Float f1 = read_float("int_file")
-    Float f2 = read_float("float_file")
+    Float integer = read_float("int_file")
+    Float decimal = read_float("float_file")
+    Float hexadecimal = read_float("hexadecimal_file")
+    Float octal = read_float("octal_file")
   }
 }
 ```
@@ -6900,8 +7181,45 @@ Example output:
 
 ```json
 {
-  "read_float.f1": 1.0,
-  "read_float.f2": 2.0
+  "read_float.integer": 1.0,
+  "read_float.decimal": 0.00125,
+  "read_float.hexadecimal": 51966.0,
+  "read_float.octal": 493.0
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: read_float_legacy_octal_task.wdl
+
+```wdl
+version 1.1
+
+task read_float_legacy_octal {
+  command <<<
+  printf "0755\n" > float_file
+  >>>
+
+  output {
+    Float value = read_float("float_file")
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
 }
 ```
 </p>
@@ -9248,6 +9566,8 @@ Example output:
 # Input and Output Formats
 
 WDL uses [JSON](https://www.json.org) as its native serialization format for task and workflow inputs and outputs. The specifics of these formats are described below.
+
+Numbers in JSON inputs, JSON outputs, and files read by `read_json` follow the JSON number grammar rather than the WDL source-literal grammar. They must also be within the range of the WDL type to which they are deserialized. In particular, JSON does not permit base prefixes, leading zeros, a leading `+`, a trailing decimal point, a leading decimal point, `NaN`, or `Infinity`.
 
 All WDL implementations are required to support the standard JSON input and output formats. WDL compliance testing is performed using test cases whose inputs and expected outputs are given in these formats. A WDL implementation may choose to provide additional input and output mechanisms so long as they are documented, and/or tools are provided to interconvert between engine-specific input and the standard JSON format, to foster interoperability between tools in the WDL ecosystem.
 
