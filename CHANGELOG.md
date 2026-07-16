@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
++ Added the `exists` standard library function for determining whether a path refers to an existing file or directory ([#780](https://github.com/openwdl/wdl/pull/780)).
+
 + Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
 
 + Clarified that `env` is a reserved keyword ([#764](https://github.com/openwdl/wdl/pull/764)).

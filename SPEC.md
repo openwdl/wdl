@@ -161,6 +161,7 @@ Revisions to this specification are made periodically in order to correct errors
   - [File Functions](#file-functions)
     - [`basename`](#basename)
     - [`join_paths`](#-join_paths)
+    - [`exists`](#exists)
     - [`glob`](#glob)
       - [Non-standard Bash](#non-standard-bash)
     - [`size`](#size)
@@ -8450,7 +8451,7 @@ For functions that write to the file system, the implementation should generate 
 **Restrictions**
 
 1. A function that only manipulates a path (i.e., doesn't require reading any of the file's attributes or contents) may be called anywhere, whether or not the file exists.
-2. A function that *reads* a file or its attributes may only be called in a context where the input file exists. If the file is an input to a task or workflow, then it may be read anywhere in that task or worklow. If the file is created by a task, then it may only be read after it is created. For example, if the file is written during the execution of the `command`, then it may only be read in the task's `output` section. This includes functions like `stdout` and `stderr` that read a task's output stream.
+2. With the exception of [`exists`](#exists), a function that *reads* a file or its attributes may only be called in a context where the input file exists. If the file is an input to a task or workflow, then it may be read anywhere in that task or worklow. If the file is created by a task, then it may only be read after it is created. For example, if the file is written during the execution of the `command`, then it may only be read in the task's `output` section. This includes functions like `stdout` and `stderr` that read a task's output stream.
 3. A function that *writes* a file may be called anywhere. However, writing a file in a workflow is discouraged since it may have the side-effect of creating a permanent output file that is not named in the output section. For example, calling [`write_lines`](#write_lines) in a workflow and then passing the resulting `File` as input to a task may require the engine to persist that file to cloud storage.
 
 ### `basename`
@@ -8585,6 +8586,70 @@ Example output:
   "join_paths.result": "hello"
 }
 ``` 
+</p>
+</details>
+
+### `exists`
+
+*as of version 1.4*
+
+```
+Boolean exists(String)
+```
+
+Determines whether a path refers to an existing `File` or `Directory`. The path is resolved according to the context-dependent rules for [relative and absolute paths](#relative-and-absolute-paths), including resolving symbolic links to their final targets.
+
+Unlike creating a non-optional `File` or `Directory` value, `exists` returns `false` only if the path does not exist. It returns `true` if the path refers to an existing file or directory. If the path exists but cannot be validated for any other reason, such as insufficient permissions or a localization failure, an error is raised rather than `false`.
+
+An implementation is only required to support paths local to the execution environment, but may support other resource identifiers in the same contexts where it supports them for `File` and `Directory` values. An implementation is not required to localize a remote resource solely to determine whether it exists, but it must raise an error if it cannot determine whether the resource exists and is accessible.
+
+The result only describes the path when `exists` is evaluated. It does not guarantee that the path remains available to a later expression.
+
+**Parameters**
+
+1. `String`: The path whose existence is checked.
+
+**Returns**: `true` if the path refers to an existing file or directory, or `false` if the path does not exist.
+
+<details>
+<summary>
+Example: test_exists_task.wdl
+
+```wdl
+version 1.4
+
+task test_exists {
+  command <<<
+    printf "first\nsecond\n" > labels.txt
+    mkdir results
+  >>>
+
+  output {
+    Boolean file_exists = exists("labels.txt")
+    Boolean directory_exists = exists("results")
+    Boolean missing_exists = exists("missing.txt")
+    Array[String] labels = if exists("labels.txt") then read_lines("labels.txt") else []
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_exists.file_exists": true,
+  "test_exists.directory_exists": true,
+  "test_exists.missing_exists": false,
+  "test_exists.labels": ["first", "second"]
+}
+```
 </p>
 </details>
 
