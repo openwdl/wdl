@@ -140,7 +140,7 @@ version 1.0.0
 ---------------------------
 + **Backported from WDL 1.2.** Clarified that inputs with default initializers
   retain their declared types when callers omit them or supply `None`
-  ([#761](https://github.com/openwdl/wdl/issues/761)).
+  ([#795](https://github.com/openwdl/wdl/pull/795)).
 
 + Rename lexer to `WdlV1Lexer`
 + Rename parser to `WdlV1Parser`
