@@ -17,6 +17,11 @@ Keep the changelog pleasant to read in the text editor:
 + Properly indent blocks.
 -->
 
+version 1.4.0
+---------------------------
+
++ Introduced the `preemptible` task hint and `preemptible_only` task requirement ([#728](https://github.com/openwdl/wdl/pull/728)).
+
 version 1.3.0
 ---------------------------
 
