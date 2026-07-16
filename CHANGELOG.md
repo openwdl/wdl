@@ -20,7 +20,7 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
-+ Added globally valid coercions from `String` to `Int`, `Float`, and `Boolean`.
++ Added globally valid coercions from `String` to `Int`, `Float`, and `Boolean` ([#797](https://github.com/openwdl/wdl/pull/797)).
 
 + Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
 
