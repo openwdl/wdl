@@ -17,10 +17,13 @@ Keep the changelog pleasant to read in the text editor:
 + Properly indent blocks.
 -->
 
-version 1.3.0
+version 1.4.0
 ---------------------------
 
 + Clarified that `env` is a reserved keyword ([#764](https://github.com/openwdl/wdl/pull/764)).
+
+version 1.3.0
+---------------------------
 
 + Clarified that relative paths in `File` and `Directory` declarations are resolved relative to the WDL document's parent directory outside the `output` section, and relative to the task's execution directory inside the `output` section. Also clarified that optional files evaluate to `None` in both contexts if the path does not exist.
   ([#735](https://github.com/openwdl/wdl/pull/735))
