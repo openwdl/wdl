@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/modules/schemas/module.schema.json",
+  "title": "WDL Module Manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["name", "license"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "license": { "type": "string", "minLength": 1 },
+    "authors": { "type": "array", "items": { "type": "string" } },
+    "description": { "type": "string" },
+    "repository": { "type": "string", "format": "uri" },
+    "homepage": { "type": "string", "format": "uri" },
+    "entrypoint": { "type": "string" },
+    "readme": { "oneOf": [{ "type": "string" }, { "const": false }] },
+    "exclude": { "type": "array", "items": { "type": "string" } },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name", "version", "license"],
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "license": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "ids": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9._-]*:.+$" }
+          }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9_-]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "oneOf": [
+          {
+            "required": ["git", "version"],
+            "not": { "anyOf": [{ "required": ["tag"] }, { "required": ["branch"] }, { "required": ["commit"] }] },
+            "properties": {
+              "git": { "type": "string", "format": "uri" },
+              "version": { "type": "string" },
+              "path": { "type": "string" }
+            }
+          },
+          {
+            "required": ["git", "tag"],
+            "not": { "anyOf": [{ "required": ["version"] }, { "required": ["branch"] }, { "required": ["commit"] }] },
+            "properties": {
+              "git": { "type": "string", "format": "uri" },
+              "tag": { "type": "string" },
+              "path": { "type": "string" }
+            }
+          },
+          {
+            "required": ["git", "branch"],
+            "not": { "anyOf": [{ "required": ["version"] }, { "required": ["tag"] }, { "required": ["commit"] }] },
+            "properties": {
+              "git": { "type": "string", "format": "uri" },
+              "branch": { "type": "string" },
+              "path": { "type": "string" }
+            }
+          },
+          {
+            "required": ["git", "commit"],
+            "not": { "anyOf": [{ "required": ["version"] }, { "required": ["tag"] }, { "required": ["branch"] }] },
+            "properties": {
+              "git": { "type": "string", "format": "uri" },
+              "commit": { "type": "string" },
+              "path": { "type": "string" }
+            }
+          },
+          {
+            "required": ["path"],
+            "not": { "anyOf": [{ "required": ["git"] }, { "required": ["version"] }, { "required": ["tag"] }, { "required": ["branch"] }, { "required": ["commit"] }] },
+            "properties": {
+              "path": { "type": "string" }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
