@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.3.1
 ---------------------------
 
++ Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
+
 + Clarified that `env` is a reserved keyword ([#764](https://github.com/openwdl/wdl/pull/764)).
 
 version 1.3.0
