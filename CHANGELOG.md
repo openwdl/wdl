@@ -17,6 +17,9 @@ Keep the changelog pleasant to read in the text editor:
 + Properly indent blocks.
 -->
 
++ Added input and output `validation` blocks to tasks and workflows, reserving `validation` as a keyword. Input validation gates execution after its input dependencies resolve, while output validation checks completed outputs before they are exposed.
+  ([#778](https://github.com/openwdl/wdl/pull/778))
+
 version 1.3.0
 ---------------------------
 
