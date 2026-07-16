@@ -552,8 +552,9 @@ An `Int` literal has one of the following forms:
 * Decimal: `0`, or a digit from `1` through `9` followed by zero or more ASCII decimal digits (`0` through `9`).
 * Hexadecimal: `0x` or `0X` followed by one or more hexadecimal digits (`0` through `9`, `a` through `f`, or `A` through `F`).
 * Octal: `0o` or `0O` followed by one or more octal digits (`0` through `7`).
+* Binary: `0b` or `0B` followed by one or more binary digits (`0` or `1`).
 
-Leading zeros are not allowed in a decimal literal, so a legacy octal form such as `0755` is invalid. WDL does not support binary or other base prefixes in integer literals.
+Leading zeros are not allowed in a decimal literal, so a legacy octal form such as `0755` is invalid. WDL does not support other base prefixes in integer literals.
 
 ##### Floating-Point Literals
 
@@ -580,6 +581,8 @@ A decimal numeric literal without a decimal point or exponent is an `Int` litera
       Int uppercase_hexadecimal = 0XCAFE
       Int lowercase_octal = 0o755
       Int uppercase_octal = 0O755
+      Int lowercase_binary = 0b101010
+      Int uppercase_binary = 0B101010
       Float decimal_point = 1.0
       Float trailing_point = 1.
       Float leading_point = .5
@@ -607,6 +610,8 @@ A decimal numeric literal without a decimal point or exponent is an `Int` litera
     "numeric_literals.uppercase_hexadecimal": 51966,
     "numeric_literals.lowercase_octal": 493,
     "numeric_literals.uppercase_octal": 493,
+    "numeric_literals.lowercase_binary": 42,
+    "numeric_literals.uppercase_binary": 42,
     "numeric_literals.decimal_point": 1.0,
     "numeric_literals.trailing_point": 1.0,
     "numeric_literals.leading_point": 0.5,
@@ -666,13 +671,13 @@ A decimal numeric literal without a decimal point or exponent is an `Int` litera
 
 <details>
   <summary>
-  Example: invalid_binary_literal.wdl
+  Example: invalid_binary_digit.wdl
 
   ```wdl
   version 1.1
 
-  workflow invalid_binary_literal {
-    Int value = 0b101010
+  workflow invalid_binary_digit {
+    Int value = 0b2
   }
   ```
   </summary>
@@ -7048,7 +7053,7 @@ Example output:
 Int read_int(File)
 ```
 
-Reads a file that contains a single line containing only an integer and (optional) whitespace. After removing surrounding whitespace, the value must consist of an optional `+` or `-` followed by any form accepted for an [`Int` source literal](#integer-literals). The source-literal radix and leading-zero rules apply, so hexadecimal and octal prefixes are supported but a legacy octal form such as `0755` is invalid. If the line contains a valid integer, that value is returned as an `Int`. If the file is empty, the value is outside the range of `Int`, or the file does not contain a single integer, an error is raised.
+Reads a file that contains a single line containing only an integer and (optional) whitespace. After removing surrounding whitespace, the value must consist of an optional `+` or `-` followed by any form accepted for an [`Int` source literal](#integer-literals). The source-literal radix and leading-zero rules apply, so hexadecimal, octal, and binary prefixes are supported but a legacy octal form such as `0755` is invalid. If the line contains a valid integer, that value is returned as an `Int`. If the file is empty, the value is outside the range of `Int`, or the file does not contain a single integer, an error is raised.
 
 **Parameters**
 
@@ -7068,12 +7073,14 @@ task read_int {
   printf "  -42  \n" > decimal_file
   printf "  0Xcafe  \n" > hexadecimal_file
   printf "  0o755  \n" > octal_file
+  printf "  0B101010  \n" > binary_file
   >>>
 
   output {
     Int decimal = read_int("decimal_file")
     Int hexadecimal = read_int("hexadecimal_file")
     Int octal = read_int("octal_file")
+    Int binary = read_int("binary_file")
   }
 }
 ```
@@ -7091,7 +7098,8 @@ Example output:
 {
   "read_int.decimal": -42,
   "read_int.hexadecimal": 51966,
-  "read_int.octal": 493
+  "read_int.octal": 493,
+  "read_int.binary": 42
 }
 ```
 </p>
@@ -7138,7 +7146,7 @@ Test config:
 Float read_float(File)
 ```
 
-Reads a file that contains only a numeric value and (optional) whitespace. After removing surrounding whitespace, the value must consist of an optional `+` or `-` followed by any form accepted for an [`Int`](#integer-literals) or [`Float`](#floating-point-literals) source literal. An integer-form value is converted to the corresponding `Float`. The source-literal radix and leading-zero rules apply, so hexadecimal and octal prefixes are supported but a legacy octal form such as `0755` is invalid. If the file contains a valid numeric value, that value is returned as a `Float`. If the file is empty, the value is outside the finite range of `Float`, or the file does not contain a single numeric value, an error is raised.
+Reads a file that contains only a numeric value and (optional) whitespace. After removing surrounding whitespace, the value must consist of an optional `+` or `-` followed by any form accepted for an [`Int`](#integer-literals) or [`Float`](#floating-point-literals) source literal. An integer-form value is converted to the corresponding `Float`. The source-literal radix and leading-zero rules apply, so hexadecimal, octal, and binary prefixes are supported but a legacy octal form such as `0755` is invalid. If the file contains a valid numeric value, that value is returned as a `Float`. If the file is empty, the value is outside the finite range of `Float`, or the file does not contain a single numeric value, an error is raised.
 
 **Parameters**
 
@@ -7159,6 +7167,7 @@ task read_float {
   printf "  1.25e-3  \n" > float_file
   printf "  0xCAFE  \n" > hexadecimal_file
   printf "  0O755  \n" > octal_file
+  printf "  0b101010  \n" > binary_file
   >>>
 
   output {
@@ -7166,6 +7175,7 @@ task read_float {
     Float decimal = read_float("float_file")
     Float hexadecimal = read_float("hexadecimal_file")
     Float octal = read_float("octal_file")
+    Float binary = read_float("binary_file")
   }
 }
 ```
@@ -7184,7 +7194,8 @@ Example output:
   "read_float.integer": 1.0,
   "read_float.decimal": 0.00125,
   "read_float.hexadecimal": 51966.0,
-  "read_float.octal": 493.0
+  "read_float.octal": 493.0,
+  "read_float.binary": 42.0
 }
 ```
 </p>
