@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 version development
 ---------------------------
 
++ Clarified that the remainder operator truncates the quotient toward zero and
+  raises an error when the right-hand operand is zero
+  ([#789](https://github.com/openwdl/wdl/pull/789)).
+
 + Fixed description of ternary operator to say that the type, not the value,
   of the if-then-else is the same regardless of which side is evaluated.
   [PR 476](https://github.com/openwdl/wdl/pull/476) by @notestaff
@@ -155,4 +159,3 @@ draft-2
 ---------------------------
 
 + Added ANTLR4 grammar
-
