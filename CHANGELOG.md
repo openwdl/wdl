@@ -20,7 +20,7 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.2
 ---------------------------
 
-+ Added explicit `String` overloads to `basename` and `size` to prevent ambiguous coercion to `File` or `Directory` ([#683](https://github.com/openwdl/wdl/issues/683)).
++ Added explicit `String` overloads to `basename` and `size` to prevent ambiguous coercion to `File` or `Directory` ([#790](https://github.com/openwdl/wdl/pull/790)).
 
 + Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
 
