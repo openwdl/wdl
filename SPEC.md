@@ -109,6 +109,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [Workflow Inputs](#workflow-inputs)
     - [Workflow Outputs](#workflow-outputs)
     - [Evaluation of Workflow Elements](#evaluation-of-workflow-elements)
+    - [Workflow File System Context](#workflow-file-system-context)
     - [Fully Qualified Names \& Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
     - [Call Statement](#call-statement)
       - [Computing Call Inputs](#computing-call-inputs)
@@ -542,6 +543,8 @@ The following primitive types exist in WDL:
     * An execution engine may support other ways to specify [`File` inputs (e.g. as URIs)](#input-and-output-formats), but prior to task execution it must [localize inputs](#task-input-localization) so that the runtime value of a `File` variable is a local path.
       * Remote files must be treated as read-only.
       * A remote file is only required to be vaild at the time that the execution engine needs to localize it.
+
+Paths in workflow expressions are resolved according to the [workflow file system context](#workflow-file-system-context).
 
 <details>
   <summary>
@@ -5016,6 +5019,58 @@ The control flow of this workflow changes depending on whether the value of `y` 
 * If an input value is provided for `y` then it receives that value immediately and `d2` may start running as soon as the workflow starts.
 * In no input value is provided for `y` then it will need to wait for `d1` to complete before it is assigned.
 
+### Workflow File System Context
+
+Every top-level workflow invocation has a single logical file system context, which is established by the execution engine when the workflow begins and remains fixed for the duration of the invocation. Subworkflows inherit the context of their parent workflow. A relative path in a workflow expression is resolved against the parent directory of the WDL document containing the expression within this context, similar to a relative [import](#import-statements). An absolute path is resolved from the root of the context.
+
+All `File` values created by workflow expressions refer to resources in the workflow's file system context. In particular, when a `String` is coerced to a `File` in a workflow expression, its path is resolved according to the preceding rules at the point of coercion. This applies to expressions in all workflow scopes, including `scatter` and conditional bodies.
+
+An execution engine may evaluate workflow expressions on different physical machines, but moving an evaluation must not change the resource denoted by a `File` value or path. The engine must provide the evaluating machine with access to the resource in the workflow's file system context, or fail the workflow if it cannot; it must not reinterpret the path against the machine's local file system. Task input localization may change the path used inside a task, but it does not change the underlying resource represented by the `File`.
+
+<details>
+  <summary>
+  Example: workflow_file_context.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow workflow_file_context {
+    input {
+      File source
+    }
+
+    String filename = "~{source}"
+    File first_file = filename
+
+    scatter (iteration in range(3)) {
+      File scattered_file = filename
+    }
+
+    output {
+      Boolean same_files = first_file == scattered_file[0] && first_file == scattered_file[1] && first_file == scattered_file[2]
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+
+  ```json
+  {
+    "workflow_file_context.source": "data/hello.txt"
+  }
+  ```
+
+  Example output:
+
+  ```json
+  {
+    "workflow_file_context.same_files": true
+  }
+  ```
+  </p>
+</details>
+
 ### Fully Qualified Names & Namespaced Identifiers
 
 A fully qualified name is the unique identifier of any particular call, input, or output, and has the following structure:
@@ -5679,7 +5734,7 @@ Example output:
 </p>
 </details>
 
-In this example, the scatter body is evaluated three times - once for each value in `name_array`. On a multi-core computer, these evaluations might happen in parallel, with each evaluation running in a separate thread or subprocess; on a cloud platform, each of these evaluations might take place in a different virtual machine.
+In this example, the scatter body is evaluated three times - once for each value in `name_array`. On a multi-core computer, these evaluations might happen in parallel, with each evaluation running in a separate thread or subprocess; on a cloud platform, each of these evaluations might take place in a different virtual machine. Regardless of where an iteration is evaluated, `File` values and paths in its expressions use the workflow's [file system context](#primitive-types).
 
 The scatter body is a nested scope in which the scatter variable is accessible, along with all of the declarations and call outputs that are accessible in the enclosing scope. The scatter variable is *not* accessible outside the scatter body. In the preceding example, it would be an error to reference `name` in the workflow's output section. However, if the `scatter` contained a nested `scatter`, `name` would be accessible in that nested `scatter`'s body. Similarly, calls within the scatter body are able to depend on each other and reference each others' outputs.
  
