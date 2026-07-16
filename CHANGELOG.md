@@ -45,7 +45,6 @@ version 1.3.0
 
 + Added `value()` standard library function to extract the inner value from an enum variant.
 ([#695](https://github.com/openwdl/wdl/pull/695))
-
 version 1.2.1
 ---------------------------
 
