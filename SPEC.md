@@ -495,6 +495,8 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
 
 The following (case-sensitive) language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, struct types, or aliases.
 
+This restriction applies when a token names a WDL language element. A reserved keyword may be used as a key in a context that permits arbitrary keys, including `runtime`, `hints`, and `meta` sections, metadata objects, and `Object` literals. A reserved keyword may also be used as the member name on the right-hand side of a [member access](#member-access) expression when accessing such a key (e.g., `task.meta.import`).
+
 ```
 Array
 Boolean
@@ -2610,7 +2612,7 @@ Example output:
 
 #### Member Access
 
-The syntax `x.y` refers to member access. `x` must be a `Struct` or `Object` value, or a call in a workflow. A call can be thought of as a struct where the members are the outputs of the called task.
+The syntax `x.y` refers to member access. `x` must be a `Struct` or `Object` value, or a call in a workflow. A call can be thought of as a struct where the members are the outputs of the called task. The member name `y` may be a [reserved keyword](#reserved-keywords) when `x` is an `Object`.
 
 <details>
 <summary>
