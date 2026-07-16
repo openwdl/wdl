@@ -25,8 +25,6 @@ version 1.4.0
 version 1.3.0
 ---------------------------
 
-+ Added `list_directory`, `list_directory_recursive`, and `list_subdirectories` standard library functions for listing the contents of a `Directory` as `Array[File]` or `Array[Directory]`, enabling scatter-gather patterns over directory contents.
-
 + Clarified that relative paths in `File` and `Directory` declarations are resolved relative to the WDL document's parent directory outside the `output` section, and relative to the task's execution directory inside the `output` section. Also clarified that optional files evaluate to `None` in both contexts if the path does not exist.
   ([#735](https://github.com/openwdl/wdl/pull/735))
 
@@ -43,7 +41,6 @@ version 1.3.0
 
 + Added `value()` standard library function to extract the inner value from an enum variant.
 ([#695](https://github.com/openwdl/wdl/pull/695))
-
 version 1.2.1
 ---------------------------
 
