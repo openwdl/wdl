@@ -6,10 +6,10 @@
 
 | Engine    | Conformance Tests |
 |-----------|------------------|
-| MiniWDL   | [![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/exclaimation-mark/shields/miniwdl.json)](https://github.com/openwdl/wdl/actions/runs/29465481433) |
-| Sprocket   | [![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/exclaimation-mark/shields/sprocket.json)](https://github.com/openwdl/wdl/actions/runs/29465481435) |
-| Toil      | [![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/exclaimation-mark/shields/toil.json)](https://github.com/openwdl/wdl/actions/runs/29465481437) |
-| Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/exclaimation-mark/shields/cromwell.json)](https://github.com/openwdl/wdl/actions/runs/29465481470) |
+| MiniWDL   | [![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/shields/miniwdl.json)](https://github.com/openwdl/wdl/actions/runs/29465188571) |
+| Sprocket   | [![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/shields/sprocket.json)](https://github.com/openwdl/wdl/actions/runs/29465188597) |
+| Toil      | [![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/shields/toil.json)](https://github.com/openwdl/wdl/actions/runs/29465188570) |
+| Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/shields/cromwell.json)](https://github.com/openwdl/wdl/actions/runs/29465188580) |
 
 
 The **Workflow Description Language (WDL)** (pronounced as _/hwɪdl/_ or "whittle" with a 'd') is an open standard for describing data processing workflows using a human-readable/writeable syntax.
