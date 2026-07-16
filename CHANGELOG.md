@@ -21,7 +21,7 @@ version development
 ---------------------------
 
 + Defined the supported forms for `Int` and `Float` literals and
-  numeric parsing functions ([#774](https://github.com/openwdl/wdl/issues/774)).
+  numeric parsing functions ([#791](https://github.com/openwdl/wdl/pull/791)).
 
 + Fixed description of ternary operator to say that the type, not the value,
   of the if-then-else is the same regardless of which side is evaluated.
