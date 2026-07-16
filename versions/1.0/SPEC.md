@@ -1482,9 +1482,9 @@ task foo {
 }
 ```
 
-In this case, `x` should be considered an optional input to the task or workflow, but unlike optional inputs without defaults, the type can be `Int` rather than `Int?`. If an input is provided, that value should be used. If no input value for x is provided then the default expression is evaluated and used.
+In this case, `x` retains its declared type `Int`, but the caller is not required to provide it. If an input is provided, that value should be used. If no input value for `x` is provided, then the default expression is evaluated and used.
 
-Note that to be considered an optional input, the default value must be provided within the `input` section. If the declaration is in the main body of the workflow it is considered an intermediate value and is not overridable. For example below, the `Int x` is an input whereas `Int y` is not.
+To allow the caller to omit an input, the default value must be provided within the `input` section. If the declaration is in the main body of the workflow it is considered an intermediate value and is not overridable. For example below, the `Int x` is an input whereas `Int y` is not.
 ```wdl
 workflow foo {
   input {
@@ -1515,7 +1515,17 @@ Note that the control flow of the workflow changes depending on whether the valu
 
 
 ##### Optional inputs with defaults
-It *is* possible to provide a default to an optional input type:
+Inputs with default initializers retain their declared types, but callers are not required to provide them. A caller may omit the input or supply `None` *whether or not* its declared type carries the optional quantifier `?`. Usually, inputs with defaults should omit the `?` from their type, except when callers need the ability to override the default with `None`.
+
+In detail, if a caller omits an input from the call `input:` section, then the default initializer applies whether or not the input type is declared optional. But if the caller explicitly supplies `None` for the input (by passing an optional value), then the default initializer applies only if the declared type isn't optional. This table illustrates the value taken by an input `x` depending on what the caller supplies:
+
+| input declaration:     | `Int x = 1` | `Int? x = 1` | `Int? x` | `Int x` |
+| ---------------------- | ----------- | ------------ | -------- | ------- |
+| call input: `x = 42`   | 42          | 42           | 42       | 42      |
+| call input: `x = None` | 1           | `None`       | `None`   | *error* |
+| call input: *omitted*  | 1           | 1            | `None`   | *error* |
+
+It is possible to provide a default to an optional input type:
 ```wdl
 input {
   String? s = "hello"
