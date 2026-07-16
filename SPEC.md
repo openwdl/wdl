@@ -2612,7 +2612,7 @@ Example output:
 
 #### Member Access
 
-The syntax `x.y` refers to member access. `x` must be a `Struct` or `Object` value, or a call in a workflow. A call can be thought of as a struct where the members are the outputs of the called task. The member name `y` may be a [reserved keyword](#reserved-keywords) when `x` is an `Object`.
+The syntax `x.y` refers to member access. `x` must be a `Struct` or `Object` value, or a call in a workflow. A call can be thought of as a struct where the members are the outputs of the called task.
 
 <details>
 <summary>
