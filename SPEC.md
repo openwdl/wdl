@@ -3273,7 +3273,15 @@ cat /tmp/file3 >> result
 
 ##### Optional inputs with defaults
 
-It *is* possible to provide a default to an optional input type. This may be desirable in the case where you want to have a defined value by default, but you want the caller to be able to override the default and set the value to undefined (`None`).
+Inputs with default initializers retain their declared types, but callers are not required to provide them. A caller may omit the input or supply `None` *whether or not* its declared type carries the optional quantifier `?`. Usually, inputs with defaults should omit the `?` from their type, except when callers need the ability to override the default with `None`.
+
+In detail, if a caller omits an input from the call `input:` section, then the default initializer applies whether or not the input type is declared optional. But if the caller explicitly supplies `None` for the input (either literally or by passing an optional value), then the default initializer applies only if the declared type isn't optional. This table illustrates the value taken by an input `x` depending on what the caller supplies:
+
+| input declaration:     | `Int x = 1` | `Int? x = 1` | `Int? x` | `Int x` |
+| ---------------------- | ----------- | ------------ | -------- | ------- |
+| call input: `x = 42`   | 42          | 42           | 42       | 42      |
+| call input: `x = None` | 1           | `None`       | `None`   | *error* |
+| call input: *omitted*  | 1           | 1            | `None`   | *error* |
 
 <details>
 <summary>

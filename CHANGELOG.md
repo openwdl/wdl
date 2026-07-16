@@ -45,6 +45,10 @@ version development
 version 1.1.4
 ---------------------------
 
++ Clarified that inputs with default initializers retain their declared types
+  when callers omit them or supply `None`
+  ([#792](https://github.com/openwdl/wdl/pull/792)).
+
 + Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
 
 version 1.1.3
