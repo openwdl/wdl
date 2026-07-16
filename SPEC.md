@@ -524,6 +524,7 @@ Object
 Pair
 String
 alias
+after
 as
 call
 command
