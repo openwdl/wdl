@@ -22,7 +22,7 @@ version development
 
 + Required task `File` outputs with the same parent directory to remain
   colocated when moved to storage
-  ([#762](https://github.com/openwdl/wdl/issues/762)).
+  ([#794](https://github.com/openwdl/wdl/pull/794)).
 
 + Fixed description of ternary operator to say that the type, not the value,
   of the if-then-else is the same regardless of which side is evaluated.
