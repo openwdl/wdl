@@ -9,7 +9,7 @@
 | MiniWDL   | [![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/exists/shields/miniwdl.json)](https://github.com/openwdl/wdl/actions/runs/29467737720) |
 | Sprocket   | [![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/exists/shields/sprocket.json)](https://github.com/openwdl/wdl/actions/runs/29467737718) |
 | Toil      | [![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/exists/shields/toil.json)](https://github.com/openwdl/wdl/actions/runs/29467737713) |
-| Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.4/shields/cromwell.json)](https://github.com/openwdl/wdl/actions/runs/29465188580) |
+| Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/exists/shields/cromwell.json)](https://github.com/openwdl/wdl/actions/runs/29467737714) |
 
 
 The **Workflow Description Language (WDL)** (pronounced as _/hwɪdl/_ or "whittle" with a 'd') is an open standard for describing data processing workflows using a human-readable/writeable syntax.
