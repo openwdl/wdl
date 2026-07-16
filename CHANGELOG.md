@@ -42,6 +42,11 @@ version development
   consist of multiple files.
   [PR 241](https://github.com/openwdl/wdl/pull/241) by @cjllanwarne.
 
+version 1.1.4
+---------------------------
+
++ Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
+
 version 1.1.3
 ---------------------------
 + Updates the compliance suite to use [`spectool`](https://github.com/openwdl/spectool) ([#753](https://github.com/openwdl/wdl/pull/753)).
