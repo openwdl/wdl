@@ -496,7 +496,7 @@ Module ecosystems are targets for supply chain attacks: compromised repositories
 
 ### Signature File Format
 
-Module authors sign a module by producing a `module.sig` file at the module root. It is a JSON file containing an Ed25519 signature computed over the module's content hash (the raw 32-byte SHA-256 digest produced by the algorithm in [Content Hashing](#content-hashing), not the hex-encoded string).
+Module authors sign a module by producing a `module.sig` file at the module root. It is a JSON file containing an Ed25519 signature computed over the domain-separated payload defined in [Signature Payload Encoding](#signature-payload-encoding), which encodes the module's content hash and optional identity metadata.
 
 ```json
 {
@@ -512,8 +512,8 @@ Module authors sign a module by producing a `module.sig` file at the module root
 The fields:
 
 - **`public_key`** (string, required). The signer's Ed25519 public key in OpenSSH public key format—the single-line `ssh-ed25519 <base64-blob> [comment]` representation produced by `ssh-keygen -t ed25519` (i.e., the contents of the corresponding `.pub` file). Engines must parse the OpenSSH wire format inside the base64 blob to recover the underlying 32-byte Ed25519 public key for verification. Trailing whitespace and the optional comment field are not significant.
-- **`identity`** (object, optional). Human-readable metadata associated with the signing key. If present, it may contain `name` (string, optional) and `email` (string, optional). Engines may populate these fields from an OpenSSH public key comment of the form `Name <email>`, and may display them in trust prompts, lockfile verification reports, and trust-store listings. This metadata is informational: engines must not use it for signature verification, key matching, or trust decisions.
-- **`signature`** (string, required). The Ed25519 signature over the module's raw 32-byte content hash, base64-encoded.
+- **`identity`** (object, optional). Human-readable metadata associated with the signing key. If present, it may contain `name` (string, optional) and `email` (string, optional). Engines may populate these fields from an OpenSSH public key comment of the form `Name <email>`, and may display them in trust prompts, lockfile verification reports, and trust-store listings. The identity fields are authenticated by the module signature: changing either field invalidates verification. They remain informational and must not replace public-key matching or determine trust; the signing key asserts the identity, but the protocol does not independently validate the assertion. Each field must contain at most 256 Unicode scalar values and must not contain Unicode control characters.
+- **`signature`** (string, required). The Ed25519 signature over the payload defined in [Signature Payload Encoding](#signature-payload-encoding), base64-encoded.
 
 A signed module looks like:
 
@@ -527,11 +527,35 @@ csvcut/
 
 Ed25519 was chosen because it is fast, produces small signatures (64 bytes) and small keys (32 bytes), and has mature implementations in every major language. Engines can verify signatures in-process without shelling out to external tools or depending on a system keychain. Keys are stored in OpenSSH public key format so authors generate signing keys with the standard `ssh-keygen -t ed25519` tool and reuse the resulting `.pub` file directly; the OpenSSH wire format inside the base64 blob is short, well-specified, and supported by mainstream cryptography libraries.
 
+### Signature Payload Encoding
+
+The Ed25519 signature covers this exact byte sequence, without separators other than the field framing defined below:
+
+1. The 27 ASCII bytes `openwdl.module-signature.v1`.
+2. The raw 32-byte SHA-256 module content digest.
+3. The encoded optional `identity.name`.
+4. The encoded optional `identity.email`.
+
+Each optional string encodes as one presence byte: `0x00` for an absent value, or `0x01` followed by the UTF-8 byte length as an unsigned 64-bit little-endian integer, followed by exactly that many UTF-8 bytes. A present empty string therefore differs from an absent value. An absent `identity` object and an object with both fields absent are semantically equivalent.
+
+The `openwdl.module-signature.v1` domain prefix prevents cross-protocol confusion: a byte sequence produced by this algorithm cannot be mistaken for input to a different signing scheme that happens to use SHA-256. The presence/length framing prevents field-boundary ambiguity: without it, a name `JaneDoe` and an email `jane@example.com` would produce identical bytes to a name `JaneDoejane` and an email `@example.com`.
+
+#### Test Vector
+
+```text
+digest: 32 bytes, each 0x42
+identity.name: Jane Doe
+identity.email: jane@example.com
+payload length: 101 bytes
+payload hex:
+6f70656e77646c2e6d6f64756c652d7369676e61747572652e763142424242424242424242424242424242424242424242424242424242424242420108000000000000004a616e6520446f650110000000000000006a616e65406578616d706c652e636f6d
+```
+
 ### Trust on First Use (TOFU)
 
 The trust model follows trust on first use:
 
-1. On first resolution, if `module.sig` is present, the engine verifies the signature and records the signer's public key in `module-lock.json` under the module entry's `signer` field. If the signature file also contains `identity`, the engine may copy it into a user-level trust store when the signer key is accepted.
+1. On first resolution, if `module.sig` is present, the engine reconstructs the payload from the module's content digest and the `identity` fields (if present), verifies the signature against that payload, and records the signer's public key in `module-lock.json` under the module entry's `signer` field. If the signature file also contains `identity`, the engine may copy it into a user-level trust store when the signer key is accepted.
 2. On subsequent resolutions, the engine verifies the signature matches the previously recorded key.
 3. If the signing key has changed, the engine must **refuse to proceed** and surface a clear warning explaining what happened. The engine may proceed only after the user explicitly accepts the new key through an engine-defined trust mechanism. This protects against compromised repositories where an attacker replaces both content and signature.
 4. If a module was unsigned on first resolution and later becomes signed, the engine records the key going forward without disruption.
@@ -572,7 +596,7 @@ Compliant engines must provide, at minimum, the following:
 
 1. **Dependency resolution.** Given a module and its `module.json`, resolve all dependencies according to this specification and generate or update `module-lock.json` as required.
 2. **Lockfile verification.** Before executing any workflow that imports a module, verify the content checksum of each cached module against the lockfile. Refuse to proceed on mismatch.
-3. **Signature verification.** When a `module.sig` is present, verify the signature against the module's content hash, compare the signer's public key against the lockfile entry, and enforce the trust-on-first-use contract.
+3. **Signature verification.** When a `module.sig` is present, reconstruct the payload from the module's content digest and `identity` fields per [Signature Payload Encoding](#signature-payload-encoding), verify the signature against that payload, compare the signer's public key against the lockfile entry, and enforce the trust-on-first-use contract.
 4. **Structural validation.** Report clear errors for malformed `module.json` files, missing required fields, invalid SPDX license expressions, invalid semver version requirements, and unrecognized selectors.
 
 Engines may additionally provide higher-level commands for authoring convenience (e.g., scaffolding, validation, upgrade). This specification does not prescribe the command surface; engine authors are free to design their own CLI.
