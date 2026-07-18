@@ -533,11 +533,13 @@ The trust model follows trust on first use:
 
 1. On first resolution, if `module.sig` is present, the engine verifies the signature and records the signer's public key in `module-lock.json` under the module entry's `signer` field. If the signature file also contains `identity`, the engine may copy it into a user-level trust store when the signer key is accepted.
 2. On subsequent resolutions, the engine verifies the signature matches the previously recorded key.
-3. If the signing key has changed, the engine must **refuse to proceed** and surface a clear warning explaining what happened. The user must explicitly accept the new key through an engine-specific command (e.g., `sprocket module trust openwdl/csvcut`). This protects against compromised repositories where an attacker replaces both content and signature.
+3. If the signing key has changed, the engine must **refuse to proceed** and surface a clear warning explaining what happened. The engine may proceed only after the user explicitly accepts the new key through an engine-defined trust mechanism. This protects against compromised repositories where an attacker replaces both content and signature.
 4. If a module was unsigned on first resolution and later becomes signed, the engine records the key going forward without disruption.
-5. If a previously signed module is later resolved without a `module.sig`, the engine must refuse to proceed, exactly as if the signing key had changed. The user must explicitly accept the removal through the same engine-specific trust command.
+5. If a previously signed module is later resolved without a `module.sig`, the engine must treat that result as a trust-relevant downgrade and refuse to proceed, exactly as if the signing key had changed. The engine may proceed only after the user explicitly accepts the downgrade. Accepting the downgrade authorizes the engine to update `module-lock.json` to record the module as unsigned; it must not revoke or remove the signer key from any user-level or global trust store, because that key may still sign other modules.
 
 The lockfile `signer` field is absent for unsigned modules and for local path dependencies, which are not subject to signature verification.
+
+When one resolution or lockfile update observes multiple signer transitions, the engine must evaluate them as one atomic batch. If policy refuses any transition, the engine must reject the entire batch, must not update either user trust state or `module-lock.json`, and must not prompt for acceptances that could not make the batch succeed. If the user declines the batch, the engine must accept none of the transitions and must not update either user trust state or `module-lock.json`.
 
 A legitimate key rotation is indistinguishable from a compromise at the protocol level; the engine cannot tell them apart, so the user must. Authors rotating a signing key should announce the new key through a channel consumers already trust, such as the repository's README or a release note, so that users have something to verify against before accepting the new key.
 
