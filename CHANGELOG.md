@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
++ Allowed a WDL document to define any number of `workflow`s. A caller selects
+  the top-level workflow when more than one is available.
+
 + Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
 
 + Clarified that `env` is a reserved keyword ([#764](https://github.com/openwdl/wdl/pull/764)).

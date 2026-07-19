@@ -3619,11 +3619,51 @@ A WDL document may contain any combination of the following:
 * Any number of [`import` statements](#import-statements).
 * Any number of `struct` definitions.
 * Any number of `task` definitions.
-* A maximum of one `workflow` definition.
+* Any number of `workflow` definitions.
 
-To execute a WDL workflow, the user must provide the execution engine with the location of a "primary" WDL file (which may import additional files as needed) and any input values needed to satisfy all required task and workflow input parameters, using a [standard input JSON file](#json-input-format) or some other execution engine-specific mechanism.
+To execute a WDL workflow, the user must provide the execution engine with the
+location of a "primary" WDL file (which may import additional files as needed)
+and any input values needed to satisfy all required task and workflow input
+parameters, using a [standard input JSON file](#json-input-format) or some other
+execution engine-specific mechanism. If more than one workflow is available in
+the primary WDL file's global scope, the user must also specify which workflow
+to execute using an execution engine-specific mechanism.
 
-If a workflow appears in the primary WDL file, it is called the "top-level" workflow, and any workflows it calls via imports are "subworkflows". Typically, it is an error for the primary WDL file to not contain a workflow; however, an execution engine may choose to support executing individual tasks.
+The workflow selected for execution is called the "top-level" workflow. Any
+workflow it calls, whether defined in the same WDL document or imported, is
+called a "subworkflow". Typically, it is an error if no workflow is available in
+the primary WDL file's global scope; however, an execution engine may choose to
+support executing individual tasks.
+
+For example, this document provides two workflows as possible execution targets,
+and one calls the other as a subworkflow:
+
+```wdl
+version 1.4
+
+workflow echo {
+  input {
+    String message
+  }
+
+  output {
+    String result = message
+  }
+}
+
+workflow echo_twice {
+  input {
+    String message
+  }
+
+  call echo as first { message }
+  call echo as second { message = first.result }
+
+  output {
+    String result = second.result
+  }
+}
+```
 
 ## Versioning
 
@@ -3903,7 +3943,10 @@ This demonstrates that `~{verbosity}` produces the choice name "Info", while `~{
 
 ## Import Statements
 
-Although a WDL workflow and the task(s) it calls may be defined completely within a single WDL document, splitting it into multiple documents can be beneficial in terms of modularity and code resuse. Furthermore, complex workflows that consist of multiple subworkflows must be defined in multiple documents because each document is only allowed to contain at most one workflow.
+Related workflows and tasks may be defined together in one WDL document or split
+across documents. Keeping them together can make a set of entry points or closely
+related subworkflows easier to distribute, while imports support modularity and
+code reuse across documents.
 
 The `import` statement is the basis for modularity in WDL. A WDL document may have any number of `import` statements, each of which references another WDL document and allows access to that document's top-level members (`task`s, `workflow`s, and `struct`s).
 
@@ -6991,9 +7034,16 @@ Test config:
 
 ### Call Statement
 
-A workflow calls other tasks/workflows via the `call` keyword. A `call` is followed by the name of the task or subworkflow to run. If a task is defined in the same WDL document as the calling workflow, it may be called using just the task name. A task or workflow in an imported WDL must be called using its [fully-qualified name](#fully-qualified-names--namespaced-identifiers).
+A workflow calls tasks and subworkflows via the `call` keyword. A `call` is
+followed by the name of the task or subworkflow to run. A task or workflow in the
+calling document's global scope may be called using its name. A task or workflow
+that is accessible only through an imported namespace must be called using its
+[fully-qualified name](#fully-qualified-names--namespaced-identifiers).
 
 Each `call` must be uniquely identifiable. By default, the `call`'s unique identifier is the task or subworkflow name (e.g., `call foo` would be referenced by name `foo`). However, to `call foo` multiple times in the same workflow, it is necessary to give all except one of the `call` statements a unique alias using the `as` clause, e.g., `call foo as bar`.
+
+The workflow call graph must be acyclic. A workflow must not call itself, either
+directly or through one or more subworkflows.
 
 A `call` has an optional body in braces (`{}`), which may contain a comma-delimited list of inputs to the call. A `call` must, at a minimum, provide values for all of the task/subworkflow's required inputs, and each input value/expression must match the type of the task/subworkflow's corresponding input parameter. An input value may be any valid expression, not just a reference to another call output. If a task has no required parameters, then the `call` body may be empty or omitted.
 
@@ -13091,7 +13141,8 @@ The following WDL namespaces exist:
 
 * [WDL document](#wdl-documents)
     * The namespace of an [imported](#import-statements) document equals that of the basename of the imported file by default, but may be aliased using the `as <identifier>` syntax.
-    * A WDL document may contain a `workflow` and/or `task`s, which are names within the document's namespace.
+    * A WDL document may contain any number of `workflow`s and `task`s, which are
+      names within the document's namespace.
     * A WDL document may contain `struct`s and `enum`s, which are also names within the document's namespace and usable as types in any declarations. Structs and enums from any imported documents are [copied into the document's namespace](#importing-and-aliasing-structs) and may be aliased using the `alias <source name> as <new name>` syntax.
 * A [WDL `task`](#task-definition) is a namespace consisting of:
     * `input`, `output`, and private declarations
@@ -13120,7 +13171,7 @@ A "scope" is associated with a level of nesting within a namespace. The visibili
 
 A WDL document is the top-level (or "outermost") scope. All elements defined within a document that are not nested inside other elements are in the global scope and accessible from anywhere in the document. The elements that may be in a global scope are:
 
-* A `workflow`
+* Any number of `workflow`s
 * Any number of `task`s
 * Imported namespaces
 * All `struct`s and `enum`s defined in the document and in any imported documents
