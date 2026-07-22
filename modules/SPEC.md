@@ -512,7 +512,7 @@ Module authors sign a module by producing a `module.sig` file at the module root
 The fields:
 
 - **`public_key`** (string, required). The signer's Ed25519 public key in OpenSSH public key format—the single-line `ssh-ed25519 <base64-blob> [comment]` representation produced by `ssh-keygen -t ed25519` (i.e., the contents of the corresponding `.pub` file). Engines must parse the OpenSSH wire format inside the base64 blob to recover the underlying 32-byte Ed25519 public key for verification. Trailing whitespace and the optional comment field are not significant.
-- **`identity`** (object, optional). Human-readable metadata associated with the signing key. If present, it may contain `name` (string, optional) and `email` (string, optional). Engines may populate these fields from an OpenSSH public key comment of the form `Name <email>`, and may display them in trust prompts, lockfile verification reports, and trust-store listings. The identity fields are authenticated by the module signature: changing either field invalidates verification. They remain informational and must not replace public-key matching or determine trust; the signing key asserts the identity, but the protocol does not independently validate the assertion. Each field must contain at most 256 Unicode scalar values and must not contain Unicode control characters.
+- **`identity`** (object, optional). Human-readable metadata associated with the signing key. The object contains either the required string fields `name` and `email`, or the single required string field `comment`. Engines may parse an OpenSSH public key comment that exactly matches `Name <email>` into `name` and `email`; otherwise, they may preserve the complete public key comment in `comment`. Engines may display this metadata in trust prompts, lockfile verification reports, and trust-store listings. The identity is authenticated by the module signature, so changing its representation or any value invalidates verification. Identity metadata remains informational and must not replace public-key matching or determine trust; the signing key asserts the identity, but the protocol does not independently validate the assertion. Each string must be non-empty, contain at most 256 Unicode scalar values, and contain no Unicode control characters.
 - **`signature`** (string, required). The Ed25519 signature over the payload defined in [Signature Payload Encoding](#signature-payload-encoding), base64-encoded.
 
 A signed module looks like:
@@ -533,12 +533,15 @@ The Ed25519 signature covers this exact byte sequence, without separators other 
 
 1. The 27 ASCII bytes `openwdl.module-signature.v1`.
 2. The raw 32-byte SHA-256 module content digest.
-3. The encoded optional `identity.name`.
-4. The encoded optional `identity.email`.
+3. One identity discriminant byte followed by the fields selected by that discriminant.
 
-Each optional string encodes as one presence byte: `0x00` for an absent value, or `0x01` followed by the UTF-8 byte length as an unsigned 64-bit little-endian integer, followed by exactly that many UTF-8 bytes. A present empty string therefore differs from an absent value. An absent `identity` object and an object with both fields absent are semantically equivalent.
+The identity discriminant and its fields encode as follows:
 
-The `openwdl.module-signature.v1` domain prefix prevents cross-protocol confusion: a byte sequence produced by this algorithm cannot be mistaken for input to a different signing scheme that happens to use SHA-256. The presence/length framing prevents field-boundary ambiguity: without it, a name `JaneDoe` and an email `jane@example.com` would produce identical bytes to a name `JaneDoejane` and an email `@example.com`.
+- `0x00` represents an absent `identity` and has no following fields.
+- `0x01` represents a signer identity and is followed by the encoded `name` and then the encoded `email`.
+- `0x02` represents an unstructured identity and is followed by the encoded `comment`.
+
+Each string encodes as its UTF-8 byte length as an unsigned 64-bit little-endian integer, followed by exactly that many UTF-8 bytes. The `openwdl.module-signature.v1` domain prefix prevents cross-protocol confusion, while the discriminant and length framing prevent both representation ambiguity and field-boundary ambiguity.
 
 #### Test Vector
 
@@ -546,9 +549,17 @@ The `openwdl.module-signature.v1` domain prefix prevents cross-protocol confusio
 digest: 32 bytes, each 0x42
 identity.name: Jane Doe
 identity.email: jane@example.com
-payload length: 101 bytes
+payload length: 100 bytes
 payload hex:
-6f70656e77646c2e6d6f64756c652d7369676e61747572652e763142424242424242424242424242424242424242424242424242424242424242420108000000000000004a616e6520446f650110000000000000006a616e65406578616d706c652e636f6d
+6f70656e77646c2e6d6f64756c652d7369676e61747572652e763142424242424242424242424242424242424242424242424242424242424242420108000000000000004a616e6520446f6510000000000000006a616e65406578616d706c652e636f6d
+```
+
+```text
+digest: 32 bytes, each 0x42
+identity.comment: release signer
+payload length: 82 bytes
+payload hex:
+6f70656e77646c2e6d6f64756c652d7369676e61747572652e76324242424242424242424242424242424242424242424242424242424242424242020e0000000000000072656c65617365207369676e6572
 ```
 
 ### Trust on First Use (TOFU)
