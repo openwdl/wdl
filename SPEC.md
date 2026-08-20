@@ -951,7 +951,7 @@ Example output:
 
 ```json
 {
-  "relative_paths_context.result": "hello.txt"
+  "relative_paths_context.result": "hello.txt",
   "relative_paths_context.content": "hello"
 }
 ```
