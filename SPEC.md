@@ -8266,7 +8266,7 @@ Example output:
   "file_size.nested": {
     "a": (10, "out.txt"),
     "b": (50, null)
-  }
+  },
   "file_sizes.nested_bytes": 22.0
 }
 ```
