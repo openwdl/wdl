@@ -8264,8 +8264,8 @@ Example output:
   "file_sizes.created_file_bytes": 22.0,
   "file_sizes.multi_file_kb": 0.022,
   "file_size.nested": {
-    "a": (10, "out.txt"),
-    "b": (50, null)
+    "a": [10, "out.txt"],
+    "b": [50, null]
   },
   "file_sizes.nested_bytes": 22.0
 }
