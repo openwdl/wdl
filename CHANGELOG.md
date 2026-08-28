@@ -45,6 +45,11 @@ version development
 version 1.1.4
 ---------------------------
 
++ Clarified that coercing an `Object` or `Map[String, X]` to a `Struct` validates
+  provided values against their corresponding members, permits optional members
+  to be omitted, and is not a limited exception.
+  ([#802](https://github.com/openwdl/wdl/pull/802)).
+
 + Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
 
 version 1.1.3
