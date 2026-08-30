@@ -1358,12 +1358,12 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | `Array[Y]`       | `Array[X]+`      | `X` must be coercible to `Y`                                                                                   |
 | `Map[X, Z]`      | `Map[W, Y]`      | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
 | `Pair[X, Z]`     | `Pair[W, Y]`     | `W` must be coercible to `X` and `Y` must be coercible to `Z`                                                  |
-| `Struct`         | `Map[String, Y]` | `Map` keys must match `Struct` member names, and all `Struct` members types must be coercible from `Y`         |
+| `Struct`         | `Map[String, Y]` | `Map` keys must all be `Struct` member names, each value must be coercible to its corresponding member type, and all non-optional members must be present |
 | `Map[String, Y]` | `Struct`         | All `Struct` members must be coercible to `Y`                                                                  |
 | `Object`         | `Map[String, Y]` |                                                                                                                |
 | `Map[String, Y]` | `Object`         | All object values must be coercible to `Y`                                                                     |
 | `Object`         | `Struct`         |                                                                                                                |
-| `Struct`         | `Object`         | `Object` keys must match `Struct` member names, and `Object` values must be coercible to `Struct` member types |
+| `Struct`         | `Object`         | `Object` keys must all be `Struct` member names, each value must be coercible to its corresponding member type, and all non-optional members must be present |
 
 The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
 
@@ -1505,7 +1505,6 @@ Implementers may choose to allow limited exceptions to the above rules, with the
 * `Map[W, X]` to `Array[Pair[Y, Z]]`, in the case where `W` is coercible to `Y` and `X` is coercible to `Z`.
 * `Array[Pair[W, X]]` to `Map[Y, Z]`, in the case where `W` is coercible to `Y` and `X` is coercible to `Z`.
 * `Map` to `Object`, in the case of `Map[String, X]`.
-* `Map` to struct, in the case of `Map[String, X]` where all members of the struct have type `X`.
 * `Object` to `Map[String, X]`, in the case where all object values are of (or are coercible to) the same type.
 
 ### Declarations
