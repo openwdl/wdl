@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 version development
 ---------------------------
 
++ Corrected the WDL 1.0 struct-assignment example to use object-literal syntax
+  instead of map-literal syntax.
+  ([#801](https://github.com/openwdl/wdl/pull/801)).
+
 + Fixed description of ternary operator to say that the type, not the value,
   of the if-then-else is the same regardless of which side is evaluated.
   [PR 476](https://github.com/openwdl/wdl/pull/476) by @notestaff
