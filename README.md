@@ -38,7 +38,7 @@ This GitHub project uses the branch for the current version of the specification
 Users are strongly encouraged to use the current version of the specification unless absolutely necessary.
 
 * This branch contains version `1.2` of the specification ([link](https://github.com/openwdl/wdl/blob/wdl-1.2/SPEC.md)).
-* The current version of the specification is version `1.3` ([link](https://github.com/openwdl/wdl/blob/wdl-1.3/SPEC.md)). Users should use the current version unless they specifically need compatibility with version `1.2`.
+* For the current specification, see the repository's [default branch][github-main]. Users should use the current version unless they specifically need compatibility with version `1.2`.
 
 If desired, previous versions of the spec can be found on the [GitHub branches page][github-branches].
 
