@@ -30,7 +30,7 @@ This GitHub project uses the branch for the current version of the specification
 Users are strongly encouraged to use the current version of the specification unless absolutely necessary.
 
 * This branch contains `draft-3` of the specification ([link](https://github.com/openwdl/wdl/blob/wdl-draft-3/SPEC.md)). Draft specifications correspond to the initial development of WDL; they are incomplete and contain known irregularities.
-* The current version of the specification is version `1.3` ([link](https://github.com/openwdl/wdl/blob/wdl-1.3/SPEC.md)). Users should use the current version unless they specifically need compatibility with `draft-3`.
+* For the current specification, see the repository's [default branch][github-main]. Users should use the current version unless they specifically need compatibility with `draft-3`.
 
 If desired, previous versions of the spec can be found on the [GitHub branches page][github-branches].
 
