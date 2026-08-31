@@ -8710,7 +8710,7 @@ And `/local/fs/tmp/array.txt` would contain:
 
 ```
 Array[Array[String]] read_tsv(File)
-Array[Object] read_tsv(File, true)
+Array[Object] read_tsv(File, Boolean)
 Array[Object] read_tsv(File, Boolean, Array[String])
 ```
 
@@ -8718,8 +8718,8 @@ Reads a tab-separated value (TSV) file as an `Array[Array[String]]` representing
 
 This function has three variants:
 
-1. `Array[Array[String]] read_tsv(File, [false])`: Returns each row of the table as an `Array[String]`. There is no requirement that the rows of the table are all the same length.
-2. `Array[Object] read_tsv(File, true)`: The second parameter must be `true` and specifies that the TSV file contains a header line. Each row is returned as an `Object` with its keys determined by the header (the first line in the file) and its values as `String`s. All rows in the file must be the same length and the field names in the header row must be valid `Object` field names, or an error is raised.
+1. `Array[Array[String]] read_tsv(File)`: Returns each row of the table as an `Array[String]`. There is no requirement that the rows of the table are all the same length.
+2. `Array[Object] read_tsv(File, Boolean)`: The second parameter must evaluate to `true`, specifying that the TSV file contains a header line; if it evaluates to `false`, an error is raised. Each row is returned as an `Object` with its keys determined by the header (the first line in the file) and its values as `String`s. All rows in the file must be the same length and the field names in the header row must be valid `Object` field names, or an error is raised.
 3. `Array[Object] read_tsv(File, Boolean, Array[String])`: The second parameter specifies whether the TSV file contains a header line, and the third parameter is an array of field names that is used to specify the field names to use for the returned `Object`s. If the second parameter is `true`, the specified field names override those in the file's header (i.e., the header line is ignored).
 
 If the file is empty, an empty array is returned.
@@ -8729,10 +8729,10 @@ If the entire contents of the file can not be read for any reason, the calling t
 **Parameters**
 
 1. `File`: The TSV file to read.
-2. `Boolean`: (Optional) Whether to treat the file's first line as a header.
+2. `Boolean`: (Optional) Whether to treat the file's first line as a header. For the two-parameter variant, this must evaluate to `true`.
 3. `Array[String]`: (Optional) An array of field names. If specified, then the second parameter is also required.
 
-**Returns**: An `Array` of rows in the TSV file, where each row is an `Array[String]` of fields or an `Object` with keys determined by the second and third parameters and `String` values.
+**Returns**: The one-parameter variant returns an `Array` of rows, where each row is an `Array[String]` of fields. The two- and three-parameter variants return an `Array` of rows, where each row is an `Object` with keys determined by the second and third parameters and `String` values.
 
 <details>
 <summary>
@@ -8742,6 +8742,10 @@ Example: read_tsv_task.wdl
 version 1.2
 
 task read_tsv {
+  input {
+    Boolean has_header = true
+  }
+
   command <<<
     {
       printf "row1\tvalue1\n"
@@ -8760,7 +8764,7 @@ task read_tsv {
   output {
     Array[Array[String]] output_table = read_tsv("data.no_headers.tsv")
     Array[Object] output_objs1 = read_tsv("data.no_headers.tsv", false, ["name", "value"])
-    Array[Object] output_objs2 = read_tsv("data.headers.tsv", true)
+    Array[Object] output_objs2 = read_tsv("data.headers.tsv", has_header)
     Array[Object] output_objs3 = read_tsv("data.headers.tsv", true, ["name", "value"])
   }
 }
@@ -8824,6 +8828,51 @@ Example output:
       "value": "value3"
     }
   ]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: read_tsv_false_fail.wdl
+
+```wdl
+version 1.2
+
+task read_tsv_false_fail {
+  input {
+    Boolean has_header = false
+  }
+
+  command <<<
+    printf "row1\tvalue1\n" > data.tsv
+  >>>
+
+  output {
+    Array[Object] rows = read_tsv("data.tsv", has_header)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
 }
 ```
 </p>
