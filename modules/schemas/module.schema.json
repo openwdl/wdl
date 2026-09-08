@@ -14,7 +14,7 @@
     "homepage": { "type": "string", "format": "uri" },
     "entrypoint": { "type": "string" },
     "readme": { "oneOf": [{ "type": "string" }, { "const": false }] },
-    "exclude": { "type": "array", "items": { "type": "string" } },
+    "exclude": { "description": "Module-relative glob patterns omitting files from module content, validation, hashing, signing, and packaging. Included files cannot import excluded files. The root module.json is always included.", "type": "array", "items": { "type": "string" } },
     "tools": {
       "type": "array",
       "items": {
