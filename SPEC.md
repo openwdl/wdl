@@ -164,6 +164,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [`glob`](#glob)
       - [Non-standard Bash](#non-standard-bash)
     - [`size`](#size)
+    - [`list`](#-list)
     - [`stdout`](#stdout)
     - [`stderr`](#stderr)
     - [`read_string`](#read_string)
@@ -8752,6 +8753,260 @@ Example output:
     "b": (50, null)
   }
   "file_sizes.nested_bytes": 22.0
+}
+```
+</p>
+</details>
+
+### ✨ `list`
+
+*as of version 1.4*
+
+```
+Pair[Array[File], Array[Directory]] list(Directory, [Boolean, [Boolean, [String]]])
+```
+
+Lists the contents of the given directory. The `left` member of the returned `Pair` contains files, and the `right` member contains directories. The input directory itself is not included.
+
+By default, only entries in the top level of the input directory are returned. If recursive traversal is enabled, all files and directories at any depth are returned.
+
+The entries in each array are sorted lexicographically by the path of the corresponding directory entry relative to the input directory. Each matching directory entry contributes one value. Values are not deduplicated after [path canonicalization](#path-canonicalization-and-validation), so a symbolic link and its target may produce equal values.
+
+The optional `String` is a glob pattern that is matched against each file's basename. Patterns without a leading `.` do not match hidden files (dotfiles). When no pattern is provided, all files are returned, including hidden files. The pattern does not filter directories; hidden directories follow the same traversal and symbolic-link rules as other directories.
+
+Symbolic links are included by default. When symbolic links are included, links to files are returned in the `left` array and links to directories are returned in the `right` array. A symbolic link to a directory is never traversed, even when recursive traversal is enabled. Broken symbolic links are returned in the `left` array, consistent with [`glob`](#glob). When symbolic links are excluded, they are omitted from both arrays.
+
+**Parameters**
+
+1. `Directory`: The directory whose contents to list.
+2. `Boolean`: (Optional) Whether to recursively traverse subdirectories. Defaults to `false`.
+3. `Boolean`: (Optional) Whether to include symbolic links. Defaults to `true`.
+4. `String`: (Optional) A glob pattern to filter files by basename (e.g., `"*.fastq.gz"`).
+
+To provide an optional argument, all preceding arguments must also be provided.
+
+**Returns**: A `Pair[Array[File], Array[Directory]]` containing the matching files in its `left` array and directories in its `right` array. Either array is empty if it has no matching entries.
+
+**Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
+
+<details>
+<summary>
+Example: list_fastqs_task.wdl
+
+```wdl
+version 1.4
+
+task list_fastqs {
+  input {
+    Directory sample_dir
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(sample_dir, false, true, "*.fastq.gz")
+  Array[File] fastqs = contents.left
+
+  command <<<
+    echo "~{sep(' ', fastqs)}"
+  >>>
+
+  output {
+    Int num_fastqs = length(fastqs)
+    String file_list = read_string(stdout())
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "list_fastqs.sample_dir": "/path/to/samples"
+}
+```
+
+Example output (given the directory contains `a.fastq.gz`, `b.fastq.gz`, and `readme.txt`):
+
+```json
+{
+  "list_fastqs.num_fastqs": 2,
+  "list_fastqs.file_list": "/path/to/samples/a.fastq.gz /path/to/samples/b.fastq.gz"
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: scatter_directory_workflow.wdl
+
+```wdl
+version 1.4
+
+workflow scatter_directory {
+  input {
+    Directory input_dir
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(input_dir)
+
+  scatter (f in contents.left) {
+    call process_file { input: infile = f }
+  }
+
+  output {
+    Array[File] results = process_file.outfile
+  }
+}
+
+task process_file {
+  input {
+    File infile
+  }
+
+  command <<<
+    wc -l ~{infile} > result.txt
+  >>>
+
+  output {
+    File outfile = "result.txt"
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "scatter_directory.input_dir": "/path/to/dir"
+}
+```
+
+Example output (given the directory contains files `a.txt` and `b.txt`):
+
+```json
+{
+  "scatter_directory.results": ["/path/to/output/result.txt", "/path/to/output/result.txt"]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: find_bams_task.wdl
+
+```wdl
+version 1.4
+
+task find_bams {
+  input {
+    Directory project_dir
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(project_dir, true, true, "*.bam")
+  Array[File] bams = contents.left
+
+  command <<<
+    for bam in ~{sep(' ', bams)}; do
+      samtools index "$bam"
+    done
+  >>>
+
+  output {
+    Array[File] indices = glob("*.bai")
+  }
+
+  requirements {
+    container: "biocontainers/samtools:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "find_bams.project_dir": "/data/project"
+}
+```
+
+Example output (given the directory tree contains `sample1/aligned.bam` and `sample2/aligned.bam`):
+
+```json
+{
+  "find_bams.indices": ["/path/to/exec/aligned.bai", "/path/to/exec/aligned.bai"]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: process_samples_workflow.wdl
+
+```wdl
+version 1.4
+
+workflow process_samples {
+  input {
+    Directory data_root  # contains one subdirectory per sample
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(data_root)
+
+  scatter (sample_dir in contents.right) {
+    Pair[Array[File], Array[Directory]] sample_contents = list(sample_dir, false, true, "*.fastq.gz")
+    call align { input: reads = sample_contents.left }
+  }
+
+  output {
+    Array[File] bams = align.bam
+  }
+}
+
+task align {
+  input {
+    Array[File] reads
+  }
+
+  command <<<
+    bwa mem ref.fa ~{sep(' ', reads)} | samtools sort -o aligned.bam
+  >>>
+
+  output {
+    File bam = "aligned.bam"
+  }
+
+  requirements {
+    container: "biocontainers/bwa:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "process_samples.data_root": "/data/samples"
+}
+```
+
+Example output (given `/data/samples` contains subdirectories `sample1/` and `sample2/`, each with FASTQ files):
+
+```json
+{
+  "process_samples.bams": ["/path/to/output/aligned.bam", "/path/to/output/aligned.bam"]
 }
 ```
 </p>
