@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.2
 ---------------------------
 
++ Clarified that reserved keywords can be used as arbitrary keys and `Object` member names ([#793](https://github.com/openwdl/wdl/pull/793)).
+
 + Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
 
 + Clarified that `env` is a reserved keyword ([#764](https://github.com/openwdl/wdl/pull/764)).

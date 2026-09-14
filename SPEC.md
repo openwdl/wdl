@@ -495,6 +495,8 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
 
 The following (case-sensitive) language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, struct types, or aliases.
 
+This restriction applies when a token names a WDL language element. A reserved keyword may be used as a key in a context that permits arbitrary keys, including `runtime`, `hints`, and `meta` sections, metadata objects, and `Object` literals. A reserved keyword may also be used as the member name on the right-hand side of a [member access](#member-access) expression when accessing such a key (e.g., `task.meta.import`).
+
 ```
 Array
 Boolean
