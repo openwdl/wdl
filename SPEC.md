@@ -164,9 +164,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [`glob`](#glob)
       - [Non-standard Bash](#non-standard-bash)
     - [`size`](#size)
-    - [`list_directory`](#list_directory)
-    - [`list_directory_recursive`](#list_directory_recursive)
-    - [`list_subdirectories`](#list_subdirectories)
+    - [`list`](#-list)
     - [`stdout`](#stdout)
     - [`stderr`](#stderr)
     - [`read_string`](#read_string)
@@ -8760,27 +8758,34 @@ Example output:
 </p>
 </details>
 
-### `list_directory`
+### ✨ `list`
 
 *as of version 1.4*
 
 ```
-Array[File] list_directory(Directory)
-Array[File] list_directory(Directory, String)
+Pair[Array[File], Array[Directory]] list(Directory, [Boolean, [Boolean, [String]]])
 ```
 
-Returns an array of all files in the top level of the given directory. If the optional glob pattern is provided, only files whose basenames match the pattern are included. Subdirectories are not included in the result; use [`list_subdirectories`](#list_subdirectories) to obtain those.
+Lists the contents of the given directory. The `left` member of the returned `Pair` contains files, and the `right` member contains directories. The input directory itself is not included.
 
-Results are sorted lexicographically by basename to ensure deterministic ordering across platforms and filesystems.
+By default, only entries in the top level of the input directory are returned. If recursive traversal is enabled, all files and directories at any depth are returned.
 
-When a glob pattern is provided, it follows standard glob matching rules: patterns without a leading `.` do not match hidden files (dotfiles). When no pattern is provided, all files are returned including hidden files.
+The entries in each array are sorted lexicographically by the path of the corresponding directory entry relative to the input directory. Each matching directory entry contributes one value. Values are not deduplicated after [path canonicalization](#path-canonicalization-and-validation), so a symbolic link and its target may produce equal values.
+
+The optional `String` is a glob pattern that is matched against each file's basename. Patterns without a leading `.` do not match hidden files (dotfiles). When no pattern is provided, all files are returned, including hidden files. The pattern does not filter directories; hidden directories follow the same traversal and symbolic-link rules as other directories.
+
+Symbolic links are included by default. When symbolic links are included, links to files are returned in the `left` array and links to directories are returned in the `right` array. A symbolic link to a directory is never traversed, even when recursive traversal is enabled. Broken symbolic links are returned in the `left` array, consistent with [`glob`](#glob). When symbolic links are excluded, they are omitted from both arrays.
 
 **Parameters**
 
-1. `Directory`: The directory whose immediate file contents to list.
-2. `String`: (Optional) A glob pattern to filter results by basename (e.g., `"*.fastq.gz"`).
+1. `Directory`: The directory whose contents to list.
+2. `Boolean`: (Optional) Whether to recursively traverse subdirectories. Defaults to `false`.
+3. `Boolean`: (Optional) Whether to include symbolic links. Defaults to `true`.
+4. `String`: (Optional) A glob pattern to filter files by basename (e.g., `"*.fastq.gz"`).
 
-**Returns**: An `Array[File]` containing the files in the top level of the directory that match the pattern. Returns an empty array if the directory contains no matching files.
+To provide an optional argument, all preceding arguments must also be provided.
+
+**Returns**: A `Pair[Array[File], Array[Directory]]` containing the matching files in its `left` array and directories in its `right` array. Either array is empty if it has no matching entries.
 
 **Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
 
@@ -8796,7 +8801,8 @@ task list_fastqs {
     Directory sample_dir
   }
 
-  Array[File] fastqs = list_directory(sample_dir, "*.fastq.gz")
+  Pair[Array[File], Array[Directory]] contents = list(sample_dir, false, true, "*.fastq.gz")
+  Array[File] fastqs = contents.left
 
   command <<<
     echo "~{sep(' ', fastqs)}"
@@ -8845,9 +8851,9 @@ workflow scatter_directory {
     Directory input_dir
   }
 
-  Array[File] all_files = list_directory(input_dir)
+  Pair[Array[File], Array[Directory]] contents = list(input_dir)
 
-  scatter (f in all_files) {
+  scatter (f in contents.left) {
     call process_file { input: infile = f }
   }
 
@@ -8894,30 +8900,6 @@ Example output (given the directory contains files `a.txt` and `b.txt`):
 </p>
 </details>
 
-### `list_directory_recursive`
-
-*as of version 1.4*
-
-```
-Array[File] list_directory_recursive(Directory)
-Array[File] list_directory_recursive(Directory, String)
-```
-
-Returns an array of all files at any depth within the given directory (recursive walk). If the optional glob pattern is provided, only files whose basenames match the pattern are included. Subdirectories themselves are not included in the result.
-
-Results are sorted lexicographically by their path relative to the input directory.
-
-When a glob pattern is provided, it follows standard glob matching rules: patterns without a leading `.` do not match hidden files (dotfiles). When no pattern is provided, all files are returned including hidden files.
-
-**Parameters**
-
-1. `Directory`: The directory to recursively list.
-2. `String`: (Optional) A glob pattern to filter results by basename (e.g., `"*.bam"`).
-
-**Returns**: An `Array[File]` containing all files found recursively within the directory that match the pattern. Returns an empty array if no matching files are found.
-
-**Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
-
 <details>
 <summary>
 Example: find_bams_task.wdl
@@ -8930,7 +8912,8 @@ task find_bams {
     Directory project_dir
   }
 
-  Array[File] bams = list_directory_recursive(project_dir, "*.bam")
+  Pair[Array[File], Array[Directory]] contents = list(project_dir, true, true, "*.bam")
+  Array[File] bams = contents.left
 
   command <<<
     for bam in ~{sep(' ', bams)}; do
@@ -8967,26 +8950,6 @@ Example output (given the directory tree contains `sample1/aligned.bam` and `sam
 </p>
 </details>
 
-### `list_subdirectories`
-
-*as of version 1.4*
-
-```
-Array[Directory] list_subdirectories(Directory)
-```
-
-Returns an array of immediate child directories within the given directory. Only direct children are returned; this function is not recursive.
-
-Results are sorted lexicographically by basename to ensure deterministic ordering across platforms and filesystems.
-
-**Parameters**
-
-1. `Directory`: The parent directory whose immediate subdirectories to list.
-
-**Returns**: An `Array[Directory]` containing the immediate subdirectories. Returns an empty array if the directory contains no subdirectories.
-
-**Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
-
 <details>
 <summary>
 Example: process_samples_workflow.wdl
@@ -8999,11 +8962,11 @@ workflow process_samples {
     Directory data_root  # contains one subdirectory per sample
   }
 
-  Array[Directory] sample_dirs = list_subdirectories(data_root)
+  Pair[Array[File], Array[Directory]] contents = list(data_root)
 
-  scatter (sample_dir in sample_dirs) {
-    Array[File] fastqs = list_directory(sample_dir, "*.fastq.gz")
-    call align { input: reads = fastqs }
+  scatter (sample_dir in contents.right) {
+    Pair[Array[File], Array[Directory]] sample_contents = list(sample_dir, false, true, "*.fastq.gz")
+    call align { input: reads = sample_contents.left }
   }
 
   output {
