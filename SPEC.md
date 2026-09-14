@@ -7974,17 +7974,18 @@ For functions that write to the file system, the implementation should generate 
 ### `basename`
 
 ```
+String basename(String, [String])
 String basename(File, [String])
 String basename(Directory, [String])
 ```
 
-Returns the "basename" of a file or directory - the name after the last directory separator in the path. 
+Returns the "basename" of a path, file, or directory - the name after the last directory separator in the path.
 
 The optional second parameter specifies a literal suffix to remove from the file name. If the file name does not end with the specified suffix then it is ignored.
 
 **Parameters**
 
-1. `File|Directory`: Path of the file or directory to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
+1. `String|File|Directory`: Path of the file or directory to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
 2. `String`: (Optional) Suffix to remove from the file name.
 
 **Returns**: The file's basename as a `String`.
@@ -8197,20 +8198,21 @@ The runtime container may use a non-standard Bash shell that supports more compl
 ### `size`
 
 ```
+Float size(String|String?, [String])
 Float size(File|File?, [String])
 Float size(Directory|Directory?, [String])
 Float size(X|X?, [String])
 ```
 
-Determines the size of a file, directory, or the sum total sizes of the files/directories contained within a compound value. The files may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage)
+Determines the size of a file, directory, or the sum total sizes of the files/directories contained within a compound value. A `String` is assumed to be a local file path relative to the current working directory of the task. Paths may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage).
 
-In the second variant of the `size` function, the parameter type `X` represents any compound type that contains `File` or `File?` nested at any depth.
+In the generic variant of the `size` function, the parameter type `X` represents any compound type that contains `File` or `File?` nested at any depth.
 
 If the size cannot be represented in the specified unit because the resulting value is too large to fit in a `Float`, an error is raised. It is recommended to use a unit that will always be large enough to handle any expected inputs without numerical overflow.
 
 **Parameters**
 
-1. `File|File?|Directory|Directory?|X|X?`: A file, directory, or a compound value containing files/directories, for which to determine the size.
+1. `String|String?|File|File?|Directory|Directory?|X|X?`: A path, file, directory, or a compound value containing files/directories, for which to determine the size.
 2. `String`: (Optional) The unit of storage; defaults to 'B'.
 
 **Returns**: The size of the files/directories as a `Float`.
@@ -8228,11 +8230,14 @@ task file_sizes {
   >>>
 
   File? missing_file = None
+  String? missing_path = None
 
   output {
     File created_file = "out.txt"
-    Float missing_file_bytes = size(missing_file, "B") 
+    Float missing_file_bytes = size(missing_file, "B")
+    Float missing_path_bytes = size(missing_path, "B")
     Float created_file_bytes = size(created_file, "B")
+    Float created_path_bytes = size("out.txt", "B")
     Float multi_file_kb = size([created_file, missing_file], "K") # 0.022
 
     Map[String, Pair[Int, File?]] nested = {
@@ -8261,7 +8266,9 @@ Example output:
 {
   "file_sizes.created_file": "out.txt",
   "file_sizes.missing_file_bytes": 0.0,
+  "file_sizes.missing_path_bytes": 0.0,
   "file_sizes.created_file_bytes": 22.0,
+  "file_sizes.created_path_bytes": 22.0,
   "file_sizes.multi_file_kb": 0.022,
   "file_size.nested": {
     "a": (10, "out.txt"),
