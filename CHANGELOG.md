@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.2
 ---------------------------
 
++ Clarified that inputs with default initializers retain their declared types when callers omit them or supply `None` ([#792](https://github.com/openwdl/wdl/pull/792)).
+
 + Clarified that reserved keywords can be used as arbitrary keys and `Object` member names ([#793](https://github.com/openwdl/wdl/pull/793)).
 
 + Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
