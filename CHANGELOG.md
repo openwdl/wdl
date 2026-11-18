@@ -45,6 +45,10 @@ version development
 version 1.1.4
 ---------------------------
 
++ Clarified that inputs with default initializers retain their declared types
+  when callers omit them or supply `None`
+  ([#792](https://github.com/openwdl/wdl/pull/792)).
+
 + Clarified that coercing an `Object` or `Map[String, X]` to a `Struct` validates
   provided values against their corresponding members, permits optional members
   to be omitted, and is not a limited exception.
