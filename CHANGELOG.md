@@ -22,6 +22,44 @@ version 1.4.0
 
 + Added the postfix unwrap operator (`!`), which converts a value of optional type `T?` to type `T` and raises an error if the value is `None`. `x!` is equivalent to `select_first([x])` ([#777](https://github.com/openwdl/wdl/pull/777)).
 
++ Added globally valid coercions from `String` to `Int`, `Float`, and `Boolean` ([#797](https://github.com/openwdl/wdl/pull/797)).
+
++ Defined module `exclude` patterns as content exclusions shared by validation, hashing, signing, packaging, and imports, while keeping the root manifest included. ([#765](https://github.com/openwdl/wdl/pull/765))
+
++ Added a module specification and ecosystem. A new peer specification at [`modules/SPEC.md`](modules/SPEC.md) defines the `module.json` manifest, dependency resolution, `module-lock.json`, content hashing, module signing, credential management, and engine tooling expectations. ([#765](https://github.com/openwdl/wdl/pull/765))
+
++ Reserved the `from` keyword. Earlier `version` declarations continue to parse `from` as an ordinary identifier. ([#765](https://github.com/openwdl/wdl/pull/765))
+
++ Added two new import forms alongside the existing one. `import * from <source>` brings every task, workflow, and user-defined type from `<source>` into the importing document's scope. `import { <member> [as <Name>] (, <member> [as <Name>])* [,] } from <source>` brings only the listed items, with an optional per-member `as <Name>` rename. A `<source>` is either a quoted URI or an unquoted symbolic module path resolved through the consuming module's `module.json`. ([#765](https://github.com/openwdl/wdl/pull/765))
+
++ Added explicit `String` overloads to `basename` and `size` to prevent ambiguous coercion to `File` or `Directory` ([#790](https://github.com/openwdl/wdl/pull/790)).
+
++ Defined the supported forms for `Int` and `Float` literals and
+  numeric parsing functions ([#791](https://github.com/openwdl/wdl/pull/791)).
+
++ Fixed malformed JSON and invalid expected outputs in the
+  `relative_paths_context`, `file_sizes`, and `serde_map_json` examples
+  ([#805](https://github.com/openwdl/wdl/pull/805)). Thanks to @adamnovak!
+
++ Added the `list` standard library function for listing a `Directory` as a `Pair[Array[File], Array[Directory]]`, with optional recursive traversal, symbolic-link inclusion, and file basename filtering.
+  ([#800](https://github.com/openwdl/wdl/pull/800)) Thanks to @markjschreiber and @claymcleod!
+
++ Allowed a WDL document to define any number of `workflow`s. A caller selects
+  the top-level workflow when more than one is available
+  ([#798](https://github.com/openwdl/wdl/pull/798)).
+
++ Clarified that the remainder operator truncates the quotient toward zero and
+  raises an error when the right-hand operand is zero
+  ([#789](https://github.com/openwdl/wdl/pull/789)).
+
++ Clarified that inputs with default initializers retain their declared types when callers omit them or supply `None` ([#792](https://github.com/openwdl/wdl/pull/792)).
+
++ Clarified that reserved keywords can be used as arbitrary keys and `Object` member names ([#793](https://github.com/openwdl/wdl/pull/793)).
+
++ Clarified that `after` is a reserved keyword ([#766](https://github.com/openwdl/wdl/pull/766)).
+
++ Clarified that `env` is a reserved keyword ([#764](https://github.com/openwdl/wdl/pull/764)).
+
 version 1.3.0
 ---------------------------
 

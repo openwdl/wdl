@@ -30,6 +30,8 @@ Revisions to this specification are made periodically in order to correct errors
     - [Literals](#literals)
     - [Types](#types)
       - [Primitive Types](#primitive-types)
+        - [Integer Literals](#integer-literals)
+        - [Floating-Point Literals](#floating-point-literals)
         - [Strings](#strings)
           - [Multi-line Strings](#multi-line-strings)
         - [Files and Directories](#files-and-directories)
@@ -52,6 +54,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
+          - [String-to-Primitive Coercion](#string-to-primitive-coercion)
           - [Order of Precedence](#order-of-precedence)
           - [Coercion of Optional Types](#coercion-of-optional-types)
           - [Struct/Object Coercion from Map](#structobject-coercion-from-map)
@@ -86,6 +89,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [JSON Input and Output for Enums](#json-input-and-output-for-enums)
       - [Command Section Serialization of Enums](#command-section-serialization-of-enums)
   - [Import Statements](#import-statements)
+    - ✨ [Import Forms](#-import-forms)
     - [Import URIs](#import-uris)
     - [Importing and Aliasing Structs](#importing-and-aliasing-structs)
     - [Importing and Aliasing Enums](#importing-and-aliasing-enums)
@@ -165,6 +169,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [`glob`](#glob)
       - [Non-standard Bash](#non-standard-bash)
     - [`size`](#size)
+    - [`list`](#-list)
     - [`stdout`](#stdout)
     - [`stderr`](#stderr)
     - [`read_string`](#read_string)
@@ -512,6 +517,8 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
 
 The following (case-sensitive) language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, struct types, or aliases.
 
+This restriction applies when a token names a WDL language element. A reserved keyword may be used as a key in a context that permits arbitrary keys, including `runtime`, `hints`, and `meta` sections, metadata objects, and `Object` literals. A reserved keyword may also be used as the member name on the right-hand side of a [member access](#member-access) expression when accessing such a key (e.g., `task.meta.import`).
+
 ```
 Array
 Boolean
@@ -525,12 +532,15 @@ Object
 Pair
 String
 alias
+after
 as
 call
 command
 else
 enum
+env
 false
+from
 hints
 if
 in
@@ -573,6 +583,245 @@ The following primitive types exist in WDL:
 * A `String` represents a unicode character string following the format described [below](#strings).
 * A `File` represents a file (or file-like object).
 * A `Directory` represents a (possibly nested) directory of files (*as of version 1.2*).
+
+##### Integer Literals
+
+An `Int` literal has one of the following forms:
+
+* Decimal: `0`, or a digit from `1` through `9` followed by zero or more ASCII decimal digits (`0` through `9`).
+* Hexadecimal: `0x` or `0X` followed by one or more hexadecimal digits (`0` through `9`, `a` through `f`, or `A` through `F`).
+* Octal: `0o` or `0O` followed by one or more octal digits (`0` through `7`).
+* Binary: `0b` or `0B` followed by one or more binary digits (`0` or `1`).
+
+Leading zeros are not allowed in a decimal literal, so a legacy octal form such as `0755` is invalid. WDL does not support other base prefixes in integer literals.
+
+##### Floating-Point Literals
+
+A `Float` literal has one of the following forms, where `digit` is an ASCII decimal digit and `exponent` is `e` or `E`, an optional `+` or `-`, and one or more digits:
+
+* `digit+ exponent`, e.g., `1e3`
+* `digit+ . digit* exponent?`, e.g., `1.`, `1.0`, or `1.25e-3`
+* `. digit+ exponent?`, e.g., `.5`
+
+A decimal numeric literal without a decimal point or exponent is an `Int` literal. A leading `+` or `-` is a unary operator, not part of a numeric literal. Numeric literals do not support digit separators, type suffixes, or non-finite values such as `NaN` and `Infinity`. A numeric literal that is outside the range of its type is an error.
+
+<details>
+  <summary>
+  Example: numeric_literals.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow numeric_literals {
+    output {
+      Int zero = 0
+      Int decimal = 42
+      Int lowercase_hexadecimal = 0xcafe
+      Int uppercase_hexadecimal = 0XCAFE
+      Int lowercase_octal = 0o755
+      Int uppercase_octal = 0O755
+      Int lowercase_binary = 0b101010
+      Int uppercase_binary = 0B101010
+      Float decimal_point = 1.0
+      Float trailing_point = 1.
+      Float leading_point = .5
+      Float exponent = 1e3
+      Float uppercase_exponent = 1E10
+      Float signed_exponent = 1.25e-3
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+
+  ```json
+  {}
+  ```
+
+  Example output:
+
+  ```json
+  {
+    "numeric_literals.zero": 0,
+    "numeric_literals.decimal": 42,
+    "numeric_literals.lowercase_hexadecimal": 51966,
+    "numeric_literals.uppercase_hexadecimal": 51966,
+    "numeric_literals.lowercase_octal": 493,
+    "numeric_literals.uppercase_octal": 493,
+    "numeric_literals.lowercase_binary": 42,
+    "numeric_literals.uppercase_binary": 42,
+    "numeric_literals.decimal_point": 1.0,
+    "numeric_literals.trailing_point": 1.0,
+    "numeric_literals.leading_point": 0.5,
+    "numeric_literals.exponent": 1000.0,
+    "numeric_literals.uppercase_exponent": 10000000000.0,
+    "numeric_literals.signed_exponent": 0.00125
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: legacy_octal_literal.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow legacy_octal_literal {
+    Int value = 0755
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: invalid_hexadecimal_digit.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow invalid_hexadecimal_digit {
+    Int value = 0xG
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: invalid_binary_digit.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow invalid_binary_digit {
+    Int value = 0b2
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: malformed_numeric_prefix.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow malformed_numeric_prefix {
+    Int value = 0x
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: invalid_octal_digit.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow invalid_octal_digit {
+    Int value = 0o8
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: incomplete_exponent.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow incomplete_exponent {
+    Float value = 1e
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
+
+<details>
+  <summary>
+  Example: non_finite_float_literal.wdl
+
+  ```wdl
+  version 1.1
+
+  workflow non_finite_float_literal {
+    Float value = NaN
+  }
+  ```
+  </summary>
+  <p>
+  Test config:
+
+  ```json
+  {
+    "fail": true
+  }
+  ```
+  </p>
+</details>
 
 <details>
   <summary>
@@ -967,7 +1216,6 @@ Example output:
 
 ```json
 {
-  "relative_paths_context.result": "hello.txt"
   "relative_paths_context.content": "hello"
 }
 ```
@@ -976,7 +1224,7 @@ Test config:
 
 ```json
 {
-  "exclude_outputs": ["result"]
+  "exclude_outputs": ["relative_paths_context.result"]
 }
 ```
 
@@ -1692,10 +1940,10 @@ enum FavoriteNumber {
 }
 
 # ERROR: the inner type of this enum cannot be unambiguously resolved, as
-# `Int` and `String` do not coerce to a common type.
+# `Int` and `Boolean` do not coerce to a common type.
 enum InvalidEnum {
   Number = 42,
-  Text = "hello"
+  Toggle = true
 }
 
 # ERROR: cannot use computed expressions in enum values
@@ -1949,10 +2197,15 @@ Test config:
 
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
+Whether a coercion is valid is determined from the source and target types during static analysis. Some valid coercions may still fail during dynamic evaluation because the source value cannot be represented by the target type. Unless otherwise specified, a failed coercion raises an error.
+
 | Target Type      | Source Type      | Notes/Constraints                                                                                                                                |
 | ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `File`           | `String`         |                                                                                                                                                  |
 | `Directory`      | `String`         |
+| `Int`            | `String`         | See [String-to-Primitive Coercion](#string-to-primitive-coercion)                                                                                 |
+| `Float`          | `String`         | See [String-to-Primitive Coercion](#string-to-primitive-coercion)                                                                                 |
+| `Boolean`        | `String`         | See [String-to-Primitive Coercion](#string-to-primitive-coercion)                                                                                 |
 | `Float`          | `Int`            | May cause overflow error                                                                                                                         |
 | `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                                                     |
 | `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                                                     |
@@ -1969,7 +2222,89 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | `Enum`           | `String`         | `String` value must exactly match one of the enum's choice names                                                                                |
 | `String`         | `Enum`           | The enum choice is serialized to its choice name                                                                                               |
 
-The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-serializationdeserialization-using-write_linesread_lines) for details and best practices.
+###### String-to-Primitive Coercion
+
+When a `String` is coerced to an `Int`, `Float`, or `Boolean`, leading and trailing whitespace is ignored and the remaining content is converted as follows:
+
+* An `Int` conversion succeeds if the content is an optional `+` or `-` followed by any form accepted for an [`Int` literal](#integer-literals), and the value is within the range of the `Int` type. The literal radix and leading-zero rules apply, so hexadecimal, octal, and binary prefixes are supported, but a legacy octal form such as `0755` is invalid.
+* A `Float` conversion succeeds if the content is an optional `+` or `-` followed by any form accepted for an [`Int`](#integer-literals) or [`Float`](#floating-point-literals) literal, and the value is within the finite range of the `Float` type. An integer-form value is converted to the corresponding `Float`.
+* A `Boolean` conversion succeeds if the content is `true` or `false`, compared case-insensitively.
+
+If the content does not meet the requirements of the target type, the coercion fails with an error during dynamic evaluation.
+
+<details>
+<summary>
+Example: string_to_primitives.wdl
+
+```wdl
+version 1.4
+
+workflow string_to_primitives {
+  Int integer = " 42 "
+  Float floating_point = " 3.5 "
+  Boolean boolean = " TRUE "
+
+  output {
+    Int integer_result = integer
+    Float float_result = floating_point
+    Boolean boolean_result = boolean
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "string_to_primitives.boolean_result": true,
+  "string_to_primitives.float_result": 3.5,
+  "string_to_primitives.integer_result": 42
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: string_to_int_fail.wdl
+
+```wdl
+version 1.4
+
+workflow string_to_int_fail {
+  Int invalid = "not an integer"
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
 
 ###### Order of Precedence
 
@@ -2174,7 +2509,6 @@ Example output:
 Implementers may choose to allow limited exceptions to the above rules, with the understanding that workflows depending on these exceptions may not be portable. These exceptions are provided for backward-compatibility, are considered deprecated, and will be removed in a future version of WDL.
 
 * `Float` to `Int`, when the coercion can be performed with no loss of precision, e.g. `1.0 -> 1`.
-* `String` to `Int`/`Float`, when the coercion can be performed with no loss of precision.
 * `X?` may be coerced to `X`, and an error is raised if the value is undefined.
 * `Array[X]` to `Array[X]+`, when the array is non-empty (an error is raised otherwise).
 * `Map[W, X]` to `Array[Pair[Y, Z]]`, in the case where `W` is coercible to `Y` and `X` is coercible to `Z`.
@@ -2640,6 +2974,8 @@ Example output:
 | `Directory` | `!=`     | `Directory` | `Boolean` |                                                        |
 | `Directory` | `==`     | `String`  | `Boolean` |                                                          |
 | `Directory` | `!=`     | `String`  | `Boolean` |                                                          |
+
+For finite numeric operands `a` and `b`, where `b` is not equal to zero, the `%` operator evaluates to `a - (q * b)`, where `q` is the exact mathematical quotient `a / b` truncated toward zero to an integer. This equation defines the result without requiring its intermediate values to be representable by WDL types. The result is either zero or has the same sign as `a`, and its magnitude is less than the magnitude of `b`. For example, `5.5 % 2.0` evaluates to `1.5`, whereas `-5.5 % 2.0` evaluates to `-1.5`. Evaluating `%` with a right-hand operand equal to zero, including floating-point negative zero, results in an error.
 
 Boolean operator evaluation is minimal (or "short-circuiting"), meaning that:
 
@@ -3755,11 +4091,51 @@ A WDL document may contain any combination of the following:
 * Any number of [`import` statements](#import-statements).
 * Any number of `struct` definitions.
 * Any number of `task` definitions.
-* A maximum of one `workflow` definition.
+* Any number of `workflow` definitions.
 
-To execute a WDL workflow, the user must provide the execution engine with the location of a "primary" WDL file (which may import additional files as needed) and any input values needed to satisfy all required task and workflow input parameters, using a [standard input JSON file](#json-input-format) or some other execution engine-specific mechanism.
+To execute a WDL workflow, the user must provide the execution engine with the
+location of a "primary" WDL file (which may import additional files as needed)
+and any input values needed to satisfy all required task and workflow input
+parameters, using a [standard input JSON file](#json-input-format) or some other
+execution engine-specific mechanism. If more than one workflow is available in
+the primary WDL file's global scope, the user must also specify which workflow
+to execute using an execution engine-specific mechanism.
 
-If a workflow appears in the primary WDL file, it is called the "top-level" workflow, and any workflows it calls via imports are "subworkflows". Typically, it is an error for the primary WDL file to not contain a workflow; however, an execution engine may choose to support executing individual tasks.
+The workflow selected for execution is called the "top-level" workflow. Any
+workflow it calls, whether defined in the same WDL document or imported, is
+called a "subworkflow". Typically, it is an error if no workflow is available in
+the primary WDL file's global scope; however, an execution engine may choose to
+support executing individual tasks.
+
+For example, this document provides two workflows as possible execution targets,
+and one calls the other as a subworkflow:
+
+```wdl
+version 1.4
+
+workflow echo {
+  input {
+    String message
+  }
+
+  output {
+    String result = message
+  }
+}
+
+workflow echo_twice {
+  input {
+    String message
+  }
+
+  call echo as first { message }
+  call echo as second { message = first.result }
+
+  output {
+    String result = second.result
+  }
+}
+```
 
 ## Versioning
 
@@ -4039,13 +4415,12 @@ This demonstrates that `~{verbosity}` produces the choice name "Info", while `~{
 
 ## Import Statements
 
-Although a WDL workflow and the task(s) it calls may be defined completely within a single WDL document, splitting it into multiple documents can be beneficial in terms of modularity and code resuse. Furthermore, complex workflows that consist of multiple subworkflows must be defined in multiple documents because each document is only allowed to contain at most one workflow.
+Related workflows and tasks may be defined together in one WDL document or split
+across documents. Keeping them together can make a set of entry points or closely
+related subworkflows easier to distribute, while imports support modularity and
+code reuse across documents.
 
-The `import` statement is the basis for modularity in WDL. A WDL document may have any number of `import` statements, each of which references another WDL document and allows access to that document's top-level members (`task`s, `workflow`s, and `struct`s).
-
-The `import` statement specifies a WDL document source as a string literal, which is interpreted as a URI. The execution engine is responsible for resolving each import URI and retrieving the contents of the WDL document. The contents of the document in each URI must be a WDL document **with the same major version and a minor version less than or equal to the minor version of the importing document**.
-
-Each imported WDL document must be assigned a unique namespace that is used to refer to its members. By default, the namespace of an imported WDL document is the filename of the imported WDL, minus the `.wdl` extension. A namespace can be assigned explicitly using the `as <identifier>` syntax. The tasks and workflows imported from a WDL file are only accessible through the assigned [namespace](#namespaces) - see [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for details.
+The `import` statement is the basis for modularity in WDL. A document may contain any number of `import` statements. An import names a source and selects which of the source's items enter the importing document's scope. A source is either a quoted URI (see [Import URIs](#import-uris)) or ✨ an unquoted symbolic module path resolved through the consuming module's `module.json` per the [WDL Module Specification](modules/SPEC.md). The three available forms are described in [✨ Import Forms](#-import-forms). Regardless of source style and form, the imported document must be a WDL document **with the same major version and a minor version less than or equal to the minor version of the importing document**.
 
 ```wdl
 import "http://example.com/lib/analysis_tasks" as analysis
@@ -4067,9 +4442,87 @@ workflow wf {
 }
 ```
 
+### ✨ Import Forms
+
+An import statement takes one of three forms. Every form accepts the same two source styles, and the source style affects only how the execution engine locates the imported document.
+
+1. `import <source> [as <alias>] (alias <Old> as <New>)*`. User-defined types (structs and enums) from `<source>` are copied into the importing document's scope. Tasks and workflows from `<source>` are accessible only through the import's namespace, which defaults to the filename minus the `.wdl` extension for a quoted URI or to the last component of the path for a symbolic module path. `as <alias>` overrides the default namespace; `alias <Old> as <New>` renames a struct or enum as it is copied. `alias` cannot rename tasks or workflows. See [Fully Qualified Names & Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers) for how the namespace is used.
+2. `import * from <source>`. Every task, workflow, and user-defined type from `<source>` enters the importing document's scope. No namespace is introduced.
+3. `import { <member> [as <Name>] (, <member> [as <Name>])* [,] } from <source>`. Only the listed items enter the importing document's scope. A per-member `as <Name>` renames the selected item locally. A trailing comma after the last member is permitted. No namespace is introduced.
+
+Forms 2 and 3 do not accept a trailing `as <alias>` or `alias` clause.
+
+Names brought into a document's scope by forms 2 and 3—like user-defined types copied in by form 1—become members of that document's namespace and are visible to importers of that document exactly as if they were defined locally. The namespace created by form 1 is not itself a member of the importing document's namespace: tasks and workflows reachable only through a form 1 namespace do not propagate to downstream importers, and hierarchical namespaces cannot be constructed through chained imports.
+
+Forms 2 and 3 must not introduce duplicate names into the importing document's scope. A task or workflow name brought in by a scope-merging import that collides with a local declaration, with a name brought in by another import, or with a namespace identifier introduced by a form 1 import is an error—unless the colliding names denote the same underlying declaration in the same resolved source document, in which case they refer to that single declaration and no error is raised. This mirrors the rule for identical struct definitions and keeps diamond-shaped import graphs—two documents that each re-export the same shared file—usable without renames. Genuine conflicts are resolved with form 3's `as <Name>` rename or by selecting fewer members. User-defined types follow the rules in [Importing and Aliasing Structs](#importing-and-aliasing-structs): identical definitions may coexist; conflicting definitions require an alias.
+
+A `<source>` is either a quoted URI or an unquoted symbolic module path. A quoted URI (e.g., `"foo.wdl"`, `"https://example.com/lib.wdl"`) resolves per [Import URIs](#import-uris). A symbolic module path takes the form `<dep>[/<sub-path>]` and resolves through the consuming module's `module.json` per the [WDL Module Specification](modules/SPEC.md). The two source styles produce identical scoping in every form; once resolved, they are interchangeable.
+
+A symbolic module path is a sequence of `/`-separated components. Each component must be a valid WDL identifier. Empty components, leading or trailing `/`, `.`, `..`, whitespace, null bytes, and any other character not permitted in a WDL identifier are themselves not permitted in a symbolic module path. A document containing an import whose symbolic path violates this grammar is malformed.
+
+Examples:
+
+```wdl
+version 1.4
+
+import "csvkit.wdl"                                              # tasks via `csvkit` namespace; structs/enums in scope
+import "csvkit.wdl" as csv                                       # tasks via `csv` namespace; structs/enums in scope
+import "csvkit.wdl" alias CsvConfig as CsvkitConfig              # rename an imported struct or enum
+import * from "csvkit.wdl"                                       # tasks, workflows, structs, enums all in scope
+import { CsvSort } from "csvkit.wdl"                             # only `CsvSort` in scope
+import { CsvSort as MySort, CsvSortStable } from "csvkit.wdl"    # `MySort` and `CsvSortStable` in scope
+import openwdl/csvkit                                            # tasks via `csvkit` namespace; structs/enums in scope
+import { CsvSort } from openwdl/csvkit                           # only `CsvSort` in scope
+```
+
+In the following example, form 2 brings the task `double` into the document's scope and form 3 imports the same task under the name `twice`:
+
+<details>
+<summary>
+Example: import_forms.wdl
+
+```wdl
+version 1.4
+
+import * from "input_ref_call.wdl"
+import { double as twice } from "input_ref_call.wdl"
+
+workflow import_forms {
+  input {
+    Int i
+  }
+
+  call double { int_in = i }
+  call twice { int_in = double.out }
+
+  output {
+    Int result = twice.out
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "import_forms.i": 5
+}
+```
+
+Example output:
+
+```json
+{
+  "import_forms.result": 20
+}
+```
+</p>
+</details>
+
 ### Import URIs
 
-A document is imported using it's [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier), which uniquely describes its local or network-accessible location. The execution engine must at least support the following protocols for import URIs:
+A quoted URI is one of the two source styles an `import` statement may use. It identifies the imported document by its [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier), which uniquely describes a local or network-accessible location. The execution engine must at least support the following protocols for import URIs:
 
 * `http://`
 * `https://`
@@ -4533,7 +4986,7 @@ cat /tmp/file3 >> result
 
 ##### Optional inputs with defaults
 
-Inputs with default initializers are implicitly optional: callers may omit the input or supply `None` *whether or not* its declared type carries the optional quantifier `?`. Usually, inputs with defaults should omit the `?` from their type, except when callers need the ability to override the default with `None`.
+Inputs with default initializers retain their declared types, but callers are not required to provide them. A caller may omit the input or supply `None` *whether or not* its declared type carries the optional quantifier `?`. Usually, inputs with defaults should omit the `?` from their type, except when callers need the ability to override the default with `None`.
 
 In detail, if a caller omits an input from the call `input:` section, then the default initializer applies whether or not the input type is declared optional. But if the caller explicitly supplies `None` for the input (either literally or by passing an optional value), then the default initializer applies only if the declared type isn't optional. This table illustrates the value taken by an input `x` depending on what the caller supplies:
 
@@ -7127,9 +7580,16 @@ Test config:
 
 ### Call Statement
 
-A workflow calls other tasks/workflows via the `call` keyword. A `call` is followed by the name of the task or subworkflow to run. If a task is defined in the same WDL document as the calling workflow, it may be called using just the task name. A task or workflow in an imported WDL must be called using its [fully-qualified name](#fully-qualified-names--namespaced-identifiers).
+A workflow calls tasks and subworkflows via the `call` keyword. A `call` is
+followed by the name of the task or subworkflow to run. A task or workflow in the
+calling document's global scope may be called using its name. A task or workflow
+that is accessible only through an imported namespace must be called using its
+[fully-qualified name](#fully-qualified-names--namespaced-identifiers).
 
 Each `call` must be uniquely identifiable. By default, the `call`'s unique identifier is the task or subworkflow name (e.g., `call foo` would be referenced by name `foo`). However, to `call foo` multiple times in the same workflow, it is necessary to give all except one of the `call` statements a unique alias using the `as` clause, e.g., `call foo as bar`.
+
+The workflow call graph must be acyclic. A workflow must not call itself, either
+directly or through one or more subworkflows.
 
 A `call` has an optional body in braces (`{}`), which may contain a comma-delimited list of inputs to the call. A `call` must, at a minimum, provide values for all of the task/subworkflow's required inputs, and each input value/expression must match the type of the task/subworkflow's corresponding input parameter. An input value may be any valid expression, not just a reference to another call output. If a task has no required parameters, then the `call` body may be empty or omitted.
 
@@ -8592,17 +9052,18 @@ For functions that write to the file system, the implementation should generate 
 ### `basename`
 
 ```
+String basename(String, [String])
 String basename(File, [String])
 String basename(Directory, [String])
 ```
 
-Returns the "basename" of a file or directory - the name after the last directory separator in the path. 
+Returns the "basename" of a path, file, or directory - the name after the last directory separator in the path.
 
 The optional second parameter specifies a literal suffix to remove from the file name. If the file name does not end with the specified suffix then it is ignored.
 
 **Parameters**
 
-1. `File|Directory`: Path of the file or directory to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
+1. `String|File|Directory`: Path of the file or directory to read. If the argument is a `String`, it is assumed to be a local file path relative to the current working directory of the task.
 2. `String`: (Optional) Suffix to remove from the file name.
 
 **Returns**: The file's basename as a `String`.
@@ -8817,20 +9278,21 @@ The runtime container may use a non-standard Bash shell that supports more compl
 ### `size`
 
 ```
+Float size(String|String?, [String])
 Float size(File|File?, [String])
 Float size(Directory|Directory?, [String])
 Float size(X|X?, [String])
 ```
 
-Determines the size of a file, directory, or the sum total sizes of the files/directories contained within a compound value. The files may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage)
+Determines the size of a file, directory, or the sum total sizes of the files/directories contained within a compound value. A `String` is assumed to be a local file path relative to the current working directory of the task. Paths may be optional values; `None` values have a size of `0.0`. By default, the size is returned in bytes unless the optional second argument is specified with a [unit](#units-of-storage).
 
-In the second choice of the `size` function, the parameter type `X` represents any compound type that contains `File` or `File?` nested at any depth.
+In the generic variant of the `size` function, the parameter type `X` represents any compound type that contains `File` or `File?` nested at any depth.
 
 If the size cannot be represented in the specified unit because the resulting value is too large to fit in a `Float`, an error is raised. It is recommended to use a unit that will always be large enough to handle any expected inputs without numerical overflow.
 
 **Parameters**
 
-1. `File|File?|Directory|Directory?|X|X?`: A file, directory, or a compound value containing files/directories, for which to determine the size.
+1. `String|String?|File|File?|Directory|Directory?|X|X?`: A path, file, directory, or a compound value containing files/directories, for which to determine the size.
 2. `String`: (Optional) The unit of storage; defaults to 'B'.
 
 **Returns**: The size of the files/directories as a `Float`.
@@ -8848,18 +9310,20 @@ task file_sizes {
   >>>
 
   File? missing_file = None
+  String? missing_path = None
 
   output {
     File created_file = "out.txt"
-    Float missing_file_bytes = size(missing_file, "B") 
+    Float missing_file_bytes = size(missing_file, "B")
+    Float missing_path_bytes = size(missing_path, "B")
     Float created_file_bytes = size(created_file, "B")
+    Float created_path_bytes = size("out.txt", "B")
     Float multi_file_kb = size([created_file, missing_file], "K") # 0.022
 
-    Map[String, Pair[Int, File?]] nested = {
+    Float nested_bytes = size({
       "a": (10, created_file),
       "b": (50, missing_file)
-    }
-    Float nested_bytes = size(nested)
+    })
   }
   
   requirements {
@@ -8881,13 +9345,265 @@ Example output:
 {
   "file_sizes.created_file": "out.txt",
   "file_sizes.missing_file_bytes": 0.0,
+  "file_sizes.missing_path_bytes": 0.0,
   "file_sizes.created_file_bytes": 22.0,
+  "file_sizes.created_path_bytes": 22.0,
   "file_sizes.multi_file_kb": 0.022,
-  "file_size.nested": {
-    "a": (10, "out.txt"),
-    "b": (50, null)
-  }
   "file_sizes.nested_bytes": 22.0
+}
+```
+</p>
+</details>
+
+### ✨ `list`
+
+*as of version 1.4*
+
+```
+Pair[Array[File], Array[Directory]] list(Directory, [Boolean, [Boolean, [String]]])
+```
+
+Lists the contents of the given directory. The `left` member of the returned `Pair` contains files, and the `right` member contains directories. The input directory itself is not included.
+
+By default, only entries in the top level of the input directory are returned. If recursive traversal is enabled, all files and directories at any depth are returned.
+
+The entries in each array are sorted lexicographically by the path of the corresponding directory entry relative to the input directory. Each matching directory entry contributes one value. Values are not deduplicated after [path canonicalization](#path-canonicalization-and-validation), so a symbolic link and its target may produce equal values.
+
+The optional `String` is a glob pattern that is matched against each file's basename. Patterns without a leading `.` do not match hidden files (dotfiles). When no pattern is provided, all files are returned, including hidden files. The pattern does not filter directories; hidden directories follow the same traversal and symbolic-link rules as other directories.
+
+Symbolic links are included by default. When symbolic links are included, links to files are returned in the `left` array and links to directories are returned in the `right` array. A symbolic link to a directory is never traversed, even when recursive traversal is enabled. Broken symbolic links are returned in the `left` array, consistent with [`glob`](#glob). When symbolic links are excluded, they are omitted from both arrays.
+
+**Parameters**
+
+1. `Directory`: The directory whose contents to list.
+2. `Boolean`: (Optional) Whether to recursively traverse subdirectories. Defaults to `false`.
+3. `Boolean`: (Optional) Whether to include symbolic links. Defaults to `true`.
+4. `String`: (Optional) A glob pattern to filter files by basename (e.g., `"*.fastq.gz"`).
+
+To provide an optional argument, all preceding arguments must also be provided.
+
+**Returns**: A `Pair[Array[File], Array[Directory]]` containing the matching files in its `left` array and directories in its `right` array. Either array is empty if it has no matching entries.
+
+**Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
+
+<details>
+<summary>
+Example: list_fastqs_task.wdl
+
+```wdl
+version 1.4
+
+task list_fastqs {
+  input {
+    Directory sample_dir
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(sample_dir, false, true, "*.fastq.gz")
+  Array[File] fastqs = contents.left
+
+  command <<<
+    echo "~{sep(' ', fastqs)}"
+  >>>
+
+  output {
+    Int num_fastqs = length(fastqs)
+    String file_list = read_string(stdout())
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "list_fastqs.sample_dir": "/path/to/samples"
+}
+```
+
+Example output (given the directory contains `a.fastq.gz`, `b.fastq.gz`, and `readme.txt`):
+
+```json
+{
+  "list_fastqs.num_fastqs": 2,
+  "list_fastqs.file_list": "/path/to/samples/a.fastq.gz /path/to/samples/b.fastq.gz"
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: scatter_directory_workflow.wdl
+
+```wdl
+version 1.4
+
+workflow scatter_directory {
+  input {
+    Directory input_dir
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(input_dir)
+
+  scatter (f in contents.left) {
+    call process_file { input: infile = f }
+  }
+
+  output {
+    Array[File] results = process_file.outfile
+  }
+}
+
+task process_file {
+  input {
+    File infile
+  }
+
+  command <<<
+    wc -l ~{infile} > result.txt
+  >>>
+
+  output {
+    File outfile = "result.txt"
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "scatter_directory.input_dir": "/path/to/dir"
+}
+```
+
+Example output (given the directory contains files `a.txt` and `b.txt`):
+
+```json
+{
+  "scatter_directory.results": ["/path/to/output/result.txt", "/path/to/output/result.txt"]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: find_bams_task.wdl
+
+```wdl
+version 1.4
+
+task find_bams {
+  input {
+    Directory project_dir
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(project_dir, true, true, "*.bam")
+  Array[File] bams = contents.left
+
+  command <<<
+    for bam in ~{sep(' ', bams)}; do
+      samtools index "$bam"
+    done
+  >>>
+
+  output {
+    Array[File] indices = glob("*.bai")
+  }
+
+  requirements {
+    container: "biocontainers/samtools:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "find_bams.project_dir": "/data/project"
+}
+```
+
+Example output (given the directory tree contains `sample1/aligned.bam` and `sample2/aligned.bam`):
+
+```json
+{
+  "find_bams.indices": ["/path/to/exec/aligned.bai", "/path/to/exec/aligned.bai"]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: process_samples_workflow.wdl
+
+```wdl
+version 1.4
+
+workflow process_samples {
+  input {
+    Directory data_root  # contains one subdirectory per sample
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(data_root)
+
+  scatter (sample_dir in contents.right) {
+    Pair[Array[File], Array[Directory]] sample_contents = list(sample_dir, false, true, "*.fastq.gz")
+    call align { input: reads = sample_contents.left }
+  }
+
+  output {
+    Array[File] bams = align.bam
+  }
+}
+
+task align {
+  input {
+    Array[File] reads
+  }
+
+  command <<<
+    bwa mem ref.fa ~{sep(' ', reads)} | samtools sort -o aligned.bam
+  >>>
+
+  output {
+    File bam = "aligned.bam"
+  }
+
+  requirements {
+    container: "biocontainers/bwa:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "process_samples.data_root": "/data/samples"
+}
+```
+
+Example output (given `/data/samples` contains subdirectories `sample1/` and `sample2/`, each with FASTQ files):
+
+```json
+{
+  "process_samples.bams": ["/path/to/output/aligned.bam", "/path/to/output/aligned.bam"]
 }
 ```
 </p>
@@ -9044,7 +9760,7 @@ Example output:
 Int read_int(File)
 ```
 
-Reads a file that contains a single line containing only an integer and (optional) whitespace. If the line contains a valid integer, that value is returned as an `Int`. If the file is empty or does not contain a single integer, an error is raised.
+Reads the contents of a file as a `String` and [coerces](#string-to-primitive-coercion) it to an `Int`. If the file is empty or its contents cannot be coerced to an `Int`, an error is raised.
 
 **Parameters**
 
@@ -9061,11 +9777,17 @@ version 1.4
 
 task read_int {
   command <<<
-  printf "  1  \n" > int_file
+  printf "  -42  \n" > decimal_file
+  printf "  0Xcafe  \n" > hexadecimal_file
+  printf "  0o755  \n" > octal_file
+  printf "  0B101010  \n" > binary_file
   >>>
 
   output {
-    Int i = read_int("int_file")
+    Int decimal = read_int("decimal_file")
+    Int hexadecimal = read_int("hexadecimal_file")
+    Int octal = read_int("octal_file")
+    Int binary = read_int("binary_file")
   }
 }
 ```
@@ -9081,7 +9803,45 @@ Example output:
 
 ```json
 {
-  "read_int.i": 1
+  "read_int.decimal": -42,
+  "read_int.hexadecimal": 51966,
+  "read_int.octal": 493,
+  "read_int.binary": 42
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: read_int_legacy_octal_task.wdl
+
+```wdl
+version 1.4
+
+task read_int_legacy_octal {
+  command <<<
+  printf "0755\n" > int_file
+  >>>
+
+  output {
+    Int value = read_int("int_file")
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
 }
 ```
 </p>
@@ -9093,7 +9853,7 @@ Example output:
 Float read_float(File)
 ```
 
-Reads a file that contains only a numeric value and (optional) whitespace. If the line contains a valid floating point number, that value is returned as a `Float`. If the file is empty or does not contain a single float, an error is raised.
+Reads the contents of a file as a `String` and [coerces](#string-to-primitive-coercion) it to a `Float`. If the file is empty or its contents cannot be coerced to a `Float`, an error is raised.
 
 **Parameters**
 
@@ -9111,12 +9871,18 @@ version 1.4
 task read_float {
   command <<<
   printf "  1  \n" > int_file
-  printf "  2.0  \n" > float_file
+  printf "  1.25e-3  \n" > float_file
+  printf "  0xCAFE  \n" > hexadecimal_file
+  printf "  0O755  \n" > octal_file
+  printf "  0b101010  \n" > binary_file
   >>>
 
   output {
-    Float f1 = read_float("int_file")
-    Float f2 = read_float("float_file")
+    Float integer = read_float("int_file")
+    Float decimal = read_float("float_file")
+    Float hexadecimal = read_float("hexadecimal_file")
+    Float octal = read_float("octal_file")
+    Float binary = read_float("binary_file")
   }
 }
 ```
@@ -9132,8 +9898,46 @@ Example output:
 
 ```json
 {
-  "read_float.f1": 1.0,
-  "read_float.f2": 2.0
+  "read_float.integer": 1.0,
+  "read_float.decimal": 0.00125,
+  "read_float.hexadecimal": 51966.0,
+  "read_float.octal": 493.0,
+  "read_float.binary": 42.0
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: read_float_legacy_octal_task.wdl
+
+```wdl
+version 1.4
+
+task read_float_legacy_octal {
+  command <<<
+  printf "0755\n" > float_file
+  >>>
+
+  output {
+    Float value = read_float("float_file")
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
 }
 ```
 </p>
@@ -9145,7 +9949,7 @@ Example output:
 Boolean read_boolean(File)
 ```
 
-Reads a file that contains a single line containing only a boolean value and (optional) whitespace. If the non-whitespace content of the line is "true" or "false", that value is returned as a `Boolean`. If the file is empty or does not contain a single boolean, an error is raised. The comparison is case- and whitespace-insensitive.
+Reads the contents of a file as a `String` and [coerces](#string-to-primitive-coercion) it to a `Boolean`. If the file is empty or its contents cannot be coerced to a `Boolean`, an error is raised.
 
 **Parameters**
 
@@ -12041,6 +12845,8 @@ Example output:
 
 WDL uses [JSON](https://www.json.org) as its native serialization format for task and workflow inputs and outputs. The specifics of these formats are described below.
 
+Numbers in JSON inputs, JSON outputs, and files read by `read_json` follow the JSON number grammar rather than the WDL source-literal grammar. They must also be within the range of the WDL type to which they are deserialized. In particular, JSON does not permit base prefixes, leading zeros, a leading `+`, a trailing decimal point, a leading decimal point, `NaN`, or `Infinity`.
+
 All WDL implementations are required to support the standard JSON input and output formats. WDL compliance testing is performed using test cases whose inputs and expected outputs are given in these formats. A WDL implementation may choose to provide additional input and output mechanisms so long as they are documented, and/or tools are provided to interconvert between engine-specific input and the standard JSON format, to foster interoperability between tools in the WDL ecosystem.
 
 ## JSON Input Format
@@ -13208,7 +14014,7 @@ Where `/jobs/564757/sample_quality_scores.json` would contain:
 {
   "read1": 32,
   "read2": 41,
-  "read3": 55,
+  "read3": 55
 }
 ```
 
@@ -13229,7 +14035,8 @@ The following WDL namespaces exist:
 
 * [WDL document](#wdl-documents)
     * The namespace of an [imported](#import-statements) document equals that of the basename of the imported file by default, but may be aliased using the `as <identifier>` syntax.
-    * A WDL document may contain a `workflow` and/or `task`s, which are names within the document's namespace.
+    * A WDL document may contain any number of `workflow`s and `task`s, which are
+      names within the document's namespace.
     * A WDL document may contain `struct`s and `enum`s, which are also names within the document's namespace and usable as types in any declarations. Structs and enums from any imported documents are [copied into the document's namespace](#importing-and-aliasing-structs) and may be aliased using the `alias <source name> as <new name>` syntax.
 * A [WDL `task`](#task-definition) is a namespace consisting of:
     * `input`, `output`, and private declarations
@@ -13258,7 +14065,7 @@ A "scope" is associated with a level of nesting within a namespace. The visibili
 
 A WDL document is the top-level (or "outermost") scope. All elements defined within a document that are not nested inside other elements are in the global scope and accessible from anywhere in the document. The elements that may be in a global scope are:
 
-* A `workflow`
+* Any number of `workflow`s
 * Any number of `task`s
 * Imported namespaces
 * All `struct`s and `enum`s defined in the document and in any imported documents
