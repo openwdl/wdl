@@ -6714,11 +6714,11 @@ Test config:
 
 The `max_retries` attribute specifies the maximum number of times a task should be retried following a failure other than preemption. The execution engine must retry the task at least once and up to (but not exceeding) the specified number of attempts.
 
-A retry following preemption does not count against `max_retries`. If the engine honors the [`preemptible`](#-preemptible) hint, that hint governs the number of preemptible attempts. Starting a non-preemptible attempt after exhausting those attempts does count as one retry.
+A retry following preemption does not count against `max_retries`, even when it runs on a non-preemptible instance. If the engine honors the [`preemptible`](#-preemptible) hint, that hint governs how many preemptions the engine tolerates before switching to a non-preemptible instance or failing the task.
 
 The execution engine may choose to define an upper bound (>= 1) on the number of retry attempts that it permits.
 
-A value of `0` means that a failure other than preemption must not result in a retry. It does not prevent retries on preemptible instances following preemption, but it prevents the engine from starting a non-preemptible attempt after the `preemptible` attempts are exhausted.
+A value of `0` means that a failure other than preemption must not result in a retry. It does not prevent retries following preemption on either type of instance.
 
 ```wdl
 task max_retries_test {
@@ -6738,7 +6738,7 @@ A preemptible instance is a compute instance that the execution environment may 
 
 When `preemptible_only` is `false`, this requirement has no effect. When `preemptible_only` is `true`, the execution engine must run every attempt on a preemptible instance. If the engine cannot provide a preemptible instance, the task must fail before the command is instantiated.
 
-This requirement does not require the engine to honor the [`preemptible`](#-preemptible) hint. If the engine honors that hint and exhausts the suggested number of preemptible attempts, the task fails because this requirement prohibits a non-preemptible attempt. If the hint is absent or ignored, the engine determines whether to retry after preemption. A retry following preemption does not count against [`max_retries`](#max_retries), while a retry following any other failure does.
+This requirement does not require the engine to honor the [`preemptible`](#-preemptible) hint. If the engine honors a positive value for the hint and the task reaches that many preemptions, the task fails because this requirement prohibits a non-preemptible attempt. If the hint is absent, ignored, or `0`, the engine determines whether to retry after preemption. A retry following preemption does not count against [`max_retries`](#max_retries), while a retry following any other failure does.
 ```wdl
 version 1.4
 
@@ -7215,15 +7215,15 @@ Provides output-specific hints. Each key must refer to a parameter defined in th
 * Accepted type: `Int`
 * Default value: `0`
 
-Suggests the maximum number of attempts that may use a [preemptible instance](#-preemptible_only). An execution engine may ignore this hint. When [`preemptible_only`](#-preemptible_only) is `false`, an engine that ignores the hint may run the initial attempt on a non-preemptible instance. This does not consume a retry permitted by [`max_retries`](#max_retries).
+Suggests the maximum number of preemptions to tolerate on [preemptible instances](#-preemptible_only) before switching to a non-preemptible instance or failing the task. An execution engine may ignore this hint. When [`preemptible_only`](#-preemptible_only) is `false`, an engine that ignores the hint may run the initial attempt on a non-preemptible instance.
 
-When an engine honors this hint, an attempt that ends in preemption counts against `preemptible` and does not count against `max_retries`. An attempt that ends in any other failure counts against `max_retries` and does not count against `preemptible`, regardless of the instance type on which it ran. The two limits are independent.
+When an engine honors this hint, only attempts that end in preemption count against `preemptible`. Retries following preemption do not count against [`max_retries`](#max_retries). Retries following any other failure count against `max_retries` and do not count against `preemptible`, regardless of the instance type.
 
-When the engine honors this hint and `preemptible_only` is `false`, the engine must not start another preemptible attempt once `preemptible` attempts have ended in preemption. If at least one retry remains under `max_retries`, the engine must use one retry to continue on a non-preemptible instance. If no retry remains, the task fails. In particular, `max_retries: 0` never permits a non-preemptible attempt after an attempt ends in preemption, but an engine may still ignore the hint and run the initial attempt on a non-preemptible instance.
+When the engine honors a positive value for this hint and `preemptible_only` is `false`, the engine must continue on a non-preemptible instance once the task reaches that many preemptions. This fallback does not consume a `max_retries` retry and occurs even when `max_retries` is `0` or all retries have been used.
 
 A value of `0` suggests that the task should not run on a preemptible instance.
 
-When [`preemptible_only`](#-preemptible_only) is `true`, the engine must run every attempt on a preemptible instance even if this hint is absent, ignored, or has a value of `0`. If the engine honors a positive value for this hint and exhausts the suggested number of attempts, the task fails because `preemptible_only` prohibits a non-preemptible attempt.
+When [`preemptible_only`](#-preemptible_only) is `true`, the engine must run every attempt on a preemptible instance even if this hint is absent, ignored, or has a value of `0`. If the engine honors a positive value for this hint and the task reaches that many preemptions, the task fails because `preemptible_only` prohibits a non-preemptible attempt.
 
 ```wdl
 version 1.4
@@ -7241,7 +7241,7 @@ task preemptible_example {
 }
 ```
 
-An engine may ignore the hint and run the initial attempt on a non-preemptible instance. An engine that honors the hint may run up to three attempts on a preemptible instance. If all three are preempted, none of those preemptions count against `max_retries`. The engine then uses one of the two retries to continue on a non-preemptible instance. One retry remains if that attempt fails for a reason other than preemption.
+An engine may ignore the hint and run the initial attempt on a non-preemptible instance. If an engine honors the hint and the first three attempts are all preempted, it continues on a non-preemptible instance with both `max_retries` retries still available. If an attempt on a preemptible instance fails for another reason and is retried, that retry uses one of the two `max_retries` retries but does not reduce the number of preemptions the engine tolerates.
 
 #### Compute Environments
 
@@ -7440,7 +7440,7 @@ This information is provided by the `task` variable, which is implicitly defined
 * `fpga`: An `Array[String]` with one specification per allocated FPGA. The specification is execution engine-specific. If no FPGAs were allocated, then the value must be an empty array.
 * `disks`: A `Map[String, Int]` with one entry for each disk mount point. The key is the mount point and the value is the initial amount of disk space allocated, in bytes. The execution engine must, at a minimum, provide one entry for each disk mount point requested, but may provide more. The amount of disk space available for a given mount point may increase during the lifetime of the task (e.g., autoscaling volumes provided by some cloud services).
 * `max_retries`: An `Int` with the maximum number of retry attempts.
-* `preemptible` ✨: An `Int` with the maximum number of attempts that may use a preemptible instance.
+* `preemptible` ✨: An `Int` with the suggested maximum number of preemptions to tolerate before switching to a non-preemptible instance or failing the task.
 * `preemptible_only` ✨: A `Boolean` indicating whether the task may run only on preemptible instances.
 * `attempt`: An `Int` with the current task attempt. The value must be `0` the first time the task is executed, and incremented by `1` each time the task is retried (if any).
 * `previous`: A [hidden type](#taskprevious-hidden-scoped-type) containing the computed requirements from the previous task attempt. All fields are `None` on the first try.
