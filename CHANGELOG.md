@@ -20,6 +20,14 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
++ Defined module `exclude` patterns as content exclusions shared by validation, hashing, signing, packaging, and imports, while keeping the root manifest included. ([#765](https://github.com/openwdl/wdl/pull/765))
+
++ Added a module specification and ecosystem. A new peer specification at [`modules/SPEC.md`](modules/SPEC.md) defines the `module.json` manifest, dependency resolution, `module-lock.json`, content hashing, module signing, credential management, and engine tooling expectations. ([#765](https://github.com/openwdl/wdl/pull/765))
+
++ Reserved the `from` keyword. Earlier `version` declarations continue to parse `from` as an ordinary identifier. ([#765](https://github.com/openwdl/wdl/pull/765))
+
++ Added two new import forms alongside the existing one. `import * from <source>` brings every task, workflow, and user-defined type from `<source>` into the importing document's scope. `import { <member> [as <Name>] (, <member> [as <Name>])* [,] } from <source>` brings only the listed items, with an optional per-member `as <Name>` rename. A `<source>` is either a quoted URI or an unquoted symbolic module path resolved through the consuming module's `module.json`. ([#765](https://github.com/openwdl/wdl/pull/765))
+
 + Added explicit `String` overloads to `basename` and `size` to prevent ambiguous coercion to `File` or `Directory` ([#790](https://github.com/openwdl/wdl/pull/790)).
 
 + Defined the supported forms for `Int` and `Float` literals and
