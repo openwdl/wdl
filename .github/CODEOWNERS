@@ -1,0 +1,9 @@
+# OpenWDL code owners
+#
+# GitHub evaluates CODEOWNERS against the BASE branch of a pull request, so this
+# file must exist on every release branch that should be protected. It is present
+# on this branch to require governance sign-off for changes merged here.
+#
+# Any change requires an approving review from the OpenWDL governance team.
+# `*` is the last (and only) pattern, so it also protects this file itself.
+* @openwdl/governance
