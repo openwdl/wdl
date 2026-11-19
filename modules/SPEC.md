@@ -334,7 +334,7 @@ Sub-path components are matched against file and directory names with the same n
 
 A sub-path may not escape the dependency's module folder. The identifier-only component rule already forbids `..`, so a path such as `samtools/../another_file` is rejected at parse time rather than being resolved against the surrounding repository. This guarantee is normative: engines may rely on it to fetch only the module folder—via sparse Git checkout, partial clone, or any other mechanism that omits the rest of the repository—without risk that a symbolic import will later require content outside that folder.
 
-Sub-path resolution is a direct file lookup. Intermediate directories along the sub-path do not need to contain `module.json` files, and any nested `module.json` files that happen to be present along the way are ignored.
+Sub-path resolution is a direct file lookup. Intermediate directories along the sub-path are ordinary folders and must not contain `module.json` files (see [Module File Tree Constraints](#module-file-tree-constraints)).
 
 If the manifest's `exclude` field matches the path that resolution would otherwise read—either the entrypoint file for a root module import or `<sub-path>.wdl` for a sub-path import—the engine must treat the import as unresolvable and surface a missing-file error that names the path. An excluded path is not part of the module. Excluding the entrypoint therefore makes root module imports of that dependency fail while leaving non-excluded files reachable by sub-path. Quoted imports from included module files must also reject excluded targets, even when the target exists in the local source checkout.
 
