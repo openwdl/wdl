@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 version development
 ---------------------------
 
++ Clarified that the remainder operator truncates the quotient toward zero and
+  raises an error when the right-hand operand is zero
+  ([#789](https://github.com/openwdl/wdl/pull/789)).
+
 + Corrected the WDL 1.0 struct-assignment example to use object-literal syntax
   instead of map-literal syntax.
   ([#801](https://github.com/openwdl/wdl/pull/801)).
@@ -159,4 +163,3 @@ draft-2
 ---------------------------
 
 + Added ANTLR4 grammar
-
