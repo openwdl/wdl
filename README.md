@@ -6,10 +6,10 @@
 
 | Engine    | Conformance Tests |
 |-----------|------------------|
-| MiniWDL   | [![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/clarify-workflow-file-coercion-wdl-1.1/shields/miniwdl.json)](https://github.com/openwdl/wdl/actions/runs/44573235910) |
-| Sprocket  | [![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/clarify-workflow-file-coercion-wdl-1.1/shields/sprocket.json)](https://github.com/openwdl/wdl/actions/runs/44573236191) |
-| Toil      | [![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/clarify-workflow-file-coercion-wdl-1.1/shields/toil.json)](https://github.com/openwdl/wdl/actions/runs/44573236200) |
-| Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/clarify-workflow-file-coercion-wdl-1.1/shields/cromwell.json)](https://github.com/openwdl/wdl/actions/runs/44573235997) |
+| MiniWDL   | [![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.1/shields/miniwdl.json)](https://github.com/openwdl/wdl/actions/runs/44572511378) |
+| Sprocket  | [![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.1/shields/sprocket.json)](https://github.com/openwdl/wdl/actions/runs/44572511355) |
+| Toil      | [![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.1/shields/toil.json)](https://github.com/openwdl/wdl/actions/runs/44572511491) |
+| Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.1/shields/cromwell.json)](https://github.com/openwdl/wdl/actions/runs/44572511280) |
 
 
 
