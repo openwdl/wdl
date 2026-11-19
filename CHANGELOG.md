@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
++ Fixed malformed JSON and invalid expected outputs in the
+  `relative_paths_context`, `file_sizes`, and `serde_map_json` examples
+  ([#805](https://github.com/openwdl/wdl/pull/805)). Thanks to @adamnovak!
+
 + Added the `list` standard library function for listing a `Directory` as a `Pair[Array[File], Array[Directory]]`, with optional recursive traversal, symbolic-link inclusion, and file basename filtering.
   ([#800](https://github.com/openwdl/wdl/pull/800)) Thanks to @markjschreiber and @claymcleod!
 
