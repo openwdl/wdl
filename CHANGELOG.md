@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
++ Added input and output `validation` blocks to tasks and workflows, reserving `validation` as a keyword. Input validation gates execution after its input dependencies resolve, while output validation checks completed outputs before they are exposed. Added the `retry_on_validation_failure` requirement to control whether output validation failures are retried.
+  ([#778](https://github.com/openwdl/wdl/pull/778))
+
 + Specified that workflow-level `File` values use a stable logical file system
   context, including when workflow expressions are evaluated on different
   machines ([#788](https://github.com/openwdl/wdl/pull/788)).

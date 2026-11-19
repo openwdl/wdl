@@ -99,6 +99,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [Special Case: Versioning Filesystem](#special-case-versioning-filesystem)
       - [Input Type Constraints](#input-type-constraints)
         - [Optional inputs with defaults](#optional-inputs-with-defaults)
+      - [✨ Input Validation](#-input-validation)
     - [Private Declarations](#private-declarations)
     - [Environment Variables](#environment-variables)
       - [String Escaping and Injection Prevention](#string-escaping-and-injection-prevention)
@@ -107,6 +108,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Stripping Leading Whitespace](#stripping-leading-whitespace)
     - [Task Outputs](#task-outputs)
       - [File, Directory, and Optional Outputs](#file-directory-and-optional-outputs)
+      - [✨ Output Validation](#-output-validation)
     - [Evaluation of Task Declarations](#evaluation-of-task-declarations)
     - [Requirements Section](#-requirements-section)
       - [Units of Storage](#units-of-storage)
@@ -117,6 +119,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [Hardware Accelerators (`gpu` and `fpga`)](#hardware-accelerators-gpu-and--fpga)
         - [`disks`](#disks)
         - [`max_retries`](#max_retries)
+        - [✨ `retry_on_validation_failure`](#-retry_on_validation_failure)
         - [`return_codes`](#return_codes)
     - [Hints Section](#-hints-section)
       - [Hints-scoped types](#hints-scoped-types)
@@ -561,6 +564,7 @@ struct
 task
 then
 true
+validation
 version
 workflow
 ```
@@ -4739,6 +4743,10 @@ The execution engine is responsible for "instantiating" the shell script (i.e., 
 task name {
   input {
     # task inputs are declared here
+
+    validation {
+      # input validation clauses are declared here
+    }
   }
 
   # other "private" declarations can be made here
@@ -4749,6 +4757,10 @@ task name {
 
   output {
     # task outputs are declared here
+
+    validation {
+      # output validation clauses are declared here
+    }
   }
 
   requirements {
@@ -5058,6 +5070,216 @@ Example output:
 ```json
 {
   "optional_with_default.greeting": "John"
+}
+```
+</p>
+</details>
+
+#### ✨ Input Validation
+
+An `input` section may end with a single, optional `validation` block containing any number of validation clauses. A validation clause consists of a condition expression, followed by `:`, followed by a message expression. Clauses are separated by commas, and a trailing comma is allowed:
+
+```wdl
+input {
+  String name
+  Int age
+
+  validation {
+    length(name) > 0: "Name must not be empty",
+    age >= 0: "Age ~{age} must not be negative",
+  }
+}
+```
+
+The condition expression must have type `Boolean`, and the message expression must have type `String`. A `validation` block must follow all declarations in its containing `input` section.
+
+Both expressions in a validation clause may reference only declarations in the containing `input` section. In addition, the initializer of any referenced input declaration must transitively reference only declarations in the same `input` section. An implementation must raise an error during static analysis if a validation clause depends directly or indirectly on a private declaration, call output, or any other value outside the containing `input` section. This restriction ensures that input validation cannot introduce a dependency cycle in the workflow graph.
+
+The execution engine evaluates input validation after all declarations referenced by the validation clauses have values, but before it evaluates any private declaration, starts any execution element in the containing workflow, or instantiates a task's command. It evaluates clauses in source order:
+
+1. If a condition evaluates to `true`, the clause succeeds and its message is not evaluated.
+2. If a condition evaluates to `false`, the engine evaluates and records its message.
+3. If a condition or message cannot be evaluated, the engine records the evaluation error.
+
+The engine must attempt to evaluate every clause even if an earlier clause fails. If any condition is `false` or any clause produces an evaluation error, input validation fails. The engine must report every recorded message and evaluation error in source order, but the representation of those errors is implementation specific.
+
+Failed input validation immediately fails the containing task or workflow. The engine must not evaluate any remaining declaration, section, or execution element in that task or workflow, including its outputs. Failed task input validation prevents the command from being instantiated or executed, does not count as a task attempt, and must not be retried regardless of [`max_retries`](#max_retries).
+
+The following example validates inputs and outputs at both the workflow and task boundaries:
+
+<details>
+<summary>
+Example: validation.wdl
+
+```wdl
+version 1.4
+
+task make_label {
+  input {
+    String name
+    Int age
+
+    validation {
+      length(name) > 0: "Task input 'name' must not be empty",
+      age >= 0: "Task input 'age' must not be negative",
+    }
+  }
+
+  command <<<
+  printf "~{name}:~{age}"
+  >>>
+
+  output {
+    String label = read_string(stdout())
+
+    validation {
+      length(label) > 1: "Task output 'label' must not be empty",
+    }
+  }
+}
+
+workflow validation {
+  input {
+    String name
+    Int age
+
+    validation {
+      length(name) > 0: "Workflow input 'name' must not be empty",
+      age >= 0: "Workflow input 'age' must not be negative",
+    }
+  }
+
+  call make_label { name, age }
+
+  output {
+    String label = make_label.label
+
+    validation {
+      length(label) > 1: "Workflow output 'label' must not be empty",
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "validation.name": "Ada",
+  "validation.age": 36
+}
+```
+
+Example output:
+
+```json
+{
+  "validation.label": "Ada:36"
+}
+```
+</p>
+</details>
+
+Input validation reports all failed clauses rather than stopping after the first failure:
+
+<details>
+<summary>
+Example: workflow_input_validation_fail.wdl
+
+```wdl
+version 1.4
+
+workflow workflow_input_validation_fail {
+  input {
+    String name
+    Int count
+
+    validation {
+      length(name) > 0: "Name must not be empty",
+      count >= 1: "Count must be at least 1",
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "workflow_input_validation_fail.name": "",
+  "workflow_input_validation_fail.count": 0
+}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
+
+Task input validation occurs after the caller computes the task inputs but before the command runs:
+
+<details>
+<summary>
+Example: task_input_validation_fail.wdl
+
+```wdl
+version 1.4
+
+task process {
+  input {
+    String name
+    Int count
+
+    validation {
+      length(name) > 0: "Name must not be empty",
+      count >= 1: "Count must be at least 1",
+    }
+  }
+
+  command <<<
+  printf "~{name}"
+  >>>
+}
+
+workflow task_input_validation_fail {
+  call process {
+    name = "",
+    count = 0
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
 }
 ```
 </p>
@@ -5920,11 +6142,117 @@ task output_subset {
 }
 ```
 
+#### ✨ Output Validation
+
+An `output` section may end with a single, optional `validation` block. Output validation clauses use the same `<Boolean expression>: <String expression>` syntax and static types as [input validation](#-input-validation). A `validation` block must follow all declarations in its containing `output` section.
+
+Expressions in output validation clauses have the same visibility as output declaration expressions. The execution engine first evaluates every output declaration. If all output declarations are evaluated successfully, it evaluates every validation clause in source order using the same message aggregation and error handling rules as input validation. Message expressions are evaluated only for conditions that evaluate to `false`.
+
+Output validation occurs before the outputs are exposed to the caller or returned as final workflow outputs. If any clause fails, the task or workflow fails and none of its outputs are exposed. A task output validation failure occurs after the command has completed and is retried according to the task's [`max_retries`](#max_retries) requirement unless the task's [`retry_on_validation_failure`](#-retry_on_validation_failure) requirement is `false`.
+
+The following task fails after its command completes because `report` does not satisfy its output validation:
+
+<details>
+<summary>
+Example: task_output_validation_fail.wdl
+
+```wdl
+version 1.4
+
+task empty_report {
+  command <<<
+  touch report.txt
+  >>>
+
+  output {
+    File report = "report.txt"
+
+    validation {
+      size(report) > 0: "Report must not be empty",
+    }
+  }
+}
+
+workflow task_output_validation_fail {
+  call empty_report
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
+
+Workflow output validation runs after all output declarations have values but before the workflow returns them:
+
+<details>
+<summary>
+Example: workflow_output_validation_fail.wdl
+
+```wdl
+version 1.4
+
+workflow workflow_output_validation_fail {
+  input {
+    Int value = 0
+  }
+
+  output {
+    Int result = value
+
+    validation {
+      result > 0: "Result must be positive",
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
+
 ### Evaluation of Task Declarations
 
-All non-output declarations (i.e., input and private declarations) must be evaluated prior to evaluating the command section.
+All non-output declarations (i.e., input and private declarations) must be evaluated prior to evaluating the command section. Input validation is evaluated after its dependencies but before any private declarations. Output validation is evaluated after all output declarations.
 
-Input and private declarations may appear in any order within their respective sections and they may reference each other so long as there are no circular references. Input and private declarations may *not* reference declarations in the output section.
+Input and private declarations may appear in any order within their respective sections and they may reference each other so long as there are no circular references. However, an input declaration referenced by [input validation](#-input-validation) is subject to the additional dependency restrictions defined for validation clauses. Input and private declarations may *not* reference declarations in the output section.
 
 Declarations in the output section may reference any input and private declarations, and may also reference other output declarations.
 
@@ -6396,6 +6724,110 @@ task max_retries_test {
   }
 }
 ```
+
+##### ✨ `retry_on_validation_failure`
+
+* Accepted type: `Boolean`
+* Default value: `true`
+
+The `retry_on_validation_failure` attribute specifies whether a task whose [output validation](#-output-validation) fails may be retried. If `true`, an output validation failure is retried like any other task failure, subject to [`max_retries`](#max_retries). If `false`, an output validation failure immediately fails the task, even if retry attempts remain. This attribute has no effect on other task failures, and input validation failures are never retried.
+
+The following task fails output validation on its first attempt and passes on its retry, so it succeeds by default:
+
+<details>
+<summary>
+Example: retry_on_validation_failure_default.wdl
+
+```wdl
+version 1.4
+
+task retry_on_validation_failure_default {
+  command <<<
+  echo "~{task.attempt}" > attempt.txt
+  >>>
+
+  output {
+    Int attempt = read_int("attempt.txt")
+
+    validation {
+      attempt > 0: "Only a retried attempt passes validation",
+    }
+  }
+
+  requirements {
+    max_retries: 1
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "retry_on_validation_failure_default.attempt": 1
+}
+```
+</p>
+</details>
+
+Setting `retry_on_validation_failure` to `false` makes the same validation failure fatal, even though a retry attempt remains:
+
+<details>
+<summary>
+Example: retry_on_validation_failure_disabled.wdl
+
+```wdl
+version 1.4
+
+task retry_on_validation_failure_disabled {
+  command <<<
+  echo "~{task.attempt}" > attempt.txt
+  >>>
+
+  output {
+    Int attempt = read_int("attempt.txt")
+
+    validation {
+      attempt > 0: "Only a retried attempt passes validation",
+    }
+  }
+
+  requirements {
+    max_retries: 1
+    retry_on_validation_failure: false
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
 
 ##### `return_codes`
 
@@ -7097,6 +7529,10 @@ A workflow is defined using the `workflow` keyword, followed by a workflow name 
 workflow name {
   input {
     # workflow inputs are declared here
+
+    validation {
+      # input validation clauses are declared here
+    }
   }
 
   # other "private" declarations can be made here
@@ -7109,6 +7545,10 @@ workflow name {
 
   output {
     # workflow outputs are declared here
+
+    validation {
+      # output validation clauses are declared here
+    }
   }
 
   hints {
