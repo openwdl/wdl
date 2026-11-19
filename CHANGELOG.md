@@ -28,6 +28,15 @@ version 1.4.0
 
 + Added two new import forms alongside the existing one. `import * from <source>` brings every task, workflow, and user-defined type from `<source>` into the importing document's scope. `import { <member> [as <Name>] (, <member> [as <Name>])* [,] } from <source>` brings only the listed items, with an optional per-member `as <Name>` rename. A `<source>` is either a quoted URI or an unquoted symbolic module path resolved through the consuming module's `module.json`. ([#765](https://github.com/openwdl/wdl/pull/765))
 
++ Added explicit `String` overloads to `basename` and `size` to prevent ambiguous coercion to `File` or `Directory` ([#790](https://github.com/openwdl/wdl/pull/790)).
+
++ Defined the supported forms for `Int` and `Float` literals and
+  numeric parsing functions ([#791](https://github.com/openwdl/wdl/pull/791)).
+
++ Fixed malformed JSON and invalid expected outputs in the
+  `relative_paths_context`, `file_sizes`, and `serde_map_json` examples
+  ([#805](https://github.com/openwdl/wdl/pull/805)). Thanks to @adamnovak!
+
 + Added the `list` standard library function for listing a `Directory` as a `Pair[Array[File], Array[Directory]]`, with optional recursive traversal, symbolic-link inclusion, and file basename filtering.
   ([#800](https://github.com/openwdl/wdl/pull/800)) Thanks to @markjschreiber and @claymcleod!
 
