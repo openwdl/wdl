@@ -2847,7 +2847,7 @@ Test config:
 </p>
 </details>
 
-Within [expression placeholders](#expression-placeholders-and-string-interpolation), an error raised by the unwrap operator is subject to the rules described in [Expression Placeholder Coercion](#expression-placeholder-coercion), i.e., the placeholder evaluates to the empty string.
+The unwrap operator raises an error only when its operand evaluates to `None`. Within [expression placeholders](#expression-placeholders-and-string-interpolation), such an error is therefore covered by the rule in [Expression Placeholder Coercion](#expression-placeholder-coercion), and the placeholder is replaced by the empty string. Errors that are not caused by evaluating `None`, such as type errors detected during static analysis or other runtime errors, remain errors.
 
 <details>
 <summary>
@@ -3660,7 +3660,7 @@ The result of evaluating an expression in a placeholder must ultimately be conve
 
 Compound types cannot be implicitly converted to `String`s. To convert an `Array` to a `String`, use the [`sep`](#sep) function: `~{sep(",", str_array)}`. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for more details and examples.
 
-If an expression within a placeholder evaluates to `None`, and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string.
+If an expression within a placeholder evaluates to `None`, and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string. This includes an error raised by applying the [unwrap operator](#unwrap-operator) to `None`.
 
 <details>
 <summary>
