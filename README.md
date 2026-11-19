@@ -9,7 +9,7 @@
 | MiniWDL   | [![MiniWDL Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix/output-colocalization-wdl-1.1/shields/miniwdl.json)](https://github.com/openwdl/wdl/actions/runs/44569454887) |
 | Sprocket  | [![Sprocket Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix/output-colocalization-wdl-1.1/shields/sprocket.json)](https://github.com/openwdl/wdl/actions/runs/44569454880) |
 | Toil      | [![Toil Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix/output-colocalization-wdl-1.1/shields/toil.json)](https://github.com/openwdl/wdl/actions/runs/44569454812) |
-| Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/wdl-1.1/shields/cromwell.json)](https://github.com/openwdl/wdl/actions/runs/44464414745) |
+| Cromwell  | [![Cromwell Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/openwdl/wdl/fix/output-colocalization-wdl-1.1/shields/cromwell.json)](https://github.com/openwdl/wdl/actions/runs/44569454846) |
 
 
 
