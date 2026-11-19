@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.2
 ---------------------------
 
++ Added globally valid coercions from `String` to `Int`, `Float`, and `Boolean` ([#797](https://github.com/openwdl/wdl/pull/797)).
+
 + Added explicit `String` overloads to `basename` and `size` to prevent ambiguous coercion to `File` or `Directory` ([#790](https://github.com/openwdl/wdl/pull/790)).
 
 + Defined the supported forms for `Int` and `Float` literals and
