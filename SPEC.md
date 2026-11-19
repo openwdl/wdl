@@ -1823,6 +1823,8 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | 🗑 `File`    | `+`      | `File`    | `File`    | append file paths - error if second path is not relative |
 | 🗑 `File`    | `+`      | `String`  | `File`    | append file paths - error if second path is not relative |
 
+For finite numeric operands `a` and `b`, where `b` is not equal to zero, the `%` operator evaluates to `a - (q * b)`, where `q` is the exact mathematical quotient `a / b` truncated toward zero to an integer. This equation defines the result without requiring its intermediate values to be representable by WDL types. The result is either zero or has the same sign as `a`, and its magnitude is less than the magnitude of `b`. For example, `5.5 % 2.0` evaluates to `1.5`, whereas `-5.5 % 2.0` evaluates to `-1.5`. Evaluating `%` with a right-hand operand equal to zero, including floating-point negative zero, results in an error.
+
 Boolean operator evaluation is minimal (or "short-circuiting"), meaning that:
 
 1. For `A && B`, if `A` evalutes to `false` then `B` is not evaluated
