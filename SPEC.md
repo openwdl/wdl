@@ -165,6 +165,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [`glob`](#glob)
       - [Non-standard Bash](#non-standard-bash)
     - [`size`](#size)
+    - [`list`](#-list)
     - [`stdout`](#stdout)
     - [`stderr`](#stderr)
     - [`read_string`](#read_string)
@@ -512,6 +513,8 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
 
 The following (case-sensitive) language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, struct types, or aliases.
 
+This restriction applies when a token names a WDL language element. A reserved keyword may be used as a key in a context that permits arbitrary keys, including `runtime`, `hints`, and `meta` sections, metadata objects, and `Object` literals. A reserved keyword may also be used as the member name on the right-hand side of a [member access](#member-access) expression when accessing such a key (e.g., `task.meta.import`).
+
 ```
 Array
 Boolean
@@ -525,11 +528,13 @@ Object
 Pair
 String
 alias
+after
 as
 call
 command
 else
 enum
+env
 false
 from
 hints
@@ -2506,6 +2511,8 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | `Directory` | `==`     | `String`  | `Boolean` |                                                          |
 | `Directory` | `!=`     | `String`  | `Boolean` |                                                          |
 
+For finite numeric operands `a` and `b`, where `b` is not equal to zero, the `%` operator evaluates to `a - (q * b)`, where `q` is the exact mathematical quotient `a / b` truncated toward zero to an integer. This equation defines the result without requiring its intermediate values to be representable by WDL types. The result is either zero or has the same sign as `a`, and its magnitude is less than the magnitude of `b`. For example, `5.5 % 2.0` evaluates to `1.5`, whereas `-5.5 % 2.0` evaluates to `-1.5`. Evaluating `%` with a right-hand operand equal to zero, including floating-point negative zero, results in an error.
+
 Boolean operator evaluation is minimal (or "short-circuiting"), meaning that:
 
 1. For `A && B`, if `A` evalutes to `false` then `B` is not evaluated
@@ -3619,11 +3626,51 @@ A WDL document may contain any combination of the following:
 * Any number of [`import` statements](#import-statements).
 * Any number of `struct` definitions.
 * Any number of `task` definitions.
-* A maximum of one `workflow` definition.
+* Any number of `workflow` definitions.
 
-To execute a WDL workflow, the user must provide the execution engine with the location of a "primary" WDL file (which may import additional files as needed) and any input values needed to satisfy all required task and workflow input parameters, using a [standard input JSON file](#json-input-format) or some other execution engine-specific mechanism.
+To execute a WDL workflow, the user must provide the execution engine with the
+location of a "primary" WDL file (which may import additional files as needed)
+and any input values needed to satisfy all required task and workflow input
+parameters, using a [standard input JSON file](#json-input-format) or some other
+execution engine-specific mechanism. If more than one workflow is available in
+the primary WDL file's global scope, the user must also specify which workflow
+to execute using an execution engine-specific mechanism.
 
-If a workflow appears in the primary WDL file, it is called the "top-level" workflow, and any workflows it calls via imports are "subworkflows". Typically, it is an error for the primary WDL file to not contain a workflow; however, an execution engine may choose to support executing individual tasks.
+The workflow selected for execution is called the "top-level" workflow. Any
+workflow it calls, whether defined in the same WDL document or imported, is
+called a "subworkflow". Typically, it is an error if no workflow is available in
+the primary WDL file's global scope; however, an execution engine may choose to
+support executing individual tasks.
+
+For example, this document provides two workflows as possible execution targets,
+and one calls the other as a subworkflow:
+
+```wdl
+version 1.4
+
+workflow echo {
+  input {
+    String message
+  }
+
+  output {
+    String result = message
+  }
+}
+
+workflow echo_twice {
+  input {
+    String message
+  }
+
+  call echo as first { message }
+  call echo as second { message = first.result }
+
+  output {
+    String result = second.result
+  }
+}
+```
 
 ## Versioning
 
@@ -3903,7 +3950,10 @@ This demonstrates that `~{verbosity}` produces the choice name "Info", while `~{
 
 ## Import Statements
 
-Although a WDL workflow and the task(s) it calls may be defined completely within a single WDL document, splitting them across multiple documents can be beneficial for modularity and code reuse. Furthermore, complex workflows consisting of multiple subworkflows must be defined across multiple documents because each document is allowed at most one workflow.
+Related workflows and tasks may be defined together in one WDL document or split
+across documents. Keeping them together can make a set of entry points or closely
+related subworkflows easier to distribute, while imports support modularity and
+code reuse across documents.
 
 The `import` statement is the basis for modularity in WDL. A document may contain any number of `import` statements. An import names a source and selects which of the source's items enter the importing document's scope. A source is either a quoted URI (see [Import URIs](#import-uris)) or ✨ an unquoted symbolic module path resolved through the consuming module's `module.json` per the [WDL Module Specification](modules/SPEC.md). The three available forms are described in [✨ Import Forms](#-import-forms). Regardless of source style and form, the imported document must be a WDL document **with the same major version and a minor version less than or equal to the minor version of the importing document**.
 
@@ -4471,7 +4521,7 @@ cat /tmp/file3 >> result
 
 ##### Optional inputs with defaults
 
-Inputs with default initializers are implicitly optional: callers may omit the input or supply `None` *whether or not* its declared type carries the optional quantifier `?`. Usually, inputs with defaults should omit the `?` from their type, except when callers need the ability to override the default with `None`.
+Inputs with default initializers retain their declared types, but callers are not required to provide them. A caller may omit the input or supply `None` *whether or not* its declared type carries the optional quantifier `?`. Usually, inputs with defaults should omit the `?` from their type, except when callers need the ability to override the default with `None`.
 
 In detail, if a caller omits an input from the call `input:` section, then the default initializer applies whether or not the input type is declared optional. But if the caller explicitly supplies `None` for the input (either literally or by passing an optional value), then the default initializer applies only if the declared type isn't optional. This table illustrates the value taken by an input `x` depending on what the caller supplies:
 
@@ -7065,9 +7115,16 @@ Test config:
 
 ### Call Statement
 
-A workflow calls other tasks/workflows via the `call` keyword. A `call` is followed by the name of the task or subworkflow to run. If a task is defined in the same WDL document as the calling workflow, it may be called using just the task name. A task or workflow in an imported WDL must be called using its [fully-qualified name](#fully-qualified-names--namespaced-identifiers).
+A workflow calls tasks and subworkflows via the `call` keyword. A `call` is
+followed by the name of the task or subworkflow to run. A task or workflow in the
+calling document's global scope may be called using its name. A task or workflow
+that is accessible only through an imported namespace must be called using its
+[fully-qualified name](#fully-qualified-names--namespaced-identifiers).
 
 Each `call` must be uniquely identifiable. By default, the `call`'s unique identifier is the task or subworkflow name (e.g., `call foo` would be referenced by name `foo`). However, to `call foo` multiple times in the same workflow, it is necessary to give all except one of the `call` statements a unique alias using the `as` clause, e.g., `call foo as bar`.
+
+The workflow call graph must be acyclic. A workflow must not call itself, either
+directly or through one or more subworkflows.
 
 A `call` has an optional body in braces (`{}`), which may contain a comma-delimited list of inputs to the call. A `call` must, at a minimum, provide values for all of the task/subworkflow's required inputs, and each input value/expression must match the type of the task/subworkflow's corresponding input parameter. An input value may be any valid expression, not just a reference to another call output. If a task has no required parameters, then the `call` body may be empty or omitted.
 
@@ -8826,6 +8883,260 @@ Example output:
     "b": (50, null)
   }
   "file_sizes.nested_bytes": 22.0
+}
+```
+</p>
+</details>
+
+### ✨ `list`
+
+*as of version 1.4*
+
+```
+Pair[Array[File], Array[Directory]] list(Directory, [Boolean, [Boolean, [String]]])
+```
+
+Lists the contents of the given directory. The `left` member of the returned `Pair` contains files, and the `right` member contains directories. The input directory itself is not included.
+
+By default, only entries in the top level of the input directory are returned. If recursive traversal is enabled, all files and directories at any depth are returned.
+
+The entries in each array are sorted lexicographically by the path of the corresponding directory entry relative to the input directory. Each matching directory entry contributes one value. Values are not deduplicated after [path canonicalization](#path-canonicalization-and-validation), so a symbolic link and its target may produce equal values.
+
+The optional `String` is a glob pattern that is matched against each file's basename. Patterns without a leading `.` do not match hidden files (dotfiles). When no pattern is provided, all files are returned, including hidden files. The pattern does not filter directories; hidden directories follow the same traversal and symbolic-link rules as other directories.
+
+Symbolic links are included by default. When symbolic links are included, links to files are returned in the `left` array and links to directories are returned in the `right` array. A symbolic link to a directory is never traversed, even when recursive traversal is enabled. Broken symbolic links are returned in the `left` array, consistent with [`glob`](#glob). When symbolic links are excluded, they are omitted from both arrays.
+
+**Parameters**
+
+1. `Directory`: The directory whose contents to list.
+2. `Boolean`: (Optional) Whether to recursively traverse subdirectories. Defaults to `false`.
+3. `Boolean`: (Optional) Whether to include symbolic links. Defaults to `true`.
+4. `String`: (Optional) A glob pattern to filter files by basename (e.g., `"*.fastq.gz"`).
+
+To provide an optional argument, all preceding arguments must also be provided.
+
+**Returns**: A `Pair[Array[File], Array[Directory]]` containing the matching files in its `left` array and directories in its `right` array. Either array is empty if it has no matching entries.
+
+**Restrictions**: This function reads directory contents and may only be called in a context where the directory exists. If the directory is an input to a task or workflow, then it may be called anywhere in that task or workflow.
+
+<details>
+<summary>
+Example: list_fastqs_task.wdl
+
+```wdl
+version 1.4
+
+task list_fastqs {
+  input {
+    Directory sample_dir
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(sample_dir, false, true, "*.fastq.gz")
+  Array[File] fastqs = contents.left
+
+  command <<<
+    echo "~{sep(' ', fastqs)}"
+  >>>
+
+  output {
+    Int num_fastqs = length(fastqs)
+    String file_list = read_string(stdout())
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "list_fastqs.sample_dir": "/path/to/samples"
+}
+```
+
+Example output (given the directory contains `a.fastq.gz`, `b.fastq.gz`, and `readme.txt`):
+
+```json
+{
+  "list_fastqs.num_fastqs": 2,
+  "list_fastqs.file_list": "/path/to/samples/a.fastq.gz /path/to/samples/b.fastq.gz"
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: scatter_directory_workflow.wdl
+
+```wdl
+version 1.4
+
+workflow scatter_directory {
+  input {
+    Directory input_dir
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(input_dir)
+
+  scatter (f in contents.left) {
+    call process_file { input: infile = f }
+  }
+
+  output {
+    Array[File] results = process_file.outfile
+  }
+}
+
+task process_file {
+  input {
+    File infile
+  }
+
+  command <<<
+    wc -l ~{infile} > result.txt
+  >>>
+
+  output {
+    File outfile = "result.txt"
+  }
+
+  requirements {
+    container: "ubuntu:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "scatter_directory.input_dir": "/path/to/dir"
+}
+```
+
+Example output (given the directory contains files `a.txt` and `b.txt`):
+
+```json
+{
+  "scatter_directory.results": ["/path/to/output/result.txt", "/path/to/output/result.txt"]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: find_bams_task.wdl
+
+```wdl
+version 1.4
+
+task find_bams {
+  input {
+    Directory project_dir
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(project_dir, true, true, "*.bam")
+  Array[File] bams = contents.left
+
+  command <<<
+    for bam in ~{sep(' ', bams)}; do
+      samtools index "$bam"
+    done
+  >>>
+
+  output {
+    Array[File] indices = glob("*.bai")
+  }
+
+  requirements {
+    container: "biocontainers/samtools:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "find_bams.project_dir": "/data/project"
+}
+```
+
+Example output (given the directory tree contains `sample1/aligned.bam` and `sample2/aligned.bam`):
+
+```json
+{
+  "find_bams.indices": ["/path/to/exec/aligned.bai", "/path/to/exec/aligned.bai"]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: process_samples_workflow.wdl
+
+```wdl
+version 1.4
+
+workflow process_samples {
+  input {
+    Directory data_root  # contains one subdirectory per sample
+  }
+
+  Pair[Array[File], Array[Directory]] contents = list(data_root)
+
+  scatter (sample_dir in contents.right) {
+    Pair[Array[File], Array[Directory]] sample_contents = list(sample_dir, false, true, "*.fastq.gz")
+    call align { input: reads = sample_contents.left }
+  }
+
+  output {
+    Array[File] bams = align.bam
+  }
+}
+
+task align {
+  input {
+    Array[File] reads
+  }
+
+  command <<<
+    bwa mem ref.fa ~{sep(' ', reads)} | samtools sort -o aligned.bam
+  >>>
+
+  output {
+    File bam = "aligned.bam"
+  }
+
+  requirements {
+    container: "biocontainers/bwa:latest"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "process_samples.data_root": "/data/samples"
+}
+```
+
+Example output (given `/data/samples` contains subdirectories `sample1/` and `sample2/`, each with FASTQ files):
+
+```json
+{
+  "process_samples.bams": ["/path/to/output/aligned.bam", "/path/to/output/aligned.bam"]
 }
 ```
 </p>
@@ -13165,7 +13476,8 @@ The following WDL namespaces exist:
 
 * [WDL document](#wdl-documents)
     * The namespace of an [imported](#import-statements) document equals that of the basename of the imported file by default, but may be aliased using the `as <identifier>` syntax.
-    * A WDL document may contain a `workflow` and/or `task`s, which are names within the document's namespace.
+    * A WDL document may contain any number of `workflow`s and `task`s, which are
+      names within the document's namespace.
     * A WDL document may contain `struct`s and `enum`s, which are also names within the document's namespace and usable as types in any declarations. Structs and enums from any imported documents are [copied into the document's namespace](#importing-and-aliasing-structs) and may be aliased using the `alias <source name> as <new name>` syntax.
 * A [WDL `task`](#task-definition) is a namespace consisting of:
     * `input`, `output`, and private declarations
@@ -13194,7 +13506,7 @@ A "scope" is associated with a level of nesting within a namespace. The visibili
 
 A WDL document is the top-level (or "outermost") scope. All elements defined within a document that are not nested inside other elements are in the global scope and accessible from anywhere in the document. The elements that may be in a global scope are:
 
-* A `workflow`
+* Any number of `workflow`s
 * Any number of `task`s
 * Imported namespaces
 * All `struct`s and `enum`s defined in the document and in any imported documents
