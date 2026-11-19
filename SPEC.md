@@ -43,6 +43,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Type Conversion](#type-conversion)
         - [Primitive Conversion to String](#primitive-conversion-to-string)
         - [Type Coercion](#type-coercion)
+          - [String-to-Primitive Coercion](#string-to-primitive-coercion)
           - [Order of Precedence](#order-of-precedence)
           - [Coercion of Optional Types](#coercion-of-optional-types)
           - [Struct/Object coercion from Map](#structobject-coercion-from-map)
@@ -1590,9 +1591,14 @@ Example output:
 
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
+Whether a coercion is valid is determined from the source and target types during static analysis. Some valid coercions may still fail during dynamic evaluation because the source value cannot be represented by the target type. Unless otherwise specified, a failed coercion raises an error.
+
 | Target Type      | Source Type      | Notes/Constraints                                                                                              |
 | ---------------- | ---------------- | -------------------------------------------------------------------------------------------------------------- |
 | `File`           | `String`         |                                                                                                                |
+| `Int`            | `String`         | See [String-to-Primitive Coercion](#string-to-primitive-coercion)                                              |
+| `Float`          | `String`         | See [String-to-Primitive Coercion](#string-to-primitive-coercion)                                              |
+| `Boolean`        | `String`         | See [String-to-Primitive Coercion](#string-to-primitive-coercion)                                              |
 | `Float`          | `Int`            | May cause overflow error                                                                                       |
 | `Y?`             | `X`              | `X` must be coercible to `Y`                                                                                   |
 | `Array[Y]`       | `Array[X]`       | `X` must be coercible to `Y`                                                                                   |
@@ -1606,7 +1612,89 @@ The table below lists all globally valid coercions. The "target" type is the typ
 | `Object`         | `Struct`         |                                                                                                                |
 | `Struct`         | `Object`         | `Object` keys must all be `Struct` member names, each value must be coercible to its corresponding member type, and all non-optional members must be present |
 
-The [`read_lines`](#read_lines) function presents a special case in which the `Array[String]` value it returns may be immediately coerced into other `Array[P]` values, where `P` is a primitive type. See [Appendix A](#array-deserialization-using-read_lines) for details and best practices.
+###### String-to-Primitive Coercion
+
+When a `String` is coerced to an `Int`, `Float`, or `Boolean`, leading and trailing whitespace is ignored and the remaining content is converted as follows:
+
+* An `Int` conversion succeeds if the content is an optional `+` or `-` followed by any form accepted for an [`Int` literal](#integer-literals), and the value is within the range of the `Int` type. The literal radix and leading-zero rules apply, so hexadecimal, octal, and binary prefixes are supported, but a legacy octal form such as `0755` is invalid.
+* A `Float` conversion succeeds if the content is an optional `+` or `-` followed by any form accepted for an [`Int`](#integer-literals) or [`Float`](#floating-point-literals) literal, and the value is within the finite range of the `Float` type. An integer-form value is converted to the corresponding `Float`.
+* A `Boolean` conversion succeeds if the content is `true` or `false`, compared case-insensitively.
+
+If the content does not meet the requirements of the target type, the coercion fails with an error during dynamic evaluation.
+
+<details>
+<summary>
+Example: string_to_primitives.wdl
+
+```wdl
+version 1.1
+
+workflow string_to_primitives {
+  Int integer = " 42 "
+  Float floating_point = " 3.5 "
+  Boolean boolean = " TRUE "
+
+  output {
+    Int integer_result = integer
+    Float float_result = floating_point
+    Boolean boolean_result = boolean
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "string_to_primitives.boolean_result": true,
+  "string_to_primitives.float_result": 3.5,
+  "string_to_primitives.integer_result": 42
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: string_to_int_fail.wdl
+
+```wdl
+version 1.1
+
+workflow string_to_int_fail {
+  Int invalid = "not an integer"
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
 
 ###### Order of Precedence
 
@@ -1740,7 +1828,6 @@ Example output:
 Implementers may choose to allow limited exceptions to the above rules, with the understanding that workflows depending on these exceptions may not be portable. These exceptions are provided for backward-compatibility, are considered deprecated, and will be removed in a future version of WDL.
 
 * `Float` to `Int`, when the coercion can be performed with no loss of precision, e.g. `1.0 -> 1`.
-* `String` to `Int`/`Float`, when the coercion can be performed with no loss of precision.
 * `X?` may be coerced to `X`, and an error is raised if the value is undefined.
 * `Array[X]` to `Array[X]+`, when the array is non-empty (an error is raised otherwise).
 * `Map[W, X]` to `Array[Pair[Y, Z]]`, in the case where `W` is coercible to `Y` and `X` is coercible to `Z`.
@@ -7062,7 +7149,7 @@ Example output:
 Int read_int(File)
 ```
 
-Reads a file that contains a single line containing only an integer and (optional) whitespace. After removing surrounding whitespace, the value must consist of an optional `+` or `-` followed by any form accepted for an [`Int` source literal](#integer-literals). The source-literal radix and leading-zero rules apply, so hexadecimal, octal, and binary prefixes are supported but a legacy octal form such as `0755` is invalid. If the line contains a valid integer, that value is returned as an `Int`. If the file is empty, the value is outside the range of `Int`, or the file does not contain a single integer, an error is raised.
+Reads the contents of a file as a `String` and [coerces](#string-to-primitive-coercion) it to an `Int`. If the file is empty or its contents cannot be coerced to an `Int`, an error is raised.
 
 **Parameters**
 
@@ -7155,7 +7242,7 @@ Test config:
 Float read_float(File)
 ```
 
-Reads a file that contains only a numeric value and (optional) whitespace. After removing surrounding whitespace, the value must consist of an optional `+` or `-` followed by any form accepted for an [`Int`](#integer-literals) or [`Float`](#floating-point-literals) source literal. An integer-form value is converted to the corresponding `Float`. The source-literal radix and leading-zero rules apply, so hexadecimal, octal, and binary prefixes are supported but a legacy octal form such as `0755` is invalid. If the file contains a valid numeric value, that value is returned as a `Float`. If the file is empty, the value is outside the finite range of `Float`, or the file does not contain a single numeric value, an error is raised.
+Reads the contents of a file as a `String` and [coerces](#string-to-primitive-coercion) it to a `Float`. If the file is empty or its contents cannot be coerced to a `Float`, an error is raised.
 
 **Parameters**
 
@@ -7251,7 +7338,7 @@ Test config:
 Boolean read_boolean(File)
 ```
 
-Reads a file that contains a single line containing only a boolean value and (optional) whitespace. If the non-whitespace content of the line is "true" or "false", that value is returned as a `Boolean`. If the file is empty or does not contain a single boolean, an error is raised. The comparison is case- and whitespace-insensitive.
+Reads the contents of a file as a `String` and [coerces](#string-to-primitive-coercion) it to a `Boolean`. If the file is empty or its contents cannot be coerced to a `Boolean`, an error is raised.
 
 **Parameters**
 
