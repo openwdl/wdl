@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
++ Added globally valid coercions from `String` to `Int`, `Float`, and `Boolean` ([#797](https://github.com/openwdl/wdl/pull/797)).
+
 + Defined module `exclude` patterns as content exclusions shared by validation, hashing, signing, packaging, and imports, while keeping the root manifest included. ([#765](https://github.com/openwdl/wdl/pull/765))
 
 + Added a module specification and ecosystem. A new peer specification at [`modules/SPEC.md`](modules/SPEC.md) defines the `module.json` manifest, dependency resolution, `module-lock.json`, content hashing, module signing, credential management, and engine tooling expectations. ([#765](https://github.com/openwdl/wdl/pull/765))
