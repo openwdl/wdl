@@ -554,6 +554,8 @@ Below are the valid results for operators on types.  Any combination not in the 
 ||`+`|`Int`|`Int`||
 ||`!`|`Boolean`|`Boolean`||
 
+For finite numeric operands `a` and `b`, where `b` is not equal to zero, the `%` operator evaluates to `a - (q * b)`, where `q` is the exact mathematical quotient `a / b` truncated toward zero to an integer. This equation defines the result without requiring its intermediate values to be representable by WDL types. The result is either zero or has the same sign as `a`, and its magnitude is less than the magnitude of `b`. For example, `5.5 % 2.0` evaluates to `1.5`, whereas `-5.5 % 2.0` evaluates to `-1.5`. Evaluating `%` with a right-hand operand equal to zero, including floating-point negative zero, results in an error.
+
 #### If then else
 
 This is an operator that takes three arguments, a condition expression, an if-true expression and an if-false expression. The condition is always evaluated. If the condition is true then the if-true value is evaluated and returned. If the condition is false, the if-false expression is evaluated and returned. The return type of the if-then-else should be the same, regardless of which side is evaluated or runtime problems might occur.
