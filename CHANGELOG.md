@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
++ Added the postfix unwrap operator (`!`), which converts a value of optional type `T?` to type `T` and raises an error if the value is `None`. `x!` is equivalent to `select_first([x])` ([#777](https://github.com/openwdl/wdl/pull/777)).
+
 + Added globally valid coercions from `String` to `Int`, `Float`, and `Boolean` ([#797](https://github.com/openwdl/wdl/pull/797)).
 
 + Defined module `exclude` patterns as content exclusions shared by validation, hashing, signing, packaging, and imports, while keeping the root manifest included. ([#765](https://github.com/openwdl/wdl/pull/765))
