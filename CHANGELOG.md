@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
++ Required task `File` outputs with the same parent directory to remain
+  colocated when moved to storage
+  ([#796](https://github.com/openwdl/wdl/pull/796)).
+
 + Added the `exists` standard library function for determining whether a path refers to an existing file or directory ([#780](https://github.com/openwdl/wdl/pull/780)).
 
 + Corrected the `read_tsv` overloads so that return types can be determined statically. `read_tsv(File, false)` is now an error; callers that need an `Array[Array[String]]` must omit the second argument ([#787](https://github.com/openwdl/wdl/pull/787)).
