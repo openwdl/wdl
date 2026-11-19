@@ -6738,7 +6738,7 @@ A preemptible instance is a compute instance that the execution environment may 
 
 When `preemptible_only` is `false`, this requirement has no effect. When `preemptible_only` is `true`, the execution engine must run every attempt on a preemptible instance. If the engine cannot provide a preemptible instance, the task must fail before the command is instantiated.
 
-This requirement does not require the engine to honor the [`preemptible`](#-preemptible) hint. If the engine honors a positive value for the hint and the task reaches that many preemptions, the task fails because this requirement prohibits a non-preemptible attempt. If the hint is absent, ignored, or `0`, the engine determines whether to retry after preemption. A retry following preemption does not count against [`max_retries`](#max_retries), while a retry following any other failure does.
+The [`preemptible`](#-preemptible) hint can suggest a limit on preemptions but does not change this placement requirement. A retry following preemption does not count against [`max_retries`](#max_retries), while a retry following any other failure does.
 ```wdl
 version 1.4
 
@@ -7215,7 +7215,7 @@ Provides output-specific hints. Each key must refer to a parameter defined in th
 * Accepted type: `Int`
 * Default value: `0`
 
-Suggests the maximum number of preemptions to tolerate on [preemptible instances](#-preemptible_only) before switching to a non-preemptible instance or failing the task. An execution engine may ignore this hint. When [`preemptible_only`](#-preemptible_only) is `false`, an engine that ignores the hint may run the initial attempt on a non-preemptible instance.
+Suggests the maximum number of preemptions to tolerate on [preemptible instances](#-preemptible_only) before switching to a non-preemptible instance or failing the task. When [`preemptible_only`](#-preemptible_only) is `false`, an engine may ignore the hint and run the initial attempt on a non-preemptible instance.
 
 When an engine honors this hint, only attempts that end in preemption count against `preemptible`. Retries following preemption do not count against [`max_retries`](#max_retries). Retries following any other failure count against `max_retries` and do not count against `preemptible`, regardless of the instance type.
 
@@ -7223,7 +7223,7 @@ When the engine honors a positive value for this hint and `preemptible_only` is 
 
 A value of `0` suggests that the task should not run on a preemptible instance.
 
-When [`preemptible_only`](#-preemptible_only) is `true`, the engine must run every attempt on a preemptible instance even if this hint is absent, ignored, or has a value of `0`. If the engine honors a positive value for this hint and the task reaches that many preemptions, the task fails because `preemptible_only` prohibits a non-preemptible attempt.
+When [`preemptible_only`](#-preemptible_only) is `true` and this hint is positive, the engine should honor it as a limit on the total number of preemptions for the task. If the engine honors the limit, it must fail the task when the limit is reached. If the hint is absent, ignored, or `0`, the engine determines whether to retry after preemption. In all cases, the engine must not fall back to a non-preemptible instance when `preemptible_only` is `true`.
 
 ```wdl
 version 1.4
