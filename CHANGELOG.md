@@ -45,6 +45,10 @@ version development
 version 1.1.4
 ---------------------------
 
++ Required task `File` outputs with the same parent directory to remain
+  colocated when moved to storage
+  ([#796](https://github.com/openwdl/wdl/pull/796)).
+
 + Added globally valid coercions from `String` to `Int`, `Float`, and `Boolean` ([#797](https://github.com/openwdl/wdl/pull/797)).
 
 + Defined the supported forms for `Int` and `Float` literals and
