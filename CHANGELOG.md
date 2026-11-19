@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
++ Allowed a WDL document to define any number of `workflow`s. A caller selects
+  the top-level workflow when more than one is available
+  ([#798](https://github.com/openwdl/wdl/pull/798)).
+
 + Clarified that the remainder operator truncates the quotient toward zero and
   raises an error when the right-hand operand is zero
   ([#789](https://github.com/openwdl/wdl/pull/789)).
