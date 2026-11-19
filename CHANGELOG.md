@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version 1.2.2
 ---------------------------
 
++ Defined the supported forms for `Int` and `Float` literals and
+  numeric parsing functions ([#791](https://github.com/openwdl/wdl/pull/791)).
+
 + Fixed malformed JSON and invalid expected outputs in the
   `relative_paths_context`, `file_sizes`, and `serde_map_json` examples
   ([#805](https://github.com/openwdl/wdl/pull/805)). Thanks to @adamnovak!
