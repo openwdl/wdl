@@ -969,7 +969,6 @@ Example output:
 
 ```json
 {
-  "relative_paths_context.result": "hello.txt"
   "relative_paths_context.content": "hello"
 }
 ```
@@ -978,7 +977,7 @@ Test config:
 
 ```json
 {
-  "exclude_outputs": ["result"]
+  "exclude_outputs": ["relative_paths_context.result"]
 }
 ```
 
@@ -8722,11 +8721,10 @@ task file_sizes {
     Float created_file_bytes = size(created_file, "B")
     Float multi_file_kb = size([created_file, missing_file], "K") # 0.022
 
-    Map[String, Pair[Int, File?]] nested = {
+    Float nested_bytes = size({
       "a": (10, created_file),
       "b": (50, missing_file)
-    }
-    Float nested_bytes = size(nested)
+    })
   }
   
   requirements {
@@ -8750,10 +8748,6 @@ Example output:
   "file_sizes.missing_file_bytes": 0.0,
   "file_sizes.created_file_bytes": 22.0,
   "file_sizes.multi_file_kb": 0.022,
-  "file_size.nested": {
-    "a": (10, "out.txt"),
-    "b": (50, null)
-  }
   "file_sizes.nested_bytes": 22.0
 }
 ```
@@ -13073,7 +13067,7 @@ Where `/jobs/564757/sample_quality_scores.json` would contain:
 {
   "read1": 32,
   "read2": 41,
-  "read3": 55,
+  "read3": 55
 }
 ```
 

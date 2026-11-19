@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 version 1.3.1
 ---------------------------
 
++ Fixed malformed JSON and invalid expected outputs in the
+  `relative_paths_context`, `file_sizes`, and `serde_map_json` examples
+  ([#805](https://github.com/openwdl/wdl/pull/805)). Thanks to @adamnovak!
+
 + Clarified that the remainder operator truncates the quotient toward zero and
   raises an error when the right-hand operand is zero
   ([#789](https://github.com/openwdl/wdl/pull/789)).
