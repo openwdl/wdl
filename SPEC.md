@@ -64,6 +64,7 @@ Revisions to this specification are made periodically in order to correct errors
     - [Expressions](#expressions)
       - [Built-in Operators](#built-in-operators)
         - [Unary Operators](#unary-operators)
+        - [Unwrap Operator](#unwrap-operator)
         - [Binary Operators on Primitive Types](#binary-operators-on-primitive-types)
         - [Equality of Compound Types](#equality-of-compound-types)
         - [Equality and Inequality Comparison of Optional Types](#equality-and-inequality-comparison-of-optional-types)
@@ -98,6 +99,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [Special Case: Versioning Filesystem](#special-case-versioning-filesystem)
       - [Input Type Constraints](#input-type-constraints)
         - [Optional inputs with defaults](#optional-inputs-with-defaults)
+      - [✨ Input Validation](#-input-validation)
     - [Private Declarations](#private-declarations)
     - [Environment Variables](#environment-variables)
       - [String Escaping and Injection Prevention](#string-escaping-and-injection-prevention)
@@ -106,6 +108,7 @@ Revisions to this specification are made periodically in order to correct errors
       - [Stripping Leading Whitespace](#stripping-leading-whitespace)
     - [Task Outputs](#task-outputs)
       - [File, Directory, and Optional Outputs](#file-directory-and-optional-outputs)
+      - [✨ Output Validation](#-output-validation)
     - [Evaluation of Task Declarations](#evaluation-of-task-declarations)
     - [Requirements Section](#-requirements-section)
       - [Units of Storage](#units-of-storage)
@@ -117,6 +120,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [`disks`](#disks)
         - [`max_retries`](#max_retries)
         - [✨ `preemptible_only`](#-preemptible_only)
+        - [✨ `retry_on_validation_failure`](#-retry_on_validation_failure)
         - [`return_codes`](#return_codes)
     - [Hints Section](#-hints-section)
       - [Hints-scoped types](#hints-scoped-types)
@@ -142,6 +146,7 @@ Revisions to this specification are made periodically in order to correct errors
   - [Workflow Definition](#workflow-definition)
     - [Workflow Elements](#workflow-elements)
     - [Evaluation of Workflow Elements](#evaluation-of-workflow-elements)
+    - [Workflow File System Context](#workflow-file-system-context)
     - [Fully Qualified Names \& Namespaced Identifiers](#fully-qualified-names--namespaced-identifiers)
     - [Workflow Inputs](#workflow-inputs)
     - [Workflow Outputs](#workflow-outputs)
@@ -167,6 +172,7 @@ Revisions to this specification are made periodically in order to correct errors
   - [File Functions](#file-functions)
     - [`basename`](#basename)
     - [`join_paths`](#-join_paths)
+    - [`exists`](#exists)
     - [`glob`](#glob)
       - [Non-standard Bash](#non-standard-bash)
     - [`size`](#size)
@@ -560,6 +566,7 @@ struct
 task
 then
 true
+validation
 version
 workflow
 ```
@@ -1183,6 +1190,8 @@ In both contexts, if an optional `File?` or `Directory?` declaration refers to a
 
 Absolute paths (paths starting with `/`) refer to specific locations on the host filesystem when used outside the `output` section. Within the `output` section, absolute paths may be interpreted in a container-dependent way—see [Task Outputs](#task-outputs) for details.
 
+Paths in workflow expressions are resolved according to the [workflow file system context](#workflow-file-system-context).
+
 <details>
 <summary>
 Example: relative_paths_context.wdl
@@ -1246,6 +1255,8 @@ Multi-level optionals are not allowed. A value cannot have multiple levels of op
 WDL has a special value `None` whose meaning is "an undefined value". The `None` value has the (hidden) type [`Union`](#union-hidden-type), meaning `None` can be assigned to an optional declaration of any type.
 
 An optional declaration has a default initialization of `None`, which indicates that it is undefined. An optional declaration may be initialized to any literal or expression of the correct type, including the special `None` value.
+
+An optional value can be converted to its corresponding non-optional type using the postfix [unwrap operator](#unwrap-operator) (`!`), which raises an error if the value is `None`.
 
 <details>
   <summary>
@@ -2354,7 +2365,7 @@ Boolean b3 = 1 == true
 
 ###### Coercion of Optional Types
 
-A non-optional type `T` can always be coerced to an optional type `T?`, but the reverse is not true - coercion from `T?` to `T` is not allowed because the latter cannot accept `None`.
+A non-optional type `T` can always be coerced to an optional type `T?`, but the reverse is not true - coercion from `T?` to `T` is not allowed because the latter cannot accept `None`. A value of type `T?` can be converted to `T` using the [unwrap operator](#unwrap-operator) (`!`) or the [`select_first`](#select_first) function, both of which raise an error if the value is `None`.
 
 This constraint propagates into compound types. For example, an `Array[T?]` can contain both optional and non-optional elements. This facilitates the common idiom [`select_first([expr, default])`](#select_first), where `expr` is of type `T?` and `default` is of type `T`, for converting an optional type to a non-optional type. However, an `Array[T?]` could not be passed to the [`sep`](#sep) function, which requires an `Array[T]`.
 
@@ -2758,6 +2769,140 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | `-`      | `Int`     | `Int`     |
 | `!`      | `Boolean` | `Boolean` |
 
+##### Unwrap Operator
+
+The postfix `!` operator unwraps an optional value. Its operand must be an expression of an optional type `T?`, and the type of the unwrap expression is the corresponding non-optional type `T`. If the operand evaluates to a defined value, the unwrap expression evaluates to that value. If the operand evaluates to `None`, an error is raised. Applying `!` to an expression of a non-optional type is a type error.
+
+| Operator | LHS Type | Result |
+| -------- | -------- | ------ |
+| `!`      | `T?`     | `T`    |
+
+The expression `x!` is equivalent to [`select_first([x])`](#select_first).
+
+The unwrap operator has higher precedence than any prefix or binary operator (see the [operator precedence table](#operator-precedence-table)). For example, `-x!` is evaluated as `-(x!)`, and `a + b!` is evaluated as `a + (b!)`. The unwrap operator may be combined with [member access](#member-access), index, and function call operations, which are applied in left-to-right order. For example, in `person.income!.amount`, the optional `income` member of `person` is unwrapped before its `amount` member is accessed.
+
+The character sequence `!=` is always interpreted as the [inequality operator](#binary-operators-on-primitive-types). When the unwrap operator is followed by an operator that begins with `=`, the two must be separated by whitespace or parentheses, e.g., `x! == y` or `(x!) == y`.
+
+<details>
+<summary>
+Example: test_unwrap.wdl
+
+```wdl
+version 1.4
+
+workflow test_unwrap {
+  input {
+    Int? maybe_five = 5
+    Int? maybe_ten = 10
+  }
+
+  output {
+    Int certainly_five = maybe_five!
+    Int fifteen = maybe_five! + maybe_ten!
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_unwrap.certainly_five": 5,
+  "test_unwrap.fifteen": 15
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: unwrap_none_fail.wdl
+
+```wdl
+version 1.4
+
+workflow unwrap_none_fail {
+  Int? maybe_five = None
+  Int five = maybe_five!  # error! cannot unwrap a value that is None
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
+
+The unwrap operator raises an error only when its operand evaluates to `None`. Within [expression placeholders](#expression-placeholders-and-string-interpolation), such an error is therefore covered by the rule in [Expression Placeholder Coercion](#expression-placeholder-coercion), and the placeholder is replaced by the empty string. Errors that are not caused by evaluating `None`, such as type errors detected during static analysis or other runtime errors, remain errors.
+
+<details>
+<summary>
+Example: unwrap_placeholder.wdl
+
+```wdl
+version 1.4
+
+workflow unwrap_placeholder {
+  input {
+    String salutation = "hello"
+    String? name1
+    String? name2 = "Fred"
+  }
+
+  output {
+    # since name1 is undefined, unwrapping it raises an error, the placeholder
+    # evaluates to the empty string, and the value of greeting1 = "nice to meet you!"
+    String greeting1 = "~{salutation + ' ' + name1! + ' '}nice to meet you!"
+
+    # since name2 is defined, unwrapping it succeeds, and the value of
+    # greeting2 = "hello Fred, nice to meet you!"
+    String greeting2 = "~{salutation + ' ' + name2! + ', '}nice to meet you!"
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "unwrap_placeholder.greeting1": "nice to meet you!",
+  "unwrap_placeholder.greeting2": "hello Fred, nice to meet you!"
+}
+```
+</p>
+</details>
+
 ##### Binary Operators on Primitive Types
 
 | LHS Type    | Operator | RHS Type  | Result    | Semantics                                                |
@@ -3100,10 +3245,11 @@ Example output:
 
 | Precedence | Operator type         | Associativity | Example      |
 | ---------- | --------------------- | ------------- | ------------ |
-| 12         | Grouping              | n/a           | `(x)`        |
-| 11         | Member Access         | left-to-right | `x.y`        |
-| 10         | Index                 | left-to-right | `x[y]`       |
-| 9          | Function Call         | left-to-right | `x(y,z,...)` |
+| 13         | Grouping              | n/a           | `(x)`        |
+| 12         | Member Access         | left-to-right | `x.y`        |
+| 11         | Index                 | left-to-right | `x[y]`       |
+| 10         | Function Call         | left-to-right | `x(y,z,...)` |
+| 9          | Unwrap                | left-to-right | `x!`         |
 | 8          | Logical NOT           | right-to-left | `!x`         |
 |            | Unary Negation        | right-to-left | `-x`         |
 | 7          | Exponentiation        | left-to-right | `x**y`       |
@@ -3524,7 +3670,7 @@ The result of evaluating an expression in a placeholder must ultimately be conve
 
 Compound types cannot be implicitly converted to `String`s. To convert an `Array` to a `String`, use the [`sep`](#sep) function: `~{sep(",", str_array)}`. See the guide on [WDL value serialization](#appendix-a-wdl-value-serialization-and-deserialization) for more details and examples.
 
-If an expression within a placeholder evaluates to `None`, and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string.
+If an expression within a placeholder evaluates to `None`, and either causes the entire placeholder to evaluate to `None` or causes an error, then the placeholder is replaced by the empty string. This includes an error raised by applying the [unwrap operator](#unwrap-operator) to `None`.
 
 <details>
 <summary>
@@ -4599,6 +4745,10 @@ The execution engine is responsible for "instantiating" the shell script (i.e., 
 task name {
   input {
     # task inputs are declared here
+
+    validation {
+      # input validation clauses are declared here
+    }
   }
 
   # other "private" declarations can be made here
@@ -4609,6 +4759,10 @@ task name {
 
   output {
     # task outputs are declared here
+
+    validation {
+      # output validation clauses are declared here
+    }
   }
 
   requirements {
@@ -4918,6 +5072,216 @@ Example output:
 ```json
 {
   "optional_with_default.greeting": "John"
+}
+```
+</p>
+</details>
+
+#### ✨ Input Validation
+
+An `input` section may end with a single, optional `validation` block containing any number of validation clauses. A validation clause consists of a condition expression, followed by `:`, followed by a message expression. Clauses are separated by commas, and a trailing comma is allowed:
+
+```wdl
+input {
+  String name
+  Int age
+
+  validation {
+    length(name) > 0: "Name must not be empty",
+    age >= 0: "Age ~{age} must not be negative",
+  }
+}
+```
+
+The condition expression must have type `Boolean`, and the message expression must have type `String`. A `validation` block must follow all declarations in its containing `input` section.
+
+Both expressions in a validation clause may reference only declarations in the containing `input` section. In addition, the initializer of any referenced input declaration must transitively reference only declarations in the same `input` section. An implementation must raise an error during static analysis if a validation clause depends directly or indirectly on a private declaration, call output, or any other value outside the containing `input` section. This restriction ensures that input validation cannot introduce a dependency cycle in the workflow graph.
+
+The execution engine evaluates input validation after all declarations referenced by the validation clauses have values, but before it evaluates any private declaration, starts any execution element in the containing workflow, or instantiates a task's command. It evaluates clauses in source order:
+
+1. If a condition evaluates to `true`, the clause succeeds and its message is not evaluated.
+2. If a condition evaluates to `false`, the engine evaluates and records its message.
+3. If a condition or message cannot be evaluated, the engine records the evaluation error.
+
+The engine must attempt to evaluate every clause even if an earlier clause fails. If any condition is `false` or any clause produces an evaluation error, input validation fails. The engine must report every recorded message and evaluation error in source order, but the representation of those errors is implementation specific.
+
+Failed input validation immediately fails the containing task or workflow. The engine must not evaluate any remaining declaration, section, or execution element in that task or workflow, including its outputs. Failed task input validation prevents the command from being instantiated or executed, does not count as a task attempt, and must not be retried regardless of [`max_retries`](#max_retries).
+
+The following example validates inputs and outputs at both the workflow and task boundaries:
+
+<details>
+<summary>
+Example: validation.wdl
+
+```wdl
+version 1.4
+
+task make_label {
+  input {
+    String name
+    Int age
+
+    validation {
+      length(name) > 0: "Task input 'name' must not be empty",
+      age >= 0: "Task input 'age' must not be negative",
+    }
+  }
+
+  command <<<
+  printf "~{name}:~{age}"
+  >>>
+
+  output {
+    String label = read_string(stdout())
+
+    validation {
+      length(label) > 1: "Task output 'label' must not be empty",
+    }
+  }
+}
+
+workflow validation {
+  input {
+    String name
+    Int age
+
+    validation {
+      length(name) > 0: "Workflow input 'name' must not be empty",
+      age >= 0: "Workflow input 'age' must not be negative",
+    }
+  }
+
+  call make_label { name, age }
+
+  output {
+    String label = make_label.label
+
+    validation {
+      length(label) > 1: "Workflow output 'label' must not be empty",
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "validation.name": "Ada",
+  "validation.age": 36
+}
+```
+
+Example output:
+
+```json
+{
+  "validation.label": "Ada:36"
+}
+```
+</p>
+</details>
+
+Input validation reports all failed clauses rather than stopping after the first failure:
+
+<details>
+<summary>
+Example: workflow_input_validation_fail.wdl
+
+```wdl
+version 1.4
+
+workflow workflow_input_validation_fail {
+  input {
+    String name
+    Int count
+
+    validation {
+      length(name) > 0: "Name must not be empty",
+      count >= 1: "Count must be at least 1",
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{
+  "workflow_input_validation_fail.name": "",
+  "workflow_input_validation_fail.count": 0
+}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
+
+Task input validation occurs after the caller computes the task inputs but before the command runs:
+
+<details>
+<summary>
+Example: task_input_validation_fail.wdl
+
+```wdl
+version 1.4
+
+task process {
+  input {
+    String name
+    Int count
+
+    validation {
+      length(name) > 0: "Name must not be empty",
+      count >= 1: "Count must be at least 1",
+    }
+  }
+
+  command <<<
+  printf "~{name}"
+  >>>
+}
+
+workflow task_input_validation_fail {
+  call process {
+    name = "",
+    count = 0
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
 }
 ```
 </p>
@@ -5459,6 +5823,8 @@ If the user mixes tabs and spaces, the behavior is undefined. The execution engi
 
 The `output` section contains declarations that are exposed as outputs of the task after the successful execution of the instantiated command. An output declaration must be initialized, and its value is evaluated only after the task's command completes successfully, enabling any files generated by the command to be used to determine its value.
 
+When an execution engine stores `File` outputs outside the task's execution directory, it must preserve their same-parent relationship: output files that had the same parent directory must be placed in the same storage directory.
+
 <details>
 <summary>
 Example: outputs_task.wdl
@@ -5778,11 +6144,117 @@ task output_subset {
 }
 ```
 
+#### ✨ Output Validation
+
+An `output` section may end with a single, optional `validation` block. Output validation clauses use the same `<Boolean expression>: <String expression>` syntax and static types as [input validation](#-input-validation). A `validation` block must follow all declarations in its containing `output` section.
+
+Expressions in output validation clauses have the same visibility as output declaration expressions. The execution engine first evaluates every output declaration. If all output declarations are evaluated successfully, it evaluates every validation clause in source order using the same message aggregation and error handling rules as input validation. Message expressions are evaluated only for conditions that evaluate to `false`.
+
+Output validation occurs before the outputs are exposed to the caller or returned as final workflow outputs. If any clause fails, the task or workflow fails and none of its outputs are exposed. A task output validation failure occurs after the command has completed and is retried according to the task's [`max_retries`](#max_retries) requirement unless the task's [`retry_on_validation_failure`](#-retry_on_validation_failure) requirement is `false`.
+
+The following task fails after its command completes because `report` does not satisfy its output validation:
+
+<details>
+<summary>
+Example: task_output_validation_fail.wdl
+
+```wdl
+version 1.4
+
+task empty_report {
+  command <<<
+  touch report.txt
+  >>>
+
+  output {
+    File report = "report.txt"
+
+    validation {
+      size(report) > 0: "Report must not be empty",
+    }
+  }
+}
+
+workflow task_output_validation_fail {
+  call empty_report
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
+
+Workflow output validation runs after all output declarations have values but before the workflow returns them:
+
+<details>
+<summary>
+Example: workflow_output_validation_fail.wdl
+
+```wdl
+version 1.4
+
+workflow workflow_output_validation_fail {
+  input {
+    Int value = 0
+  }
+
+  output {
+    Int result = value
+
+    validation {
+      result > 0: "Result must be positive",
+    }
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
+
 ### Evaluation of Task Declarations
 
-All non-output declarations (i.e., input and private declarations) must be evaluated prior to evaluating the command section.
+All non-output declarations (i.e., input and private declarations) must be evaluated prior to evaluating the command section. Input validation is evaluated after its dependencies but before any private declarations. Output validation is evaluated after all output declarations.
 
-Input and private declarations may appear in any order within their respective sections and they may reference each other so long as there are no circular references. Input and private declarations may *not* reference declarations in the output section.
+Input and private declarations may appear in any order within their respective sections and they may reference each other so long as there are no circular references. However, an input declaration referenced by [input validation](#-input-validation) is subject to the additional dependency restrictions defined for validation clauses. Input and private declarations may *not* reference declarations in the output section.
 
 Declarations in the output section may reference any input and private declarations, and may also reference other output declarations.
 
@@ -6267,7 +6739,6 @@ A preemptible instance is a compute instance that the execution environment may 
 When `preemptible_only` is `false`, this requirement has no effect. When `preemptible_only` is `true`, the execution engine must run every attempt on a preemptible instance. If the engine cannot provide a preemptible instance, the task must fail before the command is instantiated.
 
 This requirement does not require the engine to honor the [`preemptible`](#-preemptible) hint. If the engine honors that hint and exhausts the suggested number of preemptible attempts, the task fails because this requirement prohibits a non-preemptible attempt. If the hint is absent or ignored, the engine determines whether to retry after preemption. A retry following preemption does not count against [`max_retries`](#max_retries), while a retry following any other failure does.
-
 ```wdl
 version 1.4
 
@@ -6282,6 +6753,110 @@ task preemptible_only_example {
 ```
 
 Every attempt must run on a preemptible instance. The engine determines whether to retry after preemption, and such retries do not count against `max_retries`. Independently, up to two attempts that fail for reasons other than preemption may be retried on preemptible instances.
+
+##### ✨ `retry_on_validation_failure`
+
+* Accepted type: `Boolean`
+* Default value: `true`
+
+The `retry_on_validation_failure` attribute specifies whether a task whose [output validation](#-output-validation) fails may be retried. If `true`, an output validation failure is retried like any other task failure, subject to [`max_retries`](#max_retries). If `false`, an output validation failure immediately fails the task, even if retry attempts remain. This attribute has no effect on other task failures, and input validation failures are never retried.
+
+The following task fails output validation on its first attempt and passes on its retry, so it succeeds by default:
+
+<details>
+<summary>
+Example: retry_on_validation_failure_default.wdl
+
+```wdl
+version 1.4
+
+task retry_on_validation_failure_default {
+  command <<<
+  echo "~{task.attempt}" > attempt.txt
+  >>>
+
+  output {
+    Int attempt = read_int("attempt.txt")
+
+    validation {
+      attempt > 0: "Only a retried attempt passes validation",
+    }
+  }
+
+  requirements {
+    max_retries: 1
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "retry_on_validation_failure_default.attempt": 1
+}
+```
+</p>
+</details>
+
+Setting `retry_on_validation_failure` to `false` makes the same validation failure fatal, even though a retry attempt remains:
+
+<details>
+<summary>
+Example: retry_on_validation_failure_disabled.wdl
+
+```wdl
+version 1.4
+
+task retry_on_validation_failure_disabled {
+  command <<<
+  echo "~{task.attempt}" > attempt.txt
+  >>>
+
+  output {
+    Int attempt = read_int("attempt.txt")
+
+    validation {
+      attempt > 0: "Only a retried attempt passes validation",
+    }
+  }
+
+  requirements {
+    max_retries: 1
+    retry_on_validation_failure: false
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
 
 ##### `return_codes`
 
@@ -7018,6 +7593,10 @@ A workflow is defined using the `workflow` keyword, followed by a workflow name 
 workflow name {
   input {
     # workflow inputs are declared here
+
+    validation {
+      # input validation clauses are declared here
+    }
   }
 
   # other "private" declarations can be made here
@@ -7030,6 +7609,10 @@ workflow name {
 
   output {
     # workflow outputs are declared here
+
+    validation {
+      # output validation clauses are declared here
+    }
   }
 
   hints {
@@ -7125,6 +7708,58 @@ The control flow of this workflow changes depending on whether the value of `y` 
 
 * If an input value is provided for `y` then it receives that value immediately and `d2` may start running as soon as the workflow starts.
 * In no input value is provided for `y` then it will need to wait for `d1` to complete before it is assigned.
+
+### Workflow File System Context
+
+Every top-level workflow invocation has a single logical file system context, which is established by the execution engine when the workflow begins and remains fixed for the duration of the invocation. Subworkflows inherit the context of their parent workflow. A relative path in a workflow expression is resolved against the parent directory of the WDL document containing the expression within this context, similar to a relative [import](#import-statements). An absolute path is resolved from the root of the context.
+
+All `File` values created by workflow expressions refer to resources in the workflow's file system context. In particular, when a `String` is coerced to a `File` in a workflow expression, its path is resolved according to the preceding rules at the point of coercion. This applies to expressions in all workflow scopes, including `scatter` and conditional bodies.
+
+An execution engine may evaluate workflow expressions on different physical machines, but moving an evaluation must not change the resource denoted by a `File` value or path. The engine must provide the evaluating machine with access to the resource in the workflow's file system context, or fail the workflow if it cannot; it must not reinterpret the path against the machine's local file system. Task input localization may change the path used inside a task, but it does not change the underlying resource represented by the `File`.
+
+<details>
+  <summary>
+  Example: workflow_file_context.wdl
+
+  ```wdl
+  version 1.4
+
+  workflow workflow_file_context {
+    input {
+      File source
+    }
+
+    String filename = "~{source}"
+    File first_file = filename
+
+    scatter (iteration in range(3)) {
+      File scattered_file = filename
+    }
+
+    output {
+      Boolean same_files = first_file == scattered_file[0] && first_file == scattered_file[1] && first_file == scattered_file[2]
+    }
+  }
+  ```
+  </summary>
+  <p>
+  Example input:
+
+  ```json
+  {
+    "workflow_file_context.source": "data/hello.txt"
+  }
+  ```
+
+  Example output:
+
+  ```json
+  {
+    "workflow_file_context.same_files": true
+  }
+  ```
+  </p>
+</details>
 
 ### Fully Qualified Names & Namespaced Identifiers
 
@@ -8018,7 +8653,7 @@ Example output:
 </p>
 </details>
 
-In this example, the scatter body is evaluated three times - once for each value in `name_array`. On a multi-core computer, these evaluations might happen in parallel, with each evaluation running in a separate thread or subprocess; on a cloud platform, each of these evaluations might take place in a different virtual machine.
+In this example, the scatter body is evaluated three times - once for each value in `name_array`. On a multi-core computer, these evaluations might happen in parallel, with each evaluation running in a separate thread or subprocess; on a cloud platform, each of these evaluations might take place in a different virtual machine. Regardless of where an iteration is evaluated, `File` values and paths in its expressions use the workflow's [file system context](#primitive-types).
 
 The scatter body is a nested scope in which the scatter variable is accessible, along with all of the declarations and call outputs that are accessible in the enclosing scope. The scatter variable is *not* accessible outside the scatter body. In the preceding example, it would be an error to reference `name` in the workflow's output section. However, if the `scatter` contained a nested `scatter`, `name` would be accessible in that nested `scatter`'s body. Similarly, calls within the scatter body are able to depend on each other and reference each others' outputs.
  
@@ -8973,7 +9608,7 @@ For functions that write to the file system, the implementation should generate 
 **Restrictions**
 
 1. A function that only manipulates a path (i.e., doesn't require reading any of the file's attributes or contents) may be called anywhere, whether or not the file exists.
-2. A function that *reads* a file or its attributes may only be called in a context where the input file exists. If the file is an input to a task or workflow, then it may be read anywhere in that task or worklow. If the file is created by a task, then it may only be read after it is created. For example, if the file is written during the execution of the `command`, then it may only be read in the task's `output` section. This includes functions like `stdout` and `stderr` that read a task's output stream.
+2. With the exception of [`exists`](#exists), a function that *reads* a file or its attributes may only be called in a context where the input file exists. If the file is an input to a task or workflow, then it may be read anywhere in that task or worklow. If the file is created by a task, then it may only be read after it is created. For example, if the file is written during the execution of the `command`, then it may only be read in the task's `output` section. This includes functions like `stdout` and `stderr` that read a task's output stream.
 3. A function that *writes* a file may be called anywhere. However, writing a file in a workflow is discouraged since it may have the side-effect of creating a permanent output file that is not named in the output section. For example, calling [`write_lines`](#write_lines) in a workflow and then passing the resulting `File` as input to a task may require the engine to persist that file to cloud storage.
 
 ### `basename`
@@ -9109,6 +9744,70 @@ Example output:
   "join_paths.result": "hello"
 }
 ``` 
+</p>
+</details>
+
+### `exists`
+
+*as of version 1.4*
+
+```
+Boolean exists(String)
+```
+
+Determines whether a path refers to an existing `File` or `Directory`. The path is resolved according to the context-dependent rules for [relative and absolute paths](#relative-and-absolute-paths), including resolving symbolic links to their final targets.
+
+Unlike creating a non-optional `File` or `Directory` value, `exists` returns `false` only if the path does not exist. It returns `true` if the path refers to an existing file or directory. If the path exists but cannot be validated for any other reason, such as insufficient permissions or a localization failure, an error is raised rather than `false`.
+
+An implementation is only required to support paths local to the execution environment, but may support other resource identifiers in the same contexts where it supports them for `File` and `Directory` values. An implementation is not required to localize a remote resource solely to determine whether it exists, but it must raise an error if it cannot determine whether the resource exists and is accessible.
+
+The result only describes the path when `exists` is evaluated. It does not guarantee that the path remains available to a later expression.
+
+**Parameters**
+
+1. `String`: The path whose existence is checked.
+
+**Returns**: `true` if the path refers to an existing file or directory, or `false` if the path does not exist.
+
+<details>
+<summary>
+Example: test_exists_task.wdl
+
+```wdl
+version 1.4
+
+task test_exists {
+  command <<<
+    printf "first\nsecond\n" > labels.txt
+    mkdir results
+  >>>
+
+  output {
+    Boolean file_exists = exists("labels.txt")
+    Boolean directory_exists = exists("results")
+    Boolean missing_exists = exists("missing.txt")
+    Array[String] labels = if exists("labels.txt") then read_lines("labels.txt") else []
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "test_exists.file_exists": true,
+  "test_exists.directory_exists": true,
+  "test_exists.missing_exists": false,
+  "test_exists.labels": ["first", "second"]
+}
+```
 </p>
 </details>
 
@@ -10061,7 +10760,7 @@ And `/local/fs/tmp/array.txt` would contain:
 
 ```
 Array[Array[String]] read_tsv(File)
-Array[Object] read_tsv(File, true)
+Array[Object] read_tsv(File, Boolean)
 Array[Object] read_tsv(File, Boolean, Array[String])
 ```
 
@@ -10069,8 +10768,8 @@ Reads a tab-separated value (TSV) file as an `Array[Array[String]]` representing
 
 This function has three choices:
 
-1. `Array[Array[String]] read_tsv(File, [false])`: Returns each row of the table as an `Array[String]`. There is no requirement that the rows of the table are all the same length.
-2. `Array[Object] read_tsv(File, true)`: The second parameter must be `true` and specifies that the TSV file contains a header line. Each row is returned as an `Object` with its keys determined by the header (the first line in the file) and its values as `String`s. All rows in the file must be the same length and the field names in the header row must be valid `Object` field names, or an error is raised.
+1. `Array[Array[String]] read_tsv(File)`: Returns each row of the table as an `Array[String]`. There is no requirement that the rows of the table are all the same length.
+2. `Array[Object] read_tsv(File, Boolean)`: The second parameter must evaluate to `true`, specifying that the TSV file contains a header line; if it evaluates to `false`, an error is raised. Each row is returned as an `Object` with its keys determined by the header (the first line in the file) and its values as `String`s. All rows in the file must be the same length and the field names in the header row must be valid `Object` field names, or an error is raised.
 3. `Array[Object] read_tsv(File, Boolean, Array[String])`: The second parameter specifies whether the TSV file contains a header line, and the third parameter is an array of field names that is used to specify the field names to use for the returned `Object`s. If the second parameter is `true`, the specified field names override those in the file's header (i.e., the header line is ignored).
 
 If the file is empty, an empty array is returned.
@@ -10080,10 +10779,10 @@ If the entire contents of the file can not be read for any reason, the calling t
 **Parameters**
 
 1. `File`: The TSV file to read.
-2. `Boolean`: (Optional) Whether to treat the file's first line as a header.
+2. `Boolean`: (Optional) Whether to treat the file's first line as a header. For the two-parameter variant, this must evaluate to `true`.
 3. `Array[String]`: (Optional) An array of field names. If specified, then the second parameter is also required.
 
-**Returns**: An `Array` of rows in the TSV file, where each row is an `Array[String]` of fields or an `Object` with keys determined by the second and third parameters and `String` values.
+**Returns**: The one-parameter variant returns an `Array` of rows, where each row is an `Array[String]` of fields. The two- and three-parameter variants return an `Array` of rows, where each row is an `Object` with keys determined by the second and third parameters and `String` values.
 
 <details>
 <summary>
@@ -10093,6 +10792,10 @@ Example: read_tsv_task.wdl
 version 1.4
 
 task read_tsv {
+  input {
+    Boolean has_header = true
+  }
+
   command <<<
     {
       printf "row1\tvalue1\n"
@@ -10111,7 +10814,7 @@ task read_tsv {
   output {
     Array[Array[String]] output_table = read_tsv("data.no_headers.tsv")
     Array[Object] output_objs1 = read_tsv("data.no_headers.tsv", false, ["name", "value"])
-    Array[Object] output_objs2 = read_tsv("data.headers.tsv", true)
+    Array[Object] output_objs2 = read_tsv("data.headers.tsv", has_header)
     Array[Object] output_objs3 = read_tsv("data.headers.tsv", true, ["name", "value"])
   }
 }
@@ -10175,6 +10878,51 @@ Example output:
       "value": "value3"
     }
   ]
+}
+```
+</p>
+</details>
+
+<details>
+<summary>
+Example: read_tsv_false_fail.wdl
+
+```wdl
+version 1.4
+
+task read_tsv_false_fail {
+  input {
+    Boolean has_header = false
+  }
+
+  command <<<
+    printf "row1\tvalue1\n" > data.tsv
+  >>>
+
+  output {
+    Array[Object] rows = read_tsv("data.tsv", has_header)
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
 }
 ```
 </p>
@@ -11900,6 +12648,8 @@ X select_first(Array[X?], X)
 ```
 
 Selects the first - i.e., left-most - non-`None` value from an `Array` of optional values. The optional second parameter provides a default value that is returned if the array is empty or contains only `None` values. If the default value is not provided and the array is empty or contains only `None` values, then an error is raised.
+
+Calling `select_first` with a single-element array is equivalent to the [unwrap operator](#unwrap-operator): `select_first([x])` is equivalent to `x!`.
 
 **Parameters**
 

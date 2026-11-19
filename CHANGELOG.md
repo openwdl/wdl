@@ -22,6 +22,23 @@ version 1.4.0
 
 + Introduced the `preemptible` task hint and `preemptible_only` task requirement ([#728](https://github.com/openwdl/wdl/pull/728)).
 
++ Added input and output `validation` blocks to tasks and workflows, reserving `validation` as a keyword. Input validation gates execution after its input dependencies resolve, while output validation checks completed outputs before they are exposed. Added the `retry_on_validation_failure` requirement to control whether output validation failures are retried.
+  ([#778](https://github.com/openwdl/wdl/pull/778))
+
++ Specified that workflow-level `File` values use a stable logical file system
+  context, including when workflow expressions are evaluated on different
+  machines ([#788](https://github.com/openwdl/wdl/pull/788)).
+
++ Required task `File` outputs with the same parent directory to remain
+  colocated when moved to storage
+  ([#796](https://github.com/openwdl/wdl/pull/796)).
+
++ Added the `exists` standard library function for determining whether a path refers to an existing file or directory ([#780](https://github.com/openwdl/wdl/pull/780)).
+
++ Corrected the `read_tsv` overloads so that return types can be determined statically. `read_tsv(File, false)` is now an error; callers that need an `Array[Array[String]]` must omit the second argument ([#787](https://github.com/openwdl/wdl/pull/787)).
+
++ Added the postfix unwrap operator (`!`), which converts a value of optional type `T?` to type `T` and raises an error if the value is `None`. `x!` is equivalent to `select_first([x])` ([#777](https://github.com/openwdl/wdl/pull/777)).
+
 + Added globally valid coercions from `String` to `Int`, `Float`, and `Boolean` ([#797](https://github.com/openwdl/wdl/pull/797)).
 
 + Defined module `exclude` patterns as content exclusions shared by validation, hashing, signing, packaging, and imports, while keeping the root manifest included. ([#765](https://github.com/openwdl/wdl/pull/765))
