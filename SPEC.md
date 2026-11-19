@@ -6732,15 +6732,102 @@ task max_retries_test {
 
 The `retry_on_validation_failure` attribute specifies whether a task whose [output validation](#-output-validation) fails may be retried. If `true`, an output validation failure is retried like any other task failure, subject to [`max_retries`](#max_retries). If `false`, an output validation failure immediately fails the task, even if retry attempts remain. This attribute has no effect on other task failures, and input validation failures are never retried.
 
+The following task fails output validation on its first attempt and passes on its retry, so it succeeds by default:
+
+<details>
+<summary>
+Example: retry_on_validation_failure_default.wdl
+
 ```wdl
-task retry_on_validation_failure_test {
-  #.....
+version 1.4
+
+task retry_on_validation_failure_default {
+  command <<<
+  echo "~{task.attempt}" > attempt.txt
+  >>>
+
+  output {
+    Int attempt = read_int("attempt.txt")
+
+    validation {
+      attempt > 0: "Only a retried attempt passes validation",
+    }
+  }
+
   requirements {
-    max_retries: 3
+    max_retries: 1
+  }
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{
+  "retry_on_validation_failure_default.attempt": 1
+}
+```
+</p>
+</details>
+
+Setting `retry_on_validation_failure` to `false` makes the same validation failure fatal, even though a retry attempt remains:
+
+<details>
+<summary>
+Example: retry_on_validation_failure_disabled.wdl
+
+```wdl
+version 1.4
+
+task retry_on_validation_failure_disabled {
+  command <<<
+  echo "~{task.attempt}" > attempt.txt
+  >>>
+
+  output {
+    Int attempt = read_int("attempt.txt")
+
+    validation {
+      attempt > 0: "Only a retried attempt passes validation",
+    }
+  }
+
+  requirements {
+    max_retries: 1
     retry_on_validation_failure: false
   }
 }
 ```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
 
 ##### `return_codes`
 
