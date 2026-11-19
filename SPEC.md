@@ -119,6 +119,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [Hardware Accelerators (`gpu` and `fpga`)](#hardware-accelerators-gpu-and--fpga)
         - [`disks`](#disks)
         - [`max_retries`](#max_retries)
+        - [✨ `retry_on_validation_failure`](#-retry_on_validation_failure)
         - [`return_codes`](#return_codes)
     - [Hints Section](#-hints-section)
       - [Hints-scoped types](#hints-scoped-types)
@@ -6147,7 +6148,7 @@ An `output` section may end with a single, optional `validation` block. Output v
 
 Expressions in output validation clauses have the same visibility as output declaration expressions. The execution engine first evaluates every output declaration. If all output declarations are evaluated successfully, it evaluates every validation clause in source order using the same message aggregation and error handling rules as input validation. Message expressions are evaluated only for conditions that evaluate to `false`.
 
-Output validation occurs before the outputs are exposed to the caller or returned as final workflow outputs. If any clause fails, the task or workflow fails and none of its outputs are exposed. A task output validation failure occurs after the command has completed and is subject to the task's existing [`max_retries`](#max_retries) behavior.
+Output validation occurs before the outputs are exposed to the caller or returned as final workflow outputs. If any clause fails, the task or workflow fails and none of its outputs are exposed. A task output validation failure occurs after the command has completed and is retried according to the task's [`max_retries`](#max_retries) requirement unless the task's [`retry_on_validation_failure`](#-retry_on_validation_failure) requirement is `false`.
 
 The following task fails after its command completes because `report` does not satisfy its output validation:
 
@@ -6720,6 +6721,23 @@ task max_retries_test {
   #.....
   requirements {
     max_retries: 4
+  }
+}
+```
+
+##### ✨ `retry_on_validation_failure`
+
+* Accepted type: `Boolean`
+* Default value: `true`
+
+The `retry_on_validation_failure` attribute specifies whether a task whose [output validation](#-output-validation) fails may be retried. If `true`, an output validation failure is retried like any other task failure, subject to [`max_retries`](#max_retries). If `false`, an output validation failure immediately fails the task, even if retry attempts remain. This attribute has no effect on other task failures, and input validation failures are never retried.
+
+```wdl
+task retry_on_validation_failure_test {
+  #.....
+  requirements {
+    max_retries: 3
+    retry_on_validation_failure: false
   }
 }
 ```
