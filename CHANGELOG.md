@@ -20,6 +20,9 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
++ Added the `list` standard library function for listing a `Directory` as a `Pair[Array[File], Array[Directory]]`, with optional recursive traversal, symbolic-link inclusion, and file basename filtering.
+  ([#800](https://github.com/openwdl/wdl/pull/800)) Thanks to @markjschreiber and @claymcleod!
+
 + Allowed a WDL document to define any number of `workflow`s. A caller selects
   the top-level workflow when more than one is available
   ([#798](https://github.com/openwdl/wdl/pull/798)).
