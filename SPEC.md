@@ -495,6 +495,8 @@ There is no special syntax for multi-line comments - simply use a `#` at the sta
 
 The following (case-sensitive) language keywords are reserved and cannot be used to name declarations, calls, tasks, workflows, import namespaces, struct types, or aliases.
 
+This restriction applies when a token names a WDL language element. A reserved keyword may be used as a key in a context that permits arbitrary keys, including `runtime`, `hints`, and `meta` sections, metadata objects, and `Object` literals. A reserved keyword may also be used as the member name on the right-hand side of a [member access](#member-access) expression when accessing such a key (e.g., `task.meta.import`).
+
 ```
 Array
 Boolean
@@ -2328,6 +2330,8 @@ In operations on mismatched numeric types (e.g., `Int` + `Float`), the `Int` is 
 | `Directory` | `==`     | `String`  | `Boolean` |                                                          |
 | `Directory` | `!=`     | `String`  | `Boolean` |                                                          |
 
+For finite numeric operands `a` and `b`, where `b` is not equal to zero, the `%` operator evaluates to `a - (q * b)`, where `q` is the exact mathematical quotient `a / b` truncated toward zero to an integer. This equation defines the result without requiring its intermediate values to be representable by WDL types. The result is either zero or has the same sign as `a`, and its magnitude is less than the magnitude of `b`. For example, `5.5 % 2.0` evaluates to `1.5`, whereas `-5.5 % 2.0` evaluates to `-1.5`. Evaluating `%` with a right-hand operand equal to zero, including floating-point negative zero, results in an error.
+
 Boolean operator evaluation is minimal (or "short-circuiting"), meaning that:
 
 1. For `A && B`, if `A` evalutes to `false` then `B` is not evaluated
@@ -4046,7 +4050,7 @@ cat /tmp/file3 >> result
 
 ##### Optional inputs with defaults
 
-Inputs with default initializers are implicitly optional: callers may omit the input or supply `None` *whether or not* its declared type carries the optional quantifier `?`. Usually, inputs with defaults should omit the `?` from their type, except when callers need the ability to override the default with `None`.
+Inputs with default initializers retain their declared types, but callers are not required to provide them. A caller may omit the input or supply `None` *whether or not* its declared type carries the optional quantifier `?`. Usually, inputs with defaults should omit the `?` from their type, except when callers need the ability to override the default with `None`.
 
 In detail, if a caller omits an input from the call `input:` section, then the default initializer applies whether or not the input type is declared optional. But if the caller explicitly supplies `None` for the input (either literally or by passing an optional value), then the default initializer applies only if the declared type isn't optional. This table illustrates the value taken by an input `x` depending on what the caller supplies:
 
