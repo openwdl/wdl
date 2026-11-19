@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.3.1
 ---------------------------
 
++ Added explicit `String` overloads to `basename` and `size` to prevent ambiguous coercion to `File` or `Directory` ([#790](https://github.com/openwdl/wdl/pull/790)).
+
 + Defined the supported forms for `Int` and `Float` literals and
   numeric parsing functions ([#791](https://github.com/openwdl/wdl/pull/791)).
 
