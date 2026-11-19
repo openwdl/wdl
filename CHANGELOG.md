@@ -20,6 +20,10 @@ Keep the changelog pleasant to read in the text editor:
 version 1.3.1
 ---------------------------
 
++ Clarified that the remainder operator truncates the quotient toward zero and
+  raises an error when the right-hand operand is zero
+  ([#789](https://github.com/openwdl/wdl/pull/789)).
+
 + Clarified that inputs with default initializers retain their declared types when callers omit them or supply `None` ([#792](https://github.com/openwdl/wdl/pull/792)).
 
 + Clarified that reserved keywords can be used as arbitrary keys and `Object` member names ([#793](https://github.com/openwdl/wdl/pull/793)).
