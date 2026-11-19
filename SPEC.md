@@ -10326,7 +10326,7 @@ Where `/jobs/564757/sample_quality_scores.json` would contain:
 {
   "read1": 32,
   "read2": 41,
-  "read3": 55,
+  "read3": 55
 }
 ```
 

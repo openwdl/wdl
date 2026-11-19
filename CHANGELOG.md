@@ -45,6 +45,9 @@ version development
 version 1.1.4
 ---------------------------
 
++ Removed a trailing comma from the `sample_quality_scores.json` example
+  ([#805](https://github.com/openwdl/wdl/pull/805)).
+
 + Clarified that the remainder operator truncates the quotient toward zero and
   raises an error when the right-hand operand is zero
   ([#789](https://github.com/openwdl/wdl/pull/789)).
