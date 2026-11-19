@@ -45,6 +45,10 @@ version development
 version 1.1.4
 ---------------------------
 
++ Specified that workflow-level `File` values use a stable logical file system
+  context, including when workflow expressions are evaluated on different
+  machines ([#788](https://github.com/openwdl/wdl/pull/788)).
+
 + Required task `File` outputs with the same parent directory to remain
   colocated when moved to storage
   ([#796](https://github.com/openwdl/wdl/pull/796)).
