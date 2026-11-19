@@ -88,6 +88,8 @@ openwdl-tasks/
     jq.wdl
 ```
 
+Within a module, subdirectories are ordinary folders, not nested modules: only the module root contains a `module.json` (see [Module File Tree Constraints](#module-file-tree-constraints)). Consumers reach any included `.wdl` file in the module, at any depth, by its path relative to the module root (see [Symbolic Module Paths](#symbolic-module-paths)). For example, a consumer that declares the `csvkit` module above as a dependency named `csvkit` imports its `cut.wdl` with `import csvkit/cut`.
+
 Both layouts are valid. The resolution logic is identical for both. Authors who require fine-grained independent versioning may split modules further; authors who prefer fewer manifests may group related tasks under a single `module.json`.
 
 ## Module File Tree Constraints
@@ -106,7 +108,7 @@ The manifest file for a module is always located at the module's root directory 
 
 ### Core Fields
 
-- **`name`** (string, required). A human-readable display name for the module (e.g., `"csvcut"`, `"csvkit-sort"`). Used by tooling for display. Not used for dependency resolution.
+- **`name`** (string, required). A human-readable display name for the module (e.g., `"csvcut"`, `"csvkit-sort"`, `"BAM Sort"`). Used by tooling for display. Not used for dependency resolution.
 - **`license`** (string, required). An [SPDX license expression](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/) (e.g., `"MIT"`, `"Apache-2.0"`, `"MIT OR Apache-2.0"`, `"MIT AND (Apache-2.0 WITH LLVM-exception)"`).
 - **`authors`** (array of strings, optional). Author descriptions. The convention for individual authors is `"First Last <first.last@example.com>"`, but this is not enforced.
 - **`description`** (string, optional). A brief description of what the module does.
@@ -256,7 +258,7 @@ Every module designates an **entrypoint** WDL file. By default, the entrypoint i
 
 The default name `index.wdl` mirrors package index conventions: it names the file that represents the directory as a whole. A module that prefers `main.wdl` or another project-specific name can use the `entrypoint` field without changing resolution semantics.
 
-The entrypoint provides the module's **default surface**: when a consumer writes a **root module import** of the dependency (`import samtools`, with no sub-path), the engine resolves the import to the entrypoint file. The entrypoint file uses ordinary quoted imports to pull in its sibling files, exactly as defined in [`SPEC.md`](../SPEC.md#-import-forms), and the names brought into its scope become the surface that root module consumers see. Tasks and workflows enter that scope only through the scope-merging forms (`import * from`, `import { ... } from`); a form 1 (namespaced) import contributes the user-defined types it copies into scope, while its tasks and workflows remain referenceable only by namespace within the entrypoint and are not part of the module's surface.
+The entrypoint provides the module's **default surface**: when a consumer writes a **root module import** of the dependency (`import samtools`, with no sub-path), the engine resolves the import to the entrypoint file. The entrypoint file uses ordinary quoted imports to pull in its sibling files, exactly as defined in [`SPEC.md`](../SPEC.md#-import-forms), and the names brought into its scope become the surface that root module consumers see. Symbolic imports resolve only against the dependencies declared in `module.json`, so a module refers to its own files with quoted imports. Tasks and workflows enter that scope only through the scope-merging forms (`import * from`, `import { ... } from`); a form 1 (namespaced) import contributes the user-defined types it copies into scope, while its tasks and workflows remain referenceable only by namespace within the entrypoint and are not part of the module's surface.
 
 The entrypoint is the default surface, not a privacy boundary. Consumers may also import individual included files within the module folder by sub-path (see [Symbolic Module Paths](#symbolic-module-paths)); such imports do not pass through the entrypoint. The manifest's `exclude` field removes matched files from the module entirely (see [Core Fields](#core-fields)); it cannot be used to hide a helper file that included module files still import.
 
@@ -275,8 +277,8 @@ A consumer with a dependency named `csvcut` then chooses how to bring those name
 ```wdl
 version 1.4
 
-import csvcut              # tasks/workflows reachable as `csvcut.*`; UDTs in scope unqualified
-import * from csvcut       # tasks, workflows, and UDTs all in scope unqualified, no namespace
+import csvcut              # tasks/workflows reachable as `csvcut.*`; user-defined types in scope unqualified
+import * from csvcut       # tasks, workflows, and user-defined types all in scope unqualified, no namespace
 ```
 
 A module with multiple files curates its default surface by importing them from the entrypoint with the scope-merging forms:
