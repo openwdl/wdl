@@ -20,10 +20,6 @@ Keep the changelog pleasant to read in the text editor:
 version development
 ---------------------------
 
-+ Required task `File` outputs with the same parent directory to remain
-  colocated when moved to storage
-  ([#796](https://github.com/openwdl/wdl/pull/796)).
-
 + Fixed description of ternary operator to say that the type, not the value,
   of the if-then-else is the same regardless of which side is evaluated.
   [PR 476](https://github.com/openwdl/wdl/pull/476) by @notestaff
@@ -48,6 +44,10 @@ version development
 
 version 1.1.4
 ---------------------------
+
++ Required task `File` outputs with the same parent directory to remain
+  colocated when moved to storage
+  ([#796](https://github.com/openwdl/wdl/pull/796)).
 
 + Added globally valid coercions from `String` to `Int`, `Float`, and `Boolean` ([#797](https://github.com/openwdl/wdl/pull/797)).
 
