@@ -119,6 +119,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [Hardware Accelerators (`gpu` and `fpga`)](#hardware-accelerators-gpu-and--fpga)
         - [`disks`](#disks)
         - [`max_retries`](#max_retries)
+        - [✨ `preemptible_only`](#-preemptible_only)
         - [✨ `retry_on_validation_failure`](#-retry_on_validation_failure)
         - [`return_codes`](#return_codes)
     - [Hints Section](#-hints-section)
@@ -132,6 +133,7 @@ Revisions to this specification are made periodically in order to correct errors
         - [`localization_optional`](#localization_optional)
         - [`inputs`](#inputs)
         - [`outputs`](#outputs)
+        - [✨ `preemptible`](#-preemptible)
       - [Compute Environments](#compute-environments)
       - [Conventions and Best Practices](#conventions-and-best-practices)
     - [🗑 Runtime Section](#-runtime-section)
@@ -6710,11 +6712,13 @@ Test config:
 * Default value: `0`
 * Alias: `maxRetries`
 
-The `max_retries` attribute specifies the maximum number of times a task should be retried in the event of failure. The execution engine must retry the task at least once and up to (but not exceeding) the specified number of attempts.
+The `max_retries` attribute specifies the maximum number of times a task should be retried following a failure other than preemption. The execution engine must retry the task at least once and up to (but not exceeding) the specified number of attempts.
+
+A retry following preemption does not count against `max_retries`, even when it runs on a non-preemptible instance. If the engine honors the [`preemptible`](#-preemptible) hint, that hint governs how many preemptions the engine tolerates before switching to a non-preemptible instance or failing the task.
 
 The execution engine may choose to define an upper bound (>= 1) on the number of retry attempts that it permits.
 
-A value of `0` means that the task as not retryable, and therefore any failure in the task should never result in a retry by the execution engine, and the final status of the task should remain the same.
+A value of `0` means that a failure other than preemption must not result in a retry. It does not prevent retries following preemption on either type of instance.
 
 ```wdl
 task max_retries_test {
@@ -6724,6 +6728,31 @@ task max_retries_test {
   }
 }
 ```
+
+##### ✨ `preemptible_only`
+
+* Accepted type: `Boolean`
+* Default value: `false`
+
+A preemptible instance is a compute instance that the execution environment may reclaim before the task completes. Reclamation of an instance in this way is a *preemption*, which is distinct from a failure of the task's command.
+
+When `preemptible_only` is `false`, this requirement has no effect. When `preemptible_only` is `true`, the execution engine must run every attempt on a preemptible instance. If the engine cannot provide a preemptible instance, the task must fail before the command is instantiated.
+
+The [`preemptible`](#-preemptible) hint can suggest a limit on preemptions but does not change this placement requirement. A retry following preemption does not count against [`max_retries`](#max_retries), while a retry following any other failure does.
+```wdl
+version 1.4
+
+task preemptible_only_example {
+  command <<< echo "hello" >>>
+
+  requirements {
+    preemptible_only: true
+    max_retries: 2
+  }
+}
+```
+
+Every attempt must run on a preemptible instance. The engine determines whether to retry after preemption, and such retries do not count against `max_retries`. Independently, up to two attempts that fail for reasons other than preemption may be retried on preemptible instances.
 
 ##### ✨ `retry_on_validation_failure`
 
@@ -7181,6 +7210,39 @@ Reserved input-specific attributes:
 
 Provides output-specific hints. Each key must refer to a parameter defined in the task's [`output`](#task-outputs) section. A key may also use dotted notation to refer to a specific member of a struct output.
 
+##### ✨ `preemptible`
+
+* Accepted type: `Int`
+* Default value: `0`
+
+Suggests the maximum number of preemptions to tolerate on [preemptible instances](#-preemptible_only) before switching to a non-preemptible instance or failing the task. When [`preemptible_only`](#-preemptible_only) is `false`, an engine may ignore the hint and run the initial attempt on a non-preemptible instance.
+
+When an engine honors this hint, only attempts that end in preemption count against `preemptible`. Retries following preemption do not count against [`max_retries`](#max_retries). Retries following any other failure count against `max_retries` and do not count against `preemptible`, regardless of the instance type.
+
+When the engine honors a positive value for this hint and `preemptible_only` is `false`, the engine must continue on a non-preemptible instance once the task reaches that many preemptions. This fallback does not consume a `max_retries` retry and occurs even when `max_retries` is `0` or all retries have been used.
+
+A value of `0` suggests that the task should not run on a preemptible instance.
+
+When [`preemptible_only`](#-preemptible_only) is `true` and this hint is positive, the engine should honor it as a limit on the total number of preemptions for the task. If the engine honors the limit, it must fail the task when the limit is reached. If the hint is absent, ignored, or `0`, the engine determines whether to retry after preemption. In all cases, the engine must not fall back to a non-preemptible instance when `preemptible_only` is `true`.
+
+```wdl
+version 1.4
+
+task preemptible_example {
+  command <<< echo "hello" >>>
+
+  requirements {
+    max_retries: 2
+  }
+
+  hints {
+    preemptible: 3
+  }
+}
+```
+
+An engine may ignore the hint and run the initial attempt on a non-preemptible instance. If an engine honors the hint and the first three attempts are all preempted, it continues on a non-preemptible instance with both `max_retries` retries still available. If an attempt on a preemptible instance fails for another reason and is retried, that retry uses one of the two `max_retries` retries but does not reduce the number of preemptions the engine tolerates.
+
 #### Compute Environments
 
 The `hints` section should be used to provide hints that are specific to different compute environments such as HPC systems or cloud platforms. Attributes for a compute environment should be specified in a `hints` value, in which any of the [reserved hints](#reserved-task-hints) are allowed to override the values specified at the task level (if any), and other attributes are platform-specific.
@@ -7378,6 +7440,8 @@ This information is provided by the `task` variable, which is implicitly defined
 * `fpga`: An `Array[String]` with one specification per allocated FPGA. The specification is execution engine-specific. If no FPGAs were allocated, then the value must be an empty array.
 * `disks`: A `Map[String, Int]` with one entry for each disk mount point. The key is the mount point and the value is the initial amount of disk space allocated, in bytes. The execution engine must, at a minimum, provide one entry for each disk mount point requested, but may provide more. The amount of disk space available for a given mount point may increase during the lifetime of the task (e.g., autoscaling volumes provided by some cloud services).
 * `max_retries`: An `Int` with the maximum number of retry attempts.
+* `preemptible` ✨: An `Int` with the suggested maximum number of preemptions to tolerate before switching to a non-preemptible instance or failing the task.
+* `preemptible_only` ✨: A `Boolean` indicating whether the task may run only on preemptible instances.
 * `attempt`: An `Int` with the current task attempt. The value must be `0` the first time the task is executed, and incremented by `1` each time the task is retried (if any).
 * `previous`: A [hidden type](#taskprevious-hidden-scoped-type) containing the computed requirements from the previous task attempt. All fields are `None` on the first try.
 * `end_time`: An `Int?` whose value is the time by which the task must be completed, as a [Unix time stamp](https://en.wikipedia.org/wiki/Unix_time). A value of `0` means that the execution engine does not impose a time limit. A value of `None` means that the execution engine cannot determine whether the runtime of the task is limited. A positive value is a guarantee that the task will be preempted at the specified time, but is *not* a guarantee that the task won't be preempted earlier.
