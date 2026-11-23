@@ -20,6 +20,8 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
++ Added `preemptible_only` and `retry_on_validation_failure` to `task.previous`, and added `retry_on_validation_failure` to the `task` variable ([#807](https://github.com/openwdl/wdl/issues/807)).
+
 + Introduced the `preemptible` task hint and `preemptible_only` task requirement ([#728](https://github.com/openwdl/wdl/pull/728)).
 
 + Added input and output `validation` blocks to tasks and workflows, reserving `validation` as a keyword. Input validation gates execution after its input dependencies resolve, while output validation checks completed outputs before they are exposed. Added the `retry_on_validation_failure` requirement to control whether output validation failures are retried.
