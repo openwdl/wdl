@@ -2055,6 +2055,8 @@ The [`task.previous` type](#runtime-access-to-requirements-hints-and-metadata) i
 * `fpga`: An `Array[String]?` with the FPGA specifications from the previous attempt.
 * `disks`: A `Map[String, Int]?` with the disk mount points and allocated space from the previous attempt.
 * `max_retries`: An `Int?` with the maximum number of retry attempts from the previous attempt.
+* `preemptible_only` ✨: A `Boolean?` indicating whether the task was required to run only on preemptible instances in the previous attempt.
+* `retry_on_validation_failure` ✨: A `Boolean?` indicating whether output validation failures could be retried in the previous attempt.
 
 All fields are `None` on the first try.
 
@@ -7442,6 +7444,7 @@ This information is provided by the `task` variable, which is implicitly defined
 * `max_retries`: An `Int` with the maximum number of retry attempts.
 * `preemptible` ✨: An `Int` with the suggested maximum number of preemptions to tolerate before switching to a non-preemptible instance or failing the task.
 * `preemptible_only` ✨: A `Boolean` indicating whether the task may run only on preemptible instances.
+* `retry_on_validation_failure` ✨: A `Boolean` indicating whether a task whose output validation fails may be retried.
 * `attempt`: An `Int` with the current task attempt. The value must be `0` the first time the task is executed, and incremented by `1` each time the task is retried (if any).
 * `previous`: A [hidden type](#taskprevious-hidden-scoped-type) containing the computed requirements from the previous task attempt. All fields are `None` on the first try.
 * `end_time`: An `Int?` whose value is the time by which the task must be completed, as a [Unix time stamp](https://en.wikipedia.org/wiki/Unix_time). A value of `0` means that the execution engine does not impose a time limit. A value of `None` means that the execution engine cannot determine whether the runtime of the task is limited. A positive value is a guarantee that the task will be preempted at the specified time, but is *not* a guarantee that the task won't be preempted earlier.
