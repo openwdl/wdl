@@ -20,7 +20,7 @@ Keep the changelog pleasant to read in the text editor:
 version 1.4.0
 ---------------------------
 
-+ Added `preemptible_only` and `retry_on_validation_failure` to `task.previous`, and added `retry_on_validation_failure` to the `task` variable ([#807](https://github.com/openwdl/wdl/issues/807)).
++ Added `preemptible_only` and `retry_on_validation_failure` to `task.previous`, and added `retry_on_validation_failure` to the `task` variable ([#808](https://github.com/openwdl/wdl/pull/808)).
 
 + Introduced the `preemptible` task hint and `preemptible_only` task requirement ([#728](https://github.com/openwdl/wdl/pull/728)).
 
