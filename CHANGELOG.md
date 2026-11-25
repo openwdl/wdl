@@ -20,6 +20,12 @@ Keep the changelog pleasant to read in the text editor:
 version 1.3.1
 ---------------------------
 
++ Clarified that a coercion not listed in the coercion table, allowed elsewhere
+  in the specification, or included in the deprecated limited exceptions is
+  invalid. Implementations must raise an error for it, during static analysis
+  unless the source type is known only at runtime
+  ([#809](https://github.com/openwdl/wdl/pull/809)).
+
 + Specified that workflow-level `File` values use a stable logical file system
   context, including when workflow expressions are evaluated on different
   machines ([#788](https://github.com/openwdl/wdl/pull/788)).

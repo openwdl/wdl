@@ -2193,7 +2193,9 @@ Test config:
 
 The table below lists all globally valid coercions. The "target" type is the type being coerced to (this is often called the "left-hand side" or "LHS" of the coercion) and the "source" type is the type being coerced from (the "right-hand side" or "RHS").
 
-Whether a coercion is valid is determined from the source and target types during static analysis. Some valid coercions may still fail during dynamic evaluation because the source value cannot be represented by the target type. Unless otherwise specified, a failed coercion raises an error.
+Whether a coercion is valid is determined from the source and target types during static analysis. A coercion is valid only if it is listed in the table below or another section of this specification allows it in a specific context, such as [string interpolation](#expression-placeholder-coercion), [operators](#order-of-precedence), or [optional types](#coercion-of-optional-types). An implementation may also allow the deprecated [limited exceptions](#-limited-exceptions). Any other coercion is invalid, and an implementation must raise an error for it. The error must be raised during static analysis, unless the source type is known only during dynamic evaluation, such as the type of a [`Union`](#union) value. In that case, the error is raised when the coercion is attempted.
+
+Some valid coercions may still fail during dynamic evaluation because the source value cannot be represented by the target type. Unless otherwise specified, a failed coercion raises an error.
 
 | Target Type      | Source Type      | Notes/Constraints                                                                                                                                |
 | ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -2217,6 +2219,42 @@ Whether a coercion is valid is determined from the source and target types durin
 | `Struct`         | `Struct`         | The two `Struct` types must have members with identical names and compatible types (see [Struct-to-Struct Coercion](#struct-to-struct-coercion)) |
 | `Enum`           | `String`         | `String` value must exactly match one of the enum's choice names                                                                                |
 | `String`         | `Enum`           | The enum choice is serialized to its choice name                                                                                               |
+
+<details>
+<summary>
+Example: unlisted_coercion_fail.wdl
+
+```wdl
+version 1.1
+
+workflow unlisted_coercion_fail {
+  # invalid - Int is not coercible to Boolean
+  Boolean flag = 1
+}
+```
+</summary>
+<p>
+Example input:
+
+```json
+{}
+```
+
+Example output:
+
+```json
+{}
+```
+
+Test config:
+
+```json
+{
+  "fail": true
+}
+```
+</p>
+</details>
 
 ###### String-to-Primitive Coercion
 
