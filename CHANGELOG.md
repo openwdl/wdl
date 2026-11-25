@@ -27,6 +27,12 @@ version 1.4.0
 + Added input and output `validation` blocks to tasks and workflows, reserving `validation` as a keyword. Input validation gates execution after its input dependencies resolve, while output validation checks completed outputs before they are exposed. Added the `retry_on_validation_failure` requirement to control whether output validation failures are retried.
   ([#778](https://github.com/openwdl/wdl/pull/778))
 
++ Clarified that a coercion not listed in the coercion table, allowed elsewhere
+  in the specification, or included in the deprecated limited exceptions is
+  invalid. Implementations must raise an error for it, during static analysis
+  unless the source type is known only at runtime
+  ([#809](https://github.com/openwdl/wdl/pull/809)).
+
 + Specified that workflow-level `File` values use a stable logical file system
   context, including when workflow expressions are evaluated on different
   machines ([#788](https://github.com/openwdl/wdl/pull/788)).
